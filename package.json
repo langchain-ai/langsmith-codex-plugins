@@ -1,0 +1,21 @@
+{
+  "name": "@langchain/langsmith-codex-hooks",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Codex Hooks for tracing to LangSmith",
+  "private": true,
+  "scripts": {
+    "test": "vitest"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "langsmith": "^0.5.22",
+    "oxfmt": "^0.46.0",
+    "vitest": "^4.1.5"
+  }
+}

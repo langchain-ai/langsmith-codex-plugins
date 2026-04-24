@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tsx --env-file=/Users/duongtat/Work/ls-codex/.env /Users/duongtat/Work/ls-codex/src/hook.ts",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

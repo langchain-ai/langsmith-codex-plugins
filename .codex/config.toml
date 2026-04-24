@@ -1,0 +1,3 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+[features]
+codex_hooks = true
