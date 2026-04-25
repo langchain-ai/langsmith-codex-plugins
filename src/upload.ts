@@ -14,8 +14,7 @@ import type {
   StandardMessage,
 } from "./types";
 
-const DEBUG_relative = (startTime: number) => {
-  const now = Date.now();
+const DEBUG_relative = (startTime: number, now = Date.now()) => {
   return (timestamp: number) => {
     const diff = timestamp - startTime;
     return now + diff;
@@ -68,9 +67,10 @@ async function markTurnUploaded(rolloutFile: string, turnId: string): Promise<vo
 async function findRolloutFileByThreadId(
   parentFileName: string,
   threadId: string,
+  sessionsRoot?: string,
 ): Promise<string | undefined> {
   const suffix = `-${threadId}.jsonl`;
-  const sessionsRoot = path.resolve(path.dirname(parentFileName), "../../..");
+  const root = sessionsRoot ?? path.resolve(path.dirname(parentFileName), "../../..");
 
   async function walk(dir: string): Promise<string | undefined> {
     let entries: import("node:fs").Dirent[];
@@ -92,7 +92,7 @@ async function findRolloutFileByThreadId(
     return undefined;
   }
 
-  return walk(sessionsRoot);
+  return walk(root);
 }
 
 function mergeMessages(result: AggregateMessage<StandardMessage>[]) {
@@ -308,6 +308,8 @@ async function postTurn(
     options?: {
       parentRunTree?: RunTree;
       client?: Client;
+      sessionsRoot?: string;
+      debugNow?: { now: number; startTime: number };
     };
   },
 ) {
@@ -349,7 +351,9 @@ async function postTurn(
 
   const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
   const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
-  const toRelative = DEBUG_relative(parentStartTime);
+
+  const debugNow = options?.debugNow ?? { now: Date.now(), startTime: parentStartTime };
+  const toRelative = DEBUG_relative(debugNow.startTime, debugNow.now);
 
   const parentConfig: RunTreeConfig = {
     name: "openai.codex",
@@ -469,7 +473,11 @@ async function postTurn(
     }
 
     for (const subagentThread of subagentThreads ?? []) {
-      const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
+      const subagentFile = await findRolloutFileByThreadId(
+        rolloutFile,
+        subagentThread,
+        options?.sessionsRoot,
+      );
 
       if (subagentFile == null) {
         process.stderr.write(`Could not locate rollout file for subagent thread ${subagentThread}`);
@@ -478,8 +486,10 @@ async function postTurn(
       }
 
       await convertToRunTree(subagentFile, {
-        parentRunTree: llmChild,
+        parentRunTree: parent,
         client: options?.client,
+        sessionsRoot: options?.sessionsRoot,
+        debugNow: debugNow,
       });
     }
   }
@@ -490,6 +500,8 @@ export async function convertToRunTree(
   options?: {
     parentRunTree?: RunTree;
     client?: Client;
+    sessionsRoot?: string;
+    debugNow?: { now: number; startTime: number };
   },
 ) {
   let sessionMeta: Session | undefined;
