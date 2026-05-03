@@ -8,7 +8,7 @@
       "name": "langsmith-codex",
       "source": {
         "source": "url",
-        "url": "https://github.com/langchain-ai/langsmith-codex-hook.git",
+        "url": "https://github.com/langchain-ai/langsmith-codex-plugins.git",
         "ref": "main"
       },
       "policy": {

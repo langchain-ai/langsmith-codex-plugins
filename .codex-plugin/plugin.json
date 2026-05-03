@@ -6,8 +6,8 @@
     "name": "LangChain",
     "url": "https://www.langchain.com"
   },
-  "homepage": "https://github.com/langchain-ai/langsmith-codex-hook#readme",
-  "repository": "https://github.com/langchain-ai/langsmith-codex-hook",
+  "homepage": "https://github.com/langchain-ai/langsmith-codex-plugins#readme",
+  "repository": "https://github.com/langchain-ai/langsmith-codex-plugins",
   "license": "MIT",
   "keywords": ["codex", "hooks", "langsmith", "observability", "tracing"],
   "hooks": "./hooks/hooks.json",
