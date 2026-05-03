@@ -1,2 +1,2 @@
-import { runHook } from "../run.js";  
+import { runHook } from "../run.js";
 runHook();

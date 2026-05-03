@@ -1,0 +1,21 @@
+{
+  "name": "langchain-codex-plugins",
+  "interface": {
+    "displayName": "LangChain Codex Plugins"
+  },
+  "plugins": [
+    {
+      "name": "langsmith-codex",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/langchain-ai/langsmith-codex-hook.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}

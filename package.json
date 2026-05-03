@@ -18,6 +18,8 @@
     "url": "https://github.com/langchain-ai/langsmith-codex-hook.git"
   },
   "files": [
+    ".codex-plugin",
+    "hooks",
     "dist",
     "README.md"
   ],

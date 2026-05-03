@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./dist/Stop.mjs",
+            "timeout": 30,
+            "statusMessage": "Uploading Codex trace to LangSmith"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./dist/UserPromptSubmit.mjs",
+            "timeout": 30,
+            "statusMessage": "Uploading Codex trace to LangSmith"
+          }
+        ]
+      }
+    ]
+  }
+}
