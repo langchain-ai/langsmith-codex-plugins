@@ -40,21 +40,25 @@ vi.mock("node:fs", async () => {
 beforeEach(() => vol.reset());
 afterEach(() => vi.unstubAllEnvs());
 
-it.only("sets tool run duration from matching call intervals", async () => {
+it("editing", async () => {
   const { client, callSpy } = mockClient();
 
   vol.fromJSON(await preloadTestFiles());
 
-  const taskStartedAt = Date.parse("2026-04-23T20:21:10.809Z");
   await convertToRunTree(
     path.join("/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl"),
-    {
-      client,
-      projectName: "codex",
-      debugNow: { now: taskStartedAt, startTime: taskStartedAt },
-    },
+    { client, projectName: "codex" },
   );
 
+  await client.awaitPendingTraceBatches();
+
+  // Sidecar file is created
+  expect(vol.toJSON()).toMatchObject({
+    "/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl.langsmith":
+      expect.stringContaining("019dbc00-ede4-77c2-9e7a-b6876efeab9b"),
+  });
+
+  // Assert on trace output
   await expect(getAssumedTreeFromCalls(callSpy.mock.calls, client)).resolves.toMatchObject(
     asTree((run) => {
       run`openai.codex:0`(
@@ -102,26 +106,8 @@ it.only("sets tool run duration from matching call intervals", async () => {
   );
 });
 
-it("editing", async () => {
-  const client = new Client();
-  vol.fromJSON(await preloadTestFiles());
-
-  await convertToRunTree(
-    path.join("/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl"),
-    { client, projectName: "codex" },
-  );
-
-  // Sidecar file is created
-  expect(vol.toJSON()).toMatchObject({
-    "/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl.langsmith":
-      expect.stringContaining("019dbc00-ede4-77c2-9e7a-b6876efeab9b"),
-  });
-
-  await client.awaitPendingTraceBatches();
-});
-
 it("attachments", async () => {
-  const client = new Client();
+  const { client, callSpy } = mockClient();
   vol.fromJSON(await preloadTestFiles());
 
   await convertToRunTree(
@@ -135,10 +121,17 @@ it("attachments", async () => {
   });
 
   await client.awaitPendingTraceBatches();
+
+  // Assert on trace output
+  await expect(getAssumedTreeFromCalls(callSpy.mock.calls, client)).resolves.toMatchObject(
+    asTree((run) => {
+      // TODO
+    }),
+  );
 });
 
 it("subagents", async () => {
-  const client = new Client();
+  const { client, callSpy } = mockClient();
   vol.fromJSON(await preloadTestFiles());
 
   await convertToRunTree(
@@ -153,4 +146,11 @@ it("subagents", async () => {
   });
 
   await client.awaitPendingTraceBatches();
+
+  // Assert on trace output
+  await expect(getAssumedTreeFromCalls(callSpy.mock.calls, client)).resolves.toMatchObject(
+    asTree((run) => {
+      // TODO
+    }),
+  );
 });
