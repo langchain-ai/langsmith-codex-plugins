@@ -36,6 +36,35 @@ Current behavior includes:
 
 The hook reads `transcript_path`, converts the transcript into one or more LangSmith runs, then flushes the queued uploads.
 
+## LangSmith Configuration
+
+Tracing is opt-in. Enable it with one of:
+
+```sh
+LANGSMITH_CODEX_TRACING=true
+TRACE_TO_LANGSMITH=true
+LANGSMITH_TRACING=true
+```
+
+Configuration is loaded in this order, with later values overriding earlier ones:
+
+1. `~/.codex/langsmith.json`
+2. `<repo>/.codex/langsmith.json`
+3. `LANGSMITH_*` environment variables
+4. `LANGSMITH_CODEX_*` environment variables
+
+Supported config-file keys include:
+
+```json
+{
+  "tracing": true,
+  "apiUrl": "https://api.smith.langchain.com",
+  "project": "codex"
+}
+```
+
+Prefer environment variables for credentials, for example `LANGSMITH_API_KEY`.
+
 ## Conversion Notes
 
 - Developer messages are normalized to `system`

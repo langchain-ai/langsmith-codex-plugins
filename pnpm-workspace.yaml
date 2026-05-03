@@ -1,2 +1,4 @@
+minimumReleaseAge: 1440
+packages: ["."]
 allowBuilds:
   protobufjs: true

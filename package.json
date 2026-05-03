@@ -1,21 +1,56 @@
 {
-  "name": "@langchain/langsmith-codex-hooks",
+  "name": "@langchain/langsmith-codex-hook",
   "version": "0.0.1",
+  "description": "OpenAI Codex Hooks for tracing to LangSmith",
+  "keywords": [
+    "codex",
+    "langsmith",
+    "openai"
+  ],
+  "homepage": "https://github.com/langchain-ai/langsmith-codex-hook#readme",
+  "bugs": {
+    "url": "https://github.com/langchain-ai/langsmith-codex-hook/issues"
+  },
+  "license": "MIT",
+  "author": "LangChain",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/langchain-ai/langsmith-codex-hook.git"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
-  "description": "Codex Hooks for tracing to LangSmith",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "test": "vitest"
+    "build": "tsc",
+    "test": "vitest",
+    "format": "oxfmt",
+    "lint": "oxfmt --check && tsc --noEmit",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm run build && changeset publish",
+    "prepublish": "pnpm run build"
+  },
+  "dependencies": {
+    "langsmith": "^0.6.0",
+    "uuid": "^14.0.0",
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.31.0",
+    "@types/node": "^25.6.0",
+    "memfs": "^4.57.2",
+    "oxfmt": "^0.46.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {
-    "uuid": "^14.0.0"
-  },
-  "devDependencies": {
-    "langsmith": "^0.5.22",
-    "oxfmt": "^0.46.0",
-    "vitest": "^4.1.5"
-  }
+  "packageManager": "pnpm@10.33.0"
 }

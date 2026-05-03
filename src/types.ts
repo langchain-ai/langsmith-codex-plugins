@@ -225,11 +225,7 @@ export type CodexErrorInfo =
   | { active_turn_not_steerable: { turn_kind: "review" | "compact" } }
   | unknown;
 
-type ExecSource =
-  | "agent"
-  | "user_shell"
-  | "unified_exec_startup"
-  | "unified_exec_interaction";
+type ExecSource = "agent" | "user_shell" | "unified_exec_startup" | "unified_exec_interaction";
 
 export type ExecCommandOutputDeltaPayload = {
   type: "exec_command_output_delta";
@@ -1073,9 +1069,7 @@ export type Task = {
   messages: AggregateMessage<ResponseItem>[];
   userMessageIndex: number | undefined;
   context: { model: string; [key: string]: unknown } | undefined;
-  tokenCount:
-    | { total_token_usage?: TokenCount; model_context_window?: number }
-    | undefined;
+  tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
 };
 
 export type StandardMessage = {
