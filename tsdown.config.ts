@@ -1,6 +1,9 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["./src/hooks/UserPromptSubmit.ts", "./src/hooks/Stop.ts"],
+  deps: {
+    alwaysBundle: ["langsmith", "zod"],
+    onlyBundle: false,
+  },
   clean: true,
 });

@@ -1,6 +1,5 @@
 import type { LineSchema, ResponseItem } from "./types.js";
-import { Client, RunTreeConfig } from "langsmith";
-import { RunTree } from "langsmith/run_trees";
+import { Client, RunTreeConfig, RunTree } from "langsmith";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";

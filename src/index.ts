@@ -23,3 +23,5 @@ export async function runHook() {
     replicas: config.replicas,
   });
 }
+
+runHook();

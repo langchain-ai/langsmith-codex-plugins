@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./dist/Stop.mjs",
+            "command": "node ./dist/index.mjs",
             "timeout": 30,
             "statusMessage": "Uploading Codex trace to LangSmith"
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./dist/UserPromptSubmit.mjs",
+            "command": "node ./dist/index.mjs",
             "timeout": 30,
             "statusMessage": "Uploading Codex trace to LangSmith"
           }
