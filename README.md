@@ -40,5 +40,3 @@ To create an API key:
 3. Open **Settings** -> **API Keys**.
 4. Click **Create API Key**.
 5. Copy the key and set it as `LANGSMITH_API_KEY`, `LANGSMITH_CODEX_API_KEY`, or `api_key` in a local config file.
-
-
