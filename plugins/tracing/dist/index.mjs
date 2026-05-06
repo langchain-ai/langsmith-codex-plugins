@@ -11760,6 +11760,11 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/utils/isPrimitive.ts
+function isPrimitive(value) {
+	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+//#endregion
 //#region src/trace.ts
 async function loadSession(name) {
 	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
@@ -12073,18 +12078,26 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
 			const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
-			const toolCall = aiMessage.at(0)?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
-			if (toolCallId == null || toolCall == null) continue;
-			const toolCallTimings = task.toolCallTimings?.[toolCallId] ?? [];
-			const min = Math.min(toolMessage.timestamp.start, ...toolCallTimings);
-			const max = Math.max(toolMessage.timestamp.end, ...toolCallTimings);
-			const otherOutputMessageChild = parent.createChild({
-				name: toolCall.name ?? "openai.codex.tool",
+			const msgToolCall = aiMessage.at(0)?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
+			if (toolCallId == null || msgToolCall == null) continue;
+			const toolCall = task.toolCalls?.[toolCallId] ?? {
+				error: void 0,
+				timings: [],
+				outputs: {}
+			};
+			const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
+			const toolRun = parent.createChild({
+				name: msgToolCall.name ?? "openai.codex.tool",
 				run_type: "tool",
 				start_time: min,
 				end_time: max,
-				inputs: { input: toolCall.args },
-				outputs: { messages: [toolMessage.message] },
+				inputs: { input: msgToolCall.args },
+				outputs: {
+					...toolCall.outputs,
+					messages: [toolMessage.message]
+				},
+				error: toolCall.error,
 				extra: { metadata: {
 					...options?.metadata,
 					ls_model_type: "chat",
@@ -12094,15 +12107,11 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount)
 				} }
 			});
-			PROMISE_QUEUE.push(otherOutputMessageChild.postRun());
+			PROMISE_QUEUE.push(toolRun.postRun());
 		}
 		for (const subagentThread of subagentThreads ?? []) {
 			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
-			if (subagentFile == null) {
-				process.stderr.write(`Could not locate rollout file for subagent thread ${subagentThread}`);
-				process.stderr.write("\n");
-				continue;
-			}
+			if (subagentFile == null) continue;
 			await convertToRunTree(subagentFile, {
 				...options,
 				parentRunTree: parent,
@@ -12121,7 +12130,7 @@ async function convertToRunTree(rolloutFile, options) {
 			userMessageIndex: void 0,
 			context: void 0,
 			tokenCount: void 0,
-			toolCallTimings: {}
+			toolCalls: {}
 		};
 	}
 	const uploadedTurnIds = await loadUploadedTurnIds(rolloutFile);
@@ -12158,9 +12167,32 @@ async function convertToRunTree(rolloutFile, options) {
 			}
 			if (typeof payload.call_id === "string") {
 				task ??= createTask();
-				task.toolCallTimings ??= {};
-				task.toolCallTimings[payload.call_id] ??= [];
-				task.toolCallTimings[payload.call_id].push(eventTime);
+				task.toolCalls[payload.call_id] ??= {
+					error: void 0,
+					timings: [],
+					outputs: {}
+				};
+				task.toolCalls[payload.call_id].timings.push(eventTime);
+				if (payload.type.endsWith("_end")) {
+					if (payload.status === "failed" || payload.status === "declined") {
+						const stdout = (() => {
+							if (typeof payload.aggregated_output === "string") return payload.aggregated_output || void 0;
+							const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
+							if (!bestEffort) return void 0;
+							return bestEffort;
+						})();
+						const exitCode = (() => {
+							if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
+						})();
+						const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
+						task.toolCalls[payload.call_id].error = error != null ? isPrimitive(error) ? String(error) : JSON.stringify(error) : void 0;
+					}
+					const outputs = { ...payload };
+					delete outputs.call_id;
+					delete outputs.turn_id;
+					delete outputs.type;
+					Object.assign(task.toolCalls[payload.call_id].outputs, outputs);
+				}
 			}
 			if (payload.type === "token_count") {
 				task ??= createTask();
