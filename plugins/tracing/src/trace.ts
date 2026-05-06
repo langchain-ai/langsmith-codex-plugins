@@ -13,6 +13,7 @@ import type {
   Task,
   StandardMessage,
 } from "./types.js";
+import { isPrimitive } from "./utils/isPrimitive.js";
 
 async function loadSession(name: string) {
   const data = await fs.readFile(name, "utf-8");
@@ -417,25 +418,30 @@ async function postTurn(
           ? toolMessage.message.tool_call_id
           : undefined;
 
-      const toolCall = aiMessage
+      const msgToolCall = aiMessage
         .at(0)
         ?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
 
-      if (toolCallId == null || toolCall == null) continue;
-
       // Ignore tool calls that don't have a tool call id
-      const toolCallTimings = task.toolCallTimings?.[toolCallId] ?? [];
+      if (toolCallId == null || msgToolCall == null) continue;
 
-      const min = Math.min(toolMessage.timestamp.start, ...toolCallTimings);
-      const max = Math.max(toolMessage.timestamp.end, ...toolCallTimings);
+      const toolCall = task.toolCalls?.[toolCallId] ?? {
+        error: undefined,
+        timings: [],
+        outputs: {},
+      };
 
-      const otherOutputMessageChild = parent.createChild({
-        name: (toolCall.name as string) ?? "openai.codex.tool",
+      const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+      const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
+
+      const toolRun = parent.createChild({
+        name: (msgToolCall.name as string) ?? "openai.codex.tool",
         run_type: "tool",
         start_time: min,
         end_time: max,
-        inputs: { input: toolCall.args },
-        outputs: { messages: [toolMessage.message] },
+        inputs: { input: msgToolCall.args },
+        outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
+        error: toolCall.error,
         extra: {
           metadata: {
             ...options?.metadata,
@@ -447,7 +453,7 @@ async function postTurn(
           },
         },
       });
-      PROMISE_QUEUE.push(otherOutputMessageChild.postRun());
+      PROMISE_QUEUE.push(toolRun.postRun());
     }
 
     for (const subagentThread of subagentThreads ?? []) {
@@ -490,7 +496,7 @@ export async function convertToRunTree(
       userMessageIndex: undefined,
       context: undefined,
       tokenCount: undefined,
-      toolCallTimings: {},
+      toolCalls: {},
     };
   }
 
@@ -547,9 +553,43 @@ export async function convertToRunTree(
 
       if (typeof payload.call_id === "string") {
         task ??= createTask();
-        task.toolCallTimings ??= {};
-        task.toolCallTimings[payload.call_id] ??= [];
-        task.toolCallTimings[payload.call_id].push(eventTime);
+        task.toolCalls[payload.call_id] ??= { error: undefined, timings: [], outputs: {} };
+        task.toolCalls[payload.call_id].timings.push(eventTime);
+
+        if (payload.type.endsWith("_end")) {
+          // attempt to find an error message
+          if (payload.status === "failed" || payload.status === "declined") {
+            const stdout = (() => {
+              if (typeof payload.aggregated_output === "string") {
+                return payload.aggregated_output || undefined;
+              }
+
+              const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
+              if (!bestEffort) return undefined;
+              return bestEffort;
+            })();
+
+            const exitCode = (() => {
+              if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
+              return undefined;
+            })();
+
+            const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
+            task.toolCalls[payload.call_id].error =
+              error != null
+                ? isPrimitive(error)
+                  ? String(error)
+                  : JSON.stringify(error)
+                : undefined;
+          }
+
+          const outputs: Record<string, unknown> = { ...payload };
+          delete outputs.call_id;
+          delete outputs.turn_id;
+          delete outputs.type;
+
+          Object.assign(task.toolCalls[payload.call_id].outputs, outputs);
+        }
       }
 
       if (payload.type === "token_count") {

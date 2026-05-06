@@ -171,12 +171,24 @@ it("editing", async () => {
                 ]),
               }),
             ]),
+            status: "completed",
+            aggregated_output: "/Users/duongtat/Work/ls-codex-sample\n",
+            exit_code: 0,
+            command: ["/bin/zsh", "-lc", "pwd"],
           },
         }),
-        run`exec_command:3`({ run_type: "tool" }),
+        run`exec_command:3`({
+          run_type: "tool",
+          error: "Exit code: 1",
+          outputs: {
+            status: "failed",
+            parsed_cmd: [{ type: "list_files", cmd: "rg --files" }],
+          },
+        }),
         run`exec_command:4`({
           run_type: "tool",
           outputs: {
+            status: "completed",
             messages: expect.arrayContaining([
               expect.objectContaining({
                 role: "tool",
