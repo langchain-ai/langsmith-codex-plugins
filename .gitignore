@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 .vite/
 
 *.langsmith
+.motor-code
+.codex
+.agents

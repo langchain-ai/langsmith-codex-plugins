@@ -11818,6 +11818,87 @@ function mergeMessages(result) {
 		return acc;
 	}, []);
 }
+function getToolName(name, namespace) {
+	if (typeof namespace !== "string" || namespace.length === 0) return name;
+	if (name.startsWith(`${namespace}.`)) return name;
+	return `${namespace}.${name}`;
+}
+function isSkillNamespace(namespace) {
+	if (typeof namespace !== "string") return false;
+	const normalized = namespace.toLowerCase();
+	return normalized === "skill" || normalized === "skills" || normalized.includes("skill");
+}
+function getSkillName(skill) {
+	if (skill == null || typeof skill !== "object") return void 0;
+	const record = skill;
+	if (typeof record.name === "string") return record.name;
+	if (typeof record.id === "string") return record.id;
+	if (typeof record.skill_name === "string") return record.skill_name;
+}
+function getSkillDescription(skill) {
+	if (skill == null || typeof skill !== "object") return void 0;
+	const record = skill;
+	if (typeof record.description === "string") return record.description;
+	if (record.description != null && typeof record.description === "object") {
+		const descObj = record.description;
+		if (typeof descObj.text === "string") return descObj.text;
+		if (typeof descObj.value === "string") return descObj.value;
+	}
+	if (typeof record.summary === "string") return record.summary;
+}
+function getStringValue(record, key) {
+	return typeof record[key] === "string" ? record[key] : void 0;
+}
+function parseSkillBlock(raw) {
+	const skillBlockMatch = raw.match(/<skill>([\s\S]*?)<\/skill>/);
+	if (skillBlockMatch == null) return {};
+	const content = skillBlockMatch[0];
+	const inner = skillBlockMatch[1] ?? "";
+	return {
+		name: inner.match(/<name>\s*([^<\n]+?)\s*<\/name>/)?.[1]?.trim(),
+		description: inner.match(/^\s*description:\s*"([^"\n]+)"/m)?.[1] ?? inner.match(/^\s*description:\s*'([^'\n]+)'/m)?.[1] ?? inner.match(/^\s*description:\s*([^\n]+)/m)?.[1]?.trim(),
+		content
+	};
+}
+function parseSkillTrigger(raw) {
+	return Array.from(raw.matchAll(/\$([a-zA-Z0-9][a-zA-Z0-9_-]*)/g)).map((m) => m[1]).filter(Boolean);
+}
+function extractMessageText(payload) {
+	if (payload.type !== "message") return [];
+	return payload.content.map((part) => {
+		if (part == null || typeof part !== "object") return void 0;
+		const record = part;
+		const type = getStringValue(record, "type");
+		if (type !== "input_text" && type !== "text" && type !== "output_text") return void 0;
+		return getStringValue(record, "text");
+	}).filter((text) => typeof text === "string");
+}
+function detectHookSkill(command) {
+	const cmd = typeof command === "string" ? command : Array.isArray(command) ? command.filter((c) => typeof c === "string").join(" ") : "";
+	if (cmd.length === 0) return null;
+	const lowerCmd = cmd.toLowerCase();
+	if (!(/\b(node|python|python3|bash|sh|zsh|bun|deno|ts-node)\b/.test(lowerCmd) && !/\b(sed|cat|head|tail|grep|rg|ls|find)\b/.test(lowerCmd))) return null;
+	const match = cmd.match(/skills\/([a-zA-Z0-9._-]+)\/scripts\/([^\s'"]+)/);
+	if (match == null) return null;
+	return {
+		skillName: match[1],
+		scriptPath: `skills/${match[1]}/scripts/${match[2]}`,
+		commandText: cmd
+	};
+}
+function applyHookSkillToolCall(toolCall, hookSkill, skillDef, eventKind = "hook_execution") {
+	toolCall.namespace ??= "skill";
+	toolCall.isSkill = true;
+	toolCall.name = `skill.${hookSkill.skillName}.hook`;
+	Object.assign(toolCall.outputs, {
+		skill_name: hookSkill.skillName,
+		skill_description: getSkillDescription(skillDef),
+		skill: skillDef,
+		hook_script: hookSkill.scriptPath,
+		hook_command: hookSkill.commandText,
+		skill_event_kind: eventKind
+	});
+}
 function convertToStandardMessages(messages) {
 	return messages.map(({ message, ...rest }) => {
 		if (message.type === "message") return {
@@ -11853,7 +11934,7 @@ function convertToStandardMessages(messages) {
 			...rest
 		};
 		if (message.type === "function_call") {
-			const name = message.name;
+			const name = getToolName(message.name, message.namespace);
 			const id = message.call_id;
 			const args = message.arguments;
 			try {
@@ -12050,6 +12131,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			length: 1
 		};
 	});
+	const matchedToolCallIds = /* @__PURE__ */ new Set();
 	for (const output of outputs) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -12088,7 +12170,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const toolRun = parent.createChild({
-				name: msgToolCall.name ?? "openai.codex.tool",
+				name: (toolCall.isSkill ? toolCall.name : void 0) ?? msgToolCall.name ?? "openai.codex.tool",
 				run_type: "tool",
 				start_time: min,
 				end_time: max,
@@ -12104,10 +12186,13 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 					ls_provider: sessionMeta?.model_provider,
 					ls_model_name: task.context?.model,
 					ls_invocation_params: task.context,
+					ls_tool_namespace: toolCall.namespace,
+					ls_tool_category: toolCall.isSkill ? "skill" : void 0,
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount)
 				} }
 			});
 			PROMISE_QUEUE.push(toolRun.postRun());
+			matchedToolCallIds.add(toolCallId);
 		}
 		for (const subagentThread of subagentThreads ?? []) {
 			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
@@ -12119,10 +12204,46 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			});
 		}
 	}
+	for (const [toolCallId, toolCall] of Object.entries(task.toolCalls)) {
+		if (matchedToolCallIds.has(toolCallId)) continue;
+		if (!(toolCall.name != null || toolCall.input != null || toolCall.error != null || Object.keys(toolCall.outputs).length > 0)) continue;
+		const min = toolCall.timings.length > 0 ? Math.min(...toolCall.timings) : parentStartTime;
+		const max = toolCall.timings.length > 0 ? Math.max(...toolCall.timings) : parentEndTime;
+		const outputsPayload = { ...toolCall.outputs };
+		if (outputsPayload.messages == null) outputsPayload.messages = [{
+			role: "tool",
+			content: [{
+				type: "text",
+				text: JSON.stringify(toolCall.outputs)
+			}]
+		}];
+		const toolRun = parent.createChild({
+			name: toolCall.name ?? "openai.codex.tool",
+			run_type: "tool",
+			start_time: min,
+			end_time: Math.max(min, max),
+			inputs: { input: toolCall.input },
+			outputs: outputsPayload,
+			error: toolCall.error,
+			extra: { metadata: {
+				...options?.metadata,
+				ls_model_type: "chat",
+				ls_provider: sessionMeta?.model_provider,
+				ls_model_name: task.context?.model,
+				ls_invocation_params: task.context,
+				ls_tool_namespace: toolCall.namespace,
+				ls_tool_category: toolCall.isSkill ? "skill" : void 0
+			} }
+		});
+		PROMISE_QUEUE.push(toolRun.postRun());
+	}
 }
 async function convertToRunTree(rolloutFile, options) {
 	let sessionMeta;
 	let task;
+	let syntheticSkillCallIdx = 0;
+	let syntheticSkillEventKeys = /* @__PURE__ */ new Set();
+	const skillDefinitions = /* @__PURE__ */ new Map();
 	function createTask() {
 		return {
 			turnId: void 0,
@@ -12131,6 +12252,31 @@ async function convertToRunTree(rolloutFile, options) {
 			context: void 0,
 			tokenCount: void 0,
 			toolCalls: {}
+		};
+	}
+	function upsertToolCall(currentTask, callId) {
+		currentTask.toolCalls[callId] ??= {
+			error: void 0,
+			timings: [],
+			outputs: {}
+		};
+		return currentTask.toolCalls[callId];
+	}
+	function addSyntheticSkillEvent(currentTask, eventTime, name, outputs, input, dedupeKey) {
+		if (dedupeKey != null && syntheticSkillEventKeys.has(dedupeKey)) return;
+		if (dedupeKey != null) syntheticSkillEventKeys.add(dedupeKey);
+		const callId = `skill_event_${currentTask.turnId?.id ?? "unknown"}_${syntheticSkillCallIdx++}`;
+		currentTask.toolCalls[callId] = {
+			name,
+			namespace: "skill",
+			input,
+			isSkill: true,
+			error: void 0,
+			timings: [eventTime],
+			outputs: {
+				...outputs,
+				status: "completed"
+			}
 		};
 	}
 	const uploadedTurnIds = await loadUploadedTurnIds(rolloutFile);
@@ -12151,6 +12297,59 @@ async function convertToRunTree(rolloutFile, options) {
 			};
 			task.messages.push(message);
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
+			if (payload.type === "message" && payload.role === "user") for (const text of extractMessageText(payload)) {
+				for (const triggerName of parseSkillTrigger(text)) addSyntheticSkillEvent(task, Date.parse(timestamp), `skill.${triggerName}.requested`, {
+					skill_name: triggerName,
+					source: "user_trigger",
+					content: text
+				}, { trigger: `$${triggerName}` }, `requested:${triggerName}`);
+				const skillBlock = parseSkillBlock(text);
+				if (skillBlock.name != null) {
+					const existing = skillDefinitions.get(skillBlock.name);
+					skillDefinitions.set(skillBlock.name, {
+						...existing && typeof existing === "object" ? existing : {},
+						name: skillBlock.name,
+						description: skillBlock.description ?? getSkillDescription(existing),
+						content: skillBlock.content
+					});
+					addSyntheticSkillEvent(task, Date.parse(timestamp), `skill.${skillBlock.name}.loaded`, {
+						skill_name: skillBlock.name,
+						skill_description: skillBlock.description,
+						content: skillBlock.content,
+						source: "user_skill_block"
+					}, void 0, `loaded:${skillBlock.name}`);
+				}
+			}
+			if (payload.type === "function_call" && typeof payload.call_id === "string") {
+				const toolCall = upsertToolCall(task, payload.call_id);
+				toolCall.namespace ??= payload.namespace ?? null;
+				toolCall.name ??= getToolName(payload.name, payload.namespace);
+				toolCall.isSkill ||= isSkillNamespace(payload.namespace);
+				let parsedArgs = payload.arguments;
+				try {
+					parsedArgs = JSON.parse(payload.arguments);
+				} catch {
+					parsedArgs = payload.arguments;
+				}
+				toolCall.input ??= parsedArgs;
+				if (payload.name === "exec_command" && parsedArgs != null && typeof parsedArgs === "object") {
+					const cmd = getStringValue(parsedArgs, "cmd");
+					if (cmd != null) {
+						const hookSkill = detectHookSkill(cmd);
+						if (hookSkill != null) applyHookSkillToolCall(toolCall, hookSkill, skillDefinitions.get(hookSkill.skillName), "hook_invocation");
+					}
+				}
+			}
+			if (payload.type === "custom_tool_call" && typeof payload.call_id === "string") {
+				const toolCall = upsertToolCall(task, payload.call_id);
+				toolCall.name ??= payload.name;
+				toolCall.input ??= payload.input;
+			}
+			if (payload.type === "tool_search_call" && typeof payload.call_id === "string") {
+				const toolCall = upsertToolCall(task, payload.call_id);
+				toolCall.name ??= payload.type;
+				toolCall.input ??= payload.arguments;
+			}
 		}
 		if (type === "turn_context") {
 			task ??= createTask();
@@ -12160,6 +12359,7 @@ async function convertToRunTree(rolloutFile, options) {
 			const eventTime = Date.parse(timestamp);
 			if (payload.type === "task_started") {
 				task = createTask();
+				syntheticSkillEventKeys = /* @__PURE__ */ new Set();
 				task.turnId = {
 					id: payload.turn_id,
 					timestamp: eventTime
@@ -12167,12 +12367,33 @@ async function convertToRunTree(rolloutFile, options) {
 			}
 			if (typeof payload.call_id === "string") {
 				task ??= createTask();
-				task.toolCalls[payload.call_id] ??= {
-					error: void 0,
-					timings: [],
-					outputs: {}
-				};
-				task.toolCalls[payload.call_id].timings.push(eventTime);
+				const toolCall = upsertToolCall(task, payload.call_id);
+				toolCall.timings.push(eventTime);
+				if (payload.type === "mcp_tool_call_begin" || payload.type === "mcp_tool_call_end") {
+					toolCall.namespace ??= "mcp";
+					toolCall.name ??= getToolName(payload.invocation.tool, `mcp.${payload.invocation.server}`);
+					toolCall.input ??= payload.invocation.arguments;
+				}
+				if (payload.type === "dynamic_tool_call_response") {
+					toolCall.namespace ??= payload.namespace ?? null;
+					toolCall.name ??= getToolName(payload.tool, payload.namespace);
+					toolCall.input ??= payload.arguments;
+					toolCall.isSkill ||= isSkillNamespace(payload.namespace);
+					const skillDef = toolCall.isSkill ? skillDefinitions.get(payload.tool) : void 0;
+					Object.assign(toolCall.outputs, {
+						namespace: payload.namespace,
+						tool: payload.tool,
+						arguments: payload.arguments,
+						content_items: payload.content_items,
+						content: payload.content_items,
+						skill: skillDef,
+						skill_description: getSkillDescription(skillDef),
+						success: payload.success,
+						duration: payload.duration,
+						status: payload.success ? "completed" : "failed"
+					});
+					if (!payload.success) toolCall.error = payload.error == null ? "Dynamic tool call failed" : isPrimitive(payload.error) ? String(payload.error) : JSON.stringify(payload.error);
+				}
 				if (payload.type.endsWith("_end")) {
 					if (payload.status === "failed" || payload.status === "declined") {
 						const stdout = (() => {
@@ -12185,14 +12406,30 @@ async function convertToRunTree(rolloutFile, options) {
 							if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
 						})();
 						const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
-						task.toolCalls[payload.call_id].error = error != null ? isPrimitive(error) ? String(error) : JSON.stringify(error) : void 0;
+						toolCall.error = error != null ? isPrimitive(error) ? String(error) : JSON.stringify(error) : void 0;
 					}
 					const outputs = { ...payload };
 					delete outputs.call_id;
 					delete outputs.turn_id;
 					delete outputs.type;
-					Object.assign(task.toolCalls[payload.call_id].outputs, outputs);
+					Object.assign(toolCall.outputs, outputs);
 				}
+				if (payload.type === "exec_command_end") {
+					const hookSkill = detectHookSkill(payload.command);
+					if (hookSkill != null) applyHookSkillToolCall(toolCall, hookSkill, skillDefinitions.get(hookSkill.skillName), "hook_execution");
+				}
+			}
+			if (payload.type === "list_skills_response") {
+				task ??= createTask();
+				for (const skill of payload.skills) {
+					const name = getSkillName(skill);
+					if (name != null) skillDefinitions.set(name, skill);
+				}
+				addSyntheticSkillEvent(task, eventTime, "skill.list_skills", { skills: payload.skills });
+			}
+			if (payload.type === "skills_update_available") {
+				task ??= createTask();
+				addSyntheticSkillEvent(task, eventTime, "skill.skills_update_available", { update_available: true });
 			}
 			if (payload.type === "token_count") {
 				task ??= createTask();

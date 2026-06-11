@@ -1072,6 +1072,10 @@ export type Task = {
   tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
   toolCalls: {
     [callId: string]: {
+      name?: string;
+      namespace?: string | null;
+      input?: unknown;
+      isSkill?: boolean;
       error: string | undefined;
       timings: number[];
       outputs: Record<string, unknown>;
