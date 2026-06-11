@@ -171,7 +171,6 @@ it("editing", async () => {
                 ]),
               }),
             ]),
-            status: "completed",
             aggregated_output: "/Users/duongtat/Work/ls-codex-sample\n",
             exit_code: 0,
             command: ["/bin/zsh", "-lc", "pwd"],
@@ -188,7 +187,6 @@ it("editing", async () => {
         run`exec_command:4`({
           run_type: "tool",
           outputs: {
-            status: "completed",
             messages: expect.arrayContaining([
               expect.objectContaining({
                 role: "tool",
@@ -1078,7 +1076,6 @@ it("skill events", async () => {
       },
       content: [{ type: "text", text: "matched" }],
       success: true,
-      status: "completed",
       messages: expect.arrayContaining([
         expect.objectContaining({
           role: "tool",
@@ -1097,7 +1094,6 @@ it("skill events", async () => {
   expect(listSkillsRun).toMatchObject({
     outputs: expect.objectContaining({
       skills: [{ name: "search_scene_example", description: "scene best-practice examples" }],
-      status: "completed",
     }),
     extra: {
       metadata: expect.objectContaining({
@@ -1113,7 +1109,6 @@ it("skill events", async () => {
   expect(updateAvailableRun).toMatchObject({
     outputs: expect.objectContaining({
       update_available: true,
-      status: "completed",
     }),
   });
 });
@@ -1214,7 +1209,6 @@ it("injected and hook skills are reported", async () => {
         exit_code: 0,
         duration: "50ms",
         formatted_output: "ok",
-        status: "completed",
       },
     },
     {
@@ -1259,7 +1253,6 @@ it("injected and hook skills are reported", async () => {
     outputs: expect.objectContaining({
       skill_name: "mc-strict-literal",
       source: "user_trigger",
-      status: "completed",
     }),
     extra: {
       metadata: expect.objectContaining({
@@ -1275,7 +1268,6 @@ it("injected and hook skills are reported", async () => {
       skill_name: "mc-strict-literal",
       skill_description: "strict literal mode",
       source: "user_skill_block",
-      status: "completed",
     }),
   });
 
@@ -1285,7 +1277,6 @@ it("injected and hook skills are reported", async () => {
       skill_name: "lsp-syntax-check",
       skill_event_kind: "hook_execution",
       hook_script: "skills/lsp-syntax-check/scripts/lsp-hook.js",
-      status: "completed",
     }),
     extra: {
       metadata: expect.objectContaining({
@@ -1383,6 +1374,171 @@ it("hook skill is reported from exec_command call when exec_command_end is missi
       skill_name: "lsp-syntax-check",
       skill_event_kind: "hook_invocation",
       hook_script: "skills/lsp-syntax-check/scripts/lsp-hook.js",
+    }),
+    extra: {
+      metadata: expect.objectContaining({
+        ls_tool_category: "skill",
+        ls_tool_namespace: "skill",
+      }),
+    },
+  });
+});
+
+it("plain text skill mention is reported", async () => {
+  const { client, callSpy } = mockClient();
+
+  const rolloutPath =
+    "/home/codex-user/.codex/sessions/2026/06/11/rollout-skill-mentioned.jsonl";
+  const lines = [
+    {
+      timestamp: "2026-06-11T09:00:00.000Z",
+      type: "session_meta",
+      payload: {
+        id: "thread-skill-mentioned",
+        timestamp: "2026-06-11T09:00:00.000Z",
+        cwd: "/tmp",
+        originator: "codex",
+        cli_version: "0.125.0",
+        source: "test",
+        model_provider: "openai",
+        base_instructions: { text: "You are test assistant." },
+      },
+    },
+    {
+      timestamp: "2026-06-11T09:00:00.010Z",
+      type: "event_msg",
+      payload: { type: "task_started", turn_id: "turn-skill-mentioned" },
+    },
+    {
+      timestamp: "2026-06-11T09:00:00.020Z",
+      type: "turn_context",
+      payload: {
+        cwd: "/tmp",
+        approval_policy: "never",
+        sandbox_policy: "workspace-write",
+        model: "gpt-5.4",
+        summary: [],
+      },
+    },
+    {
+      timestamp: "2026-06-11T09:00:00.030Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: "这个skill没执行" }],
+      },
+    },
+    {
+      timestamp: "2026-06-11T09:00:00.040Z",
+      type: "event_msg",
+      payload: { type: "task_complete", turn_id: "turn-skill-mentioned" },
+    },
+  ];
+
+  vol.fromJSON({ [rolloutPath]: lines.map((line) => JSON.stringify(line)).join("\n") });
+
+  await convertToRunTree(rolloutPath, { client, projectName: "codex" });
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const runs = Object.values(tree.data);
+
+  const mentioned = runs.find(
+    (run) => run.run_type === "tool" && run.name === "skill.skill.mentioned",
+  );
+  expect(mentioned).toMatchObject({
+    outputs: expect.objectContaining({
+      skill_name: "skill",
+      source: "text_mention",
+    }),
+    extra: {
+      metadata: expect.objectContaining({
+        ls_tool_category: "skill",
+        ls_tool_namespace: "skill",
+      }),
+    },
+  });
+});
+
+it("skill read via exec_command is reported", async () => {
+  const { client, callSpy } = mockClient();
+
+  const rolloutPath =
+    "/home/codex-user/.codex/sessions/2026/06/11/rollout-skill-read.jsonl";
+  const lines = [
+    {
+      timestamp: "2026-06-11T10:00:00.000Z",
+      type: "session_meta",
+      payload: {
+        id: "thread-skill-read",
+        timestamp: "2026-06-11T10:00:00.000Z",
+        cwd: "/tmp",
+        originator: "codex",
+        cli_version: "0.125.0",
+        source: "test",
+        model_provider: "openai",
+        base_instructions: { text: "You are test assistant." },
+      },
+    },
+    {
+      timestamp: "2026-06-11T10:00:00.010Z",
+      type: "event_msg",
+      payload: { type: "task_started", turn_id: "turn-skill-read" },
+    },
+    {
+      timestamp: "2026-06-11T10:00:00.020Z",
+      type: "turn_context",
+      payload: {
+        cwd: "/tmp",
+        approval_policy: "never",
+        sandbox_policy: "workspace-write",
+        model: "gpt-5.4",
+        summary: [],
+      },
+    },
+    {
+      timestamp: "2026-06-11T10:00:00.030Z",
+      type: "response_item",
+      payload: {
+        type: "function_call",
+        name: "exec_command",
+        arguments: JSON.stringify({
+          cmd: "cd /repo && sed -n '1,220p' .agents/skills/mc-strict-literal/SKILL.md",
+        }),
+        call_id: "call_skill_read_1",
+      },
+    },
+    {
+      timestamp: "2026-06-11T10:00:00.040Z",
+      type: "response_item",
+      payload: {
+        type: "function_call_output",
+        call_id: "call_skill_read_1",
+        output: "---\nname: mc-strict-literal\n---",
+      },
+    },
+    {
+      timestamp: "2026-06-11T10:00:00.050Z",
+      type: "event_msg",
+      payload: { type: "task_complete", turn_id: "turn-skill-read" },
+    },
+  ];
+
+  vol.fromJSON({ [rolloutPath]: lines.map((line) => JSON.stringify(line)).join("\n") });
+
+  await convertToRunTree(rolloutPath, { client, projectName: "codex" });
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const runs = Object.values(tree.data);
+
+  const read = runs.find((run) => run.run_type === "tool" && run.name === "skill.mc-strict-literal.read");
+  expect(read).toMatchObject({
+    outputs: expect.objectContaining({
+      skill_name: "mc-strict-literal",
+      skill_event_kind: "skill_read",
+      skill_path: ".agents/skills/mc-strict-literal/SKILL.md",
     }),
     extra: {
       metadata: expect.objectContaining({

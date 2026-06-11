@@ -11863,6 +11863,14 @@ function parseSkillBlock(raw) {
 function parseSkillTrigger(raw) {
 	return Array.from(raw.matchAll(/\$([a-zA-Z0-9][a-zA-Z0-9_-]*)/g)).map((m) => m[1]).filter(Boolean);
 }
+function parseSkillMention(raw) {
+	const mentions = /* @__PURE__ */ new Set();
+	for (const match of raw.matchAll(/\b(skill(?:-[a-z0-9][a-z0-9._-]*)?)\b/gi)) {
+		const name = match[1]?.toLowerCase();
+		if (name != null) mentions.add(name);
+	}
+	return Array.from(mentions);
+}
 function extractMessageText(payload) {
 	if (payload.type !== "message") return [];
 	return payload.content.map((part) => {
@@ -11886,6 +11894,17 @@ function detectHookSkill(command) {
 		commandText: cmd
 	};
 }
+function detectSkillRead(command) {
+	const cmd = typeof command === "string" ? command : Array.isArray(command) ? command.filter((c) => typeof c === "string").join(" ") : "";
+	if (cmd.length === 0) return null;
+	const match = cmd.match(/([^\s'"]*skills\/([a-zA-Z0-9._-]+)\/SKILL\.md)/);
+	if (match == null) return null;
+	return {
+		skillName: match[2],
+		skillPath: match[1],
+		commandText: cmd
+	};
+}
 function applyHookSkillToolCall(toolCall, hookSkill, skillDef, eventKind = "hook_execution") {
 	toolCall.namespace ??= "skill";
 	toolCall.isSkill = true;
@@ -11897,6 +11916,19 @@ function applyHookSkillToolCall(toolCall, hookSkill, skillDef, eventKind = "hook
 		hook_script: hookSkill.scriptPath,
 		hook_command: hookSkill.commandText,
 		skill_event_kind: eventKind
+	});
+}
+function applySkillReadToolCall(toolCall, skillRead, skillDef) {
+	toolCall.namespace ??= "skill";
+	toolCall.isSkill = true;
+	toolCall.name = `skill.${skillRead.skillName}.read`;
+	Object.assign(toolCall.outputs, {
+		skill_name: skillRead.skillName,
+		skill_description: getSkillDescription(skillDef),
+		skill: skillDef,
+		skill_path: skillRead.skillPath,
+		skill_command: skillRead.commandText,
+		skill_event_kind: "skill_read"
 	});
 }
 function convertToStandardMessages(messages) {
@@ -12298,6 +12330,11 @@ async function convertToRunTree(rolloutFile, options) {
 			task.messages.push(message);
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 			if (payload.type === "message" && payload.role === "user") for (const text of extractMessageText(payload)) {
+				for (const mentionName of parseSkillMention(text)) addSyntheticSkillEvent(task, Date.parse(timestamp), `skill.${mentionName}.mentioned`, {
+					skill_name: mentionName,
+					source: "text_mention",
+					content: text
+				}, void 0, `mentioned:${mentionName}`);
 				for (const triggerName of parseSkillTrigger(text)) addSyntheticSkillEvent(task, Date.parse(timestamp), `skill.${triggerName}.requested`, {
 					skill_name: triggerName,
 					source: "user_trigger",
@@ -12337,6 +12374,8 @@ async function convertToRunTree(rolloutFile, options) {
 					if (cmd != null) {
 						const hookSkill = detectHookSkill(cmd);
 						if (hookSkill != null) applyHookSkillToolCall(toolCall, hookSkill, skillDefinitions.get(hookSkill.skillName), "hook_invocation");
+						const skillRead = detectSkillRead(cmd);
+						if (skillRead != null) applySkillReadToolCall(toolCall, skillRead, skillDefinitions.get(skillRead.skillName));
 					}
 				}
 			}

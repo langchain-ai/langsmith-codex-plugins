@@ -149,6 +149,16 @@ function parseSkillTrigger(raw: string): string[] {
   const matches = Array.from(raw.matchAll(/\$([a-zA-Z0-9][a-zA-Z0-9_-]*)/g));
   return matches.map((m) => m[1]).filter(Boolean);
 }
+function parseSkillMention(raw: string): string[] {
+  const mentions = new Set<string>();
+
+  for (const match of raw.matchAll(/\b(skill(?:-[a-z0-9][a-z0-9._-]*)?)\b/gi)) {
+    const name = match[1]?.toLowerCase();
+    if (name != null) mentions.add(name);
+  }
+
+  return Array.from(mentions);
+}
 
 function extractMessageText(payload: ResponseItem): string[] {
   if (payload.type !== "message") return [];
@@ -192,6 +202,29 @@ function detectHookSkill(command: unknown): {
   };
 }
 
+function detectSkillRead(command: unknown): {
+  skillName: string;
+  skillPath: string;
+  commandText: string;
+} | null {
+  const cmd =
+    typeof command === "string"
+      ? command
+      : Array.isArray(command)
+        ? command.filter((c) => typeof c === "string").join(" ")
+        : "";
+  if (cmd.length === 0) return null;
+
+  const match = cmd.match(/([^\s'"]*skills\/([a-zA-Z0-9._-]+)\/SKILL\.md)/);
+  if (match == null) return null;
+
+  return {
+    skillName: match[2],
+    skillPath: match[1],
+    commandText: cmd,
+  };
+}
+
 function applyHookSkillToolCall(
   toolCall: {
     namespace?: string | null;
@@ -213,6 +246,29 @@ function applyHookSkillToolCall(
     hook_script: hookSkill.scriptPath,
     hook_command: hookSkill.commandText,
     skill_event_kind: eventKind,
+  });
+}
+
+function applySkillReadToolCall(
+  toolCall: {
+    namespace?: string | null;
+    isSkill?: boolean;
+    name?: string;
+    outputs: Record<string, unknown>;
+  },
+  skillRead: { skillName: string; skillPath: string; commandText: string },
+  skillDef?: unknown,
+) {
+  toolCall.namespace ??= "skill";
+  toolCall.isSkill = true;
+  toolCall.name = `skill.${skillRead.skillName}.read`;
+  Object.assign(toolCall.outputs, {
+    skill_name: skillRead.skillName,
+    skill_description: getSkillDescription(skillDef),
+    skill: skillDef,
+    skill_path: skillRead.skillPath,
+    skill_command: skillRead.commandText,
+    skill_event_kind: "skill_read",
   });
 }
 
@@ -745,6 +801,21 @@ export async function convertToRunTree(
 
       if (payload.type === "message" && payload.role === "user") {
         for (const text of extractMessageText(payload)) {
+          for (const mentionName of parseSkillMention(text)) {
+            addSyntheticSkillEvent(
+              task,
+              Date.parse(timestamp),
+              `skill.${mentionName}.mentioned`,
+              {
+                skill_name: mentionName,
+                source: "text_mention",
+                content: text,
+              },
+              undefined,
+              `mentioned:${mentionName}`,
+            );
+          }
+
           for (const triggerName of parseSkillTrigger(text)) {
             addSyntheticSkillEvent(
               task,
@@ -806,6 +877,12 @@ export async function convertToRunTree(
             if (hookSkill != null) {
               const skillDef = skillDefinitions.get(hookSkill.skillName);
               applyHookSkillToolCall(toolCall, hookSkill, skillDef, "hook_invocation");
+            }
+
+            const skillRead = detectSkillRead(cmd);
+            if (skillRead != null) {
+              const skillDef = skillDefinitions.get(skillRead.skillName);
+              applySkillReadToolCall(toolCall, skillRead, skillDef);
             }
           }
         }
