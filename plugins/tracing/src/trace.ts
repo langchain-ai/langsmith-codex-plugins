@@ -14,6 +14,7 @@ import type {
   StandardMessage,
 } from "./types.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
+import { enumerate } from "./utils/enumerate.js";
 
 async function loadSession(name: string) {
   const data = await fs.readFile(name, "utf-8");
@@ -463,17 +464,25 @@ async function postTurn(
         continue;
       }
 
-      await convertToRunTree(subagentFile, {
-        ...options,
-        parentRunTree: parent,
-        debugNow,
-      });
+      const lastTurnId = await (async () => {
+        const events = await loadSession(subagentFile);
+        const lastEvent = findLast(
+          events,
+          (e) => e.type === "event_msg" && e.payload.turn_id != null,
+        ) as { payload: { turn_id: string } } | undefined;
+        return lastEvent?.payload.turn_id ?? null;
+      })();
+
+      await convertToRunTree(
+        { transcript_path: subagentFile, turn_id: lastTurnId },
+        { ...options, parentRunTree: parent, debugNow },
+      );
     }
   }
 }
 
 export async function convertToRunTree(
-  rolloutFile: string,
+  input: { transcript_path: string; turn_id: string | null },
   options?: {
     parentRunTree?: RunTree;
     client?: Client;
@@ -501,9 +510,9 @@ export async function convertToRunTree(
   // Turns that have already been uploaded in a previous hook invocation for the
   // same rollout file. Used to avoid replaying completed turns when the user
   // resumes or continues a conversation.
-  const uploadedTurnIds = await loadUploadedTurnIds(rolloutFile);
-
-  for (const { type, payload, timestamp } of await loadSession(rolloutFile)) {
+  const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
+  const events = await loadSession(input.transcript_path);
+  for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
       sessionMeta = {
         session_id: payload.id,
@@ -608,31 +617,23 @@ export async function convertToRunTree(
         }
       }
 
-      if (payload.type === "task_complete" || payload.type === "turn_aborted") {
+      if (
+        payload.type === "task_complete" ||
+        payload.type === "turn_aborted" ||
+        (task != null && index === arr.length - 1 && input.turn_id != null)
+      ) {
         task ??= createTask();
-        const completedTurnId = task.turnId?.id;
+        const completedTurnId = task.turnId?.id ?? input.turn_id ?? undefined;
         if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
-          await postTurn(task, sessionMeta, { rolloutFile, options });
+          await postTurn(task, sessionMeta, { rolloutFile: input.transcript_path, options });
           if (completedTurnId != null) {
             uploadedTurnIds.add(completedTurnId);
-            await markTurnUploaded(rolloutFile, completedTurnId);
+            await markTurnUploaded(input.transcript_path, completedTurnId);
           }
         }
         task = undefined;
       }
     }
-  }
-
-  // Trailing in-progress task: post if we haven't already uploaded this turn.
-  // We intentionally do not mark it as uploaded here because the turn has not
-  // completed yet; the completion handler above will mark it on the next hook
-  // invocation once `task_complete`/`turn_aborted` is observed.
-  if (task != null) {
-    const trailingTurnId = task.turnId?.id;
-    if (trailingTurnId == null || !uploadedTurnIds.has(trailingTurnId)) {
-      await postTurn(task, sessionMeta, { rolloutFile, options });
-    }
-    task = undefined;
   }
 
   await Promise.all(PROMISE_QUEUE);

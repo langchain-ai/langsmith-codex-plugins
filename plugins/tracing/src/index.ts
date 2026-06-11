@@ -6,7 +6,7 @@ import { readStdin } from "./utils/stdin.js";
 export async function runHook() {
   const content = await readStdin<{
     session_id: string;
-    turn_id: string | null;
+    turn_id: string;
     transcript_path: string;
     hook_event_name: "Stop";
   }>();
@@ -16,7 +16,7 @@ export async function runHook() {
   // Skip entirely if tracing is disabled
   if (!config.enabled) return;
 
-  await convertToRunTree(content.transcript_path, {
+  await convertToRunTree(content, {
     client: new Client({ apiKey: config.api_key, apiUrl: config.api_url }),
     projectName: config.project,
     metadata: config.metadata,
