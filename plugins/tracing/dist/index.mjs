@@ -11765,6 +11765,15 @@ function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
+//#region src/utils/enumerate.ts
+function* enumerate(arr) {
+	for (let i = 0; i < arr.length; i++) yield [
+		i,
+		arr[i],
+		arr
+	];
+}
+//#endregion
 //#region src/trace.ts
 async function loadSession(name) {
 	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
@@ -12229,7 +12238,12 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		for (const subagentThread of subagentThreads ?? []) {
 			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
 			if (subagentFile == null) continue;
-			await convertToRunTree(subagentFile, {
+			await convertToRunTree({
+				transcript_path: subagentFile,
+				turn_id: await (async () => {
+					return findLast(await loadSession(subagentFile), (e) => e.type === "event_msg" && e.payload.turn_id != null)?.payload.turn_id ?? null;
+				})()
+			}, {
 				...options,
 				parentRunTree: parent,
 				debugNow
@@ -12270,7 +12284,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		PROMISE_QUEUE.push(toolRun.postRun());
 	}
 }
-async function convertToRunTree(rolloutFile, options) {
+async function convertToRunTree(input, options) {
 	let sessionMeta;
 	let task;
 	let syntheticSkillCallIdx = 0;
@@ -12543,30 +12557,22 @@ async function convertToRunTree(rolloutFile, options) {
 					task.messages.at(-1)?.subagentThreads.push(payload.new_thread_id);
 				}
 			}
-			if (payload.type === "task_complete" || payload.type === "turn_aborted") {
+			if (payload.type === "task_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
-				const completedTurnId = task.turnId?.id;
+				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
 				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
 					await postTurn(task, sessionMeta, {
-						rolloutFile,
+						rolloutFile: input.transcript_path,
 						options
 					});
 					if (completedTurnId != null) {
 						uploadedTurnIds.add(completedTurnId);
-						await markTurnUploaded(rolloutFile, completedTurnId);
+						await markTurnUploaded(input.transcript_path, completedTurnId);
 					}
 				}
 				task = void 0;
 			}
 		}
-	}
-	if (task != null) {
-		const trailingTurnId = task.turnId?.id;
-		if (trailingTurnId == null || !uploadedTurnIds.has(trailingTurnId)) await postTurn(task, sessionMeta, {
-			rolloutFile,
-			options
-		});
-		task = void 0;
 	}
 	await Promise.all(PROMISE_QUEUE);
 }
@@ -12594,7 +12600,7 @@ async function runHook() {
 	const content = await readStdin();
 	const config = await getConfig();
 	if (!config.enabled) return;
-	await convertToRunTree(content.transcript_path, {
+	await convertToRunTree(content, {
 		client: new Client({
 			apiKey: config.api_key,
 			apiUrl: config.api_url
