@@ -44,6 +44,14 @@ export const ConfigSchema = z.object({
 
   // LANGSMITH_CODEX_RUNS_ENDPOINTS
   replicas: z.array(ReplicaSchema).optional(),
+
+  // LANGSMITH_CODEX_REDACT (default true) — redact secrets before upload
+  redact: z.boolean(),
+
+  // LANGSMITH_CODEX_REDACT_EXTRA — extra { pattern, replace } redaction rules
+  redact_extra_rules: z
+    .array(z.object({ pattern: z.string(), replace: z.string().optional() }))
+    .optional(),
 });
 
 const PartialConfigSchema = ConfigSchema.partial();
@@ -100,6 +108,8 @@ const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config>
       project: getVar("PROJECT", env),
       metadata: parseJson(getVar("METADATA", env)),
       replicas: parseJson(getVar("RUNS_ENDPOINTS", env)),
+      redact: parseBoolean(getVar("REDACT", env)),
+      redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env)),
     }),
   );
 };
@@ -124,6 +134,7 @@ export async function getConfig(options?: {
   return ConfigSchema.parse({
     project: "codex",
     enabled: false,
+    redact: true,
     ...globalConfig,
     ...localConfig,
     ...envConfig,
