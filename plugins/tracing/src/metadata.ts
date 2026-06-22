@@ -63,13 +63,15 @@ export function parseRepository(url: string | undefined): {
     return h || "other";
   })();
 
+  // Full org/repo slug (e.g. langchain-ai/langsmith-codex-plugins), not bare repo.
   const name =
     (pathname ?? "")
       .replace(/^\/+/, "")
       .replace(/\.git$/, "")
       .split("/")
       .filter(Boolean)
-      .pop() || undefined;
+      .slice(-2)
+      .join("/") || undefined;
 
   return {
     repository_url: normalized.replace(/\.git$/, ""),

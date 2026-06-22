@@ -348,7 +348,7 @@ describe("coding-agent-v1 contract", () => {
 
     expect(root.repository_url).toBe("https://github.com/langchain-ai/langsmith-codex-plugins");
     expect(root.repository_provider).toBe("github");
-    expect(root.repository_name).toBe("langsmith-codex-plugins");
+    expect(root.repository_name).toBe("langchain-ai/langsmith-codex-plugins");
     expect(root.git_branch).toBe("main");
     expect(root.git_commit_sha).toBe(GIT.commit_hash);
     expect(root.cwd).toBe(CWD);

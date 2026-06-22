@@ -11795,7 +11795,7 @@ function parseRepository(url) {
 		if (h.includes("bitbucket")) return "bitbucket";
 		return h || "other";
 	})();
-	const name = (pathname ?? "").replace(/^\/+/, "").replace(/\.git$/, "").split("/").filter(Boolean).pop() || void 0;
+	const name = (pathname ?? "").replace(/^\/+/, "").replace(/\.git$/, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
 	return {
 		repository_url: normalized.replace(/\.git$/, ""),
 		repository_provider: provider,
