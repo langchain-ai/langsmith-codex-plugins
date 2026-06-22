@@ -472,8 +472,13 @@ async function postTurn(
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
     const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
 
-    const outputStartTime = aiMessage.at(0)?.timestamp.start ?? parentStartTime;
-    const outputEndTime = aiMessage.at(-1)?.timestamp.end ?? outputStartTime;
+    // Span the LLM from the prior message to its response, not its own instant.
+    const outputStartTime =
+      inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
+    const outputEndTime = Math.max(
+      aiMessage.at(-1)?.timestamp.end ?? outputStartTime,
+      outputStartTime,
+    );
 
     const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 
@@ -524,7 +529,13 @@ async function postTurn(
         outputs: {},
       };
 
-      const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+      // Span the tool from its call to its output (begin/end events if present).
+      const callTime = aiMessage.at(0)?.timestamp.start;
+      const min = Math.min(
+        toolMessage.timestamp.start,
+        ...(callTime != null ? [callTime] : []),
+        ...toolCall.timings,
+      );
       const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;

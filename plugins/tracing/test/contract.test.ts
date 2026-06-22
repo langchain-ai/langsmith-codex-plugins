@@ -181,7 +181,7 @@ function subagentTranscript(): string {
 type RunType = "root" | "llm" | "tool" | "subagent";
 
 // Real emission path: parent + child co-located under a sessions/ tree. Only the
-// PARENT is traced; the child must be DISCOVERED via collab_* and recursed into.
+// PARENT is traced; the child must be DISCOVERED via spawn_agent and recursed into.
 const BASE_DIR = "/home/codex-user/.codex/sessions/2026/06/01";
 
 function classify(run: { run_type?: string; parent_run_id?: string | null }): RunType | undefined {
@@ -230,7 +230,7 @@ async function buildRuns() {
 
 describe("coding-agent-v1 contract", () => {
   // The live failure: the subagent rollout was never emitted. Tracing the PARENT
-  // alone must DISCOVER the child (via collab_*) and post it under the root thread.
+  // alone must DISCOVER the child (via spawn_agent) and post it under the root thread.
   it("discovers and emits the subagent from the parent trace alone", async () => {
     const byType = await buildRuns();
     expect(byType.subagent.length, "subagent runs discovered").toBeGreaterThanOrEqual(1);
@@ -239,6 +239,38 @@ describe("coding-agent-v1 contract", () => {
       expect(meta.ls_subagent_id).toBe(SUB_THREAD);
       expect(meta.ls_subagent_type).toBe("Harvey");
     }
+  });
+
+  // LLM/tool spans come from the inter-event timeline, not a single instant.
+  it("assigns non-zero durations from gapped timestamps", async () => {
+    const { client, callSpy } = mockClient();
+    vol.fromJSON({
+      [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
+      [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+    });
+    await convertToRunTree(
+      {
+        transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+        turn_id: PARENT_TURN,
+      },
+      { client, projectName: "codex" },
+    );
+    await client.awaitPendingTraceBatches();
+    const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+
+    const toMs = (v: unknown) => (typeof v === "number" ? v : Date.parse(String(v)));
+    const runs = Object.values(tree.data) as Array<{
+      run_type?: string;
+      start_time?: unknown;
+      end_time?: unknown;
+    }>;
+    const dur = (r: { start_time?: unknown; end_time?: unknown }) =>
+      toMs(r.end_time) - toMs(r.start_time);
+
+    const llm = runs.find((r) => r.run_type === "llm");
+    const tool = runs.find((r) => r.run_type === "tool");
+    expect(dur(llm!), "llm duration").toBeGreaterThan(0);
+    expect(dur(tool!), "tool duration").toBeGreaterThan(0);
   });
 
   it("emits the required contract keys on every run type", async () => {
