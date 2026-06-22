@@ -1,10 +1,11 @@
-import type { LineSchema, ResponseItem } from "./types.js";
+import type { LineSchema, ResponseItem, SubagentSource } from "./types.js";
 import { Client, RunTreeConfig, RunTree } from "langsmith";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
+import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
 import type {
   Session,
   TokenCount,
@@ -244,6 +245,14 @@ function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
   });
 }
 
+// Null run-type-scoped keys on llm/tool runs to override langsmith's
+// parent->child metadata inheritance (serialization drops undefined).
+const CHILD_SCOPE_RESET = {
+  approval_policy: undefined,
+  ls_subagent_id: undefined,
+  ls_subagent_type: undefined,
+} as const;
+
 function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknown> | undefined {
   if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) {
     return undefined;
@@ -277,6 +286,8 @@ async function postTurn(
       replicas?: RunTreeConfig["replicas"];
 
       parentRunTree?: RunTree;
+      // Root conversation thread_id, propagated to subagent runs for grouping.
+      threadId?: string;
       debugNow?: { now: number; startTime: number };
     };
   },
@@ -322,6 +333,47 @@ async function postTurn(
 
   const debugNow = options?.debugNow ?? { now: Date.now(), startTime: parentStartTime };
 
+  // Codex turn-context carries the workspace + policy details for this turn.
+  const cwd =
+    (typeof task.context?.cwd === "string" ? task.context.cwd : undefined) ?? sessionMeta?.cwd;
+
+  const sandboxType = (() => {
+    const policy = task.context?.sandbox_policy;
+    if (typeof policy === "string") return policy;
+    if (policy != null && typeof policy === "object") {
+      const type = (policy as { type?: unknown }).type;
+      if (typeof type === "string") return type;
+    }
+    return undefined;
+  })();
+
+  const approvalPolicy = (() => {
+    const policy = task.context?.approval_policy;
+    if (typeof policy === "string") return policy;
+    if (policy != null) return JSON.stringify(policy);
+    return undefined;
+  })();
+
+  const git = await resolveGitInfo(cwd, sessionMeta?.git);
+
+  // thread_id groups the whole conversation; subagents inherit the root's.
+  const conversationThreadId = options?.threadId ?? sessionMeta?.session_id;
+
+  // coding-agent-v1 base contract, stamped onto every run below.
+  const base = codingAgentMetadata({
+    threadId: conversationThreadId,
+    turnId: task.turnId?.id,
+    turnNumber: task.turnNumber,
+    cliVersion: sessionMeta?.cli_version,
+    cwd,
+    git,
+    sandboxType,
+  });
+
+  const isSubagent = sessionMeta?.is_subagent === true;
+
+  // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
+  // subagent only. Set undefined elsewhere to override inherited values.
   const parentConfig: RunTreeConfig = {
     name: "openai.codex",
     client: options?.client,
@@ -336,12 +388,18 @@ async function postTurn(
       metadata: {
         ...options?.metadata,
         ...task.context,
-        codex_cli_version: sessionMeta?.cli_version,
-        turn_id: task.turnId?.id,
-        thread_id: sessionMeta?.session_id,
+        ...base,
 
-        ls_integration: "openai-codex",
-        ls_agent_type: "root",
+        approval_policy: isSubagent ? undefined : approvalPolicy,
+        ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
+        ls_subagent_type: isSubagent
+          ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
+          : undefined,
+
+        // Deprecated compat aliases (>=1 release): codex_cli_version,
+        // ls_agent_type.
+        codex_cli_version: sessionMeta?.cli_version,
+        ls_agent_type: isSubagent ? "subagent" : "root",
         ls_message_format: "anthropic",
 
         usage_metadata: getUsageMetadata(task.tokenCount?.total_token_usage),
@@ -402,6 +460,8 @@ async function postTurn(
       extra: {
         metadata: {
           ...options?.metadata,
+          ...base,
+          ...CHILD_SCOPE_RESET,
           ls_model_type: "chat",
           ls_provider: sessionMeta?.model_provider,
           ls_model_name: task.context?.model,
@@ -435,8 +495,11 @@ async function postTurn(
       const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
       const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 
+      const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
+      const runName = nativeToolName ?? "openai.codex.tool";
+
       const toolRun = parent.createChild({
-        name: (msgToolCall.name as string) ?? "openai.codex.tool",
+        name: runName,
         run_type: "tool",
         start_time: min,
         end_time: max,
@@ -446,11 +509,17 @@ async function postTurn(
         extra: {
           metadata: {
             ...options?.metadata,
+            ...base,
+            ...CHILD_SCOPE_RESET,
             ls_model_type: "chat",
             ls_provider: sessionMeta?.model_provider,
             ls_model_name: task.context?.model,
             ls_invocation_params: task.context,
             usage_metadata: getUsageMetadata(toolMessage.tokenCount),
+            // Native tool name, only when it differs from the run name.
+            ...(nativeToolName != null && runName !== nativeToolName
+              ? { ls_tool_name: nativeToolName }
+              : {}),
           },
         },
       });
@@ -475,7 +544,7 @@ async function postTurn(
 
       await convertToRunTree(
         { transcript_path: subagentFile, turn_id: lastTurnId },
-        { ...options, parentRunTree: parent, debugNow },
+        { ...options, parentRunTree: parent, threadId: conversationThreadId, debugNow },
       );
     }
   }
@@ -490,6 +559,8 @@ export async function convertToRunTree(
     replicas?: RunTreeConfig["replicas"];
     projectName?: string;
     sessionsRoot?: string;
+    // Root conversation thread_id, propagated to subagent runs for grouping.
+    threadId?: string;
     debugNow?: { now: number; startTime: number };
   },
 ) {
@@ -499,6 +570,7 @@ export async function convertToRunTree(
   function createTask(): Task {
     return {
       turnId: undefined,
+      turnNumber: undefined,
       messages: [],
       userMessageIndex: undefined,
       context: undefined,
@@ -507,6 +579,9 @@ export async function convertToRunTree(
     };
   }
 
+  // 1-based native turn index within this thread; incremented per task_started.
+  let turnNumber = 0;
+
   // Turns that have already been uploaded in a previous hook invocation for the
   // same rollout file. Used to avoid replaying completed turns when the user
   // resumes or continues a conversation.
@@ -514,11 +589,23 @@ export async function convertToRunTree(
   const events = await loadSession(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
+      // Subagent threads carry `source.subagent.thread_spawn`; roots use "cli".
+      const source = payload.source;
+      const threadSpawn =
+        source != null && typeof source === "object" && "subagent" in source
+          ? (source as SubagentSource).subagent?.thread_spawn
+          : undefined;
+
       sessionMeta = {
         session_id: payload.id,
         model_provider: payload.model_provider ?? undefined,
         base_instructions: payload.base_instructions?.text,
         cli_version: payload.cli_version,
+        cwd: payload.cwd,
+        git: payload.git,
+        is_subagent: threadSpawn != null,
+        agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
+        agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? undefined,
       };
     }
 
@@ -555,7 +642,9 @@ export async function convertToRunTree(
       if (payload.type === "task_started") {
         // TODO: should we try to flush?
         task = createTask();
+        turnNumber += 1;
         task.turnId = { id: payload.turn_id, timestamp: eventTime };
+        task.turnNumber = turnNumber;
       }
 
       if (typeof payload.call_id === "string") {
@@ -624,6 +713,14 @@ export async function convertToRunTree(
       ) {
         task ??= createTask();
         const completedTurnId = task.turnId?.id ?? input.turn_id ?? undefined;
+        // Ensure a turn marker for turns completed without a task_started.
+        if (task.turnId == null && completedTurnId != null) {
+          task.turnId = { id: completedTurnId, timestamp: eventTime };
+        }
+        if (task.turnNumber == null) {
+          turnNumber += 1;
+          task.turnNumber = turnNumber;
+        }
         if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
           await postTurn(task, sessionMeta, { rolloutFile: input.transcript_path, options });
           if (completedTurnId != null) {
