@@ -12143,9 +12143,9 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		if (policy != null) return JSON.stringify(policy);
 	})();
 	const git = await resolveGitInfo(cwd, sessionMeta?.git);
-	const conversationThreadId = options?.threadId ?? sessionMeta?.session_id;
+	const isSubagent = sessionMeta?.is_subagent === true;
 	const base = codingAgentMetadata({
-		threadId: conversationThreadId,
+		threadId: (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id,
 		turnId: task.turnId?.id,
 		turnNumber: task.turnNumber,
 		cliVersion: sessionMeta?.cli_version,
@@ -12153,7 +12153,6 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		git,
 		sandboxType
 	});
-	const isSubagent = sessionMeta?.is_subagent === true;
 	const parentConfig = {
 		name: "openai.codex",
 		client: options?.client,
@@ -12275,7 +12274,6 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			}, {
 				...options,
 				parentRunTree: parent,
-				threadId: conversationThreadId,
 				debugNow
 			});
 		}
@@ -12310,6 +12308,7 @@ async function convertToRunTree(input, options) {
 				cwd: payload.cwd,
 				git: payload.git,
 				is_subagent: threadSpawn != null,
+				parent_thread_id: threadSpawn?.parent_thread_id ?? void 0,
 				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
 				agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 			};

@@ -135,7 +135,8 @@ function parentTranscript(): string {
   ].join("\n");
 }
 
-// Subagent thread spawned by the root turn; `source.subagent` marks it.
+// Separate subagent rollout (its own session/hook). source.subagent.thread_spawn
+// carries parent_thread_id, matching real Codex serialization (role null).
 function subagentTranscript(): string {
   return [
     line("session_meta", {
@@ -151,12 +152,12 @@ function subagentTranscript(): string {
             depth: 1,
             agent_path: null,
             agent_nickname: "Harvey",
-            agent_role: "researcher",
+            agent_role: null,
           },
         },
       },
       agent_nickname: "Harvey",
-      agent_role: "researcher",
+      agent_role: null,
       model_provider: "openai",
       git: GIT,
       base_instructions: { text: "You are a Codex subagent." },
@@ -187,33 +188,36 @@ function subagentTranscript(): string {
 
 type RunType = "root" | "llm" | "tool" | "subagent";
 
-function classify(run: { run_type?: string; parent_run_id?: string | null }): RunType | undefined {
-  if (run.run_type === "llm") return "llm";
-  if (run.run_type === "tool") return "tool";
-  if (run.run_type === "chain") return run.parent_run_id ? "subagent" : "root";
-  return undefined;
+// Separate session trees so the root trace can't recurse into the subagent;
+// each is traced by its own hook (model B).
+const ROOT_DIR = "/root/.codex/sessions/2026/06/01";
+const SUB_DIR = "/sub/.codex/sessions/2026/06/01";
+
+async function traceFile(transcriptPath: string, turnId: string) {
+  const { client, callSpy } = mockClient();
+  await convertToRunTree(
+    { transcript_path: transcriptPath, turn_id: turnId },
+    { client, projectName: "codex" },
+  );
+  await client.awaitPendingTraceBatches();
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  return Object.values(tree.data) as Array<{
+    run_type?: string;
+    extra?: { metadata?: Record<string, unknown> };
+  }>;
 }
 
 async function buildRuns() {
-  const { client, callSpy } = mockClient();
-
-  const baseDir = "/home/codex-user/.codex/sessions/2026/06/01";
   vol.fromJSON({
-    [path.join(baseDir, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
-    [path.join(baseDir, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+    [path.join(ROOT_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
+    [path.join(SUB_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
   });
 
-  await convertToRunTree(
-    {
-      transcript_path: path.join(baseDir, `rollout-parent-${PARENT_THREAD}.jsonl`),
-      turn_id: PARENT_TURN,
-    },
-    { client, projectName: "codex" },
+  const rootRuns = await traceFile(
+    path.join(ROOT_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+    PARENT_TURN,
   );
-
-  await client.awaitPendingTraceBatches();
-
-  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const subRuns = await traceFile(path.join(SUB_DIR, `rollout-sub-${SUB_THREAD}.jsonl`), SUB_TURN);
 
   const byType: Record<RunType, Array<Record<string, unknown>>> = {
     root: [],
@@ -222,14 +226,16 @@ async function buildRuns() {
     subagent: [],
   };
 
-  for (const run of Object.values(tree.data) as Array<{
-    run_type?: string;
-    parent_run_id?: string | null;
-    extra?: { metadata?: Record<string, unknown> };
-  }>) {
-    const type = classify(run);
-    if (type == null) continue;
-    byType[type].push(run.extra?.metadata ?? {});
+  // The root trace's top chain is the root; the subagent trace's is the subagent.
+  for (const run of rootRuns) {
+    if (run.run_type === "chain") byType.root.push(run.extra?.metadata ?? {});
+    else if (run.run_type === "llm") byType.llm.push(run.extra?.metadata ?? {});
+    else if (run.run_type === "tool") byType.tool.push(run.extra?.metadata ?? {});
+  }
+  for (const run of subRuns) {
+    if (run.run_type === "chain") byType.subagent.push(run.extra?.metadata ?? {});
+    else if (run.run_type === "llm") byType.llm.push(run.extra?.metadata ?? {});
+    else if (run.run_type === "tool") byType.tool.push(run.extra?.metadata ?? {});
   }
 
   return byType;
@@ -302,10 +308,10 @@ describe("coding-agent-v1 contract", () => {
       }
     }
 
-    // ls_subagent_* — subagent only.
+    // ls_subagent_* — subagent only. type falls back from null role to nickname.
     for (const meta of byType.subagent) {
       expect(meta.ls_subagent_id).toBe(SUB_THREAD);
-      expect(meta.ls_subagent_type).toBe("researcher");
+      expect(meta.ls_subagent_type).toBe("Harvey");
     }
     for (const type of ["root", "llm", "tool"] as const) {
       for (const meta of byType[type]) {
@@ -354,9 +360,10 @@ describe("coding-agent-v1 contract", () => {
     expect(root.ls_subagent_type).toBeUndefined();
     expect(root.codex_cli_version).toBe(CLI_VERSION);
 
-    // Subagent groups under the ROOT thread_id, keeps its own id + turn marker.
+    // Independently-traced subagent groups under the ROOT thread_id, not its own.
     const sub = byType.subagent[0];
     expect(sub.thread_id).toBe(PARENT_THREAD);
+    expect(sub.thread_id).not.toBe(SUB_THREAD);
     expect(sub.ls_subagent_id).toBe(SUB_THREAD);
     expect(sub.turn_id).toBe(SUB_TURN);
     expect(sub.turn_number).toBe(1);

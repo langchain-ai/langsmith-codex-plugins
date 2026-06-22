@@ -1057,6 +1057,8 @@ export type Session = {
   git?: GitInfo;
   // Derived from `session_meta.source` (root vs spawned subagent thread).
   is_subagent?: boolean;
+  // Parent (root, for depth-1) thread that this subagent groups under.
+  parent_thread_id?: string;
   agent_role?: string;
   agent_nickname?: string;
 };

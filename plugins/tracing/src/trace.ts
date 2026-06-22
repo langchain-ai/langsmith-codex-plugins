@@ -286,8 +286,6 @@ async function postTurn(
       replicas?: RunTreeConfig["replicas"];
 
       parentRunTree?: RunTree;
-      // Root conversation thread_id, propagated to subagent runs for grouping.
-      threadId?: string;
       debugNow?: { now: number; startTime: number };
     };
   },
@@ -356,8 +354,11 @@ async function postTurn(
 
   const git = await resolveGitInfo(cwd, sessionMeta?.git);
 
-  // thread_id groups the whole conversation; subagents inherit the root's.
-  const conversationThreadId = options?.threadId ?? sessionMeta?.session_id;
+  const isSubagent = sessionMeta?.is_subagent === true;
+
+  // Subagents are separate rollouts; group under the parent thread, not their own.
+  const conversationThreadId =
+    (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
 
   // coding-agent-v1 base contract, stamped onto every run below.
   const base = codingAgentMetadata({
@@ -369,8 +370,6 @@ async function postTurn(
     git,
     sandboxType,
   });
-
-  const isSubagent = sessionMeta?.is_subagent === true;
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
@@ -544,7 +543,7 @@ async function postTurn(
 
       await convertToRunTree(
         { transcript_path: subagentFile, turn_id: lastTurnId },
-        { ...options, parentRunTree: parent, threadId: conversationThreadId, debugNow },
+        { ...options, parentRunTree: parent, debugNow },
       );
     }
   }
@@ -559,8 +558,6 @@ export async function convertToRunTree(
     replicas?: RunTreeConfig["replicas"];
     projectName?: string;
     sessionsRoot?: string;
-    // Root conversation thread_id, propagated to subagent runs for grouping.
-    threadId?: string;
     debugNow?: { now: number; startTime: number };
   },
 ) {
@@ -604,6 +601,7 @@ export async function convertToRunTree(
         cwd: payload.cwd,
         git: payload.git,
         is_subagent: threadSpawn != null,
+        parent_thread_id: threadSpawn?.parent_thread_id ?? undefined,
         agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
         agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? undefined,
       };
