@@ -104,26 +104,18 @@ function parentTranscript(): string {
       call_id: "call_exec_1",
       output: "/Users/dev",
     }),
+    // Live schema: spawn_agent's output carries the child id as `agent_id`
+    // (no collab_* event) — the real discovery trigger.
     line("response_item", {
       type: "function_call",
       name: "spawn_agent",
       call_id: "call_spawn_1",
-      arguments: JSON.stringify({ message: "do research" }),
-    }),
-    line("event_msg", {
-      type: "collab_agent_spawn_end",
-      call_id: "call_spawn_1",
-      sender_thread_id: PARENT_THREAD,
-      new_thread_id: SUB_THREAD,
-      prompt: "do research",
-      model: "gpt-5.4",
-      reasoning_effort: null,
-      status: "ok",
+      arguments: JSON.stringify({ agent_type: "explorer", message: "do research" }),
     }),
     line("response_item", {
       type: "function_call_output",
       call_id: "call_spawn_1",
-      output: `spawned ${SUB_THREAD}`,
+      output: JSON.stringify({ agent_id: SUB_THREAD, nickname: "Harvey" }),
     }),
     line("response_item", {
       type: "message",
@@ -188,36 +180,35 @@ function subagentTranscript(): string {
 
 type RunType = "root" | "llm" | "tool" | "subagent";
 
-// Separate session trees so the root trace can't recurse into the subagent;
-// each is traced by its own hook (model B).
-const ROOT_DIR = "/root/.codex/sessions/2026/06/01";
-const SUB_DIR = "/sub/.codex/sessions/2026/06/01";
+// Real emission path: parent + child co-located under a sessions/ tree. Only the
+// PARENT is traced; the child must be DISCOVERED via collab_* and recursed into.
+const BASE_DIR = "/home/codex-user/.codex/sessions/2026/06/01";
 
-async function traceFile(transcriptPath: string, turnId: string) {
-  const { client, callSpy } = mockClient();
-  await convertToRunTree(
-    { transcript_path: transcriptPath, turn_id: turnId },
-    { client, projectName: "codex" },
-  );
-  await client.awaitPendingTraceBatches();
-  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
-  return Object.values(tree.data) as Array<{
-    run_type?: string;
-    extra?: { metadata?: Record<string, unknown> };
-  }>;
+function classify(run: { run_type?: string; parent_run_id?: string | null }): RunType | undefined {
+  if (run.run_type === "llm") return "llm";
+  if (run.run_type === "tool") return "tool";
+  if (run.run_type === "chain") return run.parent_run_id ? "subagent" : "root";
+  return undefined;
 }
 
 async function buildRuns() {
+  const { client, callSpy } = mockClient();
+
   vol.fromJSON({
-    [path.join(ROOT_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
-    [path.join(SUB_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+    [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
+    [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
   });
 
-  const rootRuns = await traceFile(
-    path.join(ROOT_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
-    PARENT_TURN,
+  await convertToRunTree(
+    {
+      transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+      turn_id: PARENT_TURN,
+    },
+    { client, projectName: "codex" },
   );
-  const subRuns = await traceFile(path.join(SUB_DIR, `rollout-sub-${SUB_THREAD}.jsonl`), SUB_TURN);
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
 
   const byType: Record<RunType, Array<Record<string, unknown>>> = {
     root: [],
@@ -225,23 +216,31 @@ async function buildRuns() {
     tool: [],
     subagent: [],
   };
-
-  // The root trace's top chain is the root; the subagent trace's is the subagent.
-  for (const run of rootRuns) {
-    if (run.run_type === "chain") byType.root.push(run.extra?.metadata ?? {});
-    else if (run.run_type === "llm") byType.llm.push(run.extra?.metadata ?? {});
-    else if (run.run_type === "tool") byType.tool.push(run.extra?.metadata ?? {});
-  }
-  for (const run of subRuns) {
-    if (run.run_type === "chain") byType.subagent.push(run.extra?.metadata ?? {});
-    else if (run.run_type === "llm") byType.llm.push(run.extra?.metadata ?? {});
-    else if (run.run_type === "tool") byType.tool.push(run.extra?.metadata ?? {});
+  for (const run of Object.values(tree.data) as Array<{
+    run_type?: string;
+    parent_run_id?: string | null;
+    extra?: { metadata?: Record<string, unknown> };
+  }>) {
+    const type = classify(run);
+    if (type != null) byType[type].push(run.extra?.metadata ?? {});
   }
 
   return byType;
 }
 
 describe("coding-agent-v1 contract", () => {
+  // The live failure: the subagent rollout was never emitted. Tracing the PARENT
+  // alone must DISCOVER the child (via collab_*) and post it under the root thread.
+  it("discovers and emits the subagent from the parent trace alone", async () => {
+    const byType = await buildRuns();
+    expect(byType.subagent.length, "subagent runs discovered").toBeGreaterThanOrEqual(1);
+    for (const meta of byType.subagent) {
+      expect(meta.thread_id).toBe(PARENT_THREAD);
+      expect(meta.ls_subagent_id).toBe(SUB_THREAD);
+      expect(meta.ls_subagent_type).toBe("Harvey");
+    }
+  });
+
   it("emits the required contract keys on every run type", async () => {
     const realFs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
     const validator = JSON.parse(

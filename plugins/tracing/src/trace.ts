@@ -3,6 +3,7 @@ import { Client, RunTreeConfig, RunTree } from "langsmith";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
@@ -28,15 +29,46 @@ async function loadSession(name: string) {
   return result;
 }
 
-// Rollout files are stored at `<sessionsRoot>/YYYY/MM/DD/rollout-<ts>-<threadId>.jsonl`.
-// Given the path of the parent rollout file we walk up to the sessions root and
-// recursively look for a file whose name ends with the subagent's thread id.
+// spawn_agent's output carries the child thread id as `agent_id` (string or object).
+function extractSpawnedAgentId(output: unknown): string | undefined {
+  let obj: unknown = output;
+  if (typeof output === "string") {
+    try {
+      obj = JSON.parse(output);
+    } catch {
+      return undefined;
+    }
+  }
+  if (obj != null && typeof obj === "object") {
+    const id = (obj as { agent_id?: unknown }).agent_id;
+    if (typeof id === "string") return id;
+  }
+  return undefined;
+}
+
+// Anchor at the real sessions root (override, nearest `sessions` ancestor, or
+// ~/.codex/sessions) rather than a fragile fixed depth.
+function resolveSessionsRoot(parentFileName: string, sessionsRoot?: string): string {
+  if (sessionsRoot) return sessionsRoot;
+
+  let dir = path.dirname(path.resolve(parentFileName));
+  while (true) {
+    if (path.basename(dir) === "sessions") return dir;
+    const up = path.dirname(dir);
+    if (up === dir) break;
+    dir = up;
+  }
+  return path.join(os.homedir(), ".codex", "sessions");
+}
+
+// Recursively find the rollout file whose name ends with the subagent's thread id.
 async function findRolloutFileByThreadId(
   parentFileName: string,
   threadId: string,
+  sessionsRoot?: string,
 ): Promise<string | undefined> {
   const suffix = `-${threadId}.jsonl`;
-  const root = path.resolve(path.dirname(parentFileName), "../../..");
+  const root = resolveSessionsRoot(parentFileName, sessionsRoot);
 
   async function walk(dir: string): Promise<string | undefined> {
     let entries: import("node:fs").Dirent[];
@@ -284,6 +316,7 @@ async function postTurn(
       projectName?: string;
       metadata?: Record<string, unknown>;
       replicas?: RunTreeConfig["replicas"];
+      sessionsRoot?: string;
 
       parentRunTree?: RunTree;
       debugNow?: { now: number; startTime: number };
@@ -526,7 +559,11 @@ async function postTurn(
     }
 
     for (const subagentThread of subagentThreads ?? []) {
-      const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
+      const subagentFile = await findRolloutFileByThreadId(
+        rolloutFile,
+        subagentThread,
+        options?.sessionsRoot,
+      );
 
       if (subagentFile == null) {
         continue;
@@ -579,6 +616,10 @@ export async function convertToRunTree(
   // 1-based native turn index within this thread; incremented per task_started.
   let turnNumber = 0;
 
+  // spawn_agent call_id → its AI message, so the child id from the matching
+  // function_call_output attaches there.
+  const spawnAgentMessages = new Map<string, { subagentThreads: string[] }>();
+
   // Turns that have already been uploaded in a previous hook invocation for the
   // same rollout file. Used to avoid replaying completed turns when the user
   // resumes or continues a conversation.
@@ -616,6 +657,17 @@ export async function convertToRunTree(
         subagentThreads: [],
       };
       task.messages.push(message);
+
+      // multi_agent_v1 discovery: attach the child id from spawn_agent's output.
+      if (payload.type === "function_call" && payload.name === "spawn_agent") {
+        spawnAgentMessages.set(payload.call_id, message);
+      } else if (
+        payload.type === "function_call_output" &&
+        spawnAgentMessages.has(payload.call_id)
+      ) {
+        const childId = extractSpawnedAgentId(payload.output);
+        if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+      }
 
       // Only capture the user message after we retrieved to turn context,
       // since <environment_context /> is being sent as user message

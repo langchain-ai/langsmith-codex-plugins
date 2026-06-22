@@ -6,6 +6,10 @@ import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
 
+// Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
+declare const __LS_INTEGRATION_VERSION__: string;
+const INTEGRATION_VERSION = __LS_INTEGRATION_VERSION__;
+
 async function preloadTestFiles(options: { makeTurnIncomplete: boolean }) {
   const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
 
@@ -115,7 +119,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 ls_agent_runtime: "Codex",
                 ls_agent_runtime_version: "0.123.0",
                 ls_trace_schema_version: "coding-agent-v1",
-                ls_integration_version: "0.0.3",
+                ls_integration_version: INTEGRATION_VERSION,
                 ls_agent_type: "root",
                 approval_policy: "on-request",
                 cwd: "/Users/duongtat/Work/ls-codex-sample",

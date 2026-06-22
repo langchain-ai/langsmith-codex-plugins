@@ -11768,7 +11768,7 @@ const LS_AGENT_KIND = "coding_agent";
 const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.0.3";
+const LS_INTEGRATION_VERSION = "0.0.5";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -11885,9 +11885,32 @@ function* enumerate(arr) {
 async function loadSession(name) {
 	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
 }
-async function findRolloutFileByThreadId(parentFileName, threadId) {
+function extractSpawnedAgentId(output) {
+	let obj = output;
+	if (typeof output === "string") try {
+		obj = JSON.parse(output);
+	} catch {
+		return;
+	}
+	if (obj != null && typeof obj === "object") {
+		const id = obj.agent_id;
+		if (typeof id === "string") return id;
+	}
+}
+function resolveSessionsRoot(parentFileName, sessionsRoot) {
+	if (sessionsRoot) return sessionsRoot;
+	let dir = nodePath.dirname(nodePath.resolve(parentFileName));
+	while (true) {
+		if (nodePath.basename(dir) === "sessions") return dir;
+		const up = nodePath.dirname(dir);
+		if (up === dir) break;
+		dir = up;
+	}
+	return nodePath.join(os.homedir(), ".codex", "sessions");
+}
+async function findRolloutFileByThreadId(parentFileName, threadId, sessionsRoot) {
 	const suffix = `-${threadId}.jsonl`;
-	const root = nodePath.resolve(nodePath.dirname(parentFileName), "../../..");
+	const root = resolveSessionsRoot(parentFileName, sessionsRoot);
 	async function walk(dir) {
 		let entries;
 		try {
@@ -12264,7 +12287,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			PROMISE_QUEUE.push(toolRun.postRun());
 		}
 		for (const subagentThread of subagentThreads ?? []) {
-			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
+			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 			if (subagentFile == null) continue;
 			await convertToRunTree({
 				transcript_path: subagentFile,
@@ -12294,6 +12317,7 @@ async function convertToRunTree(input, options) {
 		};
 	}
 	let turnNumber = 0;
+	const spawnAgentMessages = /* @__PURE__ */ new Map();
 	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
@@ -12322,6 +12346,11 @@ async function convertToRunTree(input, options) {
 				subagentThreads: []
 			};
 			task.messages.push(message);
+			if (payload.type === "function_call" && payload.name === "spawn_agent") spawnAgentMessages.set(payload.call_id, message);
+			else if (payload.type === "function_call_output" && spawnAgentMessages.has(payload.call_id)) {
+				const childId = extractSpawnedAgentId(payload.output);
+				if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+			}
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 		}
 		if (type === "turn_context") {
