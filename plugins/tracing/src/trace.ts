@@ -1,10 +1,12 @@
-import type { LineSchema, ResponseItem } from "./types.js";
+import type { LineSchema, ResponseItem, SubagentSource } from "./types.js";
 import { Client, RunTreeConfig, RunTree } from "langsmith";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
+import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
 import type {
   Session,
   TokenCount,
@@ -27,15 +29,46 @@ async function loadSession(name: string) {
   return result;
 }
 
-// Rollout files are stored at `<sessionsRoot>/YYYY/MM/DD/rollout-<ts>-<threadId>.jsonl`.
-// Given the path of the parent rollout file we walk up to the sessions root and
-// recursively look for a file whose name ends with the subagent's thread id.
+// spawn_agent's output carries the child thread id as `agent_id` (string or object).
+function extractSpawnedAgentId(output: unknown): string | undefined {
+  let obj: unknown = output;
+  if (typeof output === "string") {
+    try {
+      obj = JSON.parse(output);
+    } catch {
+      return undefined;
+    }
+  }
+  if (obj != null && typeof obj === "object") {
+    const id = (obj as { agent_id?: unknown }).agent_id;
+    if (typeof id === "string") return id;
+  }
+  return undefined;
+}
+
+// Anchor at the real sessions root (override, nearest `sessions` ancestor, or
+// ~/.codex/sessions) rather than a fragile fixed depth.
+function resolveSessionsRoot(parentFileName: string, sessionsRoot?: string): string {
+  if (sessionsRoot) return sessionsRoot;
+
+  let dir = path.dirname(path.resolve(parentFileName));
+  while (true) {
+    if (path.basename(dir) === "sessions") return dir;
+    const up = path.dirname(dir);
+    if (up === dir) break;
+    dir = up;
+  }
+  return path.join(os.homedir(), ".codex", "sessions");
+}
+
+// Recursively find the rollout file whose name ends with the subagent's thread id.
 async function findRolloutFileByThreadId(
   parentFileName: string,
   threadId: string,
+  sessionsRoot?: string,
 ): Promise<string | undefined> {
   const suffix = `-${threadId}.jsonl`;
-  const root = path.resolve(path.dirname(parentFileName), "../../..");
+  const root = resolveSessionsRoot(parentFileName, sessionsRoot);
 
   async function walk(dir: string): Promise<string | undefined> {
     let entries: import("node:fs").Dirent[];
@@ -244,6 +277,14 @@ function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
   });
 }
 
+// Null run-type-scoped keys on llm/tool runs to override langsmith's
+// parent->child metadata inheritance (serialization drops undefined).
+const CHILD_SCOPE_RESET = {
+  approval_policy: undefined,
+  ls_subagent_id: undefined,
+  ls_subagent_type: undefined,
+} as const;
+
 function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknown> | undefined {
   if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) {
     return undefined;
@@ -275,6 +316,7 @@ async function postTurn(
       projectName?: string;
       metadata?: Record<string, unknown>;
       replicas?: RunTreeConfig["replicas"];
+      sessionsRoot?: string;
 
       parentRunTree?: RunTree;
       debugNow?: { now: number; startTime: number };
@@ -322,6 +364,48 @@ async function postTurn(
 
   const debugNow = options?.debugNow ?? { now: Date.now(), startTime: parentStartTime };
 
+  // Codex turn-context carries the workspace + policy details for this turn.
+  const cwd =
+    (typeof task.context?.cwd === "string" ? task.context.cwd : undefined) ?? sessionMeta?.cwd;
+
+  const sandboxType = (() => {
+    const policy = task.context?.sandbox_policy;
+    if (typeof policy === "string") return policy;
+    if (policy != null && typeof policy === "object") {
+      const type = (policy as { type?: unknown }).type;
+      if (typeof type === "string") return type;
+    }
+    return undefined;
+  })();
+
+  const approvalPolicy = (() => {
+    const policy = task.context?.approval_policy;
+    if (typeof policy === "string") return policy;
+    if (policy != null) return JSON.stringify(policy);
+    return undefined;
+  })();
+
+  const git = await resolveGitInfo(cwd, sessionMeta?.git);
+
+  const isSubagent = sessionMeta?.is_subagent === true;
+
+  // Subagents are separate rollouts; group under the parent thread, not their own.
+  const conversationThreadId =
+    (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
+
+  // coding-agent-v1 base contract, stamped onto every run below.
+  const base = codingAgentMetadata({
+    threadId: conversationThreadId,
+    turnId: task.turnId?.id,
+    turnNumber: task.turnNumber,
+    cliVersion: sessionMeta?.cli_version,
+    cwd,
+    git,
+    sandboxType,
+  });
+
+  // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
+  // subagent only. Set undefined elsewhere to override inherited values.
   const parentConfig: RunTreeConfig = {
     name: "openai.codex",
     client: options?.client,
@@ -336,12 +420,18 @@ async function postTurn(
       metadata: {
         ...options?.metadata,
         ...task.context,
-        codex_cli_version: sessionMeta?.cli_version,
-        turn_id: task.turnId?.id,
-        thread_id: sessionMeta?.session_id,
+        ...base,
 
-        ls_integration: "openai-codex",
-        ls_agent_type: "root",
+        approval_policy: isSubagent ? undefined : approvalPolicy,
+        ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
+        ls_subagent_type: isSubagent
+          ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
+          : undefined,
+
+        // Deprecated compat aliases (>=1 release): codex_cli_version,
+        // ls_agent_type.
+        codex_cli_version: sessionMeta?.cli_version,
+        ls_agent_type: isSubagent ? "subagent" : "root",
         ls_message_format: "anthropic",
 
         usage_metadata: getUsageMetadata(task.tokenCount?.total_token_usage),
@@ -382,8 +472,13 @@ async function postTurn(
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
     const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
 
-    const outputStartTime = aiMessage.at(0)?.timestamp.start ?? parentStartTime;
-    const outputEndTime = aiMessage.at(-1)?.timestamp.end ?? outputStartTime;
+    // Span the LLM from the prior message to its response, not its own instant.
+    const outputStartTime =
+      inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
+    const outputEndTime = Math.max(
+      aiMessage.at(-1)?.timestamp.end ?? outputStartTime,
+      outputStartTime,
+    );
 
     const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 
@@ -402,6 +497,8 @@ async function postTurn(
       extra: {
         metadata: {
           ...options?.metadata,
+          ...base,
+          ...CHILD_SCOPE_RESET,
           ls_model_type: "chat",
           ls_provider: sessionMeta?.model_provider,
           ls_model_name: task.context?.model,
@@ -432,11 +529,20 @@ async function postTurn(
         outputs: {},
       };
 
-      const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+      // Span the tool from its call to its output (begin/end events if present).
+      const callTime = aiMessage.at(0)?.timestamp.start;
+      const min = Math.min(
+        toolMessage.timestamp.start,
+        ...(callTime != null ? [callTime] : []),
+        ...toolCall.timings,
+      );
       const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 
+      const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
+      const runName = nativeToolName ?? "openai.codex.tool";
+
       const toolRun = parent.createChild({
-        name: (msgToolCall.name as string) ?? "openai.codex.tool",
+        name: runName,
         run_type: "tool",
         start_time: min,
         end_time: max,
@@ -446,11 +552,17 @@ async function postTurn(
         extra: {
           metadata: {
             ...options?.metadata,
+            ...base,
+            ...CHILD_SCOPE_RESET,
             ls_model_type: "chat",
             ls_provider: sessionMeta?.model_provider,
             ls_model_name: task.context?.model,
             ls_invocation_params: task.context,
             usage_metadata: getUsageMetadata(toolMessage.tokenCount),
+            // Native tool name, only when it differs from the run name.
+            ...(nativeToolName != null && runName !== nativeToolName
+              ? { ls_tool_name: nativeToolName }
+              : {}),
           },
         },
       });
@@ -458,7 +570,11 @@ async function postTurn(
     }
 
     for (const subagentThread of subagentThreads ?? []) {
-      const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
+      const subagentFile = await findRolloutFileByThreadId(
+        rolloutFile,
+        subagentThread,
+        options?.sessionsRoot,
+      );
 
       if (subagentFile == null) {
         continue;
@@ -499,6 +615,7 @@ export async function convertToRunTree(
   function createTask(): Task {
     return {
       turnId: undefined,
+      turnNumber: undefined,
       messages: [],
       userMessageIndex: undefined,
       context: undefined,
@@ -507,6 +624,13 @@ export async function convertToRunTree(
     };
   }
 
+  // 1-based native turn index within this thread; incremented per task_started.
+  let turnNumber = 0;
+
+  // spawn_agent call_id → its AI message, so the child id from the matching
+  // function_call_output attaches there.
+  const spawnAgentMessages = new Map<string, { subagentThreads: string[] }>();
+
   // Turns that have already been uploaded in a previous hook invocation for the
   // same rollout file. Used to avoid replaying completed turns when the user
   // resumes or continues a conversation.
@@ -514,11 +638,24 @@ export async function convertToRunTree(
   const events = await loadSession(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
+      // Subagent threads carry `source.subagent.thread_spawn`; roots use "cli".
+      const source = payload.source;
+      const threadSpawn =
+        source != null && typeof source === "object" && "subagent" in source
+          ? (source as SubagentSource).subagent?.thread_spawn
+          : undefined;
+
       sessionMeta = {
         session_id: payload.id,
         model_provider: payload.model_provider ?? undefined,
         base_instructions: payload.base_instructions?.text,
         cli_version: payload.cli_version,
+        cwd: payload.cwd,
+        git: payload.git,
+        is_subagent: threadSpawn != null,
+        parent_thread_id: threadSpawn?.parent_thread_id ?? undefined,
+        agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
+        agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? undefined,
       };
     }
 
@@ -531,6 +668,17 @@ export async function convertToRunTree(
         subagentThreads: [],
       };
       task.messages.push(message);
+
+      // multi_agent_v1 discovery: attach the child id from spawn_agent's output.
+      if (payload.type === "function_call" && payload.name === "spawn_agent") {
+        spawnAgentMessages.set(payload.call_id, message);
+      } else if (
+        payload.type === "function_call_output" &&
+        spawnAgentMessages.has(payload.call_id)
+      ) {
+        const childId = extractSpawnedAgentId(payload.output);
+        if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+      }
 
       // Only capture the user message after we retrieved to turn context,
       // since <environment_context /> is being sent as user message
@@ -555,7 +703,9 @@ export async function convertToRunTree(
       if (payload.type === "task_started") {
         // TODO: should we try to flush?
         task = createTask();
+        turnNumber += 1;
         task.turnId = { id: payload.turn_id, timestamp: eventTime };
+        task.turnNumber = turnNumber;
       }
 
       if (typeof payload.call_id === "string") {
@@ -624,6 +774,14 @@ export async function convertToRunTree(
       ) {
         task ??= createTask();
         const completedTurnId = task.turnId?.id ?? input.turn_id ?? undefined;
+        // Ensure a turn marker for turns completed without a task_started.
+        if (task.turnId == null && completedTurnId != null) {
+          task.turnId = { id: completedTurnId, timestamp: eventTime };
+        }
+        if (task.turnNumber == null) {
+          turnNumber += 1;
+          task.turnNumber = turnNumber;
+        }
         if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
           await postTurn(task, sessionMeta, { rolloutFile: input.transcript_path, options });
           if (completedTurnId != null) {

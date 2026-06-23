@@ -1,6 +1,6 @@
 {
   "name": "tracing",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Trace OpenAI Codex rollout transcripts to LangSmith.",
   "author": {
     "name": "LangChain",
