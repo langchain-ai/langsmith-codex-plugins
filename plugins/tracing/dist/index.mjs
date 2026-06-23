@@ -12224,8 +12224,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
 		const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
-		const outputStartTime = aiMessage.at(0)?.timestamp.start ?? parentStartTime;
-		const outputEndTime = aiMessage.at(-1)?.timestamp.end ?? outputStartTime;
+		const outputStartTime = inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
+		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (i) => i.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = parent.createChild({
@@ -12257,7 +12257,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 				timings: [],
 				outputs: {}
 			};
-			const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+			const callTime = aiMessage.at(0)?.timestamp.start;
+			const min = Math.min(toolMessage.timestamp.start, ...callTime != null ? [callTime] : [], ...toolCall.timings);
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
