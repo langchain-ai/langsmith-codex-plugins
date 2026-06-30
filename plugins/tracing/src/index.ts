@@ -21,9 +21,7 @@ export async function runHook() {
   // single Client, so it also covers replica destinations, which reuse it.
   const anonymizer = config.redact
     ? createSecretAnonymizer(
-        config.redact_extra_rules
-          ? { extraRules: config.redact_extra_rules }
-          : undefined,
+        config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : undefined,
       )
     : undefined;
 

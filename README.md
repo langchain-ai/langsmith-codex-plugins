@@ -76,6 +76,13 @@ Subagent threads are resolved and uploaded as nested child runs under the parent
 
 Interrupted turns (where the user cancels mid-response) are still uploaded upon session completion.
 
+## Secret redaction
+
+By default, the plugin strips common secrets — provider API keys, JWTs, PEM blocks, and structural `NAME=value`, `Authorization`, and URL-credential shapes — from run inputs, outputs, and metadata **before they are uploaded** to LangSmith.
+
+- Set `LANGSMITH_CODEX_REDACT` to a falsy value (`false`, `0`, `no`, or `off`) to turn redaction off.
+- Set `LANGSMITH_CODEX_REDACT_EXTRA` to a JSON array of `{ "pattern": "...", "replace": "..." }` rules to redact additional custom patterns. `pattern` is a regular-expression string; `replace` (optional) is the replacement text.
+
 ## Environment variables
 
 Tracing is disabled unless `TRACE_TO_LANGSMITH` or `enabled` is set to `true`.
@@ -88,17 +95,21 @@ Tracing is disabled unless `TRACE_TO_LANGSMITH` or `enabled` is set to `true`.
 | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | No       | `https://api.smith.langchain.com` | LangSmith API base URL                                                       |
 | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | No       | —                                 | JSON object of custom metadata to attach to all runs                         |
 | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | No       | —                                 | JSON array of replica destinations for multi-project tracing                 |
+| `LANGSMITH_CODEX_REDACT`                                     | No       | `"true"`                          | Set to a falsy value (`false`/`0`/`no`/`off`) to disable secret redaction    |
+| `LANGSMITH_CODEX_REDACT_EXTRA`                               | No       | —                                 | JSON array of `{ pattern, replace }` custom redaction rules                  |
 
 ## JSON config reference
 
-| Config key | Environment variable                                         | Default           | Description            |
-| ---------- | ------------------------------------------------------------ | ----------------- | ---------------------- |
-| `enabled`  | `TRACE_TO_LANGSMITH`                                         | `false`           | Enable tracing         |
-| `api_key`  | `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | unset             | LangSmith API key      |
-| `api_url`  | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | LangSmith default | API endpoint           |
-| `project`  | `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | `"codex"`         | Project name           |
-| `metadata` | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | unset             | Custom metadata object |
-| `replicas` | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | unset             | Replica destinations   |
+| Config key           | Environment variable                                         | Default           | Description                                  |
+| -------------------- | ------------------------------------------------------------ | ----------------- | -------------------------------------------- |
+| `enabled`            | `TRACE_TO_LANGSMITH`                                         | `false`           | Enable tracing                               |
+| `api_key`            | `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | unset             | LangSmith API key                            |
+| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | LangSmith default | API endpoint                                 |
+| `project`            | `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | `"codex"`         | Project name                                 |
+| `metadata`           | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | unset             | Custom metadata object                       |
+| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | unset             | Replica destinations                         |
+| `redact`             | `LANGSMITH_CODEX_REDACT`                                     | `true`            | Redact secrets before upload                 |
+| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`                               | unset             | Extra `{ pattern, replace }` redaction rules |
 
 ## Tracing to multiple destinations (Replicas)
 

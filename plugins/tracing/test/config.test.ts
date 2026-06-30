@@ -202,6 +202,47 @@ it("prefers Codex-specific environment values over standard LangSmith values", a
   });
 });
 
+it("disables redaction when LANGSMITH_CODEX_REDACT is falsy", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_REDACT", "false");
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config).toEqual({ enabled: false, project: "codex", redact: false });
+});
+
+it("enables redaction explicitly via LANGSMITH_CODEX_REDACT", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_REDACT", "true");
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config).toEqual({ enabled: false, project: "codex", redact: true });
+});
+
+it("reads redact_extra_rules from the environment", async () => {
+  vi.stubEnv(
+    "LANGSMITH_CODEX_REDACT_EXTRA",
+    JSON.stringify([{ pattern: "ACME-\\w+", replace: "[REDACTED]" }]),
+  );
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config).toEqual({
+    enabled: false,
+    project: "codex",
+    redact: true,
+    redact_extra_rules: [{ pattern: "ACME-\\w+", replace: "[REDACTED]" }],
+  });
+});
+
+it("disables redaction via config file", async () => {
+  writeConfigFiles({ global: { redact: false } });
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config).toEqual({ enabled: false, project: "codex", redact: false });
+});
+
+it("falls back to defaults when an env value fails schema validation", async () => {
+  vi.stubEnv("TRACE_TO_LANGSMITH", "true");
+  // pattern must be a string — this parses as JSON but fails the schema, so the
+  // whole env layer is dropped (try/catch) rather than crashing the hook.
+  vi.stubEnv("LANGSMITH_CODEX_REDACT_EXTRA", JSON.stringify([{ pattern: 123 }]));
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config).toEqual({ enabled: false, project: "codex", redact: true });
+});
+
 it("normalizes replica camelCase aliases", async () => {
   vi.stubEnv(
     "LANGSMITH_CODEX_RUNS_ENDPOINTS",

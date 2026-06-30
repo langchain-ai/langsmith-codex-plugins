@@ -100,18 +100,26 @@ function getVar(suffix: string, env: Record<string, string | undefined>): string
 const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config> => {
   const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
 
-  return stripUndefined(
-    PartialConfigSchema.parse({
-      enabled,
-      api_key: getVar("API_KEY", env),
-      api_url: getVar("ENDPOINT", env),
-      project: getVar("PROJECT", env),
-      metadata: parseJson(getVar("METADATA", env)),
-      replicas: parseJson(getVar("RUNS_ENDPOINTS", env)),
-      redact: parseBoolean(getVar("REDACT", env)),
-      redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env)),
-    }),
-  );
+  try {
+    return stripUndefined(
+      PartialConfigSchema.parse({
+        enabled,
+        api_key: getVar("API_KEY", env),
+        api_url: getVar("ENDPOINT", env),
+        project: getVar("PROJECT", env),
+        metadata: parseJson(getVar("METADATA", env)),
+        replicas: parseJson(getVar("RUNS_ENDPOINTS", env)),
+        redact: parseBoolean(getVar("REDACT", env)),
+        redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env)),
+      }),
+    );
+  } catch {
+    // A malformed env value (e.g. METADATA / RUNS_ENDPOINTS / REDACT_EXTRA that
+    // parses as JSON but doesn't match the schema) would otherwise throw and
+    // crash the hook. Fall back to file config + defaults, mirroring
+    // readConfigFile().
+    return {};
+  }
 };
 
 const getHomeDir = () => process.env.HOME ?? os.homedir();
