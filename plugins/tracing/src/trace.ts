@@ -436,7 +436,7 @@ async function postTurn(
 
         // Non-reserved key: backend auto-aggregates child llm usage into the
         // parent, so usage_metadata here would double-count.
-        ls_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
+        ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
       },
     },
   };
