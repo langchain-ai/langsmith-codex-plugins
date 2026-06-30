@@ -125,7 +125,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 cwd: "/Users/duongtat/Work/ls-codex-sample",
                 sandbox_type: "workspace-write",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_aggregated_usage: expect.objectContaining({
                   input_tokens: 71213,
                   output_tokens: 1627,
                   total_tokens: 72840,
@@ -496,7 +496,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 ls_integration: "openai-codex",
                 ls_agent_type: "root",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_aggregated_usage: expect.objectContaining({
                   input_tokens: 14243,
                   output_tokens: 262,
                   total_tokens: 14505,
@@ -624,7 +624,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 ls_integration: "openai-codex",
                 ls_agent_type: "root",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_aggregated_usage: expect.objectContaining({
                   input_tokens: 84553,
                   output_tokens: 1049,
                   total_tokens: 85602,
@@ -762,7 +762,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   ls_agent_type: "subagent",
                   ls_subagent_id: "019dbc03-79de-7d53-8196-3167d9a32762",
                   ls_subagent_type: "Harvey",
-                  usage_metadata: expect.objectContaining({
+                  ls_aggregated_usage: expect.objectContaining({
                     input_tokens: 10744,
                     output_tokens: 20,
                     total_tokens: 10764,
@@ -808,7 +808,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   ls_agent_type: "subagent",
                   ls_subagent_id: "019dbc03-79ee-7ee0-b40b-26920c74c524",
                   ls_subagent_type: "Leibniz",
-                  usage_metadata: expect.objectContaining({
+                  ls_aggregated_usage: expect.objectContaining({
                     input_tokens: 21693,
                     output_tokens: 132,
                     total_tokens: 21825,

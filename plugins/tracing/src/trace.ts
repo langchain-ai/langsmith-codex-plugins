@@ -434,7 +434,9 @@ async function postTurn(
         ls_agent_type: isSubagent ? "subagent" : "root",
         ls_message_format: "anthropic",
 
-        usage_metadata: getUsageMetadata(task.tokenCount?.total_token_usage),
+        // Non-reserved key: backend auto-aggregates child llm usage into the
+        // parent, so usage_metadata here would double-count.
+        ls_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
       },
     },
   };
