@@ -12196,7 +12196,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			codex_cli_version: sessionMeta?.cli_version,
 			ls_agent_type: isSubagent ? "subagent" : "root",
 			ls_message_format: "anthropic",
-			usage_metadata: getUsageMetadata(task.tokenCount?.total_token_usage)
+			ls_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		} }
 	};
 	const parent = options?.parentRunTree?.createChild(parentConfig) ?? new RunTree(parentConfig);
