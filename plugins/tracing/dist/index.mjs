@@ -4,6 +4,8 @@ import * as nodePath from "node:path";
 import { Worker } from "node:worker_threads";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import * as os from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -14895,7 +14897,7 @@ function parseJson(value) {
 		return;
 	}
 }
-const stripUndefined = (value) => {
+const stripUndefined$1 = (value) => {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 };
 async function readConfigFile(file) {
@@ -14912,7 +14914,7 @@ function getVar(suffix, env) {
 const readConfigEnv = (env) => {
 	const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
 	try {
-		return stripUndefined(PartialConfigSchema.parse({
+		return stripUndefined$1(PartialConfigSchema.parse({
 			enabled,
 			api_key: getVar("API_KEY", env),
 			api_url: getVar("ENDPOINT", env),
@@ -14966,6 +14968,111 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/metadata.ts
+const execFileAsync = promisify(execFile);
+const LS_AGENT_KIND = "coding_agent";
+const LS_INTEGRATION = "openai-codex";
+const LS_AGENT_RUNTIME = "Codex";
+const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+const LS_INTEGRATION_VERSION = "0.0.4";
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
+function parseRepository(url) {
+	const normalized = url?.trim();
+	if (!normalized) return {};
+	let host;
+	let pathname;
+	const scp = /^[^/@]+@([^:/]+):(.+)$/.exec(normalized);
+	if (scp) {
+		host = scp[1];
+		pathname = scp[2];
+	} else try {
+		const parsed = new URL(normalized);
+		host = parsed.hostname;
+		pathname = parsed.pathname;
+	} catch {
+		return { repository_url: normalized };
+	}
+	const provider = (() => {
+		const h = (host ?? "").toLowerCase();
+		if (h.includes("github")) return "github";
+		if (h.includes("gitlab")) return "gitlab";
+		if (h.includes("bitbucket")) return "bitbucket";
+		return h || "other";
+	})();
+	const name = (pathname ?? "").replace(/^\/+/, "").replace(/\.git$/, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
+	return {
+		repository_url: normalized.replace(/\.git$/, ""),
+		repository_provider: provider,
+		repository_name: name
+	};
+}
+async function runGit(cwd, args) {
+	try {
+		const { stdout } = await execFileAsync("git", args, {
+			cwd,
+			timeout: 2e3
+		});
+		const out = stdout.trim();
+		return out.length > 0 ? out : void 0;
+	} catch {
+		return;
+	}
+}
+const gitInfoCache = /* @__PURE__ */ new Map();
+async function resolveGitInfo(cwd, sessionGit) {
+	if (sessionGit != null && (sessionGit.repository_url != null || sessionGit.commit_hash != null || sessionGit.branch != null)) return sessionGit;
+	if (!cwd) return void 0;
+	let pending = gitInfoCache.get(cwd);
+	if (pending == null) {
+		pending = (async () => {
+			const [repository_url, branch, commit_hash] = await Promise.all([
+				runGit(cwd, [
+					"remote",
+					"get-url",
+					"origin"
+				]),
+				runGit(cwd, [
+					"rev-parse",
+					"--abbrev-ref",
+					"HEAD"
+				]),
+				runGit(cwd, ["rev-parse", "HEAD"])
+			]);
+			if (repository_url == null && branch == null && commit_hash == null) return;
+			return {
+				repository_url,
+				branch,
+				commit_hash
+			};
+		})();
+		gitInfoCache.set(cwd, pending);
+	}
+	return pending;
+}
+function codingAgentMetadata(ctx) {
+	const repo = parseRepository(ctx.git?.repository_url);
+	return stripUndefined({
+		ls_agent_kind: LS_AGENT_KIND,
+		ls_integration: LS_INTEGRATION,
+		ls_agent_runtime: LS_AGENT_RUNTIME,
+		thread_id: ctx.threadId,
+		ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
+		ls_integration_version: LS_INTEGRATION_VERSION,
+		ls_agent_runtime_version: ctx.cliVersion,
+		turn_id: ctx.turnId,
+		turn_number: ctx.turnNumber,
+		repository_url: repo.repository_url,
+		repository_provider: repo.repository_provider,
+		repository_name: repo.repository_name,
+		git_branch: ctx.git?.branch,
+		git_commit_sha: ctx.git?.commit_hash,
+		cwd: ctx.cwd,
+		sandbox_type: ctx.sandboxType
+	});
+}
+//#endregion
 //#region src/utils/isPrimitive.ts
 function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -14984,9 +15091,32 @@ function* enumerate(arr) {
 async function loadSession(name) {
 	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
 }
-async function findRolloutFileByThreadId(parentFileName, threadId) {
+function extractSpawnedAgentId(output) {
+	let obj = output;
+	if (typeof output === "string") try {
+		obj = JSON.parse(output);
+	} catch {
+		return;
+	}
+	if (obj != null && typeof obj === "object") {
+		const id = obj.agent_id;
+		if (typeof id === "string") return id;
+	}
+}
+function resolveSessionsRoot(parentFileName, sessionsRoot) {
+	if (sessionsRoot) return sessionsRoot;
+	let dir = nodePath.dirname(nodePath.resolve(parentFileName));
+	while (true) {
+		if (nodePath.basename(dir) === "sessions") return dir;
+		const up = nodePath.dirname(dir);
+		if (up === dir) break;
+		dir = up;
+	}
+	return nodePath.join(os.homedir(), ".codex", "sessions");
+}
+async function findRolloutFileByThreadId(parentFileName, threadId, sessionsRoot) {
 	const suffix = `-${threadId}.jsonl`;
-	const root = nodePath.resolve(nodePath.dirname(parentFileName), "../../..");
+	const root = resolveSessionsRoot(parentFileName, sessionsRoot);
 	async function walk(dir) {
 		let entries;
 		try {
@@ -15183,6 +15313,11 @@ function convertToStandardMessages(messages) {
 		};
 	});
 }
+const CHILD_SCOPE_RESET = {
+	approval_policy: void 0,
+	ls_subagent_id: void 0,
+	ls_subagent_type: void 0
+};
 function getUsageMetadata(counts) {
 	if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) return;
 	return {
@@ -15222,6 +15357,31 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		now: Date.now(),
 		startTime: parentStartTime
 	};
+	const cwd = (typeof task.context?.cwd === "string" ? task.context.cwd : void 0) ?? sessionMeta?.cwd;
+	const sandboxType = (() => {
+		const policy = task.context?.sandbox_policy;
+		if (typeof policy === "string") return policy;
+		if (policy != null && typeof policy === "object") {
+			const type = policy.type;
+			if (typeof type === "string") return type;
+		}
+	})();
+	const approvalPolicy = (() => {
+		const policy = task.context?.approval_policy;
+		if (typeof policy === "string") return policy;
+		if (policy != null) return JSON.stringify(policy);
+	})();
+	const git = await resolveGitInfo(cwd, sessionMeta?.git);
+	const isSubagent = sessionMeta?.is_subagent === true;
+	const base = codingAgentMetadata({
+		threadId: (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id,
+		turnId: task.turnId?.id,
+		turnNumber: task.turnNumber,
+		cliVersion: sessionMeta?.cli_version,
+		cwd,
+		git,
+		sandboxType
+	});
 	const parentConfig = {
 		name: "openai.codex",
 		client: options?.client,
@@ -15235,13 +15395,14 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		extra: { metadata: {
 			...options?.metadata,
 			...task.context,
+			...base,
+			approval_policy: isSubagent ? void 0 : approvalPolicy,
+			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
+			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
 			codex_cli_version: sessionMeta?.cli_version,
-			turn_id: task.turnId?.id,
-			thread_id: sessionMeta?.session_id,
-			ls_integration: "openai-codex",
-			ls_agent_type: "root",
+			ls_agent_type: isSubagent ? "subagent" : "root",
 			ls_message_format: "anthropic",
-			usage_metadata: getUsageMetadata(task.tokenCount?.total_token_usage)
+			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		} }
 	};
 	const parent = options?.parentRunTree?.createChild(parentConfig) ?? new RunTree(parentConfig);
@@ -15269,8 +15430,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
 		const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
-		const outputStartTime = aiMessage.at(0)?.timestamp.start ?? parentStartTime;
-		const outputEndTime = aiMessage.at(-1)?.timestamp.end ?? outputStartTime;
+		const outputStartTime = inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
+		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (i) => i.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = parent.createChild({
@@ -15282,6 +15443,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			outputs: { messages: aiMessage.map((i) => i.message) },
 			extra: { metadata: {
 				...options?.metadata,
+				...base,
+				...CHILD_SCOPE_RESET,
 				ls_model_type: "chat",
 				ls_provider: sessionMeta?.model_provider,
 				ls_model_name: task.context?.model,
@@ -15300,10 +15463,13 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 				timings: [],
 				outputs: {}
 			};
-			const min = Math.min(toolMessage.timestamp.start, ...toolCall.timings);
+			const callTime = aiMessage.at(0)?.timestamp.start;
+			const min = Math.min(toolMessage.timestamp.start, ...callTime != null ? [callTime] : [], ...toolCall.timings);
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
+			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
+			const runName = nativeToolName ?? "openai.codex.tool";
 			const toolRun = parent.createChild({
-				name: msgToolCall.name ?? "openai.codex.tool",
+				name: runName,
 				run_type: "tool",
 				start_time: min,
 				end_time: max,
@@ -15315,17 +15481,20 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 				error: toolCall.error,
 				extra: { metadata: {
 					...options?.metadata,
+					...base,
+					...CHILD_SCOPE_RESET,
 					ls_model_type: "chat",
 					ls_provider: sessionMeta?.model_provider,
 					ls_model_name: task.context?.model,
 					ls_invocation_params: task.context,
-					usage_metadata: getUsageMetadata(toolMessage.tokenCount)
+					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
+					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
 				} }
 			});
 			PROMISE_QUEUE.push(toolRun.postRun());
 		}
 		for (const subagentThread of subagentThreads ?? []) {
-			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread);
+			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 			if (subagentFile == null) continue;
 			await convertToRunTree({
 				transcript_path: subagentFile,
@@ -15346,6 +15515,7 @@ async function convertToRunTree(input, options) {
 	function createTask() {
 		return {
 			turnId: void 0,
+			turnNumber: void 0,
 			messages: [],
 			userMessageIndex: void 0,
 			context: void 0,
@@ -15353,15 +15523,27 @@ async function convertToRunTree(input, options) {
 			toolCalls: {}
 		};
 	}
+	let turnNumber = 0;
+	const spawnAgentMessages = /* @__PURE__ */ new Map();
 	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
-		if (type === "session_meta") sessionMeta = {
-			session_id: payload.id,
-			model_provider: payload.model_provider ?? void 0,
-			base_instructions: payload.base_instructions?.text,
-			cli_version: payload.cli_version
-		};
+		if (type === "session_meta") {
+			const source = payload.source;
+			const threadSpawn = source != null && typeof source === "object" && "subagent" in source ? source.subagent?.thread_spawn : void 0;
+			sessionMeta = {
+				session_id: payload.id,
+				model_provider: payload.model_provider ?? void 0,
+				base_instructions: payload.base_instructions?.text,
+				cli_version: payload.cli_version,
+				cwd: payload.cwd,
+				git: payload.git,
+				is_subagent: threadSpawn != null,
+				parent_thread_id: threadSpawn?.parent_thread_id ?? void 0,
+				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
+				agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
+			};
+		}
 		if (type === "response_item") {
 			task ??= createTask();
 			const message = {
@@ -15371,6 +15553,11 @@ async function convertToRunTree(input, options) {
 				subagentThreads: []
 			};
 			task.messages.push(message);
+			if (payload.type === "function_call" && payload.name === "spawn_agent") spawnAgentMessages.set(payload.call_id, message);
+			else if (payload.type === "function_call_output" && spawnAgentMessages.has(payload.call_id)) {
+				const childId = extractSpawnedAgentId(payload.output);
+				if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+			}
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 		}
 		if (type === "turn_context") {
@@ -15381,10 +15568,12 @@ async function convertToRunTree(input, options) {
 			const eventTime = Date.parse(timestamp);
 			if (payload.type === "task_started") {
 				task = createTask();
+				turnNumber += 1;
 				task.turnId = {
 					id: payload.turn_id,
 					timestamp: eventTime
 				};
+				task.turnNumber = turnNumber;
 			}
 			if (typeof payload.call_id === "string") {
 				task ??= createTask();
@@ -15430,6 +15619,14 @@ async function convertToRunTree(input, options) {
 			if (payload.type === "task_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
+				if (task.turnId == null && completedTurnId != null) task.turnId = {
+					id: completedTurnId,
+					timestamp: eventTime
+				};
+				if (task.turnNumber == null) {
+					turnNumber += 1;
+					task.turnNumber = turnNumber;
+				}
 				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
 					await postTurn(task, sessionMeta, {
 						rolloutFile: input.transcript_path,

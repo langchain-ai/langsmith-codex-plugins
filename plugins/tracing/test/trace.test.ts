@@ -6,6 +6,10 @@ import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
 
+// Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
+declare const __LS_INTEGRATION_VERSION__: string;
+const INTEGRATION_VERSION = __LS_INTEGRATION_VERSION__;
+
 async function preloadTestFiles(options: { makeTurnIncomplete: boolean }) {
   const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
 
@@ -108,11 +112,20 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
               metadata: expect.objectContaining({
                 codex_cli_version: "0.123.0",
                 turn_id: "019dbc00-ede4-77c2-9e7a-b6876efeab9b",
+                turn_number: 1,
                 thread_id: "019dbc00-a3c9-7681-8e0c-73139815b4f2",
                 ls_integration: "openai-codex",
+                ls_agent_kind: "coding_agent",
+                ls_agent_runtime: "Codex",
+                ls_agent_runtime_version: "0.123.0",
+                ls_trace_schema_version: "coding-agent-v1",
+                ls_integration_version: INTEGRATION_VERSION,
                 ls_agent_type: "root",
+                approval_policy: "on-request",
+                cwd: "/Users/duongtat/Work/ls-codex-sample",
+                sandbox_type: "workspace-write",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_raw_aggregated_usage: expect.objectContaining({
                   input_tokens: 71213,
                   output_tokens: 1627,
                   total_tokens: 72840,
@@ -483,7 +496,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 ls_integration: "openai-codex",
                 ls_agent_type: "root",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_raw_aggregated_usage: expect.objectContaining({
                   input_tokens: 14243,
                   output_tokens: 262,
                   total_tokens: 14505,
@@ -611,7 +624,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 ls_integration: "openai-codex",
                 ls_agent_type: "root",
                 ls_message_format: "anthropic",
-                usage_metadata: expect.objectContaining({
+                ls_raw_aggregated_usage: expect.objectContaining({
                   input_tokens: 84553,
                   output_tokens: 1049,
                   total_tokens: 85602,
@@ -744,9 +757,12 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
               extra: {
                 metadata: expect.objectContaining({
                   turn_id: "019dbc03-79eb-73b1-8c5b-f62bd0095409",
-                  thread_id: "019dbc03-79de-7d53-8196-3167d9a32762",
-                  ls_agent_type: "root",
-                  usage_metadata: expect.objectContaining({
+                  // Subagent groups under the root thread_id; keeps its own id.
+                  thread_id: "019dbc02-cc63-7893-9d13-9b24a7db0ace",
+                  ls_agent_type: "subagent",
+                  ls_subagent_id: "019dbc03-79de-7d53-8196-3167d9a32762",
+                  ls_subagent_type: "Harvey",
+                  ls_raw_aggregated_usage: expect.objectContaining({
                     input_tokens: 10744,
                     output_tokens: 20,
                     total_tokens: 10764,
@@ -787,9 +803,12 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
               extra: {
                 metadata: expect.objectContaining({
                   turn_id: "019dbc03-79fa-7ee0-ad96-27e641f46607",
-                  thread_id: "019dbc03-79ee-7ee0-b40b-26920c74c524",
-                  ls_agent_type: "root",
-                  usage_metadata: expect.objectContaining({
+                  // Subagent groups under the root thread_id; keeps its own id.
+                  thread_id: "019dbc02-cc63-7893-9d13-9b24a7db0ace",
+                  ls_agent_type: "subagent",
+                  ls_subagent_id: "019dbc03-79ee-7ee0-b40b-26920c74c524",
+                  ls_subagent_type: "Leibniz",
+                  ls_raw_aggregated_usage: expect.objectContaining({
                     input_tokens: 21693,
                     output_tokens: 132,
                     total_tokens: 21825,

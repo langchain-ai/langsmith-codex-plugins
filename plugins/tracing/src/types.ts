@@ -18,6 +18,19 @@ export type GitInfo = {
   repository_url?: string;
 };
 
+// `session_meta.source` for a spawned subagent thread.
+export type SubagentSource = {
+  subagent: {
+    thread_spawn: {
+      parent_thread_id?: string;
+      depth?: number;
+      agent_path?: string | null;
+      agent_nickname?: string | null;
+      agent_role?: string | null;
+    };
+  };
+};
+
 export type SessionMetaPayload = {
   id: string;
   forked_from_id?: string;
@@ -1040,6 +1053,14 @@ export type Session = {
   model_provider: string | undefined;
   base_instructions: string | undefined;
   cli_version: string;
+  cwd?: string;
+  git?: GitInfo;
+  // Derived from `session_meta.source` (root vs spawned subagent thread).
+  is_subagent?: boolean;
+  // Parent (root, for depth-1) thread that this subagent groups under.
+  parent_thread_id?: string;
+  agent_role?: string;
+  agent_nickname?: string;
 };
 
 export type TokenCount = {
@@ -1066,6 +1087,8 @@ export type MergedMessage<TMessage> = {
 
 export type Task = {
   turnId: { id: string; timestamp: number } | undefined;
+  // 1-based native turn index within the thread.
+  turnNumber: number | undefined;
   messages: AggregateMessage<ResponseItem>[];
   userMessageIndex: number | undefined;
   context: { model: string; [key: string]: unknown } | undefined;
