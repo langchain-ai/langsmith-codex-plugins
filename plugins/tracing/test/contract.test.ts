@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
+import { codingAgentMetadata } from "../src/metadata.js";
 import { convertToRunTree } from "../src/trace.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
@@ -362,11 +363,19 @@ describe("coding-agent-v1 contract", () => {
     }
   });
 
+  it.each(["root", "subagent", "middleware", "compaction"] as const)(
+    "supports ls_agent_type='%s'",
+    (agentType) => {
+      expect(codingAgentMetadata({ agentType }).ls_agent_type).toBe(agentType);
+    },
+  );
+
   it("maps the frozen literal values and turn markers", async () => {
     const byType = await buildRuns();
     const root = byType.root[0];
 
-    expect(root.ls_agent_kind).toBe("coding_agent");
+    expect(root.ls_agent_purpose).toBe("coding");
+    expect(root.ls_agent_kind).toBeUndefined();
     expect(root.ls_integration).toBe("openai-codex");
     expect(root.ls_agent_runtime).toBe("Codex");
     expect(root.ls_trace_schema_version).toBe("coding-agent-v1");

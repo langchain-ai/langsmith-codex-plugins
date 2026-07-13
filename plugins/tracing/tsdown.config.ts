@@ -10,7 +10,9 @@ const pluginVersion = JSON.parse(
 
 export default defineConfig({
   deps: {
-    alwaysBundle: ["langsmith", "zod"],
+    // Regex so subpath imports (e.g. langsmith/anonymizer) are bundled too; the
+    // cached plugin has no node_modules, so nothing may stay external.
+    alwaysBundle: [/^langsmith(\/.*)?$/, /^zod(\/.*)?$/],
     onlyBundle: false,
   },
   define: {
