@@ -2,7 +2,6 @@ import * as nodeFs from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import * as nodePath from "node:path";
 import { Worker } from "node:worker_threads";
-import { createSecretAnonymizer } from "langsmith/anonymizer";
 import * as os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -11014,6 +11013,243 @@ new AsyncLocalStorageProvider();
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/index.js
 const __version__ = "0.7.13";
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/anonymizer/index.js
+function extractStringNodes(data, options) {
+	const parsedOptions = {
+		...options,
+		maxDepth: options.maxDepth ?? 10
+	};
+	const queue = [[
+		data,
+		0,
+		"",
+		null,
+		""
+	]];
+	let nextId = 0;
+	const result = [];
+	while (queue.length > 0) {
+		const task = queue.shift();
+		if (task == null) continue;
+		const [value, depth, path, parent, key] = task;
+		if (typeof value === "string") result.push({
+			value,
+			path,
+			parent,
+			key,
+			_id: nextId++
+		});
+		else if (Array.isArray(value)) {
+			if (depth >= parsedOptions.maxDepth) continue;
+			for (let i = 0; i < value.length; i++) queue.push([
+				value[i],
+				depth + 1,
+				`${path}[${i}]`,
+				value,
+				String(i)
+			]);
+		} else if (typeof value === "object" && value != null) {
+			if (depth >= parsedOptions.maxDepth) continue;
+			for (const [k, nestedValue] of Object.entries(value)) queue.push([
+				nestedValue,
+				depth + 1,
+				path ? `${path}.${k}` : k,
+				value,
+				k
+			]);
+		}
+	}
+	return result;
+}
+function deepClone(data) {
+	return JSON.parse(JSON.stringify(data));
+}
+function createAnonymizer(replacer, options) {
+	return (data) => {
+		let mutateValue = deepClone(data);
+		const nodes = extractStringNodes(mutateValue, { maxDepth: options?.maxDepth });
+		const processor = Array.isArray(replacer) ? (() => {
+			const replacers = replacer.map(({ pattern, type, replace }) => {
+				if (type != null && type !== "pattern") throw new Error("Invalid anonymizer type");
+				return [typeof pattern === "string" ? new RegExp(pattern, "g") : pattern, replace ?? "[redacted]"];
+			});
+			if (replacers.length === 0) throw new Error("No replacers provided");
+			return { maskNodes: (nodes) => {
+				return nodes.reduce((memo, item) => {
+					const newValue = replacers.reduce((value, [regex, replace]) => {
+						const result = value.replace(regex, replace);
+						regex.lastIndex = 0;
+						return result;
+					}, item.value);
+					if (newValue !== item.value) memo.push({
+						...item,
+						value: newValue
+					});
+					return memo;
+				}, []);
+			} };
+		})() : typeof replacer === "function" ? { maskNodes: (nodes) => nodes.reduce((memo, item) => {
+			const newValue = replacer(item.value, item.path);
+			if (newValue !== item.value) memo.push({
+				...item,
+				value: newValue
+			});
+			return memo;
+		}, []) } : replacer;
+		const nodesById = /* @__PURE__ */ new Map();
+		for (const node of nodes) nodesById.set(node._id, node);
+		const toUpdate = processor.maskNodes(nodes);
+		for (const node of toUpdate) if (node.path === "") mutateValue = node.value;
+		else {
+			const asInternal = node;
+			const internal = asInternal._id !== void 0 ? nodesById.get(asInternal._id) : nodes.find((n) => n.path === node.path);
+			if (internal) internal.parent[internal.key] = node.value;
+		}
+		return mutateValue;
+	};
+}
+/**
+* Replacement token written in place of detected secrets by
+* {@link DEFAULT_SECRET_RULES} / {@link createSecretAnonymizer}.
+*/
+const SECRET_PLACEHOLDER = "[SECRET_DETECTED]";
+/**
+* A curated, high-precision rule set for detecting common credentials in
+* traced data (prompts, tool inputs/outputs, file contents, shell commands).
+*
+* Designed to favor *low false positives* over exhaustive coverage:
+*  - Provider rules are anchored to well-known key prefixes.
+*  - Structural rules only fire when a sensitive *name* (api_key, token,
+*    password, …) is paired with an assignment/separator, so ordinary code,
+*    UUIDs, and hashes are left intact.
+*
+* This is NOT a port of gitleaks/secretlint; pattern shapes are drawn from
+* those projects (and provider docs) as a reference only. Every rule sets an
+* explicit `replace` because {@link createAnonymizer}'s default is
+* `[redacted]`, whereas the shared token here is {@link SECRET_PLACEHOLDER}.
+*
+* Patterns are written to port 1:1 to the Python SDK preset (no lookbehind).
+*/
+const DEFAULT_SECRET_RULES = [
+	{
+		pattern: /sk-ant-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /sk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /sk-[A-Za-z0-9]{32,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /lsv2_(?:pt|sk)_[A-Za-z0-9]{32,}(?:_[A-Za-z0-9]+)*/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /ls__[A-Za-z0-9]{16,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /gh[pousr]_[A-Za-z0-9]{36,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /github_pat_[A-Za-z0-9_]{82}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /glpat-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b(?:AKIA|ASIA|ABIA|ACCA|A3T[A-Z0-9])[0-9A-Z]{16}\b/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /AIza[0-9A-Za-z_-]{35}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /ya29\.[0-9A-Za-z_-]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /xox[baprs]-[A-Za-z0-9-]{10,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /xapp-\d-[A-Za-z0-9-]{10,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{20,}\b/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /npm_[A-Za-z0-9]{36}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /pypi-AgEIcHlwaS[A-Za-z0-9_-]{50,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY(?: BLOCK)?-----[\s\S]+?-----END (?:[A-Z0-9 ]+ )?PRIVATE KEY(?: BLOCK)?-----/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b([A-Za-z0-9_.-]*(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?KEY|AUTH[_-]?TOKEN|CLIENT[_-]?SECRET)(?![A-Za-z0-9])(?:[_.-][A-Za-z0-9]+)*["']?\s*[:=]\s*["']?)(?:(?:bearer|token|basic)\s+)?[^\s"'&;]{6,}/gi,
+		replace: `$1${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b(authorization|x-api-key|x-auth-token)(["']?\s*[:=]\s*["']?)(bearer\s+|token\s+|basic\s+)?[A-Za-z0-9._~+/-]{8,}=*/gi,
+		replace: `$1$2$3${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b(Bearer\s+)[A-Za-z0-9._~+/-]{10,}=*/gi,
+		replace: `$1${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b([a-z][a-z0-9+.-]*:\/\/[^:@/\s]*:)[^@/\s]+(@)/gi,
+		replace: `$1${SECRET_PLACEHOLDER}$2`
+	}
+];
+/**
+* Build an anonymizer pre-loaded with {@link DEFAULT_SECRET_RULES} suitable for
+* passing to `new Client({ anonymizer })`. It redacts detected secrets from run
+* inputs, outputs, and metadata client-side, before they are uploaded.
+*
+* @param options.extraRules - Additional rules appended after the defaults.
+* @param options.maxDepth - Max recursion depth (default 24; higher than
+*   `createAnonymizer`'s default of 10 because traced payloads nest deeply,
+*   e.g. `messages[].content[].args`).
+*
+* @example
+* ```ts
+* import { Client } from "langsmith";
+* import { createSecretAnonymizer } from "langsmith/anonymizer";
+*
+* const client = new Client({ anonymizer: createSecretAnonymizer() });
+* ```
+*/
+function createSecretAnonymizer(options) {
+	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
+}
 //#endregion
 //#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/core.js
 var _a$1;
