@@ -429,7 +429,6 @@ async function postTurn(
           ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
           : undefined,
 
-        // Deprecated compat alias (>=1 release).
         codex_cli_version: sessionMeta?.cli_version,
         ls_message_format: "anthropic",
 
