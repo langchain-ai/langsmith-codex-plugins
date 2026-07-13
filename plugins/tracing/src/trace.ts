@@ -395,6 +395,7 @@ async function postTurn(
 
   // coding-agent-v1 base contract, stamped onto every run below.
   const base = codingAgentMetadata({
+    agentType: isSubagent ? "subagent" : "root",
     threadId: conversationThreadId,
     turnId: task.turnId?.id,
     turnNumber: task.turnNumber,
@@ -428,10 +429,8 @@ async function postTurn(
           ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
           : undefined,
 
-        // Deprecated compat aliases (>=1 release): codex_cli_version,
-        // ls_agent_type.
+        // Deprecated compat alias (>=1 release).
         codex_cli_version: sessionMeta?.cli_version,
-        ls_agent_type: isSubagent ? "subagent" : "root",
         ls_message_format: "anthropic",
 
         // Non-reserved key: backend auto-aggregates child llm usage into the

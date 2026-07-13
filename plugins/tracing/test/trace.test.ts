@@ -115,7 +115,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 turn_number: 1,
                 thread_id: "019dbc00-a3c9-7681-8e0c-73139815b4f2",
                 ls_integration: "openai-codex",
-                ls_agent_kind: "coding_agent",
+                ls_agent_purpose: "coding",
                 ls_agent_runtime: "Codex",
                 ls_agent_runtime_version: "0.123.0",
                 ls_trace_schema_version: "coding-agent-v1",

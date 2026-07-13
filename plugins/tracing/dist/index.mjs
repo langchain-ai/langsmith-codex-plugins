@@ -14970,7 +14970,7 @@ async function markTurnUploaded(rolloutFile, turnId) {
 //#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
-const LS_AGENT_KIND = "coding_agent";
+const LS_AGENT_PURPOSE = "coding";
 const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
@@ -15054,7 +15054,8 @@ async function resolveGitInfo(cwd, sessionGit) {
 function codingAgentMetadata(ctx) {
 	const repo = parseRepository(ctx.git?.repository_url);
 	return stripUndefined({
-		ls_agent_kind: LS_AGENT_KIND,
+		ls_agent_purpose: LS_AGENT_PURPOSE,
+		ls_agent_type: ctx.agentType,
 		ls_integration: LS_INTEGRATION,
 		ls_agent_runtime: LS_AGENT_RUNTIME,
 		thread_id: ctx.threadId,
@@ -15373,8 +15374,10 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 	})();
 	const git = await resolveGitInfo(cwd, sessionMeta?.git);
 	const isSubagent = sessionMeta?.is_subagent === true;
+	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
-		threadId: (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id,
+		agentType: isSubagent ? "subagent" : "root",
+		threadId: conversationThreadId,
 		turnId: task.turnId?.id,
 		turnNumber: task.turnNumber,
 		cliVersion: sessionMeta?.cli_version,
@@ -15400,7 +15403,6 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
 			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
 			codex_cli_version: sessionMeta?.cli_version,
-			ls_agent_type: isSubagent ? "subagent" : "root",
 			ls_message_format: "anthropic",
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		} }
