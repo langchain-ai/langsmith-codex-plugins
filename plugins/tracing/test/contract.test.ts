@@ -67,7 +67,9 @@ const TOKEN_INFO = {
 };
 
 // Root turn that runs one plain tool (exec_command) and spawns one subagent.
-function parentTranscript(): string {
+function parentTranscript(
+  terminal: Record<string, unknown> = { type: "task_complete", turn_id: PARENT_TURN },
+): string {
   return [
     line("session_meta", {
       id: PARENT_THREAD,
@@ -124,7 +126,7 @@ function parentTranscript(): string {
       content: [{ type: "output_text", text: "All done" }],
     }),
     line("event_msg", { type: "token_count", info: TOKEN_INFO }),
-    line("event_msg", { type: "task_complete", turn_id: PARENT_TURN }),
+    line("event_msg", terminal),
   ].join("\n");
 }
 
@@ -228,6 +230,55 @@ async function buildRuns() {
 
   return byType;
 }
+
+async function getRootRunForTerminal(terminal: Record<string, unknown>) {
+  const { client, callSpy } = mockClient();
+  vol.fromJSON({
+    [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(terminal),
+    [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+  });
+
+  await convertToRunTree(
+    {
+      transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+      turn_id: PARENT_TURN,
+    },
+    { client, projectName: "codex" },
+  );
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  return Object.values(tree.data).find(
+    (run) => run.run_type === "chain" && run.parent_run_id == null,
+  );
+}
+
+describe("turn errors", () => {
+  it("marks an interrupted turn as an error", async () => {
+    const run = await getRootRunForTerminal({
+      type: "turn_aborted",
+      turn_id: PARENT_TURN,
+      reason: "interrupted",
+    });
+
+    expect(run?.error).toBe("Turn interrupted");
+  });
+
+  it("reports terminal Codex errors with their details", async () => {
+    const run = await getRootRunForTerminal({
+      type: "task_complete",
+      turn_id: PARENT_TURN,
+      error: {
+        message: "The model failed while generating a response",
+        codex_error_info: "server_overloaded",
+        additional_details: "Try again later",
+      },
+    });
+
+    expect(run?.error).toBe(
+      "The model failed while generating a response — Try again later — server_overloaded",
+    );
+  });
+});
 
 describe("coding-agent-v1 contract", () => {
   // The live failure: the subagent rollout was never emitted. Tracing the PARENT
