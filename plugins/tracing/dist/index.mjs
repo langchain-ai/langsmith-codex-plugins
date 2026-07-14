@@ -15340,6 +15340,40 @@ function extractSpawnedAgentId(output) {
 		if (typeof id === "string") return id;
 	}
 }
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function extractSubagentActivities(payload) {
+	const activities = [];
+	if (payload.type === "sub_agent_activity" && payload.kind === "started") {
+		if (typeof payload.agent_thread_id === "string") activities.push({
+			threadId: payload.agent_thread_id,
+			callId: typeof payload.event_id === "string" ? payload.event_id : void 0
+		});
+		return activities;
+	}
+	if (payload.type !== "item_completed" || !isRecord(payload.item)) return activities;
+	const item = payload.item;
+	const callId = typeof item.id === "string" ? item.id : void 0;
+	if (item.type === "SubAgentActivity" && item.kind === "started" && typeof item.agent_thread_id === "string") activities.push({
+		threadId: item.agent_thread_id,
+		callId
+	});
+	if (item.type === "CollabAgentToolCall" && item.tool === "spawn_agent") {
+		const ids = /* @__PURE__ */ new Set();
+		if (Array.isArray(item.receiver_thread_ids)) {
+			for (const id of item.receiver_thread_ids) if (typeof id === "string") ids.add(id);
+		}
+		if (Array.isArray(item.receiver_agents)) {
+			for (const agent of item.receiver_agents) if (isRecord(agent) && typeof agent.thread_id === "string") ids.add(agent.thread_id);
+		}
+		for (const threadId of ids) activities.push({
+			threadId,
+			callId
+		});
+	}
+	return activities;
+}
 function resolveSessionsRoot(parentFileName, sessionsRoot) {
 	if (sessionsRoot) return sessionsRoot;
 	let dir = nodePath.dirname(nodePath.resolve(parentFileName));
@@ -15664,6 +15698,21 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			length: 1
 		};
 	});
+	const postedSubagentThreads = /* @__PURE__ */ new Set();
+	async function postSubagentThread(subagentThread) {
+		if (postedSubagentThreads.has(subagentThread)) return;
+		postedSubagentThreads.add(subagentThread);
+		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
+		if (subagentFile == null) return;
+		await convertToRunTree({
+			transcript_path: subagentFile,
+			turn_id: findLast(await loadSession(subagentFile), (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
+		}, {
+			...options,
+			parentRunTree: parent,
+			debugNow
+		});
+	}
 	for (const output of outputs) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -15671,7 +15720,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		const outputStartTime = inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
 		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
-		const subagentThreads = findLast(aiMessage, (i) => i.subagentThreads.length > 0)?.subagentThreads;
+		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = parent.createChild({
 			name: "openai.codex.turn",
 			run_type: "llm",
@@ -15731,21 +15780,9 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			});
 			PROMISE_QUEUE.push(toolRun.postRun());
 		}
-		for (const subagentThread of subagentThreads ?? []) {
-			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
-			if (subagentFile == null) continue;
-			await convertToRunTree({
-				transcript_path: subagentFile,
-				turn_id: await (async () => {
-					return findLast(await loadSession(subagentFile), (e) => e.type === "event_msg" && e.payload.turn_id != null)?.payload.turn_id ?? null;
-				})()
-			}, {
-				...options,
-				parentRunTree: parent,
-				debugNow
-			});
-		}
+		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
+	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
 }
 async function convertToRunTree(input, options) {
 	let sessionMeta;
@@ -15758,17 +15795,25 @@ async function convertToRunTree(input, options) {
 			userMessageIndex: void 0,
 			context: void 0,
 			tokenCount: void 0,
+			subagentThreads: [],
 			toolCalls: {}
 		};
 	}
 	let turnNumber = 0;
 	const spawnAgentMessages = /* @__PURE__ */ new Map();
+	function recordSubagentThread(task, threadId, callId) {
+		if (!task.subagentThreads.includes(threadId)) task.subagentThreads.push(threadId);
+		if (callId == null) return;
+		const message = spawnAgentMessages.get(callId);
+		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
+	}
 	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
 			const source = payload.source;
 			const threadSpawn = source != null && typeof source === "object" && "subagent" in source ? source.subagent?.thread_spawn : void 0;
+			const isSubagent = threadSpawn != null || payload.thread_source === "subagent" && typeof payload.parent_thread_id === "string";
 			sessionMeta = {
 				session_id: payload.id,
 				model_provider: payload.model_provider ?? void 0,
@@ -15776,8 +15821,8 @@ async function convertToRunTree(input, options) {
 				cli_version: payload.cli_version,
 				cwd: payload.cwd,
 				git: payload.git,
-				is_subagent: threadSpawn != null,
-				parent_thread_id: threadSpawn?.parent_thread_id ?? void 0,
+				is_subagent: isSubagent,
+				parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0,
 				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
 				agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 			};
@@ -15794,7 +15839,7 @@ async function convertToRunTree(input, options) {
 			if (payload.type === "function_call" && payload.name === "spawn_agent") spawnAgentMessages.set(payload.call_id, message);
 			else if (payload.type === "function_call_output" && spawnAgentMessages.has(payload.call_id)) {
 				const childId = extractSpawnedAgentId(payload.output);
-				if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+				if (childId != null) recordSubagentThread(task, childId, payload.call_id);
 			}
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 		}
@@ -15848,13 +15893,15 @@ async function convertToRunTree(input, options) {
 				if (last != null) last.tokenCount = payload.info?.last_token_usage;
 				task.tokenCount = payload.info ?? void 0;
 			}
-			if (payload.type === "collab_agent_spawn_end") {
-				if (payload.new_thread_id != null) {
-					task ??= createTask();
-					task.messages.at(-1)?.subagentThreads.push(payload.new_thread_id);
-				}
+			for (const activity of extractSubagentActivities(payload)) {
+				task ??= createTask();
+				recordSubagentThread(task, activity.threadId, activity.callId);
 			}
-			if (payload.type === "task_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
+			if (payload.type === "collab_agent_spawn_end" && payload.new_thread_id != null) {
+				task ??= createTask();
+				recordSubagentThread(task, payload.new_thread_id, payload.call_id);
+			}
+			if (payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
 				if (task.turnId == null && completedTurnId != null) task.turnId = {

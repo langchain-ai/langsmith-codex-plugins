@@ -46,6 +46,53 @@ function extractSpawnedAgentId(output: unknown): string | undefined {
   return undefined;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function extractSubagentActivities(payload: Record<string, unknown>) {
+  const activities: { threadId: string; callId?: string }[] = [];
+
+  if (payload.type === "sub_agent_activity" && payload.kind === "started") {
+    if (typeof payload.agent_thread_id === "string") {
+      activities.push({
+        threadId: payload.agent_thread_id,
+        callId: typeof payload.event_id === "string" ? payload.event_id : undefined,
+      });
+    }
+    return activities;
+  }
+
+  if (payload.type !== "item_completed" || !isRecord(payload.item)) return activities;
+
+  const item = payload.item;
+  const callId = typeof item.id === "string" ? item.id : undefined;
+  if (
+    item.type === "SubAgentActivity" &&
+    item.kind === "started" &&
+    typeof item.agent_thread_id === "string"
+  ) {
+    activities.push({ threadId: item.agent_thread_id, callId });
+  }
+
+  if (item.type === "CollabAgentToolCall" && item.tool === "spawn_agent") {
+    const ids = new Set<string>();
+    if (Array.isArray(item.receiver_thread_ids)) {
+      for (const id of item.receiver_thread_ids) {
+        if (typeof id === "string") ids.add(id);
+      }
+    }
+    if (Array.isArray(item.receiver_agents)) {
+      for (const agent of item.receiver_agents) {
+        if (isRecord(agent) && typeof agent.thread_id === "string") ids.add(agent.thread_id);
+      }
+    }
+    for (const threadId of ids) activities.push({ threadId, callId });
+  }
+
+  return activities;
+}
+
 // Anchor at the real sessions root (override, nearest `sessions` ancestor, or
 // ~/.codex/sessions) rather than a fragile fixed depth.
 function resolveSessionsRoot(parentFileName: string, sessionsRoot?: string): string {
@@ -467,6 +514,30 @@ async function postTurn(
     return { start, length: 1 };
   });
 
+  const postedSubagentThreads = new Set<string>();
+  async function postSubagentThread(subagentThread: string) {
+    if (postedSubagentThreads.has(subagentThread)) return;
+    postedSubagentThreads.add(subagentThread);
+
+    const subagentFile = await findRolloutFileByThreadId(
+      rolloutFile,
+      subagentThread,
+      options?.sessionsRoot,
+    );
+    if (subagentFile == null) return;
+
+    const events = await loadSession(subagentFile);
+    const lastEvent = findLast(
+      events,
+      (event) => event.type === "event_msg" && event.payload.turn_id != null,
+    ) as { payload: { turn_id: string } } | undefined;
+
+    await convertToRunTree(
+      { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
+      { ...options, parentRunTree: parent, debugNow },
+    );
+  }
+
   for (const output of outputs) {
     const inputMessages = fullMessages.slice(0, output.start);
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -481,10 +552,9 @@ async function postTurn(
     );
 
     const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
-
     const subagentThreads = findLast(
       aiMessage,
-      (i) => i.subagentThreads.length > 0,
+      (message) => message.subagentThreads.length > 0,
     )?.subagentThreads;
 
     const llmChild = parent.createChild({
@@ -570,30 +640,13 @@ async function postTurn(
     }
 
     for (const subagentThread of subagentThreads ?? []) {
-      const subagentFile = await findRolloutFileByThreadId(
-        rolloutFile,
-        subagentThread,
-        options?.sessionsRoot,
-      );
-
-      if (subagentFile == null) {
-        continue;
-      }
-
-      const lastTurnId = await (async () => {
-        const events = await loadSession(subagentFile);
-        const lastEvent = findLast(
-          events,
-          (e) => e.type === "event_msg" && e.payload.turn_id != null,
-        ) as { payload: { turn_id: string } } | undefined;
-        return lastEvent?.payload.turn_id ?? null;
-      })();
-
-      await convertToRunTree(
-        { transcript_path: subagentFile, turn_id: lastTurnId },
-        { ...options, parentRunTree: parent, debugNow },
-      );
+      await postSubagentThread(subagentThread);
     }
+  }
+
+  // Canonical activity records can arrive without a matching response item.
+  for (const subagentThread of task.subagentThreads) {
+    await postSubagentThread(subagentThread);
   }
 }
 
@@ -620,6 +673,7 @@ export async function convertToRunTree(
       userMessageIndex: undefined,
       context: undefined,
       tokenCount: undefined,
+      subagentThreads: [],
       toolCalls: {},
     };
   }
@@ -630,6 +684,16 @@ export async function convertToRunTree(
   // spawn_agent call_id → its AI message, so the child id from the matching
   // function_call_output attaches there.
   const spawnAgentMessages = new Map<string, { subagentThreads: string[] }>();
+
+  function recordSubagentThread(task: Task, threadId: string, callId?: string) {
+    if (!task.subagentThreads.includes(threadId)) task.subagentThreads.push(threadId);
+
+    if (callId == null) return;
+    const message = spawnAgentMessages.get(callId);
+    if (message != null && !message.subagentThreads.includes(threadId)) {
+      message.subagentThreads.push(threadId);
+    }
+  }
 
   // Turns that have already been uploaded in a previous hook invocation for the
   // same rollout file. Used to avoid replaying completed turns when the user
@@ -645,6 +709,10 @@ export async function convertToRunTree(
           ? (source as SubagentSource).subagent?.thread_spawn
           : undefined;
 
+      const isSubagent =
+        threadSpawn != null ||
+        (payload.thread_source === "subagent" && typeof payload.parent_thread_id === "string");
+
       sessionMeta = {
         session_id: payload.id,
         model_provider: payload.model_provider ?? undefined,
@@ -652,8 +720,8 @@ export async function convertToRunTree(
         cli_version: payload.cli_version,
         cwd: payload.cwd,
         git: payload.git,
-        is_subagent: threadSpawn != null,
-        parent_thread_id: threadSpawn?.parent_thread_id ?? undefined,
+        is_subagent: isSubagent,
+        parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined,
         agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
         agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? undefined,
       };
@@ -677,7 +745,7 @@ export async function convertToRunTree(
         spawnAgentMessages.has(payload.call_id)
       ) {
         const childId = extractSpawnedAgentId(payload.output);
-        if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+        if (childId != null) recordSubagentThread(task, childId, payload.call_id);
       }
 
       // Only capture the user message after we retrieved to turn context,
@@ -760,15 +828,19 @@ export async function convertToRunTree(
         task.tokenCount = payload.info ?? undefined;
       }
 
-      if (payload.type === "collab_agent_spawn_end") {
-        if (payload.new_thread_id != null) {
-          task ??= createTask();
-          task.messages.at(-1)?.subagentThreads.push(payload.new_thread_id);
-        }
+      for (const activity of extractSubagentActivities(payload)) {
+        task ??= createTask();
+        recordSubagentThread(task, activity.threadId, activity.callId);
+      }
+
+      if (payload.type === "collab_agent_spawn_end" && payload.new_thread_id != null) {
+        task ??= createTask();
+        recordSubagentThread(task, payload.new_thread_id, payload.call_id);
       }
 
       if (
         payload.type === "task_complete" ||
+        payload.type === "turn_complete" ||
         payload.type === "turn_aborted" ||
         (task != null && index === arr.length - 1 && input.turn_id != null)
       ) {
