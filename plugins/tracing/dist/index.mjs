@@ -11640,7 +11640,7 @@ function flattenError(error, mapper = (issue) => issue.message) {
 		fieldErrors
 	};
 }
-function formatError(error, mapper = (issue) => issue.message) {
+function formatError$1(error, mapper = (issue) => issue.message) {
 	const fieldErrors = { _errors: [] };
 	const processError = (error, path = []) => {
 		for (const issue of error.issues) if (issue.code === "invalid_union" && issue.errors.length) issue.errors.map((issues) => processError({ issues }, [...path, ...issue.path]));
@@ -14329,7 +14329,7 @@ const initializer = (inst, issues) => {
 	$ZodError.init(inst, issues);
 	inst.name = "ZodError";
 	Object.defineProperties(inst, {
-		format: { value: (mapper) => formatError(inst, mapper) },
+		format: { value: (mapper) => formatError$1(inst, mapper) },
 		flatten: { value: (mapper) => flattenError(inst, mapper) },
 		addIssue: { value: (issue) => {
 			inst.issues.push(issue);
@@ -15343,6 +15343,27 @@ function extractSpawnedAgentId(output) {
 function isRecord(value) {
 	return value != null && typeof value === "object" && !Array.isArray(value);
 }
+function formatError(value) {
+	if (value == null) return void 0;
+	if (typeof value === "string") return value || void 0;
+	if (isPrimitive(value)) return String(value);
+	if (isRecord(value)) {
+		const message = typeof value.message === "string" ? value.message : void 0;
+		const details = typeof value.additional_details === "string" ? value.additional_details : void 0;
+		const info = value.codex_error_info;
+		const parts = [
+			message,
+			details,
+			typeof info === "string" ? info : info != null ? JSON.stringify(info) : void 0
+		].filter((part) => part != null && part.length > 0);
+		if (parts.length > 0) return parts.join(" — ");
+	}
+	try {
+		return JSON.stringify(value);
+	} catch {
+		return String(value);
+	}
+}
 function extractSubagentActivities(payload) {
 	const activities = [];
 	if (payload.type === "sub_agent_activity" && payload.kind === "started") {
@@ -15663,6 +15684,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		replicas: options?.replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
+		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
 		extra: { metadata: {
@@ -15795,6 +15817,7 @@ async function convertToRunTree(input, options) {
 			userMessageIndex: void 0,
 			context: void 0,
 			tokenCount: void 0,
+			error: void 0,
 			subagentThreads: [],
 			toolCalls: {}
 		};
@@ -15900,6 +15923,20 @@ async function convertToRunTree(input, options) {
 			if (payload.type === "collab_agent_spawn_end" && payload.new_thread_id != null) {
 				task ??= createTask();
 				recordSubagentThread(task, payload.new_thread_id, payload.call_id);
+			}
+			if (payload.type === "stream_error") {
+				task ??= createTask();
+				task.error = formatError(payload);
+			}
+			if (payload.type === "task_complete" || payload.type === "turn_complete") {
+				task ??= createTask();
+				task.error = formatError(payload.error);
+			}
+			if (payload.type === "turn_aborted") {
+				task ??= createTask();
+				const explicitError = formatError(payload.error);
+				if (explicitError != null) task.error = explicitError;
+				else if (task.error == null && payload.reason !== "review_ended") task.error = payload.reason === "interrupted" ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
 			}
 			if (payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();

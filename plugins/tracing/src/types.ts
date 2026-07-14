@@ -383,6 +383,7 @@ export type TurnCompletePayload = {
   type: "turn_complete";
   turn_id: string;
   last_agent_message?: string | null;
+  error?: unknown;
   completed_at?: number;
   duration_ms?: number;
   time_to_first_token_ms?: number;
@@ -393,6 +394,7 @@ export type TaskCompletePayload = {
   type: "task_complete";
   turn_id: string;
   last_agent_message?: string | null;
+  error?: unknown;
   completed_at?: number;
   duration_ms?: number;
   time_to_first_token_ms?: number;
@@ -1106,6 +1108,7 @@ export type Task = {
   userMessageIndex: number | undefined;
   context: { model: string; [key: string]: unknown } | undefined;
   tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
+  error: string | undefined;
   subagentThreads: string[];
   toolCalls: {
     [callId: string]: {
