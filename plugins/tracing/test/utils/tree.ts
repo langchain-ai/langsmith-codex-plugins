@@ -24,11 +24,9 @@ export async function getAssumedTreeFromCalls(
     return idx;
   }
 
-  function getId(id: string) {
-    const stableId = upsertId(id);
-
-    const name = nodeMap[id].name;
-    return [name, stableId].join(":");
+  function getDottedOrder(id: string): string | undefined {
+    const dottedOrder = (nodeMap[id] as { dotted_order?: unknown } | undefined)?.dotted_order;
+    return typeof dottedOrder === "string" ? dottedOrder : undefined;
   }
 
   for (let i = 0; i < calls.length; ++i) {
@@ -65,12 +63,43 @@ export async function getAssumedTreeFromCalls(
     }
   }
 
+  const hasSubagentRuns = idMap.some((id) => {
+    const metadata = (
+      nodeMap[id] as { extra?: { metadata?: { ls_agent_type?: unknown } } } | undefined
+    )?.extra?.metadata;
+    return metadata?.ls_agent_type === "subagent";
+  });
+  const orderedIds = idMap.filter((id) => nodeMap[id] != null);
+  if (!hasSubagentRuns) {
+    orderedIds.sort((left, right) => {
+      const leftDottedOrder = getDottedOrder(left);
+      const rightDottedOrder = getDottedOrder(right);
+      if (leftDottedOrder != null && rightDottedOrder != null) {
+        return leftDottedOrder.localeCompare(rightDottedOrder);
+      }
+      if (leftDottedOrder != null) return -1;
+      if (rightDottedOrder != null) return 1;
+      return idMap.indexOf(left) - idMap.indexOf(right);
+    });
+  }
+  const orderedIdMap = new Map(orderedIds.map((id, idx) => [id, idx] as const));
+
+  function getId(id: string) {
+    const stableId = orderedIdMap.get(id) ?? upsertId(id);
+    const name = nodeMap[id].name;
+    return [name, stableId].join(":");
+  }
+
+  const orderedEdges = hasSubagentRuns
+    ? edges
+    : [...edges].sort(
+        ([, left], [, right]) => (orderedIdMap.get(left) ?? 0) - (orderedIdMap.get(right) ?? 0),
+      );
+
   return {
-    nodes: idMap.map(getId),
-    edges: edges.map(([source, target]) => [getId(source), getId(target)]),
-    data: Object.fromEntries(
-      Object.entries(nodeMap).map(([id, value]) => [getId(id), value] as const),
-    ),
+    nodes: orderedIds.map(getId),
+    edges: orderedEdges.map(([source, target]) => [getId(source), getId(target)]),
+    data: Object.fromEntries(orderedIds.map((id) => [getId(id), nodeMap[id]] as const)),
   };
 }
 

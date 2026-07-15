@@ -29,22 +29,22 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/regex.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/regex.js
 var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/validate.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/validate.js
 function validate(uuid) {
 	return typeof uuid === "string" && regex_default.test(uuid);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/parse.js
 function parse$1(uuid) {
 	if (!validate(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/stringify.js
 /**
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -55,13 +55,13 @@ function unsafeStringify(arr, offset = 0) {
 	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/rng.js
-const rnds8 = new Uint8Array(16);
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/rng.js
+const rnds8 = /* @__PURE__ */ new Uint8Array(16);
 function rng() {
 	return crypto.getRandomValues(rnds8);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v4.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/v4.js
 function v4(options, buf, offset) {
 	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
 	return _v4(options, buf, offset);
@@ -81,7 +81,7 @@ function _v4(options, buf, offset) {
 	return unsafeStringify(rnds);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/sha1.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/sha1.js
 function f(s, x, y, z) {
 	switch (s) {
 		case 0: return x & y ^ ~x & z;
@@ -115,7 +115,7 @@ function sha1(bytes) {
 	const N = Math.ceil(l / 16);
 	const M = new Array(N);
 	for (let i = 0; i < N; ++i) {
-		const arr = new Uint32Array(16);
+		const arr = /* @__PURE__ */ new Uint32Array(16);
 		for (let j = 0; j < 16; ++j) arr[j] = bytes[i * 64 + j * 4] << 24 | bytes[i * 64 + j * 4 + 1] << 16 | bytes[i * 64 + j * 4 + 2] << 8 | bytes[i * 64 + j * 4 + 3];
 		M[i] = arr;
 	}
@@ -123,7 +123,7 @@ function sha1(bytes) {
 	M[N - 1][14] = Math.floor(M[N - 1][14]);
 	M[N - 1][15] = (bytes.length - 1) * 8 & 4294967295;
 	for (let i = 0; i < N; ++i) {
-		const W = new Uint32Array(80);
+		const W = /* @__PURE__ */ new Uint32Array(80);
 		for (let t = 0; t < 16; ++t) W[t] = M[i][t];
 		for (let t = 16; t < 80; ++t) W[t] = ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
 		let a = H[0];
@@ -149,7 +149,7 @@ function sha1(bytes) {
 	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v35.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/v35.js
 function stringToBytes(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
@@ -178,14 +178,14 @@ function v35(version, hash, value, namespace, buf, offset) {
 	return unsafeStringify(bytes);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v5.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/v5.js
 function v5(value, namespace, buf, offset) {
 	return v35(80, sha1, value, namespace, buf, offset);
 }
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v7.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
 function v7(options, buf, offset) {
 	let bytes;
@@ -213,7 +213,7 @@ function updateV7State(state, now, rnds) {
 function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
 	if (!buf) {
-		buf = new Uint8Array(16);
+		buf = /* @__PURE__ */ new Uint8Array(16);
 		offset = 0;
 	} else if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
 	msecs ??= Date.now();
@@ -237,7 +237,7 @@ function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	return buf;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/experimental/otel/constants.js
 const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
 const GEN_AI_SYSTEM = "gen_ai.system";
 const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
@@ -273,7 +273,7 @@ const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
 const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
 const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/env.js
 let globalEnv;
 const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
 const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
@@ -395,7 +395,7 @@ function getShas() {
 function getOtelEnabled() {
 	return getEnvironmentVariable("OTEL_ENABLED") === "true" || getLangSmithEnvironmentVariable("OTEL_ENABLED") === "true";
 }
-const _VALID_TRACING_MODES = new Set(["langsmith", "otel"]);
+const _VALID_TRACING_MODES = /* @__PURE__ */ new Set(["langsmith", "otel"]);
 /**
 * Resolve the effective tracing mode from an explicit config value and
 * environment variables.
@@ -416,7 +416,7 @@ function resolveTracingMode(configValue) {
 	return "langsmith";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/otel.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/singletons/otel.js
 var MockTracer = class {
 	constructor() {
 		Object.defineProperty(this, "hasWarned", {
@@ -517,7 +517,7 @@ function getDefaultOTLPTracerComponents() {
 	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/translator.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/experimental/otel/translator.js
 const WELL_KNOWN_OPERATION_NAMES = {
 	llm: "chat",
 	tool: "execute_tool",
@@ -737,10 +737,10 @@ var LangSmithToOTELTranslator = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/is-network-error/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/is-network-error/index.js
 const objectToString = Object.prototype.toString;
 const isError = (value) => objectToString.call(value) === "[object Error]";
-const errorMessages = new Set([
+const errorMessages = /* @__PURE__ */ new Set([
 	"network error",
 	"Failed to fetch",
 	"NetworkError when attempting to fetch resource.",
@@ -759,7 +759,7 @@ function isNetworkError(error) {
 	return errorMessages.has(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-retry/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/p-retry/index.js
 function validateRetries(retries) {
 	if (typeof retries === "number") {
 		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
@@ -1236,7 +1236,7 @@ var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = PriorityQueue;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-queue.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/p-queue.js
 var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const EventEmitter = require_eventemitter3();
@@ -1486,7 +1486,7 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 })))(), 1);
 const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/async_caller.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/async_caller.js
 const STATUS_RETRYABLE = [
 	408,
 	425,
@@ -1593,7 +1593,7 @@ var AsyncCaller = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/messages.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/messages.js
 function isLangChainMessage(message) {
 	return typeof message?._getType === "function";
 }
@@ -1606,7 +1606,7 @@ function convertLangChainMessageToExample(message) {
 	return converted;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -1616,12 +1616,12 @@ let uuid4 = function() {
 		uuid4 = crypto.randomUUID.bind(crypto);
 		return crypto.randomUUID();
 	}
-	const u8 = new Uint8Array(1);
+	const u8 = /* @__PURE__ */ new Uint8Array(1);
 	const randomByte = crypto ? () => crypto.getRandomValues(u8)[0] : () => Math.random() * 255 & 255;
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/errors.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/errors.js
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -1644,7 +1644,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/core/error.js
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -1723,7 +1723,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -1756,13 +1756,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/version.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/version.js
 const VERSION = "0.0.1";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -1877,7 +1877,7 @@ const getPlatformHeaders = () => {
 	return _platformHeaders ??= getPlatformProperties();
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/shims.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/shims.js
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -1917,7 +1917,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -1925,7 +1925,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -1933,7 +1933,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -1992,7 +1992,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -2164,12 +2164,12 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -2222,7 +2222,7 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/parse.js
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
@@ -2245,7 +2245,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
 var __classPrivateFieldSet$2 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2338,7 +2338,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/pagination.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/core/pagination.js
 var __classPrivateFieldSet$1 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2480,31 +2480,6 @@ var OffsetPaginationOnlineEvaluators = class extends AbstractPage {
 		};
 	}
 };
-var OffsetPaginationInsightsClusteringJobs = class extends AbstractPage {
-	constructor(client, response, body, options) {
-		super(client, response, body, options);
-		Object.defineProperty(this, "clustering_jobs", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		this.clustering_jobs = body.clustering_jobs || [];
-	}
-	getPaginatedItems() {
-		return this.clustering_jobs ?? [];
-	}
-	nextPageRequestOptions() {
-		const currentCount = (this.options.query.offset ?? 0) + this.getPaginatedItems().length;
-		return {
-			...this.options,
-			query: {
-				...maybeObj(this.options.query),
-				offset: currentCount
-			}
-		};
-	}
-};
 var ItemsCursorPostPagination = class extends AbstractPage {
 	constructor(client, response, body, options) {
 		super(client, response, body, options);
@@ -2539,7 +2514,7 @@ var ItemsCursorPostPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -2608,7 +2583,7 @@ const addFormValue = async (form, key, value) => {
 	else throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${value} instead`);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -2666,7 +2641,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/resource.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/core/resource.js
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -2679,7 +2654,7 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -2736,7 +2711,7 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/comparative.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/comparative.js
 var Comparative = class extends APIResource {
 	/**
 	* Create a comparative experiment.
@@ -2755,34 +2730,22 @@ var Comparative = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiments.js
-var Experiments = class extends APIResource {
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
+var ExperimentRuns = class extends APIResource {
 	/**
-	* Stream grouped and aggregated experiments.
+	* Returns a paginated page of dataset examples with runs from the requested
+	* experiments. Response uses the canonical `{items, next_cursor}` envelope.
 	*/
-	grouped(datasetID, body, options) {
-		return this._client.post(path$1`/api/v1/datasets/${datasetID}/experiments/grouped`, {
+	create(datasetID, body, options) {
+		return this._client.getAPIList(path$1`/v2/datasets/${datasetID}/experiment-runs`, ItemsCursorPostPagination, {
 			body,
+			method: "post",
 			...options
 		});
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/group.js
-var Group = class extends APIResource {
-	/**
-	* Fetch examples for a dataset, and fetch the runs for each example if they are
-	* associated with the given session_ids.
-	*/
-	runs(datasetID, body, options) {
-		return this._client.post(path$1`/api/v1/datasets/${datasetID}/group/runs`, {
-			body,
-			...options
-		});
-	}
-};
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/runs.js
 var Runs$1 = class extends APIResource {
 	/**
 	* Fetch examples for a dataset, and fetch the runs for each example if they are
@@ -2796,19 +2759,9 @@ var Runs$1 = class extends APIResource {
 			...options
 		});
 	}
-	/**
-	* Fetch the number of regressions/improvements for each example in a dataset,
-	* between sessions[0] and sessions[1].
-	*/
-	delta(datasetID, body, options) {
-		return this._client.post(path$1`/api/v1/datasets/${datasetID}/runs/delta`, {
-			body,
-			...options
-		});
-	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/share.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/share.js
 var Share = class extends APIResource {
 	/**
 	* Share a dataset.
@@ -2834,7 +2787,7 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/splits.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/splits.js
 var Splits = class extends APIResource {
 	/**
 	* Update Dataset Splits
@@ -2856,7 +2809,7 @@ var Splits = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/versions.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/versions.js
 var Versions = class extends APIResource {
 	/**
 	* Get dataset versions.
@@ -2878,7 +2831,7 @@ var Versions = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -2894,17 +2847,11 @@ var Datasets = class extends APIResource {
 			writable: true,
 			value: new Runs$1(this._client)
 		});
-		Object.defineProperty(this, "group", {
+		Object.defineProperty(this, "experimentRuns", {
 			enumerable: true,
 			configurable: true,
 			writable: true,
-			value: new Group(this._client)
-		});
-		Object.defineProperty(this, "experiments", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: new Experiments(this._client)
+			value: new ExperimentRuns(this._client)
 		});
 		Object.defineProperty(this, "share", {
 			enumerable: true,
@@ -3043,13 +2990,12 @@ var Datasets = class extends APIResource {
 };
 Datasets.Versions = Versions;
 Datasets.Runs = Runs$1;
-Datasets.Group = Group;
-Datasets.Experiments = Experiments;
+Datasets.ExperimentRuns = ExperimentRuns;
 Datasets.Share = Share;
 Datasets.Comparative = Comparative;
 Datasets.Splits = Splits;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/info.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/info.js
 var Info = class extends APIResource {
 	/**
 	* Get information about the current deployment of LangSmith.
@@ -3059,7 +3005,7 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/headers.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/headers.js
 const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
 	if (!headers) return;
@@ -3119,7 +3065,7 @@ const buildHeaders = (newHeaders) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -3196,10 +3142,10 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/rules.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/runs/rules.js
 var Rules = class extends APIResource {};
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3271,7 +3217,7 @@ var Runs = class extends APIResource {
 };
 Runs.Rules = Rules;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -3365,7 +3311,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -3411,7 +3357,7 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
 var Snapshots = class extends APIResource {
 	/**
 	* Create a snapshot from a Docker image (async build).
@@ -3449,7 +3395,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3477,75 +3423,10 @@ Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/insights.js
-var Insights = class extends APIResource {
-	/**
-	* Create an insights job.
-	*/
-	create(sessionID, body, options) {
-		return this._client.post(path$1`/api/v1/sessions/${sessionID}/insights`, {
-			body,
-			...options
-		});
-	}
-	/**
-	* Update a session cluster job.
-	*/
-	update(jobID, params, options) {
-		const { session_id, ...body } = params;
-		return this._client.patch(path$1`/api/v1/sessions/${session_id}/insights/${jobID}`, {
-			body,
-			...options
-		});
-	}
-	/**
-	* Get all clusters for a session.
-	*/
-	list(sessionID, query = {}, options) {
-		return this._client.getAPIList(path$1`/api/v1/sessions/${sessionID}/insights`, OffsetPaginationInsightsClusteringJobs, {
-			query,
-			...options
-		});
-	}
-	/**
-	* Delete a session cluster job.
-	*/
-	delete(jobID, params, options) {
-		const { session_id } = params;
-		return this._client.delete(path$1`/api/v1/sessions/${session_id}/insights/${jobID}`, options);
-	}
-	/**
-	* Get a specific cluster job for a session.
-	*/
-	retrieveJob(jobID, params, options) {
-		const { session_id } = params;
-		return this._client.get(path$1`/api/v1/sessions/${session_id}/insights/${jobID}`, options);
-	}
-	/**
-	* Get all runs for a cluster job, optionally filtered by cluster.
-	*/
-	retrieveRuns(jobID, params, options) {
-		const { session_id, ...query } = params;
-		return this._client.get(path$1`/api/v1/sessions/${session_id}/insights/${jobID}/runs`, {
-			query,
-			...options
-		});
-	}
-};
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/sessions.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/resources/sessions.js
 var Sessions = class extends APIResource {
-	constructor() {
-		super(...arguments);
-		Object.defineProperty(this, "insights", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: new Insights(this._client)
-		});
-	}
 	/**
-	* Create a new session.
+	* Create a new project.
 	*/
 	create(params, options) {
 		const { upsert, ...body } = params;
@@ -3556,27 +3437,27 @@ var Sessions = class extends APIResource {
 		});
 	}
 	/**
-	* Get a specific session.
+	* Get a specific project.
 	*/
-	retrieve(sessionID, params = {}, options) {
+	retrieve(project_id, params = {}, options) {
 		const { accept, ...query } = params ?? {};
-		return this._client.get(path$1`/api/v1/sessions/${sessionID}`, {
+		return this._client.get(path$1`/api/v1/sessions/${project_id}`, {
 			query,
 			...options,
 			headers: buildHeaders([{ ...accept != null ? { accept } : void 0 }, options?.headers])
 		});
 	}
 	/**
-	* Update a session.
+	* Update a project.
 	*/
-	update(sessionID, body, options) {
-		return this._client.patch(path$1`/api/v1/sessions/${sessionID}`, {
+	update(project_id, body, options) {
+		return this._client.patch(path$1`/api/v1/sessions/${project_id}`, {
 			body,
 			...options
 		});
 	}
 	/**
-	* Get all sessions.
+	* List all projects.
 	*/
 	list(params = {}, options) {
 		const { accept, ...query } = params ?? {};
@@ -3587,26 +3468,14 @@ var Sessions = class extends APIResource {
 		});
 	}
 	/**
-	* Delete a specific session.
+	* Delete a specific project.
 	*/
-	delete(sessionID, options) {
-		return this._client.delete(path$1`/api/v1/sessions/${sessionID}`, options);
-	}
-	/**
-	* Get a prebuilt dashboard for a tracing project.
-	*/
-	dashboard(sessionID, params, options) {
-		const { accept, ...body } = params;
-		return this._client.post(path$1`/api/v1/sessions/${sessionID}/dashboard`, {
-			body,
-			...options,
-			headers: buildHeaders([{ ...accept != null ? { accept } : void 0 }, options?.headers])
-		});
+	delete(project_id, options) {
+		return this._client.delete(path$1`/api/v1/sessions/${project_id}`, options);
 	}
 };
-Sessions.Insights = Insights;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
 /**
 * Read an environment variable.
 *
@@ -3619,7 +3488,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/_openapi_client/client.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -4237,7 +4106,7 @@ Langsmith.OnlineEvaluators = OnlineEvaluators;
 Langsmith.Info = Info;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/warn.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/warn.js
 const warnedMessages = {};
 function warnOnce(message) {
 	if (!warnedMessages[message]) {
@@ -4246,7 +4115,7 @@ function warnOnce(message) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/xxhash/xxhash.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/xxhash/xxhash.js
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -4507,7 +4376,7 @@ function XXH3_128(data, seed = n(0)) {
 * @returns 16-byte Uint8Array in little-endian byte order
 */
 function xxh128ToBytes(hash128) {
-	const result = new Uint8Array(16);
+	const result = /* @__PURE__ */ new Uint8Array(16);
 	const view = new DataView(result.buffer);
 	const low64 = hash128 & mask64;
 	const high64 = hash128 >> n(64);
@@ -4516,7 +4385,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/_uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/_uuid.js
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -4554,7 +4423,7 @@ function getUuidVersion(uuidStr) {
 */
 function uuidToBytes(uuidStr) {
 	const hex = uuidStr.replace(/-/g, "");
-	const bytes = new Uint8Array(16);
+	const bytes = /* @__PURE__ */ new Uint8Array(16);
 	for (let i = 0; i < 16; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
 	return bytes;
 }
@@ -4610,7 +4479,7 @@ function _fastHash128(str) {
 */
 function nonCryptographicUuid7Deterministic(originalId, key) {
 	const h = _fastHash128(`${originalId}:${key}`);
-	const b = new Uint8Array(16);
+	const b = /* @__PURE__ */ new Uint8Array(16);
 	if (getUuidVersion(originalId) === 7) {
 		const originalBytes = uuidToBytes(originalId);
 		b.set(originalBytes.slice(0, 6), 0);
@@ -4630,10 +4499,10 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/constants.js
 const _MIN_BACKEND_VERSION = "0.16.6rc1";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/error.js
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -4765,7 +4634,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompts.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/prompts.js
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -4793,7 +4662,7 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/fs.js
 /**
 * File system abstraction (Node.js version).
 *
@@ -4853,7 +4722,7 @@ async function rmRecursive(filePath) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompt_cache/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/prompt_cache/index.js
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -5135,13 +5004,12 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/fetch.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/singletons/fetch.js
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
-let globalFetchSupportsWebStreaming = void 0;
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
 const _shouldStreamForGlobalFetchImplementation = () => {
 	if (globalThis[LANGSMITH_FETCH_IMPLEMENTATION_KEY] === void 0) return true;
-	return globalFetchSupportsWebStreaming ?? false;
+	return false;
 };
 /**
 * @internal
@@ -5158,7 +5026,7 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/profile-lock.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/profile-lock.js
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
@@ -5445,7 +5313,7 @@ function authHeaderFromProfile(profile) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -5694,7 +5562,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/worker_threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/worker_threads.js
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -5706,7 +5574,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/serialize_worker.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/serialize_worker.js
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -6030,7 +5898,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/client.js
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -6398,6 +6266,12 @@ var Client = class Client {
 			writable: true,
 			value: void 0
 		});
+		Object.defineProperty(this, "anonymizer", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
 		Object.defineProperty(this, "omitTracedRuntimeInfo", {
 			enumerable: true,
 			configurable: true,
@@ -6633,6 +6507,7 @@ var Client = class Client {
 		this.hideInputs = config.hideInputs ?? config.anonymizer ?? defaultConfig.hideInputs;
 		this.hideOutputs = config.hideOutputs ?? config.anonymizer ?? defaultConfig.hideOutputs;
 		this.hideMetadata = config.hideMetadata ?? defaultConfig.hideMetadata;
+		this.anonymizer = config.anonymizer;
 		this.omitTracedRuntimeInfo = config.omitTracedRuntimeInfo ?? false;
 		this.autoBatchTracing = config.autoBatchTracing ?? this.autoBatchTracing;
 		this.autoBatchQueue = new AutoBatchQueue(maxMemory);
@@ -6759,6 +6634,14 @@ var Client = class Client {
 	get sandboxes() {
 		return this.openAPIClient.sandboxes;
 	}
+	/** Access the projects resource. */
+	get projects() {
+		return this.openAPIClient.sessions;
+	}
+	/** Access the v2 datasets resource (experimentRuns, etc.). */
+	get datasets() {
+		return this.openAPIClient.datasets;
+	}
 	async processInputs(inputs) {
 		if (this.hideInputs === false) return inputs;
 		if (this.hideInputs === true) return {};
@@ -6778,6 +6661,23 @@ var Client = class Client {
 		return metadata;
 	}
 	/**
+	* Apply the configured anonymizer to a run's error string.
+	*
+	* Unlike inputs/outputs, `error` is a plain string (an exception message or
+	* traceback) that can carry credentials the user never explicitly logged --
+	* e.g. an HTTP-client error whose message embeds an `Authorization` header.
+	* The anonymizer is typed `(KVMap) => KVMap`, so the string is wrapped as
+	* `{ error }`, scrubbed, and unwrapped. Mirrors the Python SDK's
+	* `Client._hide_run_error`.
+	*
+	* TODO: Update anonymizer to always nest inputs/outputs/error for consistency
+	*/
+	async processError(error) {
+		if (this.anonymizer == null) return error;
+		const result = await this.anonymizer({ error });
+		return typeof result?.error === "string" ? result.error : error;
+	}
+	/**
 	* Filter content from new_token events to prevent streaming LLM output
 	* from being uploaded via events.
 	*/
@@ -6795,6 +6695,7 @@ var Client = class Client {
 		const runParams = { ...run };
 		if (runParams.inputs !== void 0) runParams.inputs = await this.processInputs(runParams.inputs);
 		if (runParams.outputs !== void 0) runParams.outputs = await this.processOutputs(runParams.outputs);
+		if (runParams.error !== void 0) runParams.error = await this.processError(runParams.error);
 		if (runParams.extra != null && "metadata" in runParams.extra) runParams.extra = {
 			...runParams.extra,
 			metadata: await this.processMetadata(runParams.extra.metadata)
@@ -7403,6 +7304,7 @@ var Client = class Client {
 		assertUuid(runId);
 		if (run.inputs) run.inputs = await this.processInputs(run.inputs);
 		if (run.outputs) run.outputs = await this.processOutputs(run.outputs);
+		if (run.error) run.error = await this.processError(run.error);
 		if (run.extra != null && "metadata" in run.extra) run.extra = {
 			...run.extra,
 			metadata: await this.processMetadata(run.extra.metadata)
@@ -10143,17 +10045,17 @@ function isExampleCreate(input) {
 	return "dataset_id" in input || "dataset_name" in input;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/env.js
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/singletons/constants.js
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/context_vars.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/context_vars.js
 /**
 * Get a context variable from a run tree instance
 */
@@ -10169,13 +10071,12 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/project.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/utils/project.js
 const getDefaultProjectName = () => {
 	return getLangSmithEnvironmentVariable("PROJECT") ?? getEnvironmentVariable("LANGCHAIN_SESSION") ?? "default";
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/run_trees.js
-const TIMESTAMP_LENGTH = 36;
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
 	return v5(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
@@ -10194,7 +10095,7 @@ function convertToDottedOrderFormat(epoch, runId, executionOrder = 1) {
 		microsecondPrecisionDatestring
 	};
 }
-const HEADER_SAFE_REPLICA_FIELDS = new Set([
+const HEADER_SAFE_REPLICA_FIELDS = /* @__PURE__ */ new Set([
 	"projectName",
 	"updates",
 	"reroot"
@@ -10618,14 +10519,14 @@ var RunTree = class RunTree {
 		if (run.dotted_order) {
 			const segs = run.dotted_order.split(".");
 			let startIdx = null;
-			for (let idx = 0; idx < segs.length; idx++) if (segs[idx].slice(-TIMESTAMP_LENGTH) === parentId) {
+			for (let idx = 0; idx < segs.length; idx++) if (segs[idx].slice(-36) === parentId) {
 				startIdx = idx;
 				break;
 			}
 			if (startIdx !== null) {
 				const trimmedSegs = segs.slice(startIdx + 1);
 				run.dotted_order = trimmedSegs.join(".");
-				if (trimmedSegs.length > 0) run.trace_id = trimmedSegs[0].slice(-TIMESTAMP_LENGTH);
+				if (trimmedSegs.length > 0) run.trace_id = trimmedSegs[0].slice(-36);
 				else run.trace_id = run.id;
 			}
 		}
@@ -10677,7 +10578,7 @@ var RunTree = class RunTree {
 				if (baseRun.dotted_order) {
 					const segs = baseRun.dotted_order.split(".");
 					let rootIdx = null;
-					for (let idx = 0; idx < segs.length; idx++) if (segs[idx].slice(-TIMESTAMP_LENGTH) === ancestorRerootedTraceId) {
+					for (let idx = 0; idx < segs.length; idx++) if (segs[idx].slice(-36) === ancestorRerootedTraceId) {
 						rootIdx = idx;
 						break;
 					}
@@ -10694,8 +10595,8 @@ var RunTree = class RunTree {
 		if (baseRun.parent_run_id) newParentId = nonCryptographicUuid7Deterministic(baseRun.parent_run_id, projectName);
 		let newDottedOrder;
 		if (baseRun.dotted_order) newDottedOrder = baseRun.dotted_order.split(".").map((seg) => {
-			const remappedId = nonCryptographicUuid7Deterministic(seg.slice(-TIMESTAMP_LENGTH), projectName);
-			return seg.slice(0, -TIMESTAMP_LENGTH) + remappedId;
+			const remappedId = nonCryptographicUuid7Deterministic(seg.slice(-36), projectName);
+			return seg.slice(0, -36) + remappedId;
 		}).join(".");
 		return {
 			...baseRun,
@@ -10993,7 +10894,7 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/traceable.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/singletons/traceable.js
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -11012,10 +10913,10 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/index.js
-const __version__ = "0.7.13";
+//#region ../../node_modules/.pnpm/langsmith@0.7.14_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_ee98d68751acec04e79b153aed571b67/node_modules/langsmith/dist/index.js
+const __version__ = "0.7.14";
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/core.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
 var _a$1;
 function $constructor(name, initializer, params) {
 	function init(inst, def) {
@@ -11074,7 +10975,7 @@ function config(newConfig) {
 	return globalConfig;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/util.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
 	return Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -11101,7 +11002,7 @@ function cleanRegex(source) {
 	const end = source.endsWith("$") ? source.length - 1 : source.length;
 	return source.slice(start, end);
 }
-const EVALUATING = /* @__PURE__ */ Symbol("evaluating");
+const EVALUATING = /* @__PURE__*/ Symbol("evaluating");
 function defineLazy(object, key, getter) {
 	let value = void 0;
 	Object.defineProperty(object, key, {
@@ -11129,7 +11030,10 @@ function assignProp(target, prop, value) {
 }
 function mergeDefs(...defs) {
 	const mergedDescriptors = {};
-	for (const def of defs) Object.assign(mergedDescriptors, Object.getOwnPropertyDescriptors(def));
+	for (const def of defs) {
+		const descriptors = Object.getOwnPropertyDescriptors(def);
+		Object.assign(mergedDescriptors, descriptors);
+	}
 	return Object.defineProperties({}, mergedDescriptors);
 }
 function esc(str) {
@@ -11142,7 +11046,7 @@ const captureStackTrace = "captureStackTrace" in Error ? Error.captureStackTrace
 function isObject(data) {
 	return typeof data === "object" && data !== null && !Array.isArray(data);
 }
-const allowsEval = /* @__PURE__ */ cached(() => {
+const allowsEval = /* @__PURE__*/ cached(() => {
 	if (globalConfig.jitless) return false;
 	if (typeof navigator !== "undefined" && navigator?.userAgent?.includes("Cloudflare")) return false;
 	try {
@@ -11169,7 +11073,7 @@ function shallowClone(o) {
 	if (o instanceof Set) return new Set(o);
 	return o;
 }
-const propertyKeyTypes = /* @__PURE__ */ new Set([
+const propertyKeyTypes = /* @__PURE__*/ new Set([
 	"string",
 	"number",
 	"symbol"
@@ -11373,7 +11277,7 @@ function issue(...args) {
 	return { ...iss };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/errors.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js
 const initializer$1 = (inst, def) => {
 	inst.name = "$ZodError";
 	Object.defineProperty(inst, "_zod", {
@@ -11433,7 +11337,7 @@ function formatError(error, mapper = (issue) => issue.message) {
 	return fieldErrors;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/parse.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js
 const _parse = (_Err) => (schema, value, _ctx, _params) => {
 	const ctx = _ctx ? {
 		..._ctx,
@@ -11445,7 +11349,7 @@ const _parse = (_Err) => (schema, value, _ctx, _params) => {
 	}, ctx);
 	if (result instanceof Promise) throw new $ZodAsyncError();
 	if (result.issues.length) {
-		const e = new (_params?.Err ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+		const e = new ((_params?.Err) ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
 		captureStackTrace(e, _params?.callee);
 		throw e;
 	}
@@ -11462,7 +11366,7 @@ const _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
 	}, ctx);
 	if (result instanceof Promise) result = await result;
 	if (result.issues.length) {
-		const e = new (params?.Err ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+		const e = new ((params?.Err) ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
 		captureStackTrace(e, params?.callee);
 		throw e;
 	}
@@ -11486,7 +11390,7 @@ const _safeParse = (_Err) => (schema, value, _ctx) => {
 		data: result.value
 	};
 };
-const safeParse$1 = /* @__PURE__ */ _safeParse($ZodRealError);
+const safeParse$1 = /* @__PURE__*/ _safeParse($ZodRealError);
 const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
 	const ctx = _ctx ? {
 		..._ctx,
@@ -11505,7 +11409,7 @@ const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
 		data: result.value
 	};
 };
-const safeParseAsync$1 = /* @__PURE__ */ _safeParseAsync($ZodRealError);
+const safeParseAsync$1 = /* @__PURE__*/ _safeParseAsync($ZodRealError);
 const _encode = (_Err) => (schema, value, _ctx) => {
 	const ctx = _ctx ? {
 		..._ctx,
@@ -11547,7 +11451,7 @@ const _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 	return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/regexes.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js
 /**
 * @deprecated CUID v1 is deprecated by its authors due to information leakage
 * (timestamps embedded in the id). Use {@link cuid2} instead.
@@ -11585,7 +11489,7 @@ const base64url = /^[A-Za-z0-9_-]*$/;
 const httpProtocol = /^https?$/;
 const e164 = /^\+[1-9]\d{6,14}$/;
 const dateSource = `(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))`;
-const date$1 = /* @__PURE__ */ new RegExp(`^${dateSource}$`);
+const date$1 = /*@__PURE__*/ new RegExp(`^${dateSource}$`);
 function timeSource(args) {
 	const hhmm = `(?:[01]\\d|2[0-3]):[0-5]\\d`;
 	return typeof args.precision === "number" ? args.precision === -1 ? `${hhmm}` : args.precision === 0 ? `${hhmm}:[0-5]\\d` : `${hhmm}:[0-5]\\d\\.\\d{${args.precision}}` : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
@@ -11610,14 +11514,14 @@ const boolean$1 = /^(?:true|false)$/i;
 const lowercase = /^[^A-Z]*$/;
 const uppercase = /^[^a-z]*$/;
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/checks.js
-const $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js
+const $ZodCheck = /*@__PURE__*/ $constructor("$ZodCheck", (inst, def) => {
 	var _a;
 	inst._zod ?? (inst._zod = {});
 	inst._zod.def = def;
 	(_a = inst._zod).onattach ?? (_a.onattach = []);
 });
-const $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
+const $ZodCheckMaxLength = /*@__PURE__*/ $constructor("$ZodCheckMaxLength", (inst, def) => {
 	var _a;
 	$ZodCheck.init(inst, def);
 	(_a = inst._zod.def).when ?? (_a.when = (payload) => {
@@ -11643,7 +11547,7 @@ const $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (i
 		});
 	};
 });
-const $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
+const $ZodCheckMinLength = /*@__PURE__*/ $constructor("$ZodCheckMinLength", (inst, def) => {
 	var _a;
 	$ZodCheck.init(inst, def);
 	(_a = inst._zod.def).when ?? (_a.when = (payload) => {
@@ -11669,7 +11573,7 @@ const $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (i
 		});
 	};
 });
-const $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
+const $ZodCheckLengthEquals = /*@__PURE__*/ $constructor("$ZodCheckLengthEquals", (inst, def) => {
 	var _a;
 	$ZodCheck.init(inst, def);
 	(_a = inst._zod.def).when ?? (_a.when = (payload) => {
@@ -11705,7 +11609,7 @@ const $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEqual
 		});
 	};
 });
-const $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
+const $ZodCheckStringFormat = /*@__PURE__*/ $constructor("$ZodCheckStringFormat", (inst, def) => {
 	var _a, _b;
 	$ZodCheck.init(inst, def);
 	inst._zod.onattach.push((inst) => {
@@ -11731,7 +11635,7 @@ const $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringForma
 	});
 	else (_b = inst._zod).check ?? (_b.check = () => {});
 });
-const $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def) => {
+const $ZodCheckRegex = /*@__PURE__*/ $constructor("$ZodCheckRegex", (inst, def) => {
 	$ZodCheckStringFormat.init(inst, def);
 	inst._zod.check = (payload) => {
 		def.pattern.lastIndex = 0;
@@ -11747,15 +11651,15 @@ const $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def
 		});
 	};
 });
-const $ZodCheckLowerCase = /* @__PURE__ */ $constructor("$ZodCheckLowerCase", (inst, def) => {
+const $ZodCheckLowerCase = /*@__PURE__*/ $constructor("$ZodCheckLowerCase", (inst, def) => {
 	def.pattern ?? (def.pattern = lowercase);
 	$ZodCheckStringFormat.init(inst, def);
 });
-const $ZodCheckUpperCase = /* @__PURE__ */ $constructor("$ZodCheckUpperCase", (inst, def) => {
+const $ZodCheckUpperCase = /*@__PURE__*/ $constructor("$ZodCheckUpperCase", (inst, def) => {
 	def.pattern ?? (def.pattern = uppercase);
 	$ZodCheckStringFormat.init(inst, def);
 });
-const $ZodCheckIncludes = /* @__PURE__ */ $constructor("$ZodCheckIncludes", (inst, def) => {
+const $ZodCheckIncludes = /*@__PURE__*/ $constructor("$ZodCheckIncludes", (inst, def) => {
 	$ZodCheck.init(inst, def);
 	const escapedRegex = escapeRegex(def.includes);
 	const pattern = new RegExp(typeof def.position === "number" ? `^.{${def.position}}${escapedRegex}` : escapedRegex);
@@ -11778,7 +11682,7 @@ const $ZodCheckIncludes = /* @__PURE__ */ $constructor("$ZodCheckIncludes", (ins
 		});
 	};
 });
-const $ZodCheckStartsWith = /* @__PURE__ */ $constructor("$ZodCheckStartsWith", (inst, def) => {
+const $ZodCheckStartsWith = /*@__PURE__*/ $constructor("$ZodCheckStartsWith", (inst, def) => {
 	$ZodCheck.init(inst, def);
 	const pattern = new RegExp(`^${escapeRegex(def.prefix)}.*`);
 	def.pattern ?? (def.pattern = pattern);
@@ -11800,7 +11704,7 @@ const $ZodCheckStartsWith = /* @__PURE__ */ $constructor("$ZodCheckStartsWith", 
 		});
 	};
 });
-const $ZodCheckEndsWith = /* @__PURE__ */ $constructor("$ZodCheckEndsWith", (inst, def) => {
+const $ZodCheckEndsWith = /*@__PURE__*/ $constructor("$ZodCheckEndsWith", (inst, def) => {
 	$ZodCheck.init(inst, def);
 	const pattern = new RegExp(`.*${escapeRegex(def.suffix)}$`);
 	def.pattern ?? (def.pattern = pattern);
@@ -11822,14 +11726,14 @@ const $ZodCheckEndsWith = /* @__PURE__ */ $constructor("$ZodCheckEndsWith", (ins
 		});
 	};
 });
-const $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (inst, def) => {
+const $ZodCheckOverwrite = /*@__PURE__*/ $constructor("$ZodCheckOverwrite", (inst, def) => {
 	$ZodCheck.init(inst, def);
 	inst._zod.check = (payload) => {
 		payload.value = def.tx(payload.value);
 	};
 });
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/doc.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js
 var Doc = class {
 	constructor(args = []) {
 		this.content = [];
@@ -11860,15 +11764,15 @@ var Doc = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/versions.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js
 const version = {
 	major: 4,
 	minor: 4,
-	patch: 2
+	patch: 3
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/schemas.js
-const $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js
+const $ZodType = /*@__PURE__*/ $constructor("$ZodType", (inst, def) => {
 	var _a;
 	inst ?? (inst = {});
 	inst._zod.def = def;
@@ -11957,7 +11861,7 @@ const $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
 		version: 1
 	}));
 });
-const $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
+const $ZodString = /*@__PURE__*/ $constructor("$ZodString", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.pattern = [...inst?._zod.bag?.patterns ?? []].pop() ?? string$1(inst._zod.bag);
 	inst._zod.parse = (payload, _) => {
@@ -11974,15 +11878,15 @@ const $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
 		return payload;
 	};
 });
-const $ZodStringFormat = /* @__PURE__ */ $constructor("$ZodStringFormat", (inst, def) => {
+const $ZodStringFormat = /*@__PURE__*/ $constructor("$ZodStringFormat", (inst, def) => {
 	$ZodCheckStringFormat.init(inst, def);
 	$ZodString.init(inst, def);
 });
-const $ZodGUID = /* @__PURE__ */ $constructor("$ZodGUID", (inst, def) => {
+const $ZodGUID = /*@__PURE__*/ $constructor("$ZodGUID", (inst, def) => {
 	def.pattern ?? (def.pattern = guid);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodUUID = /* @__PURE__ */ $constructor("$ZodUUID", (inst, def) => {
+const $ZodUUID = /*@__PURE__*/ $constructor("$ZodUUID", (inst, def) => {
 	if (def.version) {
 		const v = {
 			v1: 1,
@@ -11999,11 +11903,11 @@ const $ZodUUID = /* @__PURE__ */ $constructor("$ZodUUID", (inst, def) => {
 	} else def.pattern ?? (def.pattern = uuid());
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodEmail = /* @__PURE__ */ $constructor("$ZodEmail", (inst, def) => {
+const $ZodEmail = /*@__PURE__*/ $constructor("$ZodEmail", (inst, def) => {
 	def.pattern ?? (def.pattern = email);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodURL = /* @__PURE__ */ $constructor("$ZodURL", (inst, def) => {
+const $ZodURL = /*@__PURE__*/ $constructor("$ZodURL", (inst, def) => {
 	$ZodStringFormat.init(inst, def);
 	inst._zod.check = (payload) => {
 		try {
@@ -12060,11 +11964,11 @@ const $ZodURL = /* @__PURE__ */ $constructor("$ZodURL", (inst, def) => {
 		}
 	};
 });
-const $ZodEmoji = /* @__PURE__ */ $constructor("$ZodEmoji", (inst, def) => {
+const $ZodEmoji = /*@__PURE__*/ $constructor("$ZodEmoji", (inst, def) => {
 	def.pattern ?? (def.pattern = emoji());
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodNanoID = /* @__PURE__ */ $constructor("$ZodNanoID", (inst, def) => {
+const $ZodNanoID = /*@__PURE__*/ $constructor("$ZodNanoID", (inst, def) => {
 	def.pattern ?? (def.pattern = nanoid);
 	$ZodStringFormat.init(inst, def);
 });
@@ -12073,48 +11977,48 @@ const $ZodNanoID = /* @__PURE__ */ $constructor("$ZodNanoID", (inst, def) => {
 * (timestamps embedded in the id). Use {@link $ZodCUID2} instead.
 * See https://github.com/paralleldrive/cuid.
 */
-const $ZodCUID = /* @__PURE__ */ $constructor("$ZodCUID", (inst, def) => {
+const $ZodCUID = /*@__PURE__*/ $constructor("$ZodCUID", (inst, def) => {
 	def.pattern ?? (def.pattern = cuid);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodCUID2 = /* @__PURE__ */ $constructor("$ZodCUID2", (inst, def) => {
+const $ZodCUID2 = /*@__PURE__*/ $constructor("$ZodCUID2", (inst, def) => {
 	def.pattern ?? (def.pattern = cuid2);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodULID = /* @__PURE__ */ $constructor("$ZodULID", (inst, def) => {
+const $ZodULID = /*@__PURE__*/ $constructor("$ZodULID", (inst, def) => {
 	def.pattern ?? (def.pattern = ulid);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodXID = /* @__PURE__ */ $constructor("$ZodXID", (inst, def) => {
+const $ZodXID = /*@__PURE__*/ $constructor("$ZodXID", (inst, def) => {
 	def.pattern ?? (def.pattern = xid);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodKSUID = /* @__PURE__ */ $constructor("$ZodKSUID", (inst, def) => {
+const $ZodKSUID = /*@__PURE__*/ $constructor("$ZodKSUID", (inst, def) => {
 	def.pattern ?? (def.pattern = ksuid);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodISODateTime = /* @__PURE__ */ $constructor("$ZodISODateTime", (inst, def) => {
+const $ZodISODateTime = /*@__PURE__*/ $constructor("$ZodISODateTime", (inst, def) => {
 	def.pattern ?? (def.pattern = datetime$1(def));
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodISODate = /* @__PURE__ */ $constructor("$ZodISODate", (inst, def) => {
+const $ZodISODate = /*@__PURE__*/ $constructor("$ZodISODate", (inst, def) => {
 	def.pattern ?? (def.pattern = date$1);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodISOTime = /* @__PURE__ */ $constructor("$ZodISOTime", (inst, def) => {
+const $ZodISOTime = /*@__PURE__*/ $constructor("$ZodISOTime", (inst, def) => {
 	def.pattern ?? (def.pattern = time$1(def));
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodISODuration = /* @__PURE__ */ $constructor("$ZodISODuration", (inst, def) => {
+const $ZodISODuration = /*@__PURE__*/ $constructor("$ZodISODuration", (inst, def) => {
 	def.pattern ?? (def.pattern = duration$1);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodIPv4 = /* @__PURE__ */ $constructor("$ZodIPv4", (inst, def) => {
+const $ZodIPv4 = /*@__PURE__*/ $constructor("$ZodIPv4", (inst, def) => {
 	def.pattern ?? (def.pattern = ipv4);
 	$ZodStringFormat.init(inst, def);
 	inst._zod.bag.format = `ipv4`;
 });
-const $ZodIPv6 = /* @__PURE__ */ $constructor("$ZodIPv6", (inst, def) => {
+const $ZodIPv6 = /*@__PURE__*/ $constructor("$ZodIPv6", (inst, def) => {
 	def.pattern ?? (def.pattern = ipv6);
 	$ZodStringFormat.init(inst, def);
 	inst._zod.bag.format = `ipv6`;
@@ -12132,11 +12036,11 @@ const $ZodIPv6 = /* @__PURE__ */ $constructor("$ZodIPv6", (inst, def) => {
 		}
 	};
 });
-const $ZodCIDRv4 = /* @__PURE__ */ $constructor("$ZodCIDRv4", (inst, def) => {
+const $ZodCIDRv4 = /*@__PURE__*/ $constructor("$ZodCIDRv4", (inst, def) => {
 	def.pattern ?? (def.pattern = cidrv4);
 	$ZodStringFormat.init(inst, def);
 });
-const $ZodCIDRv6 = /* @__PURE__ */ $constructor("$ZodCIDRv6", (inst, def) => {
+const $ZodCIDRv6 = /*@__PURE__*/ $constructor("$ZodCIDRv6", (inst, def) => {
 	def.pattern ?? (def.pattern = cidrv6);
 	$ZodStringFormat.init(inst, def);
 	inst._zod.check = (payload) => {
@@ -12171,7 +12075,7 @@ function isValidBase64(data) {
 		return false;
 	}
 }
-const $ZodBase64 = /* @__PURE__ */ $constructor("$ZodBase64", (inst, def) => {
+const $ZodBase64 = /*@__PURE__*/ $constructor("$ZodBase64", (inst, def) => {
 	def.pattern ?? (def.pattern = base64);
 	$ZodStringFormat.init(inst, def);
 	inst._zod.bag.contentEncoding = "base64";
@@ -12191,7 +12095,7 @@ function isValidBase64URL(data) {
 	const base64 = data.replace(/[-_]/g, (c) => c === "-" ? "+" : "/");
 	return isValidBase64(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
 }
-const $ZodBase64URL = /* @__PURE__ */ $constructor("$ZodBase64URL", (inst, def) => {
+const $ZodBase64URL = /*@__PURE__*/ $constructor("$ZodBase64URL", (inst, def) => {
 	def.pattern ?? (def.pattern = base64url);
 	$ZodStringFormat.init(inst, def);
 	inst._zod.bag.contentEncoding = "base64url";
@@ -12206,7 +12110,7 @@ const $ZodBase64URL = /* @__PURE__ */ $constructor("$ZodBase64URL", (inst, def) 
 		});
 	};
 });
-const $ZodE164 = /* @__PURE__ */ $constructor("$ZodE164", (inst, def) => {
+const $ZodE164 = /*@__PURE__*/ $constructor("$ZodE164", (inst, def) => {
 	def.pattern ?? (def.pattern = e164);
 	$ZodStringFormat.init(inst, def);
 });
@@ -12225,7 +12129,7 @@ function isValidJWT(token, algorithm = null) {
 		return false;
 	}
 }
-const $ZodJWT = /* @__PURE__ */ $constructor("$ZodJWT", (inst, def) => {
+const $ZodJWT = /*@__PURE__*/ $constructor("$ZodJWT", (inst, def) => {
 	$ZodStringFormat.init(inst, def);
 	inst._zod.check = (payload) => {
 		if (isValidJWT(payload.value, def.alg)) return;
@@ -12238,7 +12142,7 @@ const $ZodJWT = /* @__PURE__ */ $constructor("$ZodJWT", (inst, def) => {
 		});
 	};
 });
-const $ZodBoolean = /* @__PURE__ */ $constructor("$ZodBoolean", (inst, def) => {
+const $ZodBoolean = /*@__PURE__*/ $constructor("$ZodBoolean", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.pattern = boolean$1;
 	inst._zod.parse = (payload, _ctx) => {
@@ -12256,11 +12160,11 @@ const $ZodBoolean = /* @__PURE__ */ $constructor("$ZodBoolean", (inst, def) => {
 		return payload;
 	};
 });
-const $ZodUnknown = /* @__PURE__ */ $constructor("$ZodUnknown", (inst, def) => {
+const $ZodUnknown = /*@__PURE__*/ $constructor("$ZodUnknown", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload) => payload;
 });
-const $ZodNever = /* @__PURE__ */ $constructor("$ZodNever", (inst, def) => {
+const $ZodNever = /*@__PURE__*/ $constructor("$ZodNever", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload, _ctx) => {
 		payload.issues.push({
@@ -12276,7 +12180,7 @@ function handleArrayResult(result, final, index) {
 	if (result.issues.length) final.issues.push(...prefixIssues(index, result.issues));
 	final.value[index] = result.value;
 }
-const $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
+const $ZodArray = /*@__PURE__*/ $constructor("$ZodArray", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload, ctx) => {
 		const input = payload.value;
@@ -12367,7 +12271,7 @@ function handleCatchall(proms, input, payload, ctx, def, inst) {
 		return payload;
 	});
 }
-const $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
+const $ZodObject = /*@__PURE__*/ $constructor("$ZodObject", (inst, def) => {
 	$ZodType.init(inst, def);
 	if (!Object.getOwnPropertyDescriptor(def, "shape")?.get) {
 		const sh = def.shape;
@@ -12390,13 +12294,13 @@ const $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
 		}
 		return propValues;
 	});
-	const isObject$1 = isObject;
+	const isObject$2 = isObject;
 	const catchall = def.catchall;
 	let value;
 	inst._zod.parse = (payload, ctx) => {
 		value ?? (value = _normalized.value);
 		const input = payload.value;
-		if (!isObject$1(input)) {
+		if (!isObject$2(input)) {
 			payload.issues.push({
 				expected: "object",
 				code: "invalid_type",
@@ -12423,7 +12327,7 @@ const $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
 		return handleCatchall(proms, input, payload, ctx, _normalized.value, inst);
 	};
 });
-const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) => {
+const $ZodObjectJIT = /*@__PURE__*/ $constructor("$ZodObjectJIT", (inst, def) => {
 	$ZodObject.init(inst, def);
 	const superParse = inst._zod.parse;
 	const _normalized = cached(() => normalizeDef(def));
@@ -12519,7 +12423,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
 		return (payload, ctx) => fn(shape, payload, ctx);
 	};
 	let fastpass;
-	const isObject$2 = isObject;
+	const isObject$1 = isObject;
 	const jit = !globalConfig.jitless;
 	const fastEnabled = jit && allowsEval.value;
 	const catchall = def.catchall;
@@ -12527,7 +12431,7 @@ const $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) 
 	inst._zod.parse = (payload, ctx) => {
 		value ?? (value = _normalized.value);
 		const input = payload.value;
-		if (!isObject$2(input)) {
+		if (!isObject$1(input)) {
 			payload.issues.push({
 				expected: "object",
 				code: "invalid_type",
@@ -12563,7 +12467,7 @@ function handleUnionResults(results, final, inst, ctx) {
 	});
 	return final;
 }
-const $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
+const $ZodUnion = /*@__PURE__*/ $constructor("$ZodUnion", (inst, def) => {
 	$ZodType.init(inst, def);
 	defineLazy(inst._zod, "optin", () => def.options.some((o) => o._zod.optin === "optional") ? "optional" : void 0);
 	defineLazy(inst._zod, "optout", () => def.options.some((o) => o._zod.optout === "optional") ? "optional" : void 0);
@@ -12600,7 +12504,7 @@ const $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
 		});
 	};
 });
-const $ZodIntersection = /* @__PURE__ */ $constructor("$ZodIntersection", (inst, def) => {
+const $ZodIntersection = /*@__PURE__*/ $constructor("$ZodIntersection", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload, ctx) => {
 		const input = payload.value;
@@ -12699,7 +12603,7 @@ function handleIntersectionResults(result, left, right) {
 	result.value = merged.data;
 	return result;
 }
-const $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
+const $ZodRecord = /*@__PURE__*/ $constructor("$ZodRecord", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload, ctx) => {
 		const input = payload.value;
@@ -12808,7 +12712,7 @@ const $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
 		return payload;
 	};
 });
-const $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
+const $ZodEnum = /*@__PURE__*/ $constructor("$ZodEnum", (inst, def) => {
 	$ZodType.init(inst, def);
 	const values = getEnumValues(def.entries);
 	const valuesSet = new Set(values);
@@ -12826,33 +12730,36 @@ const $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
 		return payload;
 	};
 });
-const $ZodTransform = /* @__PURE__ */ $constructor("$ZodTransform", (inst, def) => {
+const $ZodTransform = /*@__PURE__*/ $constructor("$ZodTransform", (inst, def) => {
 	$ZodType.init(inst, def);
+	inst._zod.optin = "optional";
 	inst._zod.parse = (payload, ctx) => {
 		if (ctx.direction === "backward") throw new $ZodEncodeError(inst.constructor.name);
 		const _out = def.transform(payload.value, payload);
 		if (ctx.async) return (_out instanceof Promise ? _out : Promise.resolve(_out)).then((output) => {
 			payload.value = output;
+			payload.fallback = true;
 			return payload;
 		});
 		if (_out instanceof Promise) throw new $ZodAsyncError();
 		payload.value = _out;
+		payload.fallback = true;
 		return payload;
 	};
 });
 function handleOptionalResult(result, input) {
-	if (result.issues.length && input === void 0) return {
+	if (input === void 0 && (result.issues.length || result.fallback)) return {
 		issues: [],
 		value: void 0
 	};
 	return result;
 }
-const $ZodOptional = /* @__PURE__ */ $constructor("$ZodOptional", (inst, def) => {
+const $ZodOptional = /*@__PURE__*/ $constructor("$ZodOptional", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.optin = "optional";
 	inst._zod.optout = "optional";
 	defineLazy(inst._zod, "values", () => {
-		return def.innerType._zod.values ? new Set([...def.innerType._zod.values, void 0]) : void 0;
+		return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, void 0]) : void 0;
 	});
 	defineLazy(inst._zod, "pattern", () => {
 		const pattern = def.innerType._zod.pattern;
@@ -12860,15 +12767,16 @@ const $ZodOptional = /* @__PURE__ */ $constructor("$ZodOptional", (inst, def) =>
 	});
 	inst._zod.parse = (payload, ctx) => {
 		if (def.innerType._zod.optin === "optional") {
+			const input = payload.value;
 			const result = def.innerType._zod.run(payload, ctx);
-			if (result instanceof Promise) return result.then((r) => handleOptionalResult(r, payload.value));
-			return handleOptionalResult(result, payload.value);
+			if (result instanceof Promise) return result.then((r) => handleOptionalResult(r, input));
+			return handleOptionalResult(result, input);
 		}
 		if (payload.value === void 0) return payload;
 		return def.innerType._zod.run(payload, ctx);
 	};
 });
-const $ZodExactOptional = /* @__PURE__ */ $constructor("$ZodExactOptional", (inst, def) => {
+const $ZodExactOptional = /*@__PURE__*/ $constructor("$ZodExactOptional", (inst, def) => {
 	$ZodOptional.init(inst, def);
 	defineLazy(inst._zod, "values", () => def.innerType._zod.values);
 	defineLazy(inst._zod, "pattern", () => def.innerType._zod.pattern);
@@ -12876,7 +12784,7 @@ const $ZodExactOptional = /* @__PURE__ */ $constructor("$ZodExactOptional", (ins
 		return def.innerType._zod.run(payload, ctx);
 	};
 });
-const $ZodNullable = /* @__PURE__ */ $constructor("$ZodNullable", (inst, def) => {
+const $ZodNullable = /*@__PURE__*/ $constructor("$ZodNullable", (inst, def) => {
 	$ZodType.init(inst, def);
 	defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
 	defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
@@ -12885,14 +12793,14 @@ const $ZodNullable = /* @__PURE__ */ $constructor("$ZodNullable", (inst, def) =>
 		return pattern ? new RegExp(`^(${cleanRegex(pattern.source)}|null)$`) : void 0;
 	});
 	defineLazy(inst._zod, "values", () => {
-		return def.innerType._zod.values ? new Set([...def.innerType._zod.values, null]) : void 0;
+		return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, null]) : void 0;
 	});
 	inst._zod.parse = (payload, ctx) => {
 		if (payload.value === null) return payload;
 		return def.innerType._zod.run(payload, ctx);
 	};
 });
-const $ZodDefault = /* @__PURE__ */ $constructor("$ZodDefault", (inst, def) => {
+const $ZodDefault = /*@__PURE__*/ $constructor("$ZodDefault", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.optin = "optional";
 	defineLazy(inst._zod, "values", () => def.innerType._zod.values);
@@ -12914,7 +12822,7 @@ function handleDefaultResult(payload, def) {
 	if (payload.value === void 0) payload.value = def.defaultValue;
 	return payload;
 }
-const $ZodPrefault = /* @__PURE__ */ $constructor("$ZodPrefault", (inst, def) => {
+const $ZodPrefault = /*@__PURE__*/ $constructor("$ZodPrefault", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.optin = "optional";
 	defineLazy(inst._zod, "values", () => def.innerType._zod.values);
@@ -12924,7 +12832,7 @@ const $ZodPrefault = /* @__PURE__ */ $constructor("$ZodPrefault", (inst, def) =>
 		return def.innerType._zod.run(payload, ctx);
 	};
 });
-const $ZodNonOptional = /* @__PURE__ */ $constructor("$ZodNonOptional", (inst, def) => {
+const $ZodNonOptional = /*@__PURE__*/ $constructor("$ZodNonOptional", (inst, def) => {
 	$ZodType.init(inst, def);
 	defineLazy(inst._zod, "values", () => {
 		const v = def.innerType._zod.values;
@@ -12945,9 +12853,9 @@ function handleNonOptionalResult(payload, inst) {
 	});
 	return payload;
 }
-const $ZodCatch = /* @__PURE__ */ $constructor("$ZodCatch", (inst, def) => {
+const $ZodCatch = /*@__PURE__*/ $constructor("$ZodCatch", (inst, def) => {
 	$ZodType.init(inst, def);
-	defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
+	inst._zod.optin = "optional";
 	defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
 	defineLazy(inst._zod, "values", () => def.innerType._zod.values);
 	inst._zod.parse = (payload, ctx) => {
@@ -12962,6 +12870,7 @@ const $ZodCatch = /* @__PURE__ */ $constructor("$ZodCatch", (inst, def) => {
 					input: payload.value
 				});
 				payload.issues = [];
+				payload.fallback = true;
 			}
 			return payload;
 		});
@@ -12973,11 +12882,12 @@ const $ZodCatch = /* @__PURE__ */ $constructor("$ZodCatch", (inst, def) => {
 				input: payload.value
 			});
 			payload.issues = [];
+			payload.fallback = true;
 		}
 		return payload;
 	};
 });
-const $ZodPipe = /* @__PURE__ */ $constructor("$ZodPipe", (inst, def) => {
+const $ZodPipe = /*@__PURE__*/ $constructor("$ZodPipe", (inst, def) => {
 	$ZodType.init(inst, def);
 	defineLazy(inst._zod, "values", () => def.in._zod.values);
 	defineLazy(inst._zod, "optin", () => def.in._zod.optin);
@@ -13001,15 +12911,14 @@ function handlePipeResult(left, next, ctx) {
 	}
 	return next._zod.run({
 		value: left.value,
-		issues: left.issues
+		issues: left.issues,
+		fallback: left.fallback
 	}, ctx);
 }
-const $ZodPreprocess = /* @__PURE__ */ $constructor("$ZodPreprocess", (inst, def) => {
+const $ZodPreprocess = /*@__PURE__*/ $constructor("$ZodPreprocess", (inst, def) => {
 	$ZodPipe.init(inst, def);
-	defineLazy(inst._zod, "optin", () => def.out._zod.optin);
-	defineLazy(inst._zod, "optout", () => def.out._zod.optout);
 });
-const $ZodReadonly = /* @__PURE__ */ $constructor("$ZodReadonly", (inst, def) => {
+const $ZodReadonly = /*@__PURE__*/ $constructor("$ZodReadonly", (inst, def) => {
 	$ZodType.init(inst, def);
 	defineLazy(inst._zod, "propValues", () => def.innerType._zod.propValues);
 	defineLazy(inst._zod, "values", () => def.innerType._zod.values);
@@ -13026,7 +12935,7 @@ function handleReadonlyResult(payload) {
 	payload.value = Object.freeze(payload.value);
 	return payload;
 }
-const $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
+const $ZodCustom = /*@__PURE__*/ $constructor("$ZodCustom", (inst, def) => {
 	$ZodCheck.init(inst, def);
 	$ZodType.init(inst, def);
 	inst._zod.parse = (payload, _) => {
@@ -13053,7 +12962,7 @@ function handleRefineResult(result, payload, input, inst) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/registries.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js
 var _a;
 var $ZodRegistry = class {
 	constructor() {
@@ -13100,15 +13009,15 @@ function registry() {
 (_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
 const globalRegistry = globalThis.__zod_globalRegistry;
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/api.js
-/* @__NO_SIDE_EFFECTS__ */
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js
+// @__NO_SIDE_EFFECTS__
 function _string(Class, params) {
 	return new Class({
 		type: "string",
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _email(Class, params) {
 	return new Class({
 		type: "string",
@@ -13118,7 +13027,7 @@ function _email(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _guid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13128,7 +13037,7 @@ function _guid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _uuid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13138,7 +13047,7 @@ function _uuid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _uuidv4(Class, params) {
 	return new Class({
 		type: "string",
@@ -13149,7 +13058,7 @@ function _uuidv4(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _uuidv6(Class, params) {
 	return new Class({
 		type: "string",
@@ -13160,7 +13069,7 @@ function _uuidv6(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _uuidv7(Class, params) {
 	return new Class({
 		type: "string",
@@ -13171,7 +13080,7 @@ function _uuidv7(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _url(Class, params) {
 	return new Class({
 		type: "string",
@@ -13181,7 +13090,7 @@ function _url(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _emoji(Class, params) {
 	return new Class({
 		type: "string",
@@ -13191,7 +13100,7 @@ function _emoji(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _nanoid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13206,7 +13115,7 @@ function _nanoid(Class, params) {
 * (timestamps embedded in the id). Use {@link _cuid2} instead.
 * See https://github.com/paralleldrive/cuid.
 */
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _cuid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13216,7 +13125,7 @@ function _cuid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _cuid2(Class, params) {
 	return new Class({
 		type: "string",
@@ -13226,7 +13135,7 @@ function _cuid2(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _ulid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13236,7 +13145,7 @@ function _ulid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _xid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13246,7 +13155,7 @@ function _xid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _ksuid(Class, params) {
 	return new Class({
 		type: "string",
@@ -13256,7 +13165,7 @@ function _ksuid(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _ipv4(Class, params) {
 	return new Class({
 		type: "string",
@@ -13266,7 +13175,7 @@ function _ipv4(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _ipv6(Class, params) {
 	return new Class({
 		type: "string",
@@ -13276,7 +13185,7 @@ function _ipv6(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _cidrv4(Class, params) {
 	return new Class({
 		type: "string",
@@ -13286,7 +13195,7 @@ function _cidrv4(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _cidrv6(Class, params) {
 	return new Class({
 		type: "string",
@@ -13296,7 +13205,7 @@ function _cidrv6(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _base64(Class, params) {
 	return new Class({
 		type: "string",
@@ -13306,7 +13215,7 @@ function _base64(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _base64url(Class, params) {
 	return new Class({
 		type: "string",
@@ -13316,7 +13225,7 @@ function _base64url(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _e164(Class, params) {
 	return new Class({
 		type: "string",
@@ -13326,7 +13235,7 @@ function _e164(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _jwt(Class, params) {
 	return new Class({
 		type: "string",
@@ -13336,7 +13245,7 @@ function _jwt(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _isoDateTime(Class, params) {
 	return new Class({
 		type: "string",
@@ -13348,7 +13257,7 @@ function _isoDateTime(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _isoDate(Class, params) {
 	return new Class({
 		type: "string",
@@ -13357,7 +13266,7 @@ function _isoDate(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _isoTime(Class, params) {
 	return new Class({
 		type: "string",
@@ -13367,7 +13276,7 @@ function _isoTime(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _isoDuration(Class, params) {
 	return new Class({
 		type: "string",
@@ -13376,25 +13285,25 @@ function _isoDuration(Class, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _boolean(Class, params) {
 	return new Class({
 		type: "boolean",
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _unknown(Class) {
 	return new Class({ type: "unknown" });
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _never(Class, params) {
 	return new Class({
 		type: "never",
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _maxLength(maximum, params) {
 	return new $ZodCheckMaxLength({
 		check: "max_length",
@@ -13402,7 +13311,7 @@ function _maxLength(maximum, params) {
 		maximum
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _minLength(minimum, params) {
 	return new $ZodCheckMinLength({
 		check: "min_length",
@@ -13410,7 +13319,7 @@ function _minLength(minimum, params) {
 		minimum
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _length(length, params) {
 	return new $ZodCheckLengthEquals({
 		check: "length_equals",
@@ -13418,7 +13327,7 @@ function _length(length, params) {
 		length
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _regex(pattern, params) {
 	return new $ZodCheckRegex({
 		check: "string_format",
@@ -13427,7 +13336,7 @@ function _regex(pattern, params) {
 		pattern
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _lowercase(params) {
 	return new $ZodCheckLowerCase({
 		check: "string_format",
@@ -13435,7 +13344,7 @@ function _lowercase(params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _uppercase(params) {
 	return new $ZodCheckUpperCase({
 		check: "string_format",
@@ -13443,7 +13352,7 @@ function _uppercase(params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _includes(includes, params) {
 	return new $ZodCheckIncludes({
 		check: "string_format",
@@ -13452,7 +13361,7 @@ function _includes(includes, params) {
 		includes
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _startsWith(prefix, params) {
 	return new $ZodCheckStartsWith({
 		check: "string_format",
@@ -13461,7 +13370,7 @@ function _startsWith(prefix, params) {
 		prefix
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _endsWith(suffix, params) {
 	return new $ZodCheckEndsWith({
 		check: "string_format",
@@ -13470,34 +13379,34 @@ function _endsWith(suffix, params) {
 		suffix
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _overwrite(tx) {
 	return new $ZodCheckOverwrite({
 		check: "overwrite",
 		tx
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _normalize(form) {
 	return /* @__PURE__ */ _overwrite((input) => input.normalize(form));
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _trim() {
 	return /* @__PURE__ */ _overwrite((input) => input.trim());
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _toLowerCase() {
 	return /* @__PURE__ */ _overwrite((input) => input.toLowerCase());
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _toUpperCase() {
 	return /* @__PURE__ */ _overwrite((input) => input.toUpperCase());
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _slugify() {
 	return /* @__PURE__ */ _overwrite((input) => slugify(input));
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _array(Class, element, params) {
 	return new Class({
 		type: "array",
@@ -13505,7 +13414,7 @@ function _array(Class, element, params) {
 		...normalizeParams(params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _refine(Class, fn, _params) {
 	return new Class({
 		type: "custom",
@@ -13514,7 +13423,7 @@ function _refine(Class, fn, _params) {
 		...normalizeParams(_params)
 	});
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _superRefine(fn, params) {
 	const ch = /* @__PURE__ */ _check((payload) => {
 		payload.addIssue = (issue$2) => {
@@ -13533,7 +13442,7 @@ function _superRefine(fn, params) {
 	}, params);
 	return ch;
 }
-/* @__NO_SIDE_EFFECTS__ */
+// @__NO_SIDE_EFFECTS__
 function _check(fn, params) {
 	const ch = new $ZodCheck({
 		check: "custom",
@@ -13543,7 +13452,7 @@ function _check(fn, params) {
 	return ch;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/to-json-schema.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
 	let target = params?.target ?? "draft-2020-12";
 	if (target === "draft-4") target = "draft-04";
@@ -13836,7 +13745,7 @@ const createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params)
 	return finalize(ctx, schema);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/json-schema-processors.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js
 const formatMap = {
 	guid: "uuid",
 	url: "uri",
@@ -13871,7 +13780,6 @@ const booleanProcessor = (_schema, _ctx, json, _params) => {
 const neverProcessor = (_schema, _ctx, json, _params) => {
 	json.not = {};
 };
-const unknownProcessor = (_schema, _ctx, _json, _params) => {};
 const enumProcessor = (schema, _ctx, json, _params) => {
 	const def = schema._zod.def;
 	const values = getEnumValues(def.entries);
@@ -14058,29 +13966,29 @@ const optionalProcessor = (schema, ctx, _json, params) => {
 	seen.ref = def.innerType;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/iso.js
-const ZodISODateTime = /* @__PURE__ */ $constructor("ZodISODateTime", (inst, def) => {
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js
+const ZodISODateTime = /*@__PURE__*/ $constructor("ZodISODateTime", (inst, def) => {
 	$ZodISODateTime.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
 function datetime(params) {
 	return /* @__PURE__ */ _isoDateTime(ZodISODateTime, params);
 }
-const ZodISODate = /* @__PURE__ */ $constructor("ZodISODate", (inst, def) => {
+const ZodISODate = /*@__PURE__*/ $constructor("ZodISODate", (inst, def) => {
 	$ZodISODate.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
 function date(params) {
 	return /* @__PURE__ */ _isoDate(ZodISODate, params);
 }
-const ZodISOTime = /* @__PURE__ */ $constructor("ZodISOTime", (inst, def) => {
+const ZodISOTime = /*@__PURE__*/ $constructor("ZodISOTime", (inst, def) => {
 	$ZodISOTime.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
 function time(params) {
 	return /* @__PURE__ */ _isoTime(ZodISOTime, params);
 }
-const ZodISODuration = /* @__PURE__ */ $constructor("ZodISODuration", (inst, def) => {
+const ZodISODuration = /*@__PURE__*/ $constructor("ZodISODuration", (inst, def) => {
 	$ZodISODuration.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
@@ -14088,7 +13996,7 @@ function duration(params) {
 	return /* @__PURE__ */ _isoDuration(ZodISODuration, params);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/errors.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js
 const initializer = (inst, issues) => {
 	$ZodError.init(inst, issues);
 	inst.name = "ZodError";
@@ -14108,9 +14016,9 @@ const initializer = (inst, issues) => {
 		} }
 	});
 };
-const ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer, { Parent: Error });
+const ZodRealError = /*@__PURE__*/ $constructor("ZodError", initializer, { Parent: Error });
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/parse.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js
 const parse = /* @__PURE__ */ _parse(ZodRealError);
 const parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 const safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -14124,7 +14032,7 @@ const safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 const safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 const safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/schemas.js
+//#region ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
 const _installedGroups = /* @__PURE__ */ new WeakMap();
 function _installLazyMethods(inst, group, methods) {
 	const proto = Object.getPrototypeOf(inst);
@@ -14161,7 +14069,7 @@ function _installLazyMethods(inst, group, methods) {
 		});
 	}
 }
-const ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
+const ZodType = /*@__PURE__*/ $constructor("ZodType", (inst, def) => {
 	$ZodType.init(inst, def);
 	Object.assign(inst["~standard"], { jsonSchema: {
 		input: createStandardJSONSchemaMethod(inst, "input"),
@@ -14287,7 +14195,7 @@ const ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
 	return inst;
 });
 /** @internal */
-const _ZodString = /* @__PURE__ */ $constructor("_ZodString", (inst, def) => {
+const _ZodString = /*@__PURE__*/ $constructor("_ZodString", (inst, def) => {
 	$ZodString.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => stringProcessor(inst, ctx, json, params);
@@ -14343,7 +14251,7 @@ const _ZodString = /* @__PURE__ */ $constructor("_ZodString", (inst, def) => {
 		}
 	});
 });
-const ZodString = /* @__PURE__ */ $constructor("ZodString", (inst, def) => {
+const ZodString = /*@__PURE__*/ $constructor("ZodString", (inst, def) => {
 	$ZodString.init(inst, def);
 	_ZodString.init(inst, def);
 	inst.email = (params) => inst.check(/* @__PURE__ */ _email(ZodEmail, params));
@@ -14377,31 +14285,31 @@ const ZodString = /* @__PURE__ */ $constructor("ZodString", (inst, def) => {
 function string(params) {
 	return /* @__PURE__ */ _string(ZodString, params);
 }
-const ZodStringFormat = /* @__PURE__ */ $constructor("ZodStringFormat", (inst, def) => {
+const ZodStringFormat = /*@__PURE__*/ $constructor("ZodStringFormat", (inst, def) => {
 	$ZodStringFormat.init(inst, def);
 	_ZodString.init(inst, def);
 });
-const ZodEmail = /* @__PURE__ */ $constructor("ZodEmail", (inst, def) => {
+const ZodEmail = /*@__PURE__*/ $constructor("ZodEmail", (inst, def) => {
 	$ZodEmail.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodGUID = /* @__PURE__ */ $constructor("ZodGUID", (inst, def) => {
+const ZodGUID = /*@__PURE__*/ $constructor("ZodGUID", (inst, def) => {
 	$ZodGUID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodUUID = /* @__PURE__ */ $constructor("ZodUUID", (inst, def) => {
+const ZodUUID = /*@__PURE__*/ $constructor("ZodUUID", (inst, def) => {
 	$ZodUUID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodURL = /* @__PURE__ */ $constructor("ZodURL", (inst, def) => {
+const ZodURL = /*@__PURE__*/ $constructor("ZodURL", (inst, def) => {
 	$ZodURL.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodEmoji = /* @__PURE__ */ $constructor("ZodEmoji", (inst, def) => {
+const ZodEmoji = /*@__PURE__*/ $constructor("ZodEmoji", (inst, def) => {
 	$ZodEmoji.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodNanoID = /* @__PURE__ */ $constructor("ZodNanoID", (inst, def) => {
+const ZodNanoID = /*@__PURE__*/ $constructor("ZodNanoID", (inst, def) => {
 	$ZodNanoID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
@@ -14410,59 +14318,59 @@ const ZodNanoID = /* @__PURE__ */ $constructor("ZodNanoID", (inst, def) => {
 * (timestamps embedded in the id). Use {@link ZodCUID2} instead.
 * See https://github.com/paralleldrive/cuid.
 */
-const ZodCUID = /* @__PURE__ */ $constructor("ZodCUID", (inst, def) => {
+const ZodCUID = /*@__PURE__*/ $constructor("ZodCUID", (inst, def) => {
 	$ZodCUID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodCUID2 = /* @__PURE__ */ $constructor("ZodCUID2", (inst, def) => {
+const ZodCUID2 = /*@__PURE__*/ $constructor("ZodCUID2", (inst, def) => {
 	$ZodCUID2.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodULID = /* @__PURE__ */ $constructor("ZodULID", (inst, def) => {
+const ZodULID = /*@__PURE__*/ $constructor("ZodULID", (inst, def) => {
 	$ZodULID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodXID = /* @__PURE__ */ $constructor("ZodXID", (inst, def) => {
+const ZodXID = /*@__PURE__*/ $constructor("ZodXID", (inst, def) => {
 	$ZodXID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodKSUID = /* @__PURE__ */ $constructor("ZodKSUID", (inst, def) => {
+const ZodKSUID = /*@__PURE__*/ $constructor("ZodKSUID", (inst, def) => {
 	$ZodKSUID.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodIPv4 = /* @__PURE__ */ $constructor("ZodIPv4", (inst, def) => {
+const ZodIPv4 = /*@__PURE__*/ $constructor("ZodIPv4", (inst, def) => {
 	$ZodIPv4.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodIPv6 = /* @__PURE__ */ $constructor("ZodIPv6", (inst, def) => {
+const ZodIPv6 = /*@__PURE__*/ $constructor("ZodIPv6", (inst, def) => {
 	$ZodIPv6.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodCIDRv4 = /* @__PURE__ */ $constructor("ZodCIDRv4", (inst, def) => {
+const ZodCIDRv4 = /*@__PURE__*/ $constructor("ZodCIDRv4", (inst, def) => {
 	$ZodCIDRv4.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodCIDRv6 = /* @__PURE__ */ $constructor("ZodCIDRv6", (inst, def) => {
+const ZodCIDRv6 = /*@__PURE__*/ $constructor("ZodCIDRv6", (inst, def) => {
 	$ZodCIDRv6.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodBase64 = /* @__PURE__ */ $constructor("ZodBase64", (inst, def) => {
+const ZodBase64 = /*@__PURE__*/ $constructor("ZodBase64", (inst, def) => {
 	$ZodBase64.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodBase64URL = /* @__PURE__ */ $constructor("ZodBase64URL", (inst, def) => {
+const ZodBase64URL = /*@__PURE__*/ $constructor("ZodBase64URL", (inst, def) => {
 	$ZodBase64URL.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodE164 = /* @__PURE__ */ $constructor("ZodE164", (inst, def) => {
+const ZodE164 = /*@__PURE__*/ $constructor("ZodE164", (inst, def) => {
 	$ZodE164.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodJWT = /* @__PURE__ */ $constructor("ZodJWT", (inst, def) => {
+const ZodJWT = /*@__PURE__*/ $constructor("ZodJWT", (inst, def) => {
 	$ZodJWT.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
-const ZodBoolean = /* @__PURE__ */ $constructor("ZodBoolean", (inst, def) => {
+const ZodBoolean = /*@__PURE__*/ $constructor("ZodBoolean", (inst, def) => {
 	$ZodBoolean.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => booleanProcessor(inst, ctx, json, params);
@@ -14470,15 +14378,15 @@ const ZodBoolean = /* @__PURE__ */ $constructor("ZodBoolean", (inst, def) => {
 function boolean(params) {
 	return /* @__PURE__ */ _boolean(ZodBoolean, params);
 }
-const ZodUnknown = /* @__PURE__ */ $constructor("ZodUnknown", (inst, def) => {
+const ZodUnknown = /*@__PURE__*/ $constructor("ZodUnknown", (inst, def) => {
 	$ZodUnknown.init(inst, def);
 	ZodType.init(inst, def);
-	inst._zod.processJSONSchema = (ctx, json, params) => unknownProcessor(inst, ctx, json, params);
+	inst._zod.processJSONSchema = (ctx, json, params) => void 0;
 });
 function unknown() {
 	return /* @__PURE__ */ _unknown(ZodUnknown);
 }
-const ZodNever = /* @__PURE__ */ $constructor("ZodNever", (inst, def) => {
+const ZodNever = /*@__PURE__*/ $constructor("ZodNever", (inst, def) => {
 	$ZodNever.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => neverProcessor(inst, ctx, json, params);
@@ -14486,7 +14394,7 @@ const ZodNever = /* @__PURE__ */ $constructor("ZodNever", (inst, def) => {
 function never(params) {
 	return /* @__PURE__ */ _never(ZodNever, params);
 }
-const ZodArray = /* @__PURE__ */ $constructor("ZodArray", (inst, def) => {
+const ZodArray = /*@__PURE__*/ $constructor("ZodArray", (inst, def) => {
 	$ZodArray.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => arrayProcessor(inst, ctx, json, params);
@@ -14512,7 +14420,7 @@ const ZodArray = /* @__PURE__ */ $constructor("ZodArray", (inst, def) => {
 function array(element, params) {
 	return /* @__PURE__ */ _array(ZodArray, element, params);
 }
-const ZodObject = /* @__PURE__ */ $constructor("ZodObject", (inst, def) => {
+const ZodObject = /*@__PURE__*/ $constructor("ZodObject", (inst, def) => {
 	$ZodObjectJIT.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => objectProcessor(inst, ctx, json, params);
@@ -14583,7 +14491,7 @@ function object(shape, params) {
 		...normalizeParams(params)
 	});
 }
-const ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
+const ZodUnion = /*@__PURE__*/ $constructor("ZodUnion", (inst, def) => {
 	$ZodUnion.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => unionProcessor(inst, ctx, json, params);
@@ -14596,7 +14504,7 @@ function union(options, params) {
 		...normalizeParams(params)
 	});
 }
-const ZodIntersection = /* @__PURE__ */ $constructor("ZodIntersection", (inst, def) => {
+const ZodIntersection = /*@__PURE__*/ $constructor("ZodIntersection", (inst, def) => {
 	$ZodIntersection.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => intersectionProcessor(inst, ctx, json, params);
@@ -14608,7 +14516,7 @@ function intersection(left, right) {
 		right
 	});
 }
-const ZodRecord = /* @__PURE__ */ $constructor("ZodRecord", (inst, def) => {
+const ZodRecord = /*@__PURE__*/ $constructor("ZodRecord", (inst, def) => {
 	$ZodRecord.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => recordProcessor(inst, ctx, json, params);
@@ -14629,7 +14537,7 @@ function record(keyType, valueType, params) {
 		...normalizeParams(params)
 	});
 }
-const ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
+const ZodEnum = /*@__PURE__*/ $constructor("ZodEnum", (inst, def) => {
 	$ZodEnum.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => enumProcessor(inst, ctx, json, params);
@@ -14666,7 +14574,7 @@ function _enum(values, params) {
 		...normalizeParams(params)
 	});
 }
-const ZodTransform = /* @__PURE__ */ $constructor("ZodTransform", (inst, def) => {
+const ZodTransform = /*@__PURE__*/ $constructor("ZodTransform", (inst, def) => {
 	$ZodTransform.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => transformProcessor(inst, ctx, json, params);
@@ -14686,9 +14594,11 @@ const ZodTransform = /* @__PURE__ */ $constructor("ZodTransform", (inst, def) =>
 		const output = def.transform(payload.value, payload);
 		if (output instanceof Promise) return output.then((output) => {
 			payload.value = output;
+			payload.fallback = true;
 			return payload;
 		});
 		payload.value = output;
+		payload.fallback = true;
 		return payload;
 	};
 });
@@ -14698,7 +14608,7 @@ function transform(fn) {
 		transform: fn
 	});
 }
-const ZodOptional = /* @__PURE__ */ $constructor("ZodOptional", (inst, def) => {
+const ZodOptional = /*@__PURE__*/ $constructor("ZodOptional", (inst, def) => {
 	$ZodOptional.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => optionalProcessor(inst, ctx, json, params);
@@ -14710,7 +14620,7 @@ function optional(innerType) {
 		innerType
 	});
 }
-const ZodExactOptional = /* @__PURE__ */ $constructor("ZodExactOptional", (inst, def) => {
+const ZodExactOptional = /*@__PURE__*/ $constructor("ZodExactOptional", (inst, def) => {
 	$ZodExactOptional.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => optionalProcessor(inst, ctx, json, params);
@@ -14722,7 +14632,7 @@ function exactOptional(innerType) {
 		innerType
 	});
 }
-const ZodNullable = /* @__PURE__ */ $constructor("ZodNullable", (inst, def) => {
+const ZodNullable = /*@__PURE__*/ $constructor("ZodNullable", (inst, def) => {
 	$ZodNullable.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => nullableProcessor(inst, ctx, json, params);
@@ -14734,7 +14644,7 @@ function nullable(innerType) {
 		innerType
 	});
 }
-const ZodDefault = /* @__PURE__ */ $constructor("ZodDefault", (inst, def) => {
+const ZodDefault = /*@__PURE__*/ $constructor("ZodDefault", (inst, def) => {
 	$ZodDefault.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => defaultProcessor(inst, ctx, json, params);
@@ -14750,7 +14660,7 @@ function _default(innerType, defaultValue) {
 		}
 	});
 }
-const ZodPrefault = /* @__PURE__ */ $constructor("ZodPrefault", (inst, def) => {
+const ZodPrefault = /*@__PURE__*/ $constructor("ZodPrefault", (inst, def) => {
 	$ZodPrefault.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => prefaultProcessor(inst, ctx, json, params);
@@ -14765,7 +14675,7 @@ function prefault(innerType, defaultValue) {
 		}
 	});
 }
-const ZodNonOptional = /* @__PURE__ */ $constructor("ZodNonOptional", (inst, def) => {
+const ZodNonOptional = /*@__PURE__*/ $constructor("ZodNonOptional", (inst, def) => {
 	$ZodNonOptional.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => nonoptionalProcessor(inst, ctx, json, params);
@@ -14778,7 +14688,7 @@ function nonoptional(innerType, params) {
 		...normalizeParams(params)
 	});
 }
-const ZodCatch = /* @__PURE__ */ $constructor("ZodCatch", (inst, def) => {
+const ZodCatch = /*@__PURE__*/ $constructor("ZodCatch", (inst, def) => {
 	$ZodCatch.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => catchProcessor(inst, ctx, json, params);
@@ -14792,7 +14702,7 @@ function _catch(innerType, catchValue) {
 		catchValue: typeof catchValue === "function" ? catchValue : () => catchValue
 	});
 }
-const ZodPipe = /* @__PURE__ */ $constructor("ZodPipe", (inst, def) => {
+const ZodPipe = /*@__PURE__*/ $constructor("ZodPipe", (inst, def) => {
 	$ZodPipe.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => pipeProcessor(inst, ctx, json, params);
@@ -14806,11 +14716,11 @@ function pipe(in_, out) {
 		out
 	});
 }
-const ZodPreprocess = /* @__PURE__ */ $constructor("ZodPreprocess", (inst, def) => {
+const ZodPreprocess = /*@__PURE__*/ $constructor("ZodPreprocess", (inst, def) => {
 	ZodPipe.init(inst, def);
 	$ZodPreprocess.init(inst, def);
 });
-const ZodReadonly = /* @__PURE__ */ $constructor("ZodReadonly", (inst, def) => {
+const ZodReadonly = /*@__PURE__*/ $constructor("ZodReadonly", (inst, def) => {
 	$ZodReadonly.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => readonlyProcessor(inst, ctx, json, params);
@@ -14822,7 +14732,7 @@ function readonly(innerType) {
 		innerType
 	});
 }
-const ZodCustom = /* @__PURE__ */ $constructor("ZodCustom", (inst, def) => {
+const ZodCustom = /*@__PURE__*/ $constructor("ZodCustom", (inst, def) => {
 	$ZodCustom.init(inst, def);
 	ZodType.init(inst, def);
 	inst._zod.processJSONSchema = (ctx, json, params) => customProcessor(inst, ctx, json, params);
