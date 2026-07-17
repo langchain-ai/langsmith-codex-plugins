@@ -39,9 +39,12 @@ export type SessionMetaPayload = {
   originator: string;
   cli_version: string;
   source: string | StringRecord;
+  parent_thread_id?: string;
+  thread_source?: string;
   agent_nickname?: string;
   agent_role?: string;
   agent_path?: string;
+  multi_agent_version?: string;
   model_provider?: string | null;
   base_instructions?: { text: string } | null;
   dynamic_tools?: unknown[];
@@ -380,6 +383,7 @@ export type TurnCompletePayload = {
   type: "turn_complete";
   turn_id: string;
   last_agent_message?: string | null;
+  error?: unknown;
   completed_at?: number;
   duration_ms?: number;
   time_to_first_token_ms?: number;
@@ -390,6 +394,7 @@ export type TaskCompletePayload = {
   type: "task_complete";
   turn_id: string;
   last_agent_message?: string | null;
+  error?: unknown;
   completed_at?: number;
   duration_ms?: number;
   time_to_first_token_ms?: number;
@@ -784,6 +789,15 @@ export type ItemCompletedPayload = {
   [key: string]: unknown;
 };
 
+export type SubAgentActivityPayload = {
+  type: "sub_agent_activity";
+  event_id: string;
+  agent_thread_id: string;
+  agent_path?: string;
+  kind: string;
+  [key: string]: unknown;
+};
+
 export type HookStartedPayload = {
   type: "hook_started";
   turn_id?: string | null;
@@ -1009,6 +1023,7 @@ export type EventMsgPayload =
   | RawResponseItemPayload
   | ItemStartedPayload
   | ItemCompletedPayload
+  | SubAgentActivityPayload
   | HookStartedPayload
   | HookCompletedPayload
   | AgentMessageContentDeltaPayload
@@ -1093,6 +1108,8 @@ export type Task = {
   userMessageIndex: number | undefined;
   context: { model: string; [key: string]: unknown } | undefined;
   tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
+  error: string | undefined;
+  subagentThreads: string[];
   toolCalls: {
     [callId: string]: {
       error: string | undefined;

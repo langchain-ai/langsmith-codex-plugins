@@ -28,22 +28,22 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/regex.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/regex.js
 var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/validate.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/validate.js
 function validate(uuid) {
 	return typeof uuid === "string" && regex_default.test(uuid);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/parse.js
 function parse$1(uuid) {
 	if (!validate(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/stringify.js
 /**
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -54,13 +54,13 @@ function unsafeStringify(arr, offset = 0) {
 	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/rng.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/rng.js
 const rnds8 = new Uint8Array(16);
 function rng() {
 	return crypto.getRandomValues(rnds8);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v4.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v4.js
 function v4(options, buf, offset) {
 	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
 	return _v4(options, buf, offset);
@@ -80,7 +80,7 @@ function _v4(options, buf, offset) {
 	return unsafeStringify(rnds);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/sha1.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/sha1.js
 function f(s, x, y, z) {
 	switch (s) {
 		case 0: return x & y ^ ~x & z;
@@ -148,7 +148,7 @@ function sha1(bytes) {
 	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v35.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v35.js
 function stringToBytes(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
@@ -177,14 +177,14 @@ function v35(version, hash, value, namespace, buf, offset) {
 	return unsafeStringify(bytes);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v5.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v5.js
 function v5(value, namespace, buf, offset) {
 	return v35(80, sha1, value, namespace, buf, offset);
 }
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v7.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
 function v7(options, buf, offset) {
 	let bytes;
@@ -236,7 +236,7 @@ function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	return buf;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/constants.js
 const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
 const GEN_AI_SYSTEM = "gen_ai.system";
 const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
@@ -272,7 +272,7 @@ const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
 const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
 const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/env.js
 let globalEnv;
 const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
 const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
@@ -415,7 +415,7 @@ function resolveTracingMode(configValue) {
 	return "langsmith";
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/otel.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/otel.js
 var MockTracer = class {
 	constructor() {
 		Object.defineProperty(this, "hasWarned", {
@@ -516,7 +516,7 @@ function getDefaultOTLPTracerComponents() {
 	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/translator.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/experimental/otel/translator.js
 const WELL_KNOWN_OPERATION_NAMES = {
 	llm: "chat",
 	tool: "execute_tool",
@@ -736,7 +736,7 @@ var LangSmithToOTELTranslator = class {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/is-network-error/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/is-network-error/index.js
 const objectToString = Object.prototype.toString;
 const isError = (value) => objectToString.call(value) === "[object Error]";
 const errorMessages = new Set([
@@ -758,7 +758,7 @@ function isNetworkError(error) {
 	return errorMessages.has(message);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-retry/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-retry/index.js
 function validateRetries(retries) {
 	if (typeof retries === "number") {
 		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
@@ -894,7 +894,7 @@ async function pRetry(input, options = {}) {
 	throw new Error("Retry attempts exhausted without throwing an error.");
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
+//#region ../../node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
 var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var has = Object.prototype.hasOwnProperty, prefix = "~";
 	/**
@@ -1129,7 +1129,7 @@ var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 	if ("undefined" !== typeof module) module.exports = EventEmitter;
 }));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
+//#region ../../node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
 var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = (promise, onFinally) => {
 		onFinally = onFinally || (() => {});
@@ -1143,7 +1143,7 @@ var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	};
 }));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
+//#region ../../node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
 var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	const pFinally = require_p_finally();
 	var TimeoutError = class extends Error {
@@ -1181,7 +1181,7 @@ var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports.TimeoutError = TimeoutError;
 }));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
 var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	function lowerBound(array, value, comparator) {
@@ -1200,7 +1200,7 @@ var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = lowerBound;
 }));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
 var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const lower_bound_1 = require_lower_bound();
@@ -1235,7 +1235,7 @@ var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = PriorityQueue;
 }));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-queue.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/p-queue.js
 var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const EventEmitter = require_eventemitter3();
@@ -1485,7 +1485,7 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 })))(), 1);
 const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/async_caller.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/async_caller.js
 const STATUS_RETRYABLE = [
 	408,
 	425,
@@ -1592,7 +1592,7 @@ var AsyncCaller = class {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/messages.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/messages.js
 function isLangChainMessage(message) {
 	return typeof message?._getType === "function";
 }
@@ -1605,7 +1605,7 @@ function convertLangChainMessageToExample(message) {
 	return converted;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -1620,7 +1620,7 @@ let uuid4 = function() {
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/errors.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/errors.js
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -1643,7 +1643,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/error.js
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -1722,7 +1722,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -1755,13 +1755,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/version.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/version.js
 const VERSION = "0.0.1";
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -1876,7 +1876,7 @@ const getPlatformHeaders = () => {
 	return _platformHeaders ??= getPlatformProperties();
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/shims.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/shims.js
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -1916,7 +1916,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -1924,7 +1924,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -1932,7 +1932,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -1991,7 +1991,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -2163,12 +2163,12 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -2221,7 +2221,7 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/parse.js
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
@@ -2244,7 +2244,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
 var __classPrivateFieldSet$2 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2337,7 +2337,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/pagination.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/pagination.js
 var __classPrivateFieldSet$1 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2538,7 +2538,7 @@ var ItemsCursorPostPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -2607,7 +2607,7 @@ const addFormValue = async (form, key, value) => {
 	else throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${value} instead`);
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -2665,7 +2665,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/resource.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/core/resource.js
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -2678,7 +2678,7 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -2735,7 +2735,7 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/comparative.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/comparative.js
 var Comparative = class extends APIResource {
 	/**
 	* Create a comparative experiment.
@@ -2754,7 +2754,7 @@ var Comparative = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiments.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiments.js
 var Experiments = class extends APIResource {
 	/**
 	* Stream grouped and aggregated experiments.
@@ -2767,7 +2767,7 @@ var Experiments = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/group.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/group.js
 var Group = class extends APIResource {
 	/**
 	* Fetch examples for a dataset, and fetch the runs for each example if they are
@@ -2781,7 +2781,7 @@ var Group = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/runs.js
 var Runs$1 = class extends APIResource {
 	/**
 	* Fetch examples for a dataset, and fetch the runs for each example if they are
@@ -2807,7 +2807,7 @@ var Runs$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/share.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/share.js
 var Share = class extends APIResource {
 	/**
 	* Share a dataset.
@@ -2833,7 +2833,7 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/splits.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/splits.js
 var Splits = class extends APIResource {
 	/**
 	* Update Dataset Splits
@@ -2855,7 +2855,7 @@ var Splits = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/versions.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/versions.js
 var Versions = class extends APIResource {
 	/**
 	* Get dataset versions.
@@ -2877,7 +2877,7 @@ var Versions = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3048,7 +3048,7 @@ Datasets.Share = Share;
 Datasets.Comparative = Comparative;
 Datasets.Splits = Splits;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/info.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/info.js
 var Info = class extends APIResource {
 	/**
 	* Get information about the current deployment of LangSmith.
@@ -3058,7 +3058,7 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/headers.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/headers.js
 const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
 	if (!headers) return;
@@ -3118,7 +3118,7 @@ const buildHeaders = (newHeaders) => {
 	};
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -3195,10 +3195,10 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/rules.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/rules.js
 var Rules = class extends APIResource {};
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3270,7 +3270,7 @@ var Runs = class extends APIResource {
 };
 Runs.Rules = Rules;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -3364,7 +3364,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -3410,7 +3410,7 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
 var Snapshots = class extends APIResource {
 	/**
 	* Create a snapshot from a Docker image (async build).
@@ -3448,7 +3448,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3476,7 +3476,7 @@ Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/insights.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/insights.js
 var Insights = class extends APIResource {
 	/**
 	* Create an insights job.
@@ -3532,7 +3532,7 @@ var Insights = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/sessions.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/resources/sessions/sessions.js
 var Sessions = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3605,7 +3605,7 @@ var Sessions = class extends APIResource {
 };
 Sessions.Insights = Insights;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
 /**
 * Read an environment variable.
 *
@@ -3618,7 +3618,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/_openapi_client/client.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -4236,7 +4236,7 @@ Langsmith.OnlineEvaluators = OnlineEvaluators;
 Langsmith.Info = Info;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/warn.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/warn.js
 const warnedMessages = {};
 function warnOnce(message) {
 	if (!warnedMessages[message]) {
@@ -4245,7 +4245,7 @@ function warnOnce(message) {
 	}
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/xxhash/xxhash.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/xxhash/xxhash.js
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -4515,7 +4515,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/_uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/_uuid.js
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -4629,10 +4629,10 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/constants.js
 const _MIN_BACKEND_VERSION = "0.16.6rc1";
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/error.js
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -4764,7 +4764,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompts.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompts.js
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -4792,7 +4792,7 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fs.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fs.js
 /**
 * File system abstraction (Node.js version).
 *
@@ -4852,7 +4852,7 @@ async function rmRecursive(filePath) {
 	});
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompt_cache/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/prompt_cache/index.js
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -5134,7 +5134,7 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/fetch.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/fetch.js
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
 let globalFetchSupportsWebStreaming = void 0;
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
@@ -5157,7 +5157,7 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/profile-lock.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/profile-lock.js
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
@@ -5444,7 +5444,7 @@ function authHeaderFromProfile(profile) {
 	};
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -5693,7 +5693,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/worker_threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/worker_threads.js
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -5705,7 +5705,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/serialize_worker.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/serialize_worker.js
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -6029,7 +6029,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/client.js
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -10142,17 +10142,17 @@ function isExampleCreate(input) {
 	return "dataset_id" in input || "dataset_name" in input;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/env.js
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/constants.js
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/context_vars.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/context_vars.js
 /**
 * Get a context variable from a run tree instance
 */
@@ -10168,12 +10168,12 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/project.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/utils/project.js
 const getDefaultProjectName = () => {
 	return getLangSmithEnvironmentVariable("PROJECT") ?? getEnvironmentVariable("LANGCHAIN_SESSION") ?? "default";
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/run_trees.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/run_trees.js
 const TIMESTAMP_LENGTH = 36;
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
@@ -10992,7 +10992,7 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/traceable.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/singletons/traceable.js
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -11011,10 +11011,247 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/index.js
 const __version__ = "0.7.13";
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/core.js
+//#region ../../node_modules/.pnpm/langsmith@0.7.13_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_03ff9590af590a03557e790b2589ad75/node_modules/langsmith/dist/anonymizer/index.js
+function extractStringNodes(data, options) {
+	const parsedOptions = {
+		...options,
+		maxDepth: options.maxDepth ?? 10
+	};
+	const queue = [[
+		data,
+		0,
+		"",
+		null,
+		""
+	]];
+	let nextId = 0;
+	const result = [];
+	while (queue.length > 0) {
+		const task = queue.shift();
+		if (task == null) continue;
+		const [value, depth, path, parent, key] = task;
+		if (typeof value === "string") result.push({
+			value,
+			path,
+			parent,
+			key,
+			_id: nextId++
+		});
+		else if (Array.isArray(value)) {
+			if (depth >= parsedOptions.maxDepth) continue;
+			for (let i = 0; i < value.length; i++) queue.push([
+				value[i],
+				depth + 1,
+				`${path}[${i}]`,
+				value,
+				String(i)
+			]);
+		} else if (typeof value === "object" && value != null) {
+			if (depth >= parsedOptions.maxDepth) continue;
+			for (const [k, nestedValue] of Object.entries(value)) queue.push([
+				nestedValue,
+				depth + 1,
+				path ? `${path}.${k}` : k,
+				value,
+				k
+			]);
+		}
+	}
+	return result;
+}
+function deepClone(data) {
+	return JSON.parse(JSON.stringify(data));
+}
+function createAnonymizer(replacer, options) {
+	return (data) => {
+		let mutateValue = deepClone(data);
+		const nodes = extractStringNodes(mutateValue, { maxDepth: options?.maxDepth });
+		const processor = Array.isArray(replacer) ? (() => {
+			const replacers = replacer.map(({ pattern, type, replace }) => {
+				if (type != null && type !== "pattern") throw new Error("Invalid anonymizer type");
+				return [typeof pattern === "string" ? new RegExp(pattern, "g") : pattern, replace ?? "[redacted]"];
+			});
+			if (replacers.length === 0) throw new Error("No replacers provided");
+			return { maskNodes: (nodes) => {
+				return nodes.reduce((memo, item) => {
+					const newValue = replacers.reduce((value, [regex, replace]) => {
+						const result = value.replace(regex, replace);
+						regex.lastIndex = 0;
+						return result;
+					}, item.value);
+					if (newValue !== item.value) memo.push({
+						...item,
+						value: newValue
+					});
+					return memo;
+				}, []);
+			} };
+		})() : typeof replacer === "function" ? { maskNodes: (nodes) => nodes.reduce((memo, item) => {
+			const newValue = replacer(item.value, item.path);
+			if (newValue !== item.value) memo.push({
+				...item,
+				value: newValue
+			});
+			return memo;
+		}, []) } : replacer;
+		const nodesById = /* @__PURE__ */ new Map();
+		for (const node of nodes) nodesById.set(node._id, node);
+		const toUpdate = processor.maskNodes(nodes);
+		for (const node of toUpdate) if (node.path === "") mutateValue = node.value;
+		else {
+			const asInternal = node;
+			const internal = asInternal._id !== void 0 ? nodesById.get(asInternal._id) : nodes.find((n) => n.path === node.path);
+			if (internal) internal.parent[internal.key] = node.value;
+		}
+		return mutateValue;
+	};
+}
+/**
+* Replacement token written in place of detected secrets by
+* {@link DEFAULT_SECRET_RULES} / {@link createSecretAnonymizer}.
+*/
+const SECRET_PLACEHOLDER = "[SECRET_DETECTED]";
+/**
+* A curated, high-precision rule set for detecting common credentials in
+* traced data (prompts, tool inputs/outputs, file contents, shell commands).
+*
+* Designed to favor *low false positives* over exhaustive coverage:
+*  - Provider rules are anchored to well-known key prefixes.
+*  - Structural rules only fire when a sensitive *name* (api_key, token,
+*    password, …) is paired with an assignment/separator, so ordinary code,
+*    UUIDs, and hashes are left intact.
+*
+* This is NOT a port of gitleaks/secretlint; pattern shapes are drawn from
+* those projects (and provider docs) as a reference only. Every rule sets an
+* explicit `replace` because {@link createAnonymizer}'s default is
+* `[redacted]`, whereas the shared token here is {@link SECRET_PLACEHOLDER}.
+*
+* Patterns are written to port 1:1 to the Python SDK preset (no lookbehind).
+*/
+const DEFAULT_SECRET_RULES = [
+	{
+		pattern: /sk-ant-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /sk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /sk-[A-Za-z0-9]{32,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /lsv2_(?:pt|sk)_[A-Za-z0-9]{32,}(?:_[A-Za-z0-9]+)*/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /ls__[A-Za-z0-9]{16,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /gh[pousr]_[A-Za-z0-9]{36,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /github_pat_[A-Za-z0-9_]{82}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /glpat-[A-Za-z0-9_-]{20,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b(?:AKIA|ASIA|ABIA|ACCA|A3T[A-Z0-9])[0-9A-Z]{16}\b/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /AIza[0-9A-Za-z_-]{35}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /ya29\.[0-9A-Za-z_-]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /xox[baprs]-[A-Za-z0-9-]{10,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /xapp-\d-[A-Za-z0-9-]{10,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{20,}\b/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /npm_[A-Za-z0-9]{36}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /pypi-AgEIcHlwaS[A-Za-z0-9_-]{50,}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY(?: BLOCK)?-----[\s\S]+?-----END (?:[A-Z0-9 ]+ )?PRIVATE KEY(?: BLOCK)?-----/g,
+		replace: SECRET_PLACEHOLDER
+	},
+	{
+		pattern: /\b([A-Za-z0-9_.-]*(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?KEY|AUTH[_-]?TOKEN|CLIENT[_-]?SECRET)(?![A-Za-z0-9])(?:[_.-][A-Za-z0-9]+)*["']?\s*[:=]\s*["']?)(?:(?:bearer|token|basic)\s+)?[^\s"'&;]{6,}/gi,
+		replace: `$1${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b(authorization|x-api-key|x-auth-token)(["']?\s*[:=]\s*["']?)(bearer\s+|token\s+|basic\s+)?[A-Za-z0-9._~+/-]{8,}=*/gi,
+		replace: `$1$2$3${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b(Bearer\s+)[A-Za-z0-9._~+/-]{10,}=*/gi,
+		replace: `$1${SECRET_PLACEHOLDER}`
+	},
+	{
+		pattern: /\b([a-z][a-z0-9+.-]*:\/\/[^:@/\s]*:)[^@/\s]+(@)/gi,
+		replace: `$1${SECRET_PLACEHOLDER}$2`
+	}
+];
+/**
+* Build an anonymizer pre-loaded with {@link DEFAULT_SECRET_RULES} suitable for
+* passing to `new Client({ anonymizer })`. It redacts detected secrets from run
+* inputs, outputs, and metadata client-side, before they are uploaded.
+*
+* @param options.extraRules - Additional rules appended after the defaults.
+* @param options.maxDepth - Max recursion depth (default 24; higher than
+*   `createAnonymizer`'s default of 10 because traced payloads nest deeply,
+*   e.g. `messages[].content[].args`).
+*
+* @example
+* ```ts
+* import { Client } from "langsmith";
+* import { createSecretAnonymizer } from "langsmith/anonymizer";
+*
+* const client = new Client({ anonymizer: createSecretAnonymizer() });
+* ```
+*/
+function createSecretAnonymizer(options) {
+	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
+}
+//#endregion
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/core.js
 var _a$1;
 function $constructor(name, initializer, params) {
 	function init(inst, def) {
@@ -11073,7 +11310,7 @@ function config(newConfig) {
 	return globalConfig;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/util.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
 	return Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -11372,7 +11609,7 @@ function issue(...args) {
 	return { ...iss };
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/errors.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/errors.js
 const initializer$1 = (inst, def) => {
 	inst.name = "$ZodError";
 	Object.defineProperty(inst, "_zod", {
@@ -11403,7 +11640,7 @@ function flattenError(error, mapper = (issue) => issue.message) {
 		fieldErrors
 	};
 }
-function formatError(error, mapper = (issue) => issue.message) {
+function formatError$1(error, mapper = (issue) => issue.message) {
 	const fieldErrors = { _errors: [] };
 	const processError = (error, path = []) => {
 		for (const issue of error.issues) if (issue.code === "invalid_union" && issue.errors.length) issue.errors.map((issues) => processError({ issues }, [...path, ...issue.path]));
@@ -11432,7 +11669,7 @@ function formatError(error, mapper = (issue) => issue.message) {
 	return fieldErrors;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/parse.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/parse.js
 const _parse = (_Err) => (schema, value, _ctx, _params) => {
 	const ctx = _ctx ? {
 		..._ctx,
@@ -11546,7 +11783,7 @@ const _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 	return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/regexes.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/regexes.js
 /**
 * @deprecated CUID v1 is deprecated by its authors due to information leakage
 * (timestamps embedded in the id). Use {@link cuid2} instead.
@@ -11609,7 +11846,7 @@ const boolean$1 = /^(?:true|false)$/i;
 const lowercase = /^[^A-Z]*$/;
 const uppercase = /^[^a-z]*$/;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/checks.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/checks.js
 const $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
 	var _a;
 	inst._zod ?? (inst._zod = {});
@@ -11828,7 +12065,7 @@ const $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (i
 	};
 });
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/doc.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/doc.js
 var Doc = class {
 	constructor(args = []) {
 		this.content = [];
@@ -11859,14 +12096,14 @@ var Doc = class {
 	}
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/versions.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/versions.js
 const version = {
 	major: 4,
 	minor: 4,
 	patch: 2
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/schemas.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/schemas.js
 const $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
 	var _a;
 	inst ?? (inst = {});
@@ -13052,7 +13289,7 @@ function handleRefineResult(result, payload, input, inst) {
 	}
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/registries.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/registries.js
 var _a;
 var $ZodRegistry = class {
 	constructor() {
@@ -13099,7 +13336,7 @@ function registry() {
 (_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
 const globalRegistry = globalThis.__zod_globalRegistry;
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/api.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/api.js
 /* @__NO_SIDE_EFFECTS__ */
 function _string(Class, params) {
 	return new Class({
@@ -13542,7 +13779,7 @@ function _check(fn, params) {
 	return ch;
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/to-json-schema.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
 	let target = params?.target ?? "draft-2020-12";
 	if (target === "draft-4") target = "draft-04";
@@ -13835,7 +14072,7 @@ const createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params)
 	return finalize(ctx, schema);
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/json-schema-processors.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/core/json-schema-processors.js
 const formatMap = {
 	guid: "uuid",
 	url: "uri",
@@ -14057,7 +14294,7 @@ const optionalProcessor = (schema, ctx, _json, params) => {
 	seen.ref = def.innerType;
 };
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/iso.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/iso.js
 const ZodISODateTime = /* @__PURE__ */ $constructor("ZodISODateTime", (inst, def) => {
 	$ZodISODateTime.init(inst, def);
 	ZodStringFormat.init(inst, def);
@@ -14087,12 +14324,12 @@ function duration(params) {
 	return /* @__PURE__ */ _isoDuration(ZodISODuration, params);
 }
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/errors.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/errors.js
 const initializer = (inst, issues) => {
 	$ZodError.init(inst, issues);
 	inst.name = "ZodError";
 	Object.defineProperties(inst, {
-		format: { value: (mapper) => formatError(inst, mapper) },
+		format: { value: (mapper) => formatError$1(inst, mapper) },
 		flatten: { value: (mapper) => flattenError(inst, mapper) },
 		addIssue: { value: (issue) => {
 			inst.issues.push(issue);
@@ -14109,7 +14346,7 @@ const initializer = (inst, issues) => {
 };
 const ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer, { Parent: Error });
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/parse.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/parse.js
 const parse = /* @__PURE__ */ _parse(ZodRealError);
 const parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 const safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -14123,7 +14360,7 @@ const safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 const safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 const safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 //#endregion
-//#region ../../../langsmith-codex-plugins/node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/schemas.js
+//#region ../../node_modules/.pnpm/zod@4.4.2/node_modules/zod/v4/classic/schemas.js
 const _installedGroups = /* @__PURE__ */ new WeakMap();
 function _installLazyMethods(inst, group, methods) {
 	const proto = Object.getPrototypeOf(inst);
@@ -14862,7 +15099,12 @@ const ConfigSchema = object({
 	api_url: string().optional(),
 	project: string().optional(),
 	metadata: record(string(), unknown()).optional(),
-	replicas: array(ReplicaSchema).optional()
+	replicas: array(ReplicaSchema).optional(),
+	redact: boolean(),
+	redact_extra_rules: array(object({
+		pattern: string(),
+		replace: string().optional()
+	})).optional()
 });
 const PartialConfigSchema = ConfigSchema.partial();
 function parseBoolean(value) {
@@ -14907,14 +15149,20 @@ function getVar(suffix, env) {
 }
 const readConfigEnv = (env) => {
 	const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
-	return stripUndefined$1(PartialConfigSchema.parse({
-		enabled,
-		api_key: getVar("API_KEY", env),
-		api_url: getVar("ENDPOINT", env),
-		project: getVar("PROJECT", env),
-		metadata: parseJson(getVar("METADATA", env)),
-		replicas: parseJson(getVar("RUNS_ENDPOINTS", env))
-	}));
+	try {
+		return stripUndefined$1(PartialConfigSchema.parse({
+			enabled,
+			api_key: getVar("API_KEY", env),
+			api_url: getVar("ENDPOINT", env),
+			project: getVar("PROJECT", env),
+			metadata: parseJson(getVar("METADATA", env)),
+			replicas: parseJson(getVar("RUNS_ENDPOINTS", env)),
+			redact: parseBoolean(getVar("REDACT", env)),
+			redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env))
+		}));
+	} catch {
+		return {};
+	}
 };
 const getHomeDir = () => process.env.HOME ?? os.homedir();
 async function getConfig(options) {
@@ -14925,6 +15173,7 @@ async function getConfig(options) {
 	return ConfigSchema.parse({
 		project: "codex",
 		enabled: false,
+		redact: true,
 		...globalConfig,
 		...localConfig,
 		...envConfig
@@ -14957,11 +15206,11 @@ async function markTurnUploaded(rolloutFile, turnId) {
 //#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
-const LS_AGENT_KIND = "coding_agent";
+const LS_AGENT_PURPOSE = "coding";
 const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.0.4";
+const LS_INTEGRATION_VERSION = "0.0.6";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -15041,7 +15290,8 @@ async function resolveGitInfo(cwd, sessionGit) {
 function codingAgentMetadata(ctx) {
 	const repo = parseRepository(ctx.git?.repository_url);
 	return stripUndefined({
-		ls_agent_kind: LS_AGENT_KIND,
+		ls_agent_purpose: LS_AGENT_PURPOSE,
+		ls_agent_type: ctx.agentType,
 		ls_integration: LS_INTEGRATION,
 		ls_agent_runtime: LS_AGENT_RUNTIME,
 		thread_id: ctx.threadId,
@@ -15107,6 +15357,61 @@ function extractSpawnedAgentId(output) {
 		const id = obj.agent_id;
 		if (typeof id === "string") return id;
 	}
+}
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function formatError(value) {
+	if (value == null) return void 0;
+	if (typeof value === "string") return value || void 0;
+	if (isPrimitive(value)) return String(value);
+	if (isRecord(value)) {
+		const message = typeof value.message === "string" ? value.message : void 0;
+		const details = typeof value.additional_details === "string" ? value.additional_details : void 0;
+		const info = value.codex_error_info;
+		const parts = [
+			message,
+			details,
+			typeof info === "string" ? info : info != null ? JSON.stringify(info) : void 0
+		].filter((part) => part != null && part.length > 0);
+		if (parts.length > 0) return parts.join(" — ");
+	}
+	try {
+		return JSON.stringify(value);
+	} catch {
+		return String(value);
+	}
+}
+function extractSubagentActivities(payload) {
+	const activities = [];
+	if (payload.type === "sub_agent_activity" && payload.kind === "started") {
+		if (typeof payload.agent_thread_id === "string") activities.push({
+			threadId: payload.agent_thread_id,
+			callId: typeof payload.event_id === "string" ? payload.event_id : void 0
+		});
+		return activities;
+	}
+	if (payload.type !== "item_completed" || !isRecord(payload.item)) return activities;
+	const item = payload.item;
+	const callId = typeof item.id === "string" ? item.id : void 0;
+	if (item.type === "SubAgentActivity" && item.kind === "started" && typeof item.agent_thread_id === "string") activities.push({
+		threadId: item.agent_thread_id,
+		callId
+	});
+	if (item.type === "CollabAgentToolCall" && item.tool === "spawn_agent") {
+		const ids = /* @__PURE__ */ new Set();
+		if (Array.isArray(item.receiver_thread_ids)) {
+			for (const id of item.receiver_thread_ids) if (typeof id === "string") ids.add(id);
+		}
+		if (Array.isArray(item.receiver_agents)) {
+			for (const agent of item.receiver_agents) if (isRecord(agent) && typeof agent.thread_id === "string") ids.add(agent.thread_id);
+		}
+		for (const threadId of ids) activities.push({
+			threadId,
+			callId
+		});
+	}
+	return activities;
 }
 function resolveSessionsRoot(parentFileName, sessionsRoot) {
 	if (sessionsRoot) return sessionsRoot;
@@ -15378,8 +15683,10 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 	})();
 	const git = await resolveGitInfo(cwd, sessionMeta?.git);
 	const isSubagent = sessionMeta?.is_subagent === true;
+	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
-		threadId: (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id,
+		agentType: isSubagent ? "subagent" : "root",
+		threadId: conversationThreadId,
 		turnId: task.turnId?.id,
 		turnNumber: task.turnNumber,
 		cliVersion: sessionMeta?.cli_version,
@@ -15395,6 +15702,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		replicas: options?.replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
+		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
 		extra: { metadata: {
@@ -15405,7 +15713,6 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
 			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
 			codex_cli_version: sessionMeta?.cli_version,
-			ls_agent_type: isSubagent ? "subagent" : "root",
 			ls_message_format: "anthropic",
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		} }
@@ -15431,6 +15738,21 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			length: 1
 		};
 	});
+	const postedSubagentThreads = /* @__PURE__ */ new Set();
+	async function postSubagentThread(subagentThread) {
+		if (postedSubagentThreads.has(subagentThread)) return;
+		postedSubagentThreads.add(subagentThread);
+		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
+		if (subagentFile == null) return;
+		await convertToRunTree({
+			transcript_path: subagentFile,
+			turn_id: findLast(await loadSession(subagentFile), (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
+		}, {
+			...options,
+			parentRunTree: parent,
+			debugNow
+		});
+	}
 	for (const output of outputs) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -15438,7 +15760,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		const outputStartTime = inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
 		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
-		const subagentThreads = findLast(aiMessage, (i) => i.subagentThreads.length > 0)?.subagentThreads;
+		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = parent.createChild({
 			name: "openai.codex.turn",
 			run_type: "llm",
@@ -15500,21 +15822,9 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			});
 			PROMISE_QUEUE.push(toolRun.postRun());
 		}
-		for (const subagentThread of subagentThreads ?? []) {
-			const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
-			if (subagentFile == null) continue;
-			await convertToRunTree({
-				transcript_path: subagentFile,
-				turn_id: await (async () => {
-					return findLast(await loadSession(subagentFile), (e) => e.type === "event_msg" && e.payload.turn_id != null)?.payload.turn_id ?? null;
-				})()
-			}, {
-				...options,
-				parentRunTree: parent,
-				debugNow
-			});
-		}
+		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
+	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
 }
 async function convertToRunTree(input, options) {
 	let sessionMeta;
@@ -15527,17 +15837,26 @@ async function convertToRunTree(input, options) {
 			userMessageIndex: void 0,
 			context: void 0,
 			tokenCount: void 0,
+			error: void 0,
+			subagentThreads: [],
 			toolCalls: {}
 		};
 	}
 	let turnNumber = 0;
 	const spawnAgentMessages = /* @__PURE__ */ new Map();
+	function recordSubagentThread(task, threadId, callId) {
+		if (!task.subagentThreads.includes(threadId)) task.subagentThreads.push(threadId);
+		if (callId == null) return;
+		const message = spawnAgentMessages.get(callId);
+		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
+	}
 	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
 			const source = payload.source;
 			const threadSpawn = source != null && typeof source === "object" && "subagent" in source ? source.subagent?.thread_spawn : void 0;
+			const isSubagent = threadSpawn != null || payload.thread_source === "subagent" && typeof payload.parent_thread_id === "string";
 			sessionMeta = {
 				session_id: payload.id,
 				model_provider: payload.model_provider ?? void 0,
@@ -15545,8 +15864,8 @@ async function convertToRunTree(input, options) {
 				cli_version: payload.cli_version,
 				cwd: payload.cwd,
 				git: payload.git,
-				is_subagent: threadSpawn != null,
-				parent_thread_id: threadSpawn?.parent_thread_id ?? void 0,
+				is_subagent: isSubagent,
+				parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0,
 				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
 				agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 			};
@@ -15563,7 +15882,7 @@ async function convertToRunTree(input, options) {
 			if (payload.type === "function_call" && payload.name === "spawn_agent") spawnAgentMessages.set(payload.call_id, message);
 			else if (payload.type === "function_call_output" && spawnAgentMessages.has(payload.call_id)) {
 				const childId = extractSpawnedAgentId(payload.output);
-				if (childId != null) spawnAgentMessages.get(payload.call_id)?.subagentThreads.push(childId);
+				if (childId != null) recordSubagentThread(task, childId, payload.call_id);
 			}
 			if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 		}
@@ -15617,13 +15936,29 @@ async function convertToRunTree(input, options) {
 				if (last != null) last.tokenCount = payload.info?.last_token_usage;
 				task.tokenCount = payload.info ?? void 0;
 			}
-			if (payload.type === "collab_agent_spawn_end") {
-				if (payload.new_thread_id != null) {
-					task ??= createTask();
-					task.messages.at(-1)?.subagentThreads.push(payload.new_thread_id);
-				}
+			for (const activity of extractSubagentActivities(payload)) {
+				task ??= createTask();
+				recordSubagentThread(task, activity.threadId, activity.callId);
 			}
-			if (payload.type === "task_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
+			if (payload.type === "collab_agent_spawn_end" && payload.new_thread_id != null) {
+				task ??= createTask();
+				recordSubagentThread(task, payload.new_thread_id, payload.call_id);
+			}
+			if (payload.type === "stream_error") {
+				task ??= createTask();
+				task.error = formatError(payload);
+			}
+			if (payload.type === "task_complete" || payload.type === "turn_complete") {
+				task ??= createTask();
+				task.error = formatError(payload.error);
+			}
+			if (payload.type === "turn_aborted") {
+				task ??= createTask();
+				const explicitError = formatError(payload.error);
+				if (explicitError != null) task.error = explicitError;
+				else if (task.error == null && payload.reason !== "review_ended") task.error = payload.reason === "interrupted" ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
+			}
+			if (payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
 				if (task.turnId == null && completedTurnId != null) task.turnId = {
@@ -15674,10 +16009,12 @@ async function runHook() {
 	const content = await readStdin();
 	const config = await getConfig();
 	if (!config.enabled) return;
+	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
 	await convertToRunTree(content, {
 		client: new Client({
 			apiKey: config.api_key,
-			apiUrl: config.api_url
+			apiUrl: config.api_url,
+			anonymizer
 		}),
 		projectName: config.project,
 		metadata: config.metadata,

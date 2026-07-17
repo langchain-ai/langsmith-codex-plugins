@@ -8,10 +8,13 @@ import type { GitInfo } from "./types.js";
 const execFileAsync = promisify(execFile);
 
 // Frozen literals for the Codex integration (see validator.json).
-export const LS_AGENT_KIND = "coding_agent";
+export const LS_AGENT_PURPOSE = "coding";
 export const LS_INTEGRATION = "openai-codex";
 export const LS_AGENT_RUNTIME = "Codex";
 export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+
+/** The role a run plays within a coding-agent trace. */
+export type LSAgentType = "root" | "subagent" | "middleware" | "compaction";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.
@@ -128,6 +131,8 @@ export async function resolveGitInfo(
 }
 
 export interface CodingAgentContext {
+  /** Role of these runs within the coding agent trace → `ls_agent_type`. */
+  agentType: LSAgentType;
   /** Stable conversation/thread id used to group turns (Codex `thread_id`/session id). */
   threadId?: string;
   /** Stable per-turn id (Codex `turn_id`). */
@@ -151,7 +156,8 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
 
   return stripUndefined({
     // Identity & grouping — required on every run.
-    ls_agent_kind: LS_AGENT_KIND,
+    ls_agent_purpose: LS_AGENT_PURPOSE,
+    ls_agent_type: ctx.agentType,
     ls_integration: LS_INTEGRATION,
     ls_agent_runtime: LS_AGENT_RUNTIME,
     thread_id: ctx.threadId,

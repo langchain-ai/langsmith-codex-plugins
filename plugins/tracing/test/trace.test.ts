@@ -10,7 +10,10 @@ import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
 declare const __LS_INTEGRATION_VERSION__: string;
 const INTEGRATION_VERSION = __LS_INTEGRATION_VERSION__;
 
-async function preloadTestFiles(options: { makeTurnIncomplete: boolean }) {
+async function preloadTestFiles(options: {
+  makeTurnIncomplete: boolean;
+  subagentProtocol?: "legacy" | "v2";
+}) {
   const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
 
   const sourceDir = path.join(__dirname, "sessions/2026/04/23");
@@ -24,6 +27,70 @@ async function preloadTestFiles(options: { makeTurnIncomplete: boolean }) {
     if (!file.endsWith(".jsonl")) continue;
 
     let content = await fs.readFile(path.join(sourceDir, file), "utf-8");
+
+    if (options.subagentProtocol === "v2" && file === "rollout-subagents.jsonl") {
+      const children = new Map([
+        [
+          "call_8OH6877kwWsCioAo0t5q4SD1",
+          { threadId: "019dbc03-79de-7d53-8196-3167d9a32762", path: "/root/harvey" },
+        ],
+        [
+          "call_YLhnEvlSUFUUdFauf7zFNkV6",
+          { threadId: "019dbc03-79ee-7ee0-b40b-26920c74c524", path: "/root/leibniz" },
+        ],
+      ]);
+      const lines = content
+        .trim()
+        .split("\n")
+        .flatMap((line) => {
+          const event = JSON.parse(line);
+          const child = children.get(event.payload.call_id);
+          if (event.payload.type !== "function_call_output" || child == null) return [event];
+
+          event.payload.output = JSON.stringify({ task_name: child.path });
+          return [
+            event,
+            {
+              timestamp: event.timestamp,
+              ordinal: 1,
+              type: "event_msg",
+              payload: {
+                type: "item_completed",
+                thread_id: "019dbc02-cc63-7893-9d13-9b24a7db0ace",
+                turn_id: "019dbc03-4aa2-72a0-8190-c747168c8f1d",
+                item: {
+                  type: "SubAgentActivity",
+                  id: event.payload.call_id,
+                  kind: "started",
+                  agent_thread_id: child.threadId,
+                  agent_path: child.path,
+                },
+              },
+            },
+          ];
+        });
+      content = lines.map((line) => JSON.stringify(line)).join("\n") + "\n";
+    }
+
+    if (
+      options.subagentProtocol === "v2" &&
+      file.startsWith("rollout-subagents-") &&
+      file !== "rollout-subagents.jsonl"
+    ) {
+      const lines = content
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const event = JSON.parse(line);
+          if (event.type === "session_meta") {
+            event.payload.source = "cli";
+            event.payload.thread_source = "subagent";
+            event.payload.parent_thread_id = "019dbc02-cc63-7893-9d13-9b24a7db0ace";
+          }
+          return JSON.stringify(event);
+        });
+      content = lines.join("\n") + "\n";
+    }
 
     if (options.makeTurnIncomplete) {
       // Remove the last line to simulate an incomplete turn
@@ -115,7 +182,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                 turn_number: 1,
                 thread_id: "019dbc00-a3c9-7681-8e0c-73139815b4f2",
                 ls_integration: "openai-codex",
-                ls_agent_kind: "coding_agent",
+                ls_agent_purpose: "coding",
                 ls_agent_runtime: "Codex",
                 ls_agent_runtime_version: "0.123.0",
                 ls_trace_schema_version: "coding-agent-v1",
@@ -986,3 +1053,30 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
     );
   },
 );
+
+it("discovers subagents from current Codex v2 activity items", async () => {
+  const { client, callSpy } = mockClient();
+  vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete: false, subagentProtocol: "v2" }));
+
+  await convertToRunTree(
+    {
+      transcript_path: path.join(
+        "/home/codex-user/.codex/sessions/2026/04/23/rollout-subagents.jsonl",
+      ),
+      turn_id: "019dbc03-4aa2-72a0-8190-c747168c8f1d",
+    },
+    { client, projectName: "codex" },
+  );
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const subagentIds = Object.values(tree.data)
+    .filter((run) => run.extra?.metadata?.ls_agent_type === "subagent")
+    .map((run) => run.extra?.metadata?.ls_subagent_id)
+    .filter((id): id is string => typeof id === "string")
+    .sort();
+
+  expect(subagentIds).toEqual([
+    "019dbc03-79de-7d53-8196-3167d9a32762",
+    "019dbc03-79ee-7ee0-b40b-26920c74c524",
+  ]);
+});
