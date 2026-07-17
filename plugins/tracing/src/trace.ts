@@ -6,7 +6,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
+import { codingAgentMetadata, resolveGitInfo, skillNameFromToolCall } from "./metadata.js";
 import type {
   Session,
   TokenCount,
@@ -542,6 +542,8 @@ async function postTurn(
 
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
+      // Provisional skill-name capture — see skillNameFromToolCall (metadata.ts).
+      const skillName = skillNameFromToolCall(nativeToolName, msgToolCall.args);
 
       const toolRun = parent.createChild({
         name: runName,
@@ -565,6 +567,8 @@ async function postTurn(
             ...(nativeToolName != null && runName !== nativeToolName
               ? { ls_tool_name: nativeToolName }
               : {}),
+            // Invoked skill name, when this tool call is a skill invocation.
+            ...(skillName != null ? { ls_skill_name: skillName } : {}),
           },
         },
       });

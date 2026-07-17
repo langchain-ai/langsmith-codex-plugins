@@ -175,3 +175,25 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
     sandbox_type: ctx.sandboxType,
   });
 }
+
+/**
+ * Best-effort extraction of an invoked skill's name from a Codex tool call, for
+ * the `ls_skill_name` metadata key. Mirrors the Claude Code plugin so skill
+ * usage is queryable via RunQueryStats (group_by metadata path=ls_skill_name).
+ *
+ * PROVISIONAL — TODO(skills): Codex does not yet emit a skill-*invocation* span
+ * we can key on; the rollout only carries catalog events (`list_skills_response`,
+ * `skills_update_available`). Confirm against a real rollout how an invoked skill
+ * actually surfaces (a dedicated tool/function call vs. prompt expansion) and
+ * tighten the tool-name / arg matching below. Until then this stays inert for
+ * ordinary tools (exec_command, spawn_agent, …), so it changes no existing trace.
+ */
+export function skillNameFromToolCall(
+  toolName: string | undefined,
+  args: unknown,
+): string | undefined {
+  if (toolName !== "skill" && toolName !== "invoke_skill") return undefined;
+  const record = typeof args === "object" && args !== null ? (args as Record<string, unknown>) : {};
+  const name = record.skill ?? record.name;
+  return typeof name === "string" ? name : undefined;
+}
