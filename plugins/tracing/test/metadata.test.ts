@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { skillNameFromToolCall } from "../src/metadata.js";
 
-// Unit coverage for ls_skill_name extraction. Codex emits no dedicated skill
-// span, so a skill invocation is detected only from an exec_command that READS a
-// .../skills/<name>/SKILL.md file (confirmed against real rollouts — see the
-// rollout-skill-* fixtures). Writes, edits, deletes, and other tools must not match.
+// Unit coverage for ls_skill_name: an exec_command that READS a
+// .../skills/<name>/SKILL.md file. Writes/edits/deletes and other tools must not match.
 describe("skillNameFromToolCall", () => {
   it("extracts the skill from an explicit `cat .../skills/<name>/SKILL.md`", () => {
     expect(
@@ -37,7 +35,7 @@ describe("skillNameFromToolCall", () => {
     expect(
       skillNameFromToolCall("exec_command", { cmd: "cat ./.codex/skills/my-skill/SKILL.md" }),
     ).toBe("my-skill");
-    // Unparsed args (raw JSON string) still work — the path survives serialization.
+    // Raw JSON string args still work.
     expect(skillNameFromToolCall("exec_command", '{"cmd":"cat repo/skills/foo/SKILL.md"}')).toBe(
       "foo",
     );

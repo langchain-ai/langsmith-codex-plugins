@@ -183,33 +183,18 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
 }
 
 /**
- * Extract an invoked skill's name from a Codex tool call, for the `ls_skill_name`
- * metadata key (part of the coding-agent-v1 contract), so skill usage is
- * queryable via RunQueryStats (group_by metadata path=ls_skill_name).
- *
- * Confirmed against real 0.128.0 rollouts (see the rollout-skill-* fixtures):
- * Codex emits no skill-invocation span, no `skill`/`invoke_skill` tool, and no
- * catalog event in the rollout. A skill invocation — named or model-chosen —
- * surfaces only as an `exec_command` that READS the skill definition file:
- *   cat /path/.../skills/<name>/SKILL.md
- * so we key on that read. The skill name is the directory holding SKILL.md,
- * required to sit under a `skills/` path segment.
- *
- * Scope guards keep this from over-tagging: only `exec_command` (the observed
- * carrier), only read commands (cat/sed/rg/…), never a write, in-place edit,
- * redirect, or delete — so authoring or removing a skill is not counted as using
- * it. It stays inert for every other tool call, changing no other trace. The one
- * remaining false positive (reading a SKILL.md for some non-use reason) is rare.
- * Repeated reads of the same skill within a turn are de-duplicated by the caller.
+ * Skill name for the `ls_skill_name` metadata key (coding-agent-v1 contract).
+ * Codex has no skill span/tool/catalog event; a skill invocation shows up only as
+ * an exec_command that reads `.../skills/<name>/SKILL.md` (rationale in PR #25).
+ * Reads only — writes/edits/deletes excluded; repeated reads deduped by caller.
  */
 const SKILL_MD_PATH =
   /(?:^|\/)skills\/(?:[^\s"']*\/)?([A-Za-z0-9][A-Za-z0-9._-]*)\/SKILL\.md(?![\w.-])/;
 
 // Read utilities Codex uses to load a skill; anything that writes, edits in
 // place, redirects, or deletes must never count as a skill invocation.
-// Verbs are matched only when followed by whitespace (i.e. actually invoked with
-// args), so a skill *name* segment like `cp-tool` or `cat-facts` in the path
-// isn't mistaken for the command.
+// Verbs match only when followed by whitespace (actually invoked), so a skill
+// name segment like `cp-tool` in the path isn't read as the command.
 const READ_COMMAND =
   /\b(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
 const MUTATING_COMMAND =
@@ -229,7 +214,6 @@ export function skillNameFromToolCall(
   toolName: string | undefined,
   args: unknown,
 ): string | undefined {
-  // Only exec_command reads are observed to carry a skill invocation.
   if (toolName !== "exec_command") return undefined;
   const cmd = commandText(args);
   if (cmd == null) return undefined;

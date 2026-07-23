@@ -6,11 +6,9 @@ import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
 
-// End-to-end coverage for ls_skill_name against real, sanitized Codex 0.128.0
-// rollouts. In both the explicit ("use the openai-docs skill") and implicit
-// ("how do I author a skill?" — Codex picks skill-creator) cases, the only trace
-// left by a skill invocation is an exec_command that reads the skill's
-// .../skills/<name>/SKILL.md file. The tracer must tag that tool run.
+// End-to-end coverage for ls_skill_name over real (sanitized) Codex 0.128.0
+// rollouts: a skill invocation surfaces only as an exec_command reading
+// .../skills/<name>/SKILL.md, and the tracer must tag that tool run.
 const SESSIONS_DIR = "/home/codex-user/.codex/sessions/2026/07/23";
 
 async function preloadSkillFixtures() {
@@ -69,8 +67,7 @@ describe("ls_skill_name from real rollouts", () => {
       "rollout-skill-implicit.jsonl",
       "019f8fd1-0cf7-7d32-b7cb-86d980f60d88",
     );
-    // Codex read skill-creator three ways (cat / rg / sed) in one turn; the tag is
-    // deduped per skill per turn, so one activation yields exactly one tag.
+    // skill-creator read three ways in one turn → deduped to a single tag.
     expect([...new Set(names)]).toEqual(["skill-creator"]);
     expect(names.length).toBe(1);
   });
