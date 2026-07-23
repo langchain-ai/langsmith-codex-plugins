@@ -220,7 +220,7 @@
       "allowedValues": null,
       "requirement": "contextual",
       "requiredWhereKnown": false,
-      "note": "Invoked skill name; tool runs only. Queryable via RunQueryStats group_by metadata path=ls_skill_name. PROVISIONAL: Codex does not yet emit a distinct skill-invocation span — confirm the rollout shape (see skillNameFromToolCall in metadata.ts)."
+      "note": "Invoked skill name; tool runs only. Queryable via RunQueryStats group_by metadata path=ls_skill_name. Codex emits no dedicated skill-invocation span or catalog event, so this is derived heuristically from an exec_command that reads a .../skills/<name>/SKILL.md path (read commands only, deduped per skill per turn; see skillNameFromToolCall in metadata.ts)."
     }
   ],
   "preserveExistingOnModelAndToolRuns": [

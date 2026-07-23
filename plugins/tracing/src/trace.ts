@@ -562,6 +562,10 @@ async function postTurn(
     );
   }
 
+  // One ls_skill_name tag per skill per turn: Codex reads a skill's SKILL.md via
+  // several exec_command reads (cat/sed/rg), so tag only the first per skill.
+  const taggedSkills = new Set<string>();
+
   for (const output of outputs) {
     const inputMessages = fullMessages.slice(0, output.start);
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -634,8 +638,12 @@ async function postTurn(
 
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
-      // Provisional skill-name capture — see skillNameFromToolCall (metadata.ts).
-      const skillName = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+      // Skill-name capture — see skillNameFromToolCall (metadata.ts). Dedup per
+      // skill per turn so one activation yields exactly one tag.
+      const detectedSkill = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+      const skillName =
+        detectedSkill != null && !taggedSkills.has(detectedSkill) ? detectedSkill : undefined;
+      if (skillName != null) taggedSkills.add(skillName);
 
       const toolRun = parent.createChild({
         name: runName,

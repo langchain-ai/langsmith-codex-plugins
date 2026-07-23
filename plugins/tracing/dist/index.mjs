@@ -15310,22 +15310,42 @@ function codingAgentMetadata(ctx) {
 	});
 }
 /**
-* Best-effort extraction of an invoked skill's name from a Codex tool call, for
-* the `ls_skill_name` metadata key. Mirrors the Claude Code plugin so skill
-* usage is queryable via RunQueryStats (group_by metadata path=ls_skill_name).
+* Extract an invoked skill's name from a Codex tool call, for the `ls_skill_name`
+* metadata key (part of the coding-agent-v1 contract), so skill usage is
+* queryable via RunQueryStats (group_by metadata path=ls_skill_name).
 *
-* PROVISIONAL — TODO(skills): Codex does not yet emit a skill-*invocation* span
-* we can key on; the rollout only carries catalog events (`list_skills_response`,
-* `skills_update_available`). Confirm against a real rollout how an invoked skill
-* actually surfaces (a dedicated tool/function call vs. prompt expansion) and
-* tighten the tool-name / arg matching below. Until then this stays inert for
-* ordinary tools (exec_command, spawn_agent, …), so it changes no existing trace.
+* Confirmed against real 0.128.0 rollouts (see the rollout-skill-* fixtures):
+* Codex emits no skill-invocation span, no `skill`/`invoke_skill` tool, and no
+* catalog event in the rollout. A skill invocation — named or model-chosen —
+* surfaces only as an `exec_command` that READS the skill definition file:
+*   cat /path/.../skills/<name>/SKILL.md
+* so we key on that read. The skill name is the directory holding SKILL.md,
+* required to sit under a `skills/` path segment.
+*
+* Scope guards keep this from over-tagging: only `exec_command` (the observed
+* carrier), only read commands (cat/sed/rg/…), never a write, in-place edit,
+* redirect, or delete — so authoring or removing a skill is not counted as using
+* it. It stays inert for every other tool call, changing no other trace. The one
+* remaining false positive (reading a SKILL.md for some non-use reason) is rare.
+* Repeated reads of the same skill within a turn are de-duplicated by the caller.
 */
+const SKILL_MD_PATH = /(?:^|\/)skills\/(?:[^\s"']*\/)?([A-Za-z0-9][A-Za-z0-9._-]*)\/SKILL\.md(?![\w.-])/;
+const READ_COMMAND = /\b(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const MUTATING_COMMAND = /(?:>>?|\btee\s|\bsed\b[^\n]*\s-i\b|\b(?:rm|rmdir|unlink|mv|cp|dd|truncate|install|ln|chmod|chown|touch|mkdir)\s)/;
+/** Shell-command text from an exec_command tool call's arguments. */
+function commandText(args) {
+	if (typeof args === "string") return args;
+	if (typeof args === "object" && args !== null) {
+		const cmd = args.cmd;
+		if (typeof cmd === "string") return cmd;
+	}
+}
 function skillNameFromToolCall(toolName, args) {
-	if (toolName !== "skill" && toolName !== "invoke_skill") return void 0;
-	const record = typeof args === "object" && args !== null ? args : {};
-	const name = record.skill ?? record.name;
-	return typeof name === "string" ? name : void 0;
+	if (toolName !== "exec_command") return void 0;
+	const cmd = commandText(args);
+	if (cmd == null) return void 0;
+	if (!READ_COMMAND.test(cmd) || MUTATING_COMMAND.test(cmd)) return void 0;
+	return SKILL_MD_PATH.exec(cmd)?.[1];
 }
 //#endregion
 //#region src/utils/isPrimitive.ts
@@ -15753,6 +15773,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			debugNow
 		});
 	}
+	const taggedSkills = /* @__PURE__ */ new Set();
 	for (const output of outputs) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -15795,7 +15816,9 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
-			const skillName = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+			const detectedSkill = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+			const skillName = detectedSkill != null && !taggedSkills.has(detectedSkill) ? detectedSkill : void 0;
+			if (skillName != null) taggedSkills.add(skillName);
 			const toolRun = parent.createChild({
 				name: runName,
 				run_type: "tool",
