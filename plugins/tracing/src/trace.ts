@@ -7,6 +7,7 @@ import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { codingAgentMetadata, resolveGitInfo, skillNameFromToolCall } from "./metadata.js";
+import { isRecord } from "./utils/isRecord.js";
 import type {
   Session,
   TokenCount,
@@ -44,10 +45,6 @@ function extractSpawnedAgentId(output: unknown): string | undefined {
     if (typeof id === "string") return id;
   }
   return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatError(value: unknown): string | undefined {
@@ -665,7 +662,7 @@ async function postTurn(
             ...(nativeToolName != null && runName !== nativeToolName
               ? { ls_tool_name: nativeToolName }
               : {}),
-            // Invoked skill name, when this tool call is a skill invocation.
+            // Invoked skill name — first read of each skill per turn (deduped above).
             ...(skillName != null ? { ls_skill_name: skillName } : {}),
           },
         },

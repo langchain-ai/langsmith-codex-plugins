@@ -4,6 +4,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { GitInfo } from "./types.js";
+import { isRecord } from "./utils/isRecord.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -188,8 +189,9 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
  * an exec_command that reads `.../skills/<name>/SKILL.md` (rationale in PR #25).
  * Reads only — writes/edits/deletes excluded; repeated reads deduped by caller.
  */
+// Accept both POSIX and Windows path separators.
 const SKILL_MD_PATH =
-  /(?:^|\/)skills\/(?:[^\s"']*\/)?([A-Za-z0-9][A-Za-z0-9._-]*)\/SKILL\.md(?![\w.-])/;
+  /(?:^|[/\\])skills[/\\](?:[^\s"']*[/\\])?([A-Za-z0-9][A-Za-z0-9._-]*)[/\\]SKILL\.md(?![\w.-])/;
 
 // Read utilities Codex uses to load a skill; anything that writes, edits in
 // place, redirects, or deletes must never count as a skill invocation.
@@ -203,10 +205,7 @@ const MUTATING_COMMAND =
 /** Shell-command text from an exec_command tool call's arguments. */
 function commandText(args: unknown): string | undefined {
   if (typeof args === "string") return args;
-  if (typeof args === "object" && args !== null) {
-    const cmd = (args as Record<string, unknown>).cmd;
-    if (typeof cmd === "string") return cmd;
-  }
+  if (isRecord(args) && typeof args.cmd === "string") return args.cmd;
   return undefined;
 }
 

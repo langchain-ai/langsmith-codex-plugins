@@ -48,6 +48,14 @@ describe("skillNameFromToolCall", () => {
     ).toBe("cp-tool");
   });
 
+  it("matches Windows-style backslash paths", () => {
+    expect(
+      skillNameFromToolCall("exec_command", {
+        cmd: "cat C:\\Users\\u\\.codex\\skills\\openai-docs\\SKILL.md",
+      }),
+    ).toBe("openai-docs");
+  });
+
   it("only fires for exec_command, not other tools", () => {
     const args = { cmd: "cat /home/u/.codex/skills/.system/openai-docs/SKILL.md" };
     expect(skillNameFromToolCall("exec", args)).toBeUndefined();
