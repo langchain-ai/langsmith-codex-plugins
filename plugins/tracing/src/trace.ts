@@ -6,7 +6,8 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
+import { codingAgentMetadata, resolveGitInfo, skillNameFromToolCall } from "./metadata.js";
+import { isRecord } from "./utils/isRecord.js";
 import type {
   Session,
   TokenCount,
@@ -44,10 +45,6 @@ function extractSpawnedAgentId(output: unknown): string | undefined {
     if (typeof id === "string") return id;
   }
   return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatError(value: unknown): string | undefined {
@@ -562,6 +559,9 @@ async function postTurn(
     );
   }
 
+  // Dedup ls_skill_name per skill per turn (a skill is read several ways in one turn).
+  const taggedSkills = new Set<string>();
+
   for (const output of outputs) {
     const inputMessages = fullMessages.slice(0, output.start);
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -634,6 +634,11 @@ async function postTurn(
 
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
+      // Tag the first read of each skill per turn (see skillNameFromToolCall).
+      const detectedSkill = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+      const skillName =
+        detectedSkill != null && !taggedSkills.has(detectedSkill) ? detectedSkill : undefined;
+      if (skillName != null) taggedSkills.add(skillName);
 
       const toolRun = parent.createChild({
         name: runName,
@@ -657,6 +662,8 @@ async function postTurn(
             ...(nativeToolName != null && runName !== nativeToolName
               ? { ls_tool_name: nativeToolName }
               : {}),
+            // Invoked skill name — first read of each skill per turn (deduped above).
+            ...(skillName != null ? { ls_skill_name: skillName } : {}),
           },
         },
       });

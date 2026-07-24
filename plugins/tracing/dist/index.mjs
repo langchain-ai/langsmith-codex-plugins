@@ -15204,6 +15204,11 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/utils/isRecord.ts
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+//#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
 const LS_AGENT_PURPOSE = "coding";
@@ -15309,6 +15314,27 @@ function codingAgentMetadata(ctx) {
 		sandbox_type: ctx.sandboxType
 	});
 }
+/**
+* Skill name for the `ls_skill_name` metadata key (coding-agent-v1 contract).
+* Codex has no skill span/tool/catalog event; a skill invocation shows up only as
+* an exec_command that reads `.../skills/<name>/SKILL.md` (rationale in PR #25).
+* Reads only — writes/edits/deletes excluded; repeated reads deduped by caller.
+*/
+const SKILL_MD_PATH = /(?:^|[/\\])skills[/\\](?:[^\s"']*[/\\])?([A-Za-z0-9][A-Za-z0-9._-]*)[/\\]SKILL\.md(?![\w.-])/;
+const READ_COMMAND = /\b(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const MUTATING_COMMAND = /(?:>>?|\btee\s|\bsed\b[^\n]*\s-i\b|\b(?:rm|rmdir|unlink|mv|cp|dd|truncate|install|ln|chmod|chown|touch|mkdir)\s)/;
+/** Shell-command text from an exec_command tool call's arguments. */
+function commandText(args) {
+	if (typeof args === "string") return args;
+	if (isRecord(args) && typeof args.cmd === "string") return args.cmd;
+}
+function skillNameFromToolCall(toolName, args) {
+	if (toolName !== "exec_command") return void 0;
+	const cmd = commandText(args);
+	if (cmd == null) return void 0;
+	if (!READ_COMMAND.test(cmd) || MUTATING_COMMAND.test(cmd)) return void 0;
+	return SKILL_MD_PATH.exec(cmd)?.[1];
+}
 //#endregion
 //#region src/utils/isPrimitive.ts
 function isPrimitive(value) {
@@ -15339,9 +15365,6 @@ function extractSpawnedAgentId(output) {
 		const id = obj.agent_id;
 		if (typeof id === "string") return id;
 	}
-}
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
 }
 function formatError(value) {
 	if (value == null) return void 0;
@@ -15735,6 +15758,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			debugNow
 		});
 	}
+	const taggedSkills = /* @__PURE__ */ new Set();
 	for (const output of outputs) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
@@ -15777,6 +15801,9 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
+			const detectedSkill = skillNameFromToolCall(nativeToolName, msgToolCall.args);
+			const skillName = detectedSkill != null && !taggedSkills.has(detectedSkill) ? detectedSkill : void 0;
+			if (skillName != null) taggedSkills.add(skillName);
 			const toolRun = parent.createChild({
 				name: runName,
 				run_type: "tool",
@@ -15797,7 +15824,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 					ls_model_name: task.context?.model,
 					ls_invocation_params: task.context,
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
+					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {},
+					...skillName != null ? { ls_skill_name: skillName } : {}
 				} }
 			});
 			PROMISE_QUEUE.push(toolRun.postRun());
