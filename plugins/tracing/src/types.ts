@@ -1109,6 +1109,7 @@ export type Task = {
   context: { model: string; [key: string]: unknown } | undefined;
   tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
   error: string | undefined;
+  isErrorInterrupt: boolean;
   subagentThreads: string[];
   toolCalls: {
     [callId: string]: {

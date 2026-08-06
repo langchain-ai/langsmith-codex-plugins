@@ -351,6 +351,7 @@ function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
 // parent->child metadata inheritance (serialization drops undefined).
 const CHILD_SCOPE_RESET = {
   approval_policy: undefined,
+  ls_is_error_interrupt: undefined,
   ls_subagent_id: undefined,
   ls_subagent_type: undefined,
 } as const;
@@ -493,6 +494,7 @@ async function postTurn(
         ...options?.metadata,
         ...task.context,
         ...base,
+        ...(task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}),
 
         approval_policy: isSubagent ? undefined : approvalPolicy,
         ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
@@ -698,6 +700,7 @@ export async function convertToRunTree(
       context: undefined,
       tokenCount: undefined,
       error: undefined,
+      isErrorInterrupt: false,
       subagentThreads: [],
       toolCalls: {},
     };
@@ -879,10 +882,9 @@ export async function convertToRunTree(
         if (explicitError != null) {
           task.error = explicitError;
         } else if (task.error == null && payload.reason !== "review_ended") {
-          task.error =
-            payload.reason === "interrupted"
-              ? "Turn interrupted"
-              : `Turn aborted: ${payload.reason}`;
+          const interrupted = payload.reason === "interrupted";
+          task.isErrorInterrupt = interrupted;
+          task.error = interrupted ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
         }
       }
 
