@@ -15607,6 +15607,7 @@ function convertToStandardMessages(messages) {
 }
 const CHILD_SCOPE_RESET = {
 	approval_policy: void 0,
+	ls_is_error_interrupt: void 0,
 	ls_subagent_id: void 0,
 	ls_subagent_type: void 0
 };
@@ -15691,6 +15692,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			...options?.metadata,
 			...task.context,
 			...base,
+			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {},
 			approval_policy: isSubagent ? void 0 : approvalPolicy,
 			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
 			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
@@ -15818,6 +15820,7 @@ async function convertToRunTree(input, options) {
 			context: void 0,
 			tokenCount: void 0,
 			error: void 0,
+			isErrorInterrupt: false,
 			subagentThreads: [],
 			toolCalls: {}
 		};
@@ -15934,6 +15937,7 @@ async function convertToRunTree(input, options) {
 			}
 			if (payload.type === "turn_aborted") {
 				task ??= createTask();
+				task.isErrorInterrupt = payload.reason === "interrupted";
 				const explicitError = formatError(payload.error);
 				if (explicitError != null) task.error = explicitError;
 				else if (task.error == null && payload.reason !== "review_ended") task.error = payload.reason === "interrupted" ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;

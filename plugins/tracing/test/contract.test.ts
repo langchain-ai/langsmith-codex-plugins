@@ -261,6 +261,7 @@ describe("turn errors", () => {
     });
 
     expect(run?.error).toBe("Turn interrupted");
+    expect(run?.extra?.metadata?.ls_is_error_interrupt).toBe(true);
   });
 
   it("reports terminal Codex errors with their details", async () => {
@@ -277,6 +278,7 @@ describe("turn errors", () => {
     expect(run?.error).toBe(
       "The model failed while generating a response — Try again later — server_overloaded",
     );
+    expect(run?.extra?.metadata?.ls_is_error_interrupt).toBeUndefined();
   });
 });
 
