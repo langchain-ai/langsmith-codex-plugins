@@ -878,15 +878,13 @@ export async function convertToRunTree(
 
       if (payload.type === "turn_aborted") {
         task ??= createTask();
-        task.isErrorInterrupt = payload.reason === "interrupted";
         const explicitError = formatError(payload.error);
         if (explicitError != null) {
           task.error = explicitError;
         } else if (task.error == null && payload.reason !== "review_ended") {
-          task.error =
-            payload.reason === "interrupted"
-              ? "Turn interrupted"
-              : `Turn aborted: ${payload.reason}`;
+          const interrupted = payload.reason === "interrupted";
+          task.isErrorInterrupt = interrupted;
+          task.error = interrupted ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
         }
       }
 

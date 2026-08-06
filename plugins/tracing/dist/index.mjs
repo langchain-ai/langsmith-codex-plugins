@@ -15937,10 +15937,13 @@ async function convertToRunTree(input, options) {
 			}
 			if (payload.type === "turn_aborted") {
 				task ??= createTask();
-				task.isErrorInterrupt = payload.reason === "interrupted";
 				const explicitError = formatError(payload.error);
 				if (explicitError != null) task.error = explicitError;
-				else if (task.error == null && payload.reason !== "review_ended") task.error = payload.reason === "interrupted" ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
+				else if (task.error == null && payload.reason !== "review_ended") {
+					const interrupted = payload.reason === "interrupted";
+					task.isErrorInterrupt = interrupted;
+					task.error = interrupted ? "Turn interrupted" : `Turn aborted: ${payload.reason}`;
+				}
 			}
 			if (payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
