@@ -15210,7 +15210,7 @@ const LS_AGENT_PURPOSE = "coding";
 const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.0.6";
+const LS_INTEGRATION_VERSION = "0.0.7";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
