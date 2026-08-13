@@ -48,7 +48,7 @@ export const ConfigSchema = z.object({
   // LANGSMITH_CODEX_PARENT_HEADERS
   parent_headers: z
     .object({
-      "langsmith-trace": z.string().min(1),
+      "langsmith-trace": z.string(),
       baggage: z.string().optional(),
     })
     .optional(),

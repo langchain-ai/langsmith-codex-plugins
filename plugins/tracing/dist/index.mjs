@@ -15101,7 +15101,7 @@ const ConfigSchema = object({
 	metadata: record(string(), unknown()).optional(),
 	replicas: array(ReplicaSchema).optional(),
 	parent_headers: object({
-		"langsmith-trace": string().min(1),
+		"langsmith-trace": string(),
 		baggage: string().optional()
 	}).optional(),
 	redact: boolean(),
