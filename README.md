@@ -113,13 +113,6 @@ Tracing is disabled unless `TRACE_TO_LANGSMITH` or `enabled` is set to `true`.
 | `redact`             | `LANGSMITH_CODEX_REDACT`                                     | `true`            | Redact secrets before upload                 |
 | `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`                               | unset             | Extra `{ pattern, replace }` redaction rules |
 
-## Nesting under an existing trace
-
-Set `LANGSMITH_CODEX_PARENT_HEADERS` to the JSON-encoded result of a LangSmith
-run tree's `toHeaders()` (JavaScript) or `to_headers()` (Python) method. The
-plugin accepts the standard `langsmith-trace` header and optional `baggage`, and
-uploads the Codex turn as a child of that run instead of creating a new trace.
-
 ## Tracing to multiple destinations (Replicas)
 
 You can trace to multiple LangSmith projects or workspaces simultaneously using `LANGSMITH_CODEX_RUNS_ENDPOINTS`. This is useful for:
