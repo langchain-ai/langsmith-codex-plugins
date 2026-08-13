@@ -76,6 +76,10 @@ it("loads local config", async () => {
 });
 
 it("loads environment config", async () => {
+  const parentHeaders = {
+    "langsmith-trace": "20260813T133849375587Z019ffb58-cf9f-7b51-86da-1ab91beacb97",
+    baggage: "langsmith-project=parent-project",
+  };
   vi.stubEnv("TRACE_TO_LANGSMITH", "true");
   vi.stubEnv("LANGSMITH_API_KEY", "env-key");
   vi.stubEnv("LANGSMITH_ENDPOINT", "https://env.example");
@@ -85,6 +89,7 @@ it("loads environment config", async () => {
     "LANGSMITH_RUNS_ENDPOINTS",
     JSON.stringify([{ api_url: "https://env-replica.example" }]),
   );
+  vi.stubEnv("LANGSMITH_CODEX_PARENT_HEADERS", JSON.stringify(parentHeaders));
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
     enabled: true,
@@ -93,6 +98,7 @@ it("loads environment config", async () => {
     project: "env-project",
     metadata: { source: "env" },
     replicas: [{ api_url: "https://env-replica.example" }],
+    parent_headers: parentHeaders,
     redact: true,
   });
 });

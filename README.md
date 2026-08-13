@@ -95,6 +95,7 @@ Tracing is disabled unless `TRACE_TO_LANGSMITH` or `enabled` is set to `true`.
 | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | No       | `https://api.smith.langchain.com` | LangSmith API base URL                                                       |
 | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | No       | —                                 | JSON object of custom metadata to attach to all runs                         |
 | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | No       | —                                 | JSON array of replica destinations for multi-project tracing                 |
+| `LANGSMITH_CODEX_PARENT_HEADERS`                             | No       | —                                 | JSON object containing LangSmith distributed-tracing parent headers          |
 | `LANGSMITH_CODEX_REDACT`                                     | No       | `"true"`                          | Set to a falsy value (`false`/`0`/`no`/`off`) to disable secret redaction    |
 | `LANGSMITH_CODEX_REDACT_EXTRA`                               | No       | —                                 | JSON array of `{ pattern, replace }` custom redaction rules                  |
 
@@ -108,6 +109,7 @@ Tracing is disabled unless `TRACE_TO_LANGSMITH` or `enabled` is set to `true`.
 | `project`            | `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | `"codex"`         | Project name                                 |
 | `metadata`           | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | unset             | Custom metadata object                       |
 | `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | unset             | Replica destinations                         |
+| `parent_headers`     | `LANGSMITH_CODEX_PARENT_HEADERS`                             | unset             | Distributed-tracing parent headers           |
 | `redact`             | `LANGSMITH_CODEX_REDACT`                                     | `true`            | Redact secrets before upload                 |
 | `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`                               | unset             | Extra `{ pattern, replace }` redaction rules |
 
