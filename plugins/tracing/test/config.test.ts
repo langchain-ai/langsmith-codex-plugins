@@ -97,6 +97,25 @@ it("loads environment config", async () => {
   });
 });
 
+it("loads parent trace headers from the environment", async () => {
+  const parentHeaders = {
+    "langsmith-trace": "20260813T133849375587Z019ffb58-cf9f-7b51-86da-1ab91beacb97",
+    baggage: "langsmith-project=parent-project",
+  };
+  const config = await getConfig({
+    home: HOME,
+    cwd: CWD,
+    env: { LANGSMITH_CODEX_PARENT_HEADERS: JSON.stringify(parentHeaders) },
+  });
+
+  expect(config).toEqual({
+    enabled: false,
+    project: "codex",
+    parent_headers: parentHeaders,
+    redact: true,
+  });
+});
+
 it("applies local config over global config", async () => {
   writeConfigFiles({
     global: {

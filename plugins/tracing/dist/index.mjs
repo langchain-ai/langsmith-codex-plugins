@@ -14819,6 +14819,14 @@ function object(shape, params) {
 		...normalizeParams(params)
 	});
 }
+function strictObject(shape, params) {
+	return new ZodObject({
+		type: "object",
+		shape,
+		catchall: never(),
+		...normalizeParams(params)
+	});
+}
 const ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
 	$ZodUnion.init(inst, def);
 	ZodType.init(inst, def);
@@ -15093,6 +15101,10 @@ const ReplicaSchema = preprocess((value) => {
 	project: string().optional(),
 	updates: record(string(), unknown()).optional()
 }));
+const ParentHeadersSchema = strictObject({
+	"langsmith-trace": string().min(1),
+	baggage: string().optional()
+});
 const ConfigSchema = object({
 	enabled: boolean(),
 	api_key: string().optional(),
@@ -15100,6 +15112,7 @@ const ConfigSchema = object({
 	project: string().optional(),
 	metadata: record(string(), unknown()).optional(),
 	replicas: array(ReplicaSchema).optional(),
+	parent_headers: ParentHeadersSchema.optional(),
 	redact: boolean(),
 	redact_extra_rules: array(object({
 		pattern: string(),
@@ -15157,6 +15170,7 @@ const readConfigEnv = (env) => {
 			project: getVar("PROJECT", env),
 			metadata: parseJson(getVar("METADATA", env)),
 			replicas: parseJson(getVar("RUNS_ENDPOINTS", env)),
+			parent_headers: parseJson(getVar("PARENT_HEADERS", env)),
 			redact: parseBoolean(getVar("REDACT", env)),
 			redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env))
 		}));
@@ -15997,15 +16011,21 @@ async function runHook() {
 	const config = await getConfig();
 	if (!config.enabled) return;
 	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
+	const client = new Client({
+		apiKey: config.api_key,
+		apiUrl: config.api_url,
+		anonymizer
+	});
+	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
+		client,
+		project_name: config.project
+	}) : void 0;
 	await convertToRunTree(content, {
-		client: new Client({
-			apiKey: config.api_key,
-			apiUrl: config.api_url,
-			anonymizer
-		}),
+		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: config.replicas
+		replicas: config.replicas,
+		parentRunTree
 	});
 }
 runHook();

@@ -1,4 +1,4 @@
-import { Client } from "langsmith";
+import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
 import { convertToRunTree } from "./trace.js";
@@ -25,15 +25,24 @@ export async function runHook() {
       )
     : undefined;
 
+  const client = new Client({
+    apiKey: config.api_key,
+    apiUrl: config.api_url,
+    anonymizer,
+  });
+  const parentRunTree = config.parent_headers
+    ? RunTree.fromHeaders(config.parent_headers, {
+        client,
+        project_name: config.project,
+      })
+    : undefined;
+
   await convertToRunTree(content, {
-    client: new Client({
-      apiKey: config.api_key,
-      apiUrl: config.api_url,
-      anonymizer,
-    }),
+    client,
     projectName: config.project,
     metadata: config.metadata,
     replicas: config.replicas,
+    parentRunTree,
   });
 }
 
