@@ -31,7 +31,7 @@ export async function runHook() {
     anonymizer,
   });
 
-  // Reconstruct the distributed parent so Codex runs attach to the existing trace.
+  // (Optionally) reconstruct the distributed parent so Codex runs attach to the target trace.
   const parentRunTree = config.parent_headers
     ? RunTree.fromHeaders(config.parent_headers, {
         client,
