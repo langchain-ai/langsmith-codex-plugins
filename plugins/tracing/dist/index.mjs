@@ -14819,14 +14819,6 @@ function object(shape, params) {
 		...normalizeParams(params)
 	});
 }
-function strictObject(shape, params) {
-	return new ZodObject({
-		type: "object",
-		shape,
-		catchall: never(),
-		...normalizeParams(params)
-	});
-}
 const ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
 	$ZodUnion.init(inst, def);
 	ZodType.init(inst, def);
@@ -15101,10 +15093,6 @@ const ReplicaSchema = preprocess((value) => {
 	project: string().optional(),
 	updates: record(string(), unknown()).optional()
 }));
-const ParentHeadersSchema = strictObject({
-	"langsmith-trace": string().min(1),
-	baggage: string().optional()
-});
 const ConfigSchema = object({
 	enabled: boolean(),
 	api_key: string().optional(),
@@ -15112,7 +15100,10 @@ const ConfigSchema = object({
 	project: string().optional(),
 	metadata: record(string(), unknown()).optional(),
 	replicas: array(ReplicaSchema).optional(),
-	parent_headers: ParentHeadersSchema.optional(),
+	parent_headers: object({
+		"langsmith-trace": string().min(1),
+		baggage: string().optional()
+	}).optional(),
 	redact: boolean(),
 	redact_extra_rules: array(object({
 		pattern: string(),

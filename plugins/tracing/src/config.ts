@@ -26,11 +26,6 @@ const ReplicaSchema = z.preprocess(
   }),
 );
 
-const ParentHeadersSchema = z.strictObject({
-  "langsmith-trace": z.string().min(1),
-  baggage: z.string().optional(),
-});
-
 export const ConfigSchema = z.object({
   // TRACE_TO_LANGSMITH == true
   enabled: z.boolean(),
@@ -51,7 +46,12 @@ export const ConfigSchema = z.object({
   replicas: z.array(ReplicaSchema).optional(),
 
   // LANGSMITH_CODEX_PARENT_HEADERS
-  parent_headers: ParentHeadersSchema.optional(),
+  parent_headers: z
+    .object({
+      "langsmith-trace": z.string().min(1),
+      baggage: z.string().optional(),
+    })
+    .optional(),
 
   // LANGSMITH_CODEX_REDACT (default true) — redact secrets before upload
   redact: z.boolean(),
