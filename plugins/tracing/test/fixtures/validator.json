@@ -212,6 +212,15 @@
       "requirement": "contextual",
       "requiredWhereKnown": false,
       "note": "Tool runs only; emit when it differs from the run name. Pass-through native name — no cross-agent taxonomy normalization."
+    },
+    {
+      "key": "ls_skill_name",
+      "appliesTo": ["tool"],
+      "type": "string",
+      "allowedValues": null,
+      "requirement": "contextual",
+      "requiredWhereKnown": false,
+      "note": "Invoked skill name; tool runs only. Queryable via RunQueryStats group_by metadata path=ls_skill_name. Codex emits no dedicated skill-invocation span or catalog event, so this is derived heuristically from an exec_command that reads a .../skills/<name>/SKILL.md path (read commands only, deduped per skill per turn; see skillNameFromToolCall in metadata.ts)."
     }
   ],
   "preserveExistingOnModelAndToolRuns": [

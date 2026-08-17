@@ -4,6 +4,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { GitInfo } from "./types.js";
+import { isRecord } from "./utils/isRecord.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -180,4 +181,41 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
     // Environment.
     sandbox_type: ctx.sandboxType,
   });
+}
+
+/**
+ * Skill name for the `ls_skill_name` metadata key (coding-agent-v1 contract).
+ * Codex has no skill span/tool/catalog event; a skill invocation shows up only as
+ * an exec_command that reads `.../skills/<name>/SKILL.md` (rationale in PR #25).
+ * Reads only — writes/edits/deletes excluded; repeated reads deduped by caller.
+ */
+// Accept both POSIX and Windows path separators.
+const SKILL_MD_PATH =
+  /(?:^|[/\\])skills[/\\](?:[^\s"']*[/\\])?([A-Za-z0-9][A-Za-z0-9._-]*)[/\\]SKILL\.md(?![\w.-])/;
+
+// Read utilities Codex uses to load a skill; anything that writes, edits in
+// place, redirects, or deletes must never count as a skill invocation.
+// Verbs match only when followed by whitespace (actually invoked), so a skill
+// name segment like `cp-tool` in the path isn't read as the command.
+const READ_COMMAND =
+  /\b(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const MUTATING_COMMAND =
+  /(?:>>?|\btee\s|\bsed\b[^\n]*\s-i\b|\b(?:rm|rmdir|unlink|mv|cp|dd|truncate|install|ln|chmod|chown|touch|mkdir)\s)/;
+
+/** Shell-command text from an exec_command tool call's arguments. */
+function commandText(args: unknown): string | undefined {
+  if (typeof args === "string") return args;
+  if (isRecord(args) && typeof args.cmd === "string") return args.cmd;
+  return undefined;
+}
+
+export function skillNameFromToolCall(
+  toolName: string | undefined,
+  args: unknown,
+): string | undefined {
+  if (toolName !== "exec_command") return undefined;
+  const cmd = commandText(args);
+  if (cmd == null) return undefined;
+  if (!READ_COMMAND.test(cmd) || MUTATING_COMMAND.test(cmd)) return undefined;
+  return SKILL_MD_PATH.exec(cmd)?.[1];
 }
