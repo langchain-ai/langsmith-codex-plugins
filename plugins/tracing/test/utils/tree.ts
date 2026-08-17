@@ -24,13 +24,6 @@ export async function getAssumedTreeFromCalls(
     return idx;
   }
 
-  function getId(id: string) {
-    const stableId = upsertId(id);
-
-    const name = nodeMap[id].name;
-    return [name, stableId].join(":");
-  }
-
   for (let i = 0; i < calls.length; ++i) {
     const call = calls[i];
 
@@ -65,12 +58,37 @@ export async function getAssumedTreeFromCalls(
     }
   }
 
+  function getExecutionOrder(run: Run) {
+    const order = run.dotted_order
+      ?.split(".")
+      .at(-1)
+      ?.match(/^\d{8}T\d{9}(\d{3})Z/)?.[1];
+    if (order == null) return undefined;
+    const parsed = Number(order);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  const orderedIds = [...idMap].sort((left, right) => {
+    const leftOrder = getExecutionOrder(nodeMap[left]);
+    const rightOrder = getExecutionOrder(nodeMap[right]);
+    if (leftOrder != null && rightOrder != null) return leftOrder - rightOrder;
+    if (leftOrder != null) return -1;
+    if (rightOrder != null) return 1;
+    return idMap.indexOf(left) - idMap.indexOf(right);
+  });
+  const orderedIdMap = new Map(orderedIds.map((id, index) => [id, index]));
+
+  function getId(id: string) {
+    const name = nodeMap[id].name;
+    return [name, orderedIdMap.get(id)].join(":");
+  }
+
   return {
-    nodes: idMap.map(getId),
-    edges: edges.map(([source, target]) => [getId(source), getId(target)]),
-    data: Object.fromEntries(
-      Object.entries(nodeMap).map(([id, value]) => [getId(id), value] as const),
-    ),
+    nodes: orderedIds.map(getId),
+    edges: [...edges]
+      .sort(([, left], [, right]) => (orderedIdMap.get(left) ?? 0) - (orderedIdMap.get(right) ?? 0))
+      .map(([source, target]) => [getId(source), getId(target)]),
+    data: Object.fromEntries(orderedIds.map((id) => [getId(id), nodeMap[id]] as const)),
   };
 }
 
