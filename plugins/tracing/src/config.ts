@@ -6,23 +6,29 @@ import { z } from "zod";
 
 const ReplicaSchema = z.preprocess(
   (value) => {
-    if (value == null || typeof value !== "object" || Array.isArray(value)) {
-      return value;
-    }
+    if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
 
     const replica = value as Record<string, unknown>;
     return {
-      api_url: replica.api_url ?? replica.apiUrl,
-      api_key: replica.api_key ?? replica.apiKey,
-      project: replica.project ?? replica.projectName,
+      apiUrl: replica.apiUrl ?? replica.api_url,
+      apiKey: replica.apiKey ?? replica.api_key,
+      workspaceId: replica.workspaceId ?? replica.workspace_id,
+      projectName: replica.projectName ?? replica.project_name ?? replica.project,
+      primary: replica.primary,
       updates: replica.updates,
+      fromEnv: replica.fromEnv ?? replica.from_env,
+      reroot: replica.reroot,
     };
   },
   z.object({
-    api_url: z.string().optional(),
-    api_key: z.string().optional(),
-    project: z.string().optional(),
+    apiUrl: z.string().optional(),
+    apiKey: z.string().optional(),
+    workspaceId: z.string().optional(),
+    projectName: z.string().optional(),
+    primary: z.boolean().optional(),
     updates: z.record(z.string(), z.unknown()).optional(),
+    fromEnv: z.boolean().optional(),
+    reroot: z.boolean().optional(),
   }),
 );
 
@@ -92,12 +98,26 @@ const stripUndefined = <T extends Record<string, unknown>>(value: T): Partial<T>
   ) as Partial<T>;
 };
 
-async function readConfigFile(file: string): Promise<Partial<Config> | undefined> {
+async function readConfigFile(
+  file: string,
+): Promise<{ config?: Partial<Config>; invalid: boolean }> {
+  let data: string;
   try {
-    const data = await fs.readFile(file, "utf-8");
-    return PartialConfigSchema.parse(JSON.parse(data));
+    data = await fs.readFile(file, "utf-8");
+  } catch (error) {
+    return {
+      invalid: !(
+        error != null &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ),
+    };
+  }
+  try {
+    return { config: PartialConfigSchema.parse(JSON.parse(data)), invalid: false };
   } catch {
-    return undefined;
+    return { invalid: true };
   }
 }
 
@@ -105,13 +125,24 @@ function getVar(suffix: string, env: Record<string, string | undefined>): string
   return env[`LANGSMITH_CODEX_${suffix}`] ?? env[`LANGSMITH_${suffix}`];
 }
 
-const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config> => {
-  const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
-
+const readConfigEnv = (
+  env: Record<string, string | undefined>,
+): { config: Partial<Config>; invalid: boolean } => {
+  const names = [
+    "TRACE_TO_LANGSMITH",
+    "METADATA",
+    "RUNS_ENDPOINTS",
+    "PARENT_HEADERS",
+    "REDACT",
+    "REDACT_EXTRA",
+  ];
+  const present = names.some((name) =>
+    name === "TRACE_TO_LANGSMITH" ? env[name] != null : getVar(name, env) != null,
+  );
   try {
-    return stripUndefined(
+    const config = stripUndefined(
       PartialConfigSchema.parse({
-        enabled,
+        enabled: parseBoolean(env.TRACE_TO_LANGSMITH),
         api_key: getVar("API_KEY", env),
         api_url: getVar("ENDPOINT", env),
         project: getVar("PROJECT", env),
@@ -122,12 +153,15 @@ const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config>
         redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env)),
       }),
     );
+    const invalid =
+      (env.TRACE_TO_LANGSMITH != null && config.enabled == null) ||
+      ["METADATA", "RUNS_ENDPOINTS", "PARENT_HEADERS", "REDACT_EXTRA"].some(
+        (name) => getVar(name, env) != null && parseJson(getVar(name, env)) == null,
+      ) ||
+      (getVar("REDACT", env) != null && config.redact == null);
+    return { config, invalid };
   } catch {
-    // A malformed env value (e.g. METADATA / RUNS_ENDPOINTS / REDACT_EXTRA that
-    // parses as JSON but doesn't match the schema) would otherwise throw and
-    // crash the hook. Fall back to file config + defaults, mirroring
-    // readConfigFile().
-    return {};
+    return { config: {}, invalid: present };
   }
 };
 
@@ -147,13 +181,15 @@ export async function getConfig(options?: {
     readConfigFile(path.join(home, ".codex", "langsmith.json")),
     readConfigFile(path.join(cwd, ".codex", "langsmith.json")),
   ]);
+  const invalid = envConfig.invalid || globalConfig.invalid || localConfig.invalid;
 
   return ConfigSchema.parse({
     project: "codex",
     enabled: false,
     redact: true,
-    ...globalConfig,
-    ...localConfig,
-    ...envConfig,
+    ...globalConfig.config,
+    ...localConfig.config,
+    ...envConfig.config,
+    ...(invalid ? { enabled: false } : {}),
   });
 }

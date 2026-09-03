@@ -7,6 +7,15 @@ import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { codingAgentMetadata, resolveGitInfo } from "./metadata.js";
+import {
+  getThreadMode,
+  getTurnMode,
+  isTurnHandled,
+  linkThreadRoot,
+  markTurnHandled,
+  snapshotTurnMode,
+  type TracingMode,
+} from "./state.js";
 import type {
   Session,
   TokenCount,
@@ -391,6 +400,8 @@ async function postTurn(
 
       parentRunTree?: RunTree;
       debugNow?: { now: number; startTime: number };
+      turnMode?: TracingMode;
+      failClosedMissingSnapshot?: boolean;
     };
   },
 ) {
@@ -475,43 +486,93 @@ async function postTurn(
     git,
     sandboxType,
   });
+  const mode =
+    options?.turnMode ??
+    getTurnMode(task.turnId?.id, conversationThreadId ?? sessionMeta?.session_id ?? "");
+  const status = task.error == null ? "completed" : "error";
+  const safeBase = Object.fromEntries(
+    Object.entries(base).filter(
+      ([key]) =>
+        key === "thread_id" ||
+        key === "turn_id" ||
+        key === "turn_number" ||
+        key.startsWith("ls_agent_") ||
+        key === "ls_integration" ||
+        key === "ls_integration_version" ||
+        key === "ls_trace_schema_version",
+    ),
+  );
+  const metadataBase = {
+    ...safeBase,
+    status,
+    ls_tracing_mode: "metadata",
+  };
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
+  const safeReplicas =
+    mode === "metadata"
+      ? options?.replicas?.map((replica) => {
+          if (Array.isArray(replica)) return replica;
+          const { updates: _, ...safe } = replica;
+          return safe;
+        })
+      : options?.replicas;
+  const topologyParent =
+    mode === "metadata" && options?.parentRunTree != null
+      ? new RunTree({
+          name: "distributed-parent",
+          id: options.parentRunTree.id,
+          trace_id: options.parentRunTree.trace_id,
+          dotted_order: options.parentRunTree.dotted_order,
+          client: options.client,
+          project_name: options.projectName,
+          inputs: {},
+          outputs: {},
+          extra: { metadata: {} },
+          replicas: safeReplicas,
+        })
+      : options?.parentRunTree;
+
   const parentConfig: RunTreeConfig = {
     name: "openai.codex",
     client: options?.client,
     project_name: options?.projectName,
     run_type: "chain",
-    replicas: options?.replicas,
-    inputs: { messages: user != null ? [user.message] : [] },
-    outputs: { messages: agent.map((i) => i.message) },
-    error: task.error,
+    replicas: safeReplicas,
+    inputs: mode === "metadata" ? {} : { messages: user != null ? [user.message] : [] },
+    outputs: mode === "metadata" ? {} : { messages: agent.map((i) => i.message) },
+    error: mode === "metadata" ? undefined : task.error,
     start_time: parentStartTime,
     end_time: parentEndTime,
     extra: {
-      metadata: {
-        ...options?.metadata,
-        ...task.context,
-        ...base,
-        ...(task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}),
-
-        approval_policy: isSubagent ? undefined : approvalPolicy,
-        ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
-        ls_subagent_type: isSubagent
-          ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
-          : undefined,
-
-        codex_cli_version: sessionMeta?.cli_version,
-        ls_message_format: "anthropic",
-
-        // Non-reserved key: backend auto-aggregates child llm usage into the
-        // parent, so usage_metadata here would double-count.
-        ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
-      },
+      metadata:
+        mode === "metadata"
+          ? {
+              ...metadataBase,
+              ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
+              ls_subagent_type: isSubagent
+                ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
+                : undefined,
+              ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
+            }
+          : {
+              ...options?.metadata,
+              ...task.context,
+              ...base,
+              ...(task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}),
+              approval_policy: isSubagent ? undefined : approvalPolicy,
+              ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
+              ls_subagent_type: isSubagent
+                ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
+                : undefined,
+              codex_cli_version: sessionMeta?.cli_version,
+              ls_message_format: "anthropic",
+              ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
+            },
     },
   };
-  const parent = options?.parentRunTree?.createChild(parentConfig) ?? new RunTree(parentConfig);
+  const parent = topologyParent?.createChild(parentConfig) ?? new RunTree(parentConfig);
 
   PROMISE_QUEUE.push(parent.postRun());
 
@@ -560,7 +621,7 @@ async function postTurn(
 
     await convertToRunTree(
       { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
-      { ...options, parentRunTree: parent, debugNow },
+      { ...options, parentRunTree: parent, debugNow, turnMode: mode },
     );
   }
 
@@ -588,19 +649,27 @@ async function postTurn(
       run_type: "llm",
       start_time: outputStartTime,
       end_time: outputEndTime,
-      inputs: { messages: inputMessages.map((i) => i.message) },
-      outputs: { messages: aiMessage.map((i) => i.message) },
+      inputs: mode === "metadata" ? {} : { messages: inputMessages.map((i) => i.message) },
+      outputs: mode === "metadata" ? {} : { messages: aiMessage.map((i) => i.message) },
       extra: {
-        metadata: {
-          ...options?.metadata,
-          ...base,
-          ...CHILD_SCOPE_RESET,
-          ls_model_type: "chat",
-          ls_provider: sessionMeta?.model_provider,
-          ls_model_name: task.context?.model,
-          ls_invocation_params: task.context,
-          usage_metadata: getUsageMetadata(tokenCounts),
-        },
+        metadata:
+          mode === "metadata"
+            ? {
+                ...metadataBase,
+                ...CHILD_SCOPE_RESET,
+                ls_model_name: task.context?.model,
+                usage_metadata: getUsageMetadata(tokenCounts),
+              }
+            : {
+                ...options?.metadata,
+                ...base,
+                ...CHILD_SCOPE_RESET,
+                ls_model_type: "chat",
+                ls_provider: sessionMeta?.model_provider,
+                ls_model_name: task.context?.model,
+                ls_invocation_params: task.context,
+                usage_metadata: getUsageMetadata(tokenCounts),
+              },
       },
     });
     PROMISE_QUEUE.push(llmChild.postRun());
@@ -642,24 +711,33 @@ async function postTurn(
         run_type: "tool",
         start_time: min,
         end_time: max,
-        inputs: { input: msgToolCall.args },
-        outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
-        error: toolCall.error,
+        inputs: mode === "metadata" ? {} : { input: msgToolCall.args },
+        outputs:
+          mode === "metadata" ? {} : { ...toolCall.outputs, messages: [toolMessage.message] },
+        error: mode === "metadata" ? undefined : toolCall.error,
         extra: {
-          metadata: {
-            ...options?.metadata,
-            ...base,
-            ...CHILD_SCOPE_RESET,
-            ls_model_type: "chat",
-            ls_provider: sessionMeta?.model_provider,
-            ls_model_name: task.context?.model,
-            ls_invocation_params: task.context,
-            usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-            // Native tool name, only when it differs from the run name.
-            ...(nativeToolName != null && runName !== nativeToolName
-              ? { ls_tool_name: nativeToolName }
-              : {}),
-          },
+          metadata:
+            mode === "metadata"
+              ? {
+                  ...metadataBase,
+                  ...CHILD_SCOPE_RESET,
+                  ls_model_name: task.context?.model,
+                  ls_tool_name: nativeToolName,
+                  usage_metadata: getUsageMetadata(toolMessage.tokenCount),
+                }
+              : {
+                  ...options?.metadata,
+                  ...base,
+                  ...CHILD_SCOPE_RESET,
+                  ls_model_type: "chat",
+                  ls_provider: sessionMeta?.model_provider,
+                  ls_model_name: task.context?.model,
+                  ls_invocation_params: task.context,
+                  usage_metadata: getUsageMetadata(toolMessage.tokenCount),
+                  ...(nativeToolName != null && runName !== nativeToolName
+                    ? { ls_tool_name: nativeToolName }
+                    : {}),
+                },
         },
       });
       PROMISE_QUEUE.push(toolRun.postRun());
@@ -674,6 +752,7 @@ async function postTurn(
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(subagentThread);
   }
+  await Promise.all(PROMISE_QUEUE.splice(0));
 }
 
 export async function convertToRunTree(
@@ -686,6 +765,8 @@ export async function convertToRunTree(
     projectName?: string;
     sessionsRoot?: string;
     debugNow?: { now: number; startTime: number };
+    turnMode?: TracingMode;
+    failClosedMissingSnapshot?: boolean;
   },
 ) {
   let sessionMeta: Session | undefined;
@@ -741,6 +822,13 @@ export async function convertToRunTree(
         threadSpawn != null ||
         (payload.thread_source === "subagent" && typeof payload.parent_thread_id === "string");
 
+      const parentThreadId = threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined;
+      if (isSubagent && parentThreadId != null) {
+        try {
+          linkThreadRoot(payload.id, parentThreadId);
+        } catch {}
+      }
+
       sessionMeta = {
         session_id: payload.id,
         model_provider: payload.model_provider ?? undefined,
@@ -749,7 +837,7 @@ export async function convertToRunTree(
         cwd: payload.cwd,
         git: payload.git,
         is_subagent: isSubagent,
-        parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined,
+        parent_thread_id: parentThreadId,
         agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
         agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? undefined,
       };
@@ -802,6 +890,15 @@ export async function convertToRunTree(
         turnNumber += 1;
         task.turnId = { id: payload.turn_id, timestamp: eventTime };
         task.turnNumber = turnNumber;
+        if (sessionMeta != null) {
+          try {
+            snapshotTurnMode(
+              sessionMeta.parent_thread_id ?? sessionMeta.session_id,
+              payload.turn_id,
+              options?.turnMode,
+            );
+          } catch {}
+        }
       }
 
       if (typeof payload.call_id === "string") {
@@ -904,11 +1001,27 @@ export async function convertToRunTree(
           turnNumber += 1;
           task.turnNumber = turnNumber;
         }
-        if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
-          await postTurn(task, sessionMeta, { rolloutFile: input.transcript_path, options });
+        if (
+          completedTurnId == null ||
+          (!uploadedTurnIds.has(completedTurnId) && !isTurnHandled(completedTurnId))
+        ) {
+          const threadId = sessionMeta?.parent_thread_id ?? sessionMeta?.session_id ?? "";
+          const mode =
+            options?.turnMode ??
+            (options?.failClosedMissingSnapshot
+              ? getTurnMode(completedTurnId, threadId)
+              : getThreadMode(threadId));
+          await postTurn(task, sessionMeta, {
+            rolloutFile: input.transcript_path,
+            options: { ...options, turnMode: mode },
+          });
           if (completedTurnId != null) {
             uploadedTurnIds.add(completedTurnId);
-            await markTurnUploaded(input.transcript_path, completedTurnId);
+            if (mode === "metadata") {
+              try {
+                markTurnHandled(completedTurnId);
+              } catch {}
+            } else await markTurnUploaded(input.transcript_path, completedTurnId);
           }
         }
         task = undefined;

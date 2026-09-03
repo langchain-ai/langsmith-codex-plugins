@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import { vol } from "memfs";
+import { fs, vol } from "memfs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { getConfig } from "../src/config.js";
 
@@ -22,8 +22,12 @@ function writeConfigFiles(files: {
   local?: Partial<Record<string, unknown>>;
 }) {
   vol.fromJSON({
-    [path.join(HOME, ".codex", "langsmith.json")]: JSON.stringify(files.global),
-    [path.join(CWD, ".codex", "langsmith.json")]: JSON.stringify(files.local),
+    ...(files.global == null
+      ? {}
+      : { [path.join(HOME, ".codex", "langsmith.json")]: JSON.stringify(files.global) }),
+    ...(files.local == null
+      ? {}
+      : { [path.join(CWD, ".codex", "langsmith.json")]: JSON.stringify(files.local) }),
   });
 }
 
@@ -87,7 +91,7 @@ it("loads environment config", async () => {
   vi.stubEnv("LANGSMITH_METADATA", JSON.stringify({ source: "env" }));
   vi.stubEnv(
     "LANGSMITH_RUNS_ENDPOINTS",
-    JSON.stringify([{ api_url: "https://env-replica.example" }]),
+    JSON.stringify([{ apiUrl: "https://env-replica.example" }]),
   );
   vi.stubEnv("LANGSMITH_CODEX_PARENT_HEADERS", JSON.stringify(parentHeaders));
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
@@ -97,7 +101,7 @@ it("loads environment config", async () => {
     api_url: "https://env.example",
     project: "env-project",
     metadata: { source: "env" },
-    replicas: [{ api_url: "https://env-replica.example" }],
+    replicas: [{ apiUrl: "https://env-replica.example" }],
     parent_headers: parentHeaders,
     redact: true,
   });
@@ -111,14 +115,14 @@ it("applies local config over global config", async () => {
       api_url: "https://global.example",
       project: "global-project",
       metadata: { scope: "global" },
-      replicas: [{ api_url: "https://global-replica.example" }],
+      replicas: [{ apiUrl: "https://global-replica.example" }],
     },
     local: {
       api_key: "local-key",
       api_url: "https://local.example",
       project: "local-project",
       metadata: { scope: "local" },
-      replicas: [{ api_url: "https://local-replica.example" }],
+      replicas: [{ apiUrl: "https://local-replica.example" }],
     },
   });
 
@@ -129,7 +133,7 @@ it("applies local config over global config", async () => {
     api_url: "https://local.example",
     project: "local-project",
     metadata: { scope: "local" },
-    replicas: [{ api_url: "https://local-replica.example" }],
+    replicas: [{ apiUrl: "https://local-replica.example" }],
     redact: true,
   });
 });
@@ -157,7 +161,7 @@ it("applies environment values over config files", async () => {
   vi.stubEnv("LANGSMITH_METADATA", JSON.stringify({ source: "env" }));
   vi.stubEnv(
     "LANGSMITH_RUNS_ENDPOINTS",
-    JSON.stringify([{ api_url: "https://env-replica.example" }]),
+    JSON.stringify([{ apiUrl: "https://env-replica.example" }]),
   );
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
@@ -167,7 +171,7 @@ it("applies environment values over config files", async () => {
     api_url: "https://env.example",
     project: "env-project",
     metadata: { source: "env" },
-    replicas: [{ api_url: "https://env-replica.example" }],
+    replicas: [{ apiUrl: "https://env-replica.example" }],
     redact: true,
   });
 });
@@ -189,11 +193,11 @@ it("prefers Codex-specific environment values over standard LangSmith values", a
 
   vi.stubEnv(
     "LANGSMITH_RUNS_ENDPOINTS",
-    JSON.stringify([{ api_url: "https://standard-replica.example" }]),
+    JSON.stringify([{ apiUrl: "https://standard-replica.example" }]),
   );
   vi.stubEnv(
     "LANGSMITH_CODEX_RUNS_ENDPOINTS",
-    JSON.stringify([{ api_url: "https://codex-replica.example" }]),
+    JSON.stringify([{ apiUrl: "https://codex-replica.example" }]),
   );
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
@@ -203,7 +207,7 @@ it("prefers Codex-specific environment values over standard LangSmith values", a
     api_url: "https://codex.example",
     project: "codex-project",
     metadata: { source: "codex" },
-    replicas: [{ api_url: "https://codex-replica.example" }],
+    replicas: [{ apiUrl: "https://codex-replica.example" }],
     redact: true,
   });
 });
@@ -249,31 +253,70 @@ it("falls back to defaults when an env value fails schema validation", async () 
   expect(config).toEqual({ enabled: false, project: "codex", redact: true });
 });
 
-it("normalizes replica camelCase aliases", async () => {
+it("fails disabled for malformed project config and invalid present environment values", async () => {
+  vol.fromJSON({
+    [path.join(CWD, ".codex", "langsmith.json")]: "not json",
+  });
+  vi.stubEnv("TRACE_TO_LANGSMITH", "true");
+  expect(await getConfig({ home: HOME, cwd: CWD, env: process.env })).toMatchObject({
+    enabled: false,
+  });
+
+  vol.reset();
+  vi.stubEnv("LANGSMITH_CODEX_METADATA", "not json");
+  expect(await getConfig({ home: HOME, cwd: CWD, env: process.env })).toMatchObject({
+    enabled: false,
+  });
+});
+
+it("normalizes replicas to the installed SDK WriteReplica shape", async () => {
   vi.stubEnv(
     "LANGSMITH_CODEX_RUNS_ENDPOINTS",
     JSON.stringify([
       {
-        apiUrl: "https://replica.example",
-        apiKey: "replica-key",
-        projectName: "replica-project",
+        api_url: "https://replica.example",
+        api_key: "replica-key",
+        project: "replica-project",
+        workspace_id: "workspace",
+        primary: true,
+        from_env: false,
+        reroot: true,
         updates: { mode: "append" },
+        unsupported: "drop-me",
       },
     ]),
   );
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config).toEqual({
+  expect(config.replicas).toEqual([
+    {
+      apiUrl: "https://replica.example",
+      apiKey: "replica-key",
+      projectName: "replica-project",
+      workspaceId: "workspace",
+      primary: true,
+      fromEnv: false,
+      reroot: true,
+      updates: { mode: "append" },
+    },
+  ]);
+});
+
+it("fails disabled when the config path is a directory", async () => {
+  writeConfigFiles({ global: { enabled: true } });
+  vol.mkdirSync(path.join(CWD, ".codex", "langsmith.json"), { recursive: true });
+  expect(await getConfig({ home: HOME, cwd: CWD, env: process.env })).toMatchObject({
     enabled: false,
-    project: "codex",
-    replicas: [
-      {
-        api_url: "https://replica.example",
-        api_key: "replica-key",
-        project: "replica-project",
-        updates: { mode: "append" },
-      },
-    ],
-    redact: true,
   });
+});
+
+it("fails disabled on non-ENOENT config read errors", async () => {
+  writeConfigFiles({ global: { enabled: true } });
+  const readFile = vi
+    .spyOn(fs.promises, "readFile")
+    .mockRejectedValueOnce(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+  expect(await getConfig({ home: HOME, cwd: CWD, env: process.env })).toMatchObject({
+    enabled: false,
+  });
+  readFile.mockRestore();
 });

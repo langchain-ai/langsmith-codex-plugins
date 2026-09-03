@@ -76,6 +76,12 @@ Subagent threads are resolved and uploaded as nested child runs under the parent
 
 Interrupted turns (where the user cancels mid-response) are still uploaded upon session completion.
 
+### Per-thread tracing controls
+
+Use the exact lowercase commands `/trace on`, `/trace off`, and `/trace status`. Commands are blocked before they become transcript turns and therefore are never traced. `/trace off` keeps topology, timing, usage, thread/turn IDs, and safe integration metadata while omitting messages, tool payloads, errors, workspace details, inherited baggage metadata, and replica updates. The selected mode is snapshotted when a prompt with `turn_id` is submitted, so later commands do not change earlier turns. Compatibility prompts without `turn_id` enqueue only a metadata-only FIFO marker; they never persist prompt content or identity and can never enable full-content tracing. Subagents inherit the mode active when the parent launched them.
+
+The preference is stored in `~/.codex/langsmith-state.json`. If it is malformed, tracing fails closed to metadata-only; an explicit `/trace on` or `/trace off` quarantines the corrupt file and creates valid state. A malformed project config or an invalid present environment setting disables tracing. `TRACE_TO_LANGSMITH=false` remains the master switch: commands may update the saved preference, but status reports that tracing is disabled by configuration.
+
 ## Secret redaction
 
 By default, the plugin strips common secrets — provider API keys, JWTs, PEM blocks, and structural `NAME=value`, `Authorization`, and URL-credential shapes — from run inputs, outputs, and metadata **before they are uploaded** to LangSmith.

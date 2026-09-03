@@ -1765,7 +1765,7 @@ const safeJSON = (text) => {
 };
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.8.11_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_fc9c488f4e5a73a2aaf25bc15573e6b5/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
-const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep$2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.8.11_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_fc9c488f4e5a73a2aaf25bc15573e6b5/node_modules/langsmith/dist/_openapi_client/version.js
 const VERSION = "0.0.1";
@@ -4225,7 +4225,7 @@ var Langsmith = class {
 			const maxRetries = options.maxRetries ?? this.maxRetries;
 			timeoutMillis = this.calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries);
 		}
-		await sleep$1(timeoutMillis);
+		await sleep$2(timeoutMillis);
 		return this.makeRequest(options, retriesRemaining - 1, requestLogID);
 	}
 	calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries) {
@@ -5362,7 +5362,7 @@ const _getFetchImplementation = (debug) => {
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
-function sleep(ms) {
+function sleep$1(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 function isEEXIST(err) {
@@ -5414,7 +5414,7 @@ async function acquireOAuthRefreshLock(configPath, deadline) {
 			if (!isEEXIST(err)) throw err;
 			if (!await removeStaleLock(lockDir)) {
 				if (Date.now() >= deadline) throw new Error("timed out acquiring OAuth refresh lock");
-				await sleep(Math.min(LOCK_POLL_INTERVAL_MS, Math.max(0, deadline - Date.now())));
+				await sleep$1(Math.min(LOCK_POLL_INTERVAL_MS, Math.max(0, deadline - Date.now())));
 			}
 			continue;
 		}
@@ -15776,16 +15776,24 @@ const ReplicaSchema = preprocess((value) => {
 	if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
 	const replica = value;
 	return {
-		api_url: replica.api_url ?? replica.apiUrl,
-		api_key: replica.api_key ?? replica.apiKey,
-		project: replica.project ?? replica.projectName,
-		updates: replica.updates
+		apiUrl: replica.apiUrl ?? replica.api_url,
+		apiKey: replica.apiKey ?? replica.api_key,
+		workspaceId: replica.workspaceId ?? replica.workspace_id,
+		projectName: replica.projectName ?? replica.project_name ?? replica.project,
+		primary: replica.primary,
+		updates: replica.updates,
+		fromEnv: replica.fromEnv ?? replica.from_env,
+		reroot: replica.reroot
 	};
 }, object({
-	api_url: string().optional(),
-	api_key: string().optional(),
-	project: string().optional(),
-	updates: record(string(), unknown()).optional()
+	apiUrl: string().optional(),
+	apiKey: string().optional(),
+	workspaceId: string().optional(),
+	projectName: string().optional(),
+	primary: boolean().optional(),
+	updates: record(string(), unknown()).optional(),
+	fromEnv: boolean().optional(),
+	reroot: boolean().optional()
 }));
 const ConfigSchema = object({
 	enabled: boolean(),
@@ -15835,21 +15843,36 @@ const stripUndefined$1 = (value) => {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 };
 async function readConfigFile(file) {
+	let data;
 	try {
-		const data = await nodeFsPromises.readFile(file, "utf-8");
-		return PartialConfigSchema.parse(JSON.parse(data));
+		data = await nodeFsPromises.readFile(file, "utf-8");
+	} catch (error) {
+		return { invalid: !(error != null && typeof error === "object" && "code" in error && error.code === "ENOENT") };
+	}
+	try {
+		return {
+			config: PartialConfigSchema.parse(JSON.parse(data)),
+			invalid: false
+		};
 	} catch {
-		return;
+		return { invalid: true };
 	}
 }
 function getVar(suffix, env) {
 	return env[`LANGSMITH_CODEX_${suffix}`] ?? env[`LANGSMITH_${suffix}`];
 }
 const readConfigEnv = (env) => {
-	const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
+	const present = [
+		"TRACE_TO_LANGSMITH",
+		"METADATA",
+		"RUNS_ENDPOINTS",
+		"PARENT_HEADERS",
+		"REDACT",
+		"REDACT_EXTRA"
+	].some((name) => name === "TRACE_TO_LANGSMITH" ? env[name] != null : getVar(name, env) != null);
 	try {
-		return stripUndefined$1(PartialConfigSchema.parse({
-			enabled,
+		const config = stripUndefined$1(PartialConfigSchema.parse({
+			enabled: parseBoolean(env.TRACE_TO_LANGSMITH),
 			api_key: getVar("API_KEY", env),
 			api_url: getVar("ENDPOINT", env),
 			project: getVar("PROJECT", env),
@@ -15859,8 +15882,20 @@ const readConfigEnv = (env) => {
 			redact: parseBoolean(getVar("REDACT", env)),
 			redact_extra_rules: parseJson(getVar("REDACT_EXTRA", env))
 		}));
+		return {
+			config,
+			invalid: env.TRACE_TO_LANGSMITH != null && config.enabled == null || [
+				"METADATA",
+				"RUNS_ENDPOINTS",
+				"PARENT_HEADERS",
+				"REDACT_EXTRA"
+			].some((name) => getVar(name, env) != null && parseJson(getVar(name, env)) == null) || getVar("REDACT", env) != null && config.redact == null
+		};
 	} catch {
-		return {};
+		return {
+			config: {},
+			invalid: present
+		};
 	}
 };
 const getHomeDir = () => process.env.HOME ?? os.homedir();
@@ -15870,14 +15905,267 @@ async function getConfig(options) {
 	const env = options?.env ?? process.env;
 	const envConfig = readConfigEnv(env);
 	const [globalConfig, localConfig] = await Promise.all([readConfigFile(nodePath.join(home, ".codex", "langsmith.json")), readConfigFile(nodePath.join(cwd, ".codex", "langsmith.json"))]);
+	const invalid = envConfig.invalid || globalConfig.invalid || localConfig.invalid;
 	return ConfigSchema.parse({
 		project: "codex",
 		enabled: false,
 		redact: true,
-		...globalConfig,
-		...localConfig,
-		...envConfig
+		...globalConfig.config,
+		...localConfig.config,
+		...envConfig.config,
+		...invalid ? { enabled: false } : {}
 	});
+}
+//#endregion
+//#region src/state.ts
+const RETENTION_MS = 6048e5;
+const emptyState = () => ({
+	version: 2,
+	threads: {},
+	turns: {},
+	roots: {},
+	pending: {}
+});
+const sleep = () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+function statePath(home = process.env.HOME ?? os.homedir()) {
+	return nodePath.join(home, ".codex", "langsmith-state.json");
+}
+function parseState(data) {
+	try {
+		const value = JSON.parse(data);
+		if (value == null || typeof value !== "object" || Array.isArray(value)) return void 0;
+		const pending = value.pending ?? {};
+		for (const entry of [
+			value.threads,
+			value.turns,
+			value.roots,
+			pending
+		]) if (entry == null || typeof entry !== "object" || Array.isArray(entry)) return void 0;
+		if (value.version !== 2) return void 0;
+		const state = {
+			...value,
+			pending
+		};
+		if (Object.values(state.threads).some((entry) => entry == null || typeof entry !== "object" || Array.isArray(entry) || typeof entry.updatedAt !== "number" || entry.tracing != null && entry.tracing !== "metadata")) return void 0;
+		if (Object.values(state.turns).some((entry) => entry == null || typeof entry !== "object" || ![
+			"full",
+			"metadata",
+			"skip"
+		].includes(entry.mode) || typeof entry.root !== "string" || typeof entry.updatedAt !== "number")) return void 0;
+		if (Object.values(state.roots).some((entry) => entry == null || typeof entry !== "object" || typeof entry.root !== "string" || typeof entry.updatedAt !== "number")) return void 0;
+		if (Object.values(state.pending).some((queue) => !Array.isArray(queue) || queue.some((entry) => entry == null || typeof entry !== "object" || typeof entry.createdAt !== "number"))) return void 0;
+		return state;
+	} catch {
+		return;
+	}
+}
+function readTracingState(home) {
+	try {
+		const parsed = parseState(nodeFs.readFileSync(statePath(home), "utf8"));
+		return parsed == null ? {
+			state: emptyState(),
+			malformed: true
+		} : {
+			state: parsed,
+			malformed: false
+		};
+	} catch (error) {
+		return error.code === "ENOENT" ? {
+			state: emptyState(),
+			malformed: false
+		} : {
+			state: emptyState(),
+			malformed: true
+		};
+	}
+}
+function processAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+function staleLock(lock) {
+	try {
+		const owner = JSON.parse(nodeFs.readFileSync(nodePath.join(lock, "owner.json"), "utf8"));
+		return typeof owner.pid !== "number" || typeof owner.created !== "number" || Date.now() - owner.created > 3e4 || !processAlive(owner.pid);
+	} catch {
+		try {
+			return Date.now() - nodeFs.statSync(lock).mtimeMs > 3e4;
+		} catch {
+			return true;
+		}
+	}
+}
+function rootForThread(state, threadId) {
+	let current = threadId;
+	const seen = /* @__PURE__ */ new Set();
+	while (state.roots[current] != null && !seen.has(current)) {
+		seen.add(current);
+		current = state.roots[current].root;
+	}
+	return current;
+}
+function collectRoot(state, root) {
+	delete state.threads[root];
+	delete state.pending[root];
+	for (const [turnId, entry] of Object.entries(state.turns)) if (entry.root === root) delete state.turns[turnId];
+	for (const [threadId, entry] of Object.entries(state.roots)) if (threadId === root || rootForThread(state, threadId) === root) delete state.roots[threadId];
+}
+function gc(state, now) {
+	const cutoff = now - RETENTION_MS;
+	const activeRoots = /* @__PURE__ */ new Set();
+	for (const [root, entry] of Object.entries(state.threads)) if (entry.updatedAt >= cutoff) activeRoots.add(root);
+	for (const entry of Object.values(state.turns)) if (entry.updatedAt >= cutoff) activeRoots.add(entry.root);
+	for (const [thread, entry] of Object.entries(state.roots)) if (entry.updatedAt >= cutoff) activeRoots.add(rootForThread(state, thread));
+	for (const [root, queue] of Object.entries(state.pending)) {
+		state.pending[root] = queue.filter((entry) => entry.createdAt >= cutoff);
+		if (state.pending[root].length > 0) activeRoots.add(root);
+		else delete state.pending[root];
+	}
+	const roots = /* @__PURE__ */ new Set([
+		...Object.keys(state.threads),
+		...Object.values(state.turns).map((entry) => entry.root),
+		...Object.keys(state.pending),
+		...Object.keys(state.roots).map((thread) => rootForThread(state, thread))
+	]);
+	for (const root of roots) if (!activeRoots.has(root)) collectRoot(state, root);
+}
+function withLock(home, update, recoverMalformed = false) {
+	const file = statePath(home);
+	const dir = nodePath.dirname(file);
+	const lock = nodePath.join(dir, "langsmith-state.lock");
+	nodeFs.mkdirSync(dir, {
+		recursive: true,
+		mode: 448
+	});
+	for (let attempt = 0;; attempt += 1) try {
+		nodeFs.mkdirSync(lock, { mode: 448 });
+		nodeFs.writeFileSync(nodePath.join(lock, "owner.json"), JSON.stringify({
+			pid: process.pid,
+			created: Date.now()
+		}));
+		break;
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		if (staleLock(lock)) {
+			nodeFs.rmSync(lock, {
+				recursive: true,
+				force: true
+			});
+			continue;
+		}
+		if (attempt >= 200) throw new Error("Timed out waiting for LangSmith tracing state lock");
+		sleep();
+	}
+	try {
+		const loaded = readTracingState(home);
+		if (loaded.malformed && !recoverMalformed) throw new Error("Malformed LangSmith tracing state");
+		if (loaded.malformed && nodeFs.existsSync(file)) nodeFs.renameSync(file, `${file}.corrupt-${Date.now()}-${process.pid}`);
+		const state = loaded.malformed ? emptyState() : loaded.state;
+		const now = Date.now();
+		gc(state, now);
+		const result = update(state, now);
+		const temp = nodePath.join(dir, `.langsmith-state-${process.pid}-${Date.now()}.tmp`);
+		nodeFs.writeFileSync(temp, JSON.stringify(state), { mode: 384 });
+		nodeFs.renameSync(temp, file);
+		return result;
+	} finally {
+		nodeFs.rmSync(lock, {
+			recursive: true,
+			force: true
+		});
+	}
+}
+function modeInState(state, threadId) {
+	return state.threads[rootForThread(state, threadId)]?.tracing === "metadata" ? "metadata" : "full";
+}
+function getThreadMode(threadId, home) {
+	const loaded = readTracingState(home);
+	return loaded.malformed ? "metadata" : modeInState(loaded.state, threadId);
+}
+function setThreadMode(threadId, mode, home) {
+	withLock(home, (state, now) => {
+		const root = rootForThread(state, threadId);
+		state.threads[root] = {
+			...mode === "metadata" ? { tracing: "metadata" } : {},
+			updatedAt: now
+		};
+	}, true);
+}
+function linkThreadRoot(threadId, rootId, home) {
+	withLock(home, (state, now) => {
+		const oldMode = modeInState(state, threadId);
+		const root = rootForThread(state, rootId);
+		state.roots[threadId] = {
+			root,
+			updatedAt: now
+		};
+		if (oldMode === "metadata") state.threads[root] = {
+			tracing: "metadata",
+			updatedAt: now
+		};
+	});
+}
+function enqueuePendingMode(threadId, home) {
+	withLock(home, (state, now) => {
+		const root = rootForThread(state, threadId);
+		(state.pending[root] ??= []).push({ createdAt: now });
+	});
+}
+function snapshotCurrentTurnMode(threadId, turnId, home) {
+	return withLock(home, (state, now) => {
+		const existing = state.turns[turnId];
+		if (existing != null) return existing.mode === "full" ? "full" : "metadata";
+		const root = rootForThread(state, threadId);
+		const mode = modeInState(state, root);
+		state.turns[turnId] = {
+			mode,
+			root,
+			updatedAt: now
+		};
+		return mode;
+	});
+}
+function snapshotTurnMode(threadId, turnId, inheritedMode, home) {
+	return withLock(home, (state, now) => {
+		const existing = state.turns[turnId];
+		if (existing != null) return existing.mode === "full" ? "full" : "metadata";
+		const root = rootForThread(state, threadId);
+		const queue = state.pending[root];
+		if (queue != null) {
+			queue.shift();
+			if (queue.length === 0) delete state.pending[root];
+		}
+		const mode = inheritedMode ?? "metadata";
+		state.turns[turnId] = {
+			mode,
+			root,
+			updatedAt: now
+		};
+		return mode;
+	});
+}
+function markTurnHandled(turnId, home) {
+	withLock(home, (state, now) => {
+		const existing = state.turns[turnId];
+		state.turns[turnId] = {
+			mode: "skip",
+			root: existing?.root ?? "unknown",
+			updatedAt: now
+		};
+	});
+}
+function isTurnHandled(turnId, home) {
+	const loaded = readTracingState(home);
+	return !loaded.malformed && loaded.state.turns[turnId]?.mode === "skip";
+}
+function getTurnMode(turnId, _threadId, home) {
+	const loaded = readTracingState(home);
+	if (loaded.malformed || turnId == null) return "metadata";
+	return loaded.state.turns[turnId]?.mode === "full" ? "full" : "metadata";
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -15910,7 +16198,7 @@ const LS_AGENT_PURPOSE = "coding";
 const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.0.7";
+const LS_INTEGRATION_VERSION = "0.0.8";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -16377,18 +16665,47 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		git,
 		sandboxType
 	});
+	const mode = options?.turnMode ?? getTurnMode(task.turnId?.id, conversationThreadId ?? sessionMeta?.session_id ?? "");
+	const status = task.error == null ? "completed" : "error";
+	const metadataBase = {
+		...Object.fromEntries(Object.entries(base).filter(([key]) => key === "thread_id" || key === "turn_id" || key === "turn_number" || key.startsWith("ls_agent_") || key === "ls_integration" || key === "ls_integration_version" || key === "ls_trace_schema_version")),
+		status,
+		ls_tracing_mode: "metadata"
+	};
+	const safeReplicas = mode === "metadata" ? options?.replicas?.map((replica) => {
+		if (Array.isArray(replica)) return replica;
+		const { updates: _, ...safe } = replica;
+		return safe;
+	}) : options?.replicas;
+	const topologyParent = mode === "metadata" && options?.parentRunTree != null ? new RunTree({
+		name: "distributed-parent",
+		id: options.parentRunTree.id,
+		trace_id: options.parentRunTree.trace_id,
+		dotted_order: options.parentRunTree.dotted_order,
+		client: options.client,
+		project_name: options.projectName,
+		inputs: {},
+		outputs: {},
+		extra: { metadata: {} },
+		replicas: safeReplicas
+	}) : options?.parentRunTree;
 	const parentConfig = {
 		name: "openai.codex",
 		client: options?.client,
 		project_name: options?.projectName,
 		run_type: "chain",
-		replicas: options?.replicas,
-		inputs: { messages: user != null ? [user.message] : [] },
-		outputs: { messages: agent.map((i) => i.message) },
-		error: task.error,
+		replicas: safeReplicas,
+		inputs: mode === "metadata" ? {} : { messages: user != null ? [user.message] : [] },
+		outputs: mode === "metadata" ? {} : { messages: agent.map((i) => i.message) },
+		error: mode === "metadata" ? void 0 : task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
-		extra: { metadata: {
+		extra: { metadata: mode === "metadata" ? {
+			...metadataBase,
+			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
+			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
+			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
+		} : {
 			...options?.metadata,
 			...task.context,
 			...base,
@@ -16401,7 +16718,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		} }
 	};
-	const parent = options?.parentRunTree?.createChild(parentConfig) ?? new RunTree(parentConfig);
+	const parent = topologyParent?.createChild(parentConfig) ?? new RunTree(parentConfig);
 	PROMISE_QUEUE.push(parent.postRun());
 	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 	const outputs = fullMessages.reduce((acc, item, idx) => {
@@ -16435,7 +16752,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		}, {
 			...options,
 			parentRunTree: parent,
-			debugNow
+			debugNow,
+			turnMode: mode
 		});
 	}
 	for (const output of outputs) {
@@ -16451,9 +16769,14 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			run_type: "llm",
 			start_time: outputStartTime,
 			end_time: outputEndTime,
-			inputs: { messages: inputMessages.map((i) => i.message) },
-			outputs: { messages: aiMessage.map((i) => i.message) },
-			extra: { metadata: {
+			inputs: mode === "metadata" ? {} : { messages: inputMessages.map((i) => i.message) },
+			outputs: mode === "metadata" ? {} : { messages: aiMessage.map((i) => i.message) },
+			extra: { metadata: mode === "metadata" ? {
+				...metadataBase,
+				...CHILD_SCOPE_RESET,
+				ls_model_name: task.context?.model,
+				usage_metadata: getUsageMetadata(tokenCounts)
+			} : {
 				...options?.metadata,
 				...base,
 				...CHILD_SCOPE_RESET,
@@ -16485,13 +16808,19 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 				run_type: "tool",
 				start_time: min,
 				end_time: max,
-				inputs: { input: msgToolCall.args },
-				outputs: {
+				inputs: mode === "metadata" ? {} : { input: msgToolCall.args },
+				outputs: mode === "metadata" ? {} : {
 					...toolCall.outputs,
 					messages: [toolMessage.message]
 				},
-				error: toolCall.error,
-				extra: { metadata: {
+				error: mode === "metadata" ? void 0 : toolCall.error,
+				extra: { metadata: mode === "metadata" ? {
+					...metadataBase,
+					...CHILD_SCOPE_RESET,
+					ls_model_name: task.context?.model,
+					ls_tool_name: nativeToolName,
+					usage_metadata: getUsageMetadata(toolMessage.tokenCount)
+				} : {
 					...options?.metadata,
 					...base,
 					...CHILD_SCOPE_RESET,
@@ -16508,6 +16837,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
+	await Promise.all(PROMISE_QUEUE.splice(0));
 }
 async function convertToRunTree(input, options) {
 	let sessionMeta;
@@ -16541,6 +16871,10 @@ async function convertToRunTree(input, options) {
 			const source = payload.source;
 			const threadSpawn = source != null && typeof source === "object" && "subagent" in source ? source.subagent?.thread_spawn : void 0;
 			const isSubagent = threadSpawn != null || payload.thread_source === "subagent" && typeof payload.parent_thread_id === "string";
+			const parentThreadId = threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0;
+			if (isSubagent && parentThreadId != null) try {
+				linkThreadRoot(payload.id, parentThreadId);
+			} catch {}
 			sessionMeta = {
 				session_id: payload.id,
 				model_provider: payload.model_provider ?? void 0,
@@ -16549,7 +16883,7 @@ async function convertToRunTree(input, options) {
 				cwd: payload.cwd,
 				git: payload.git,
 				is_subagent: isSubagent,
-				parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0,
+				parent_thread_id: parentThreadId,
 				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
 				agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 			};
@@ -16584,6 +16918,9 @@ async function convertToRunTree(input, options) {
 					timestamp: eventTime
 				};
 				task.turnNumber = turnNumber;
+				if (sessionMeta != null) try {
+					snapshotTurnMode(sessionMeta.parent_thread_id ?? sessionMeta.session_id, payload.turn_id, options?.turnMode);
+				} catch {}
 			}
 			if (typeof payload.call_id === "string") {
 				task ??= createTask();
@@ -16657,14 +16994,22 @@ async function convertToRunTree(input, options) {
 					turnNumber += 1;
 					task.turnNumber = turnNumber;
 				}
-				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
+				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId) && !isTurnHandled(completedTurnId)) {
+					const threadId = sessionMeta?.parent_thread_id ?? sessionMeta?.session_id ?? "";
+					const mode = options?.turnMode ?? (options?.failClosedMissingSnapshot ? getTurnMode(completedTurnId, threadId) : getThreadMode(threadId));
 					await postTurn(task, sessionMeta, {
 						rolloutFile: input.transcript_path,
-						options
+						options: {
+							...options,
+							turnMode: mode
+						}
 					});
 					if (completedTurnId != null) {
 						uploadedTurnIds.add(completedTurnId);
-						await markTurnUploaded(input.transcript_path, completedTurnId);
+						if (mode === "metadata") try {
+							markTurnHandled(completedTurnId);
+						} catch {}
+						else await markTurnUploaded(input.transcript_path, completedTurnId);
 					}
 				}
 				task = void 0;
@@ -16693,28 +17038,82 @@ function readStdin() {
 }
 //#endregion
 //#region src/index.ts
-async function runHook() {
-	const content = await readStdin();
+function transcript(input) {
+	if (input.transcript_path == null) return [];
+	try {
+		return nodeFs.readFileSync(input.transcript_path, "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+	} catch {
+		return [];
+	}
+}
+function inputThread(input) {
+	return input.thread_id ?? input.session_id ?? "unknown";
+}
+function resolveRoot(input) {
+	const thread = inputThread(input);
+	const payload = transcript(input).find((line) => line.type === "session_meta")?.payload;
+	const parent = (payload?.source)?.subagent?.thread_spawn?.parent_thread_id ?? (payload?.thread_source === "subagent" ? payload.parent_thread_id : void 0);
+	if (typeof parent === "string") {
+		try {
+			linkThreadRoot(thread, parent);
+		} catch {}
+		return parent;
+	}
+	return thread;
+}
+function commandOutput(reason) {
+	process.stdout.write(JSON.stringify({
+		decision: "block",
+		reason
+	}));
+}
+async function handleUserPromptSubmit(input) {
+	const root = resolveRoot(input);
+	const command = /^\/trace (on|off|status)$/.exec(input.prompt)?.[1];
 	const config = await getConfig();
-	if (!config.enabled) return;
+	if (command != null) {
+		if (command === "on") setThreadMode(root, "full");
+		if (command === "off") setThreadMode(root, "metadata");
+		if (!config.enabled) commandOutput("LangSmith tracing is disabled by configuration for this thread.");
+		else commandOutput(getThreadMode(root) === "full" ? "LangSmith tracing is on for this thread." : "LangSmith tracing is off for this thread (metadata only).");
+		return true;
+	}
+	try {
+		if (input.turn_id != null) snapshotCurrentTurnMode(root, input.turn_id);
+		else enqueuePendingMode(root);
+	} catch {}
+	return false;
+}
+async function handleStop(content) {
+	const config = await getConfig();
+	if (!config.enabled || content.transcript_path == null) return;
 	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
 	const client = new Client({
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
 		anonymizer
 	});
-	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
+	const parentRunTree = config.parent_headers?.["langsmith-trace"] ? RunTree.fromHeaders(config.parent_headers, {
 		client,
 		project_name: config.project
 	}) : void 0;
-	await convertToRunTree(content, {
+	await convertToRunTree({
+		transcript_path: content.transcript_path,
+		turn_id: content.turn_id ?? null
+	}, {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
 		replicas: config.replicas,
-		parentRunTree
+		parentRunTree,
+		failClosedMissingSnapshot: true
 	});
+}
+async function runHook() {
+	const content = await readStdin();
+	if (content.hook_event_name === "UserPromptSubmit") await handleUserPromptSubmit(content);
+	else await handleStop(content);
 }
 runHook();
 //#endregion
-export { runHook };
+export { handleUserPromptSubmit, runHook };
