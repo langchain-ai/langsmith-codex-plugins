@@ -12,7 +12,13 @@ beforeEach(async () => {
 afterEach(async () => {
   await fs.rm(home, { recursive: true, force: true });
 });
-async function hook(prompt: string, turnId: string, enabled = false) {
+async function hook(
+  prompt: string,
+  turnId: string,
+  enabled = false,
+  defaultMuted = false,
+  options: { configOnly?: boolean; cwd?: string } = {},
+) {
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) => !/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key),
@@ -26,7 +32,12 @@ async function hook(prompt: string, turnId: string, enabled = false) {
         env: {
           ...env,
           HOME: home,
-          TRACE_TO_LANGSMITH: String(enabled),
+          ...(options.configOnly
+            ? {}
+            : {
+                TRACE_TO_LANGSMITH: String(enabled),
+                LANGSMITH_CODEX_DEFAULT_MUTED: String(defaultMuted),
+              }),
         },
         cwd: home,
       },
@@ -46,7 +57,7 @@ async function hook(prompt: string, turnId: string, enabled = false) {
         hook_event_name: "UserPromptSubmit",
         session_id: "thread",
         turn_id: turnId,
-        cwd: home,
+        cwd: options.cwd ?? home,
         prompt,
       }),
     );
@@ -104,4 +115,45 @@ it("the bundle blocks corruption without overwriting it", async () => {
 it("the bundle does not interpret whitespace or slash lookalikes", async () => {
   expect((await hook(" langsmith-tracing:mute", "a")).stdout).toBe("");
   expect((await hook("/langsmith-tracing:mute", "b")).stdout).toBe("");
+});
+
+it("the production bundle follows changing defaults without materializing an override", async () => {
+  expect((await hook("work", "muted", true, true)).stdout).toBe("");
+  expect((await hook("work", "full", true, false)).stdout).toBe("");
+  expect((await hook("work", "muted", true, false)).stdout).toBe("");
+  const policy = JSON.parse(
+    await fs.readFile(path.join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+  );
+  expect(policy).toEqual({
+    version: 1,
+    threads: { thread: { turns: { muted: "metadata", full: "full" } } },
+  });
+});
+
+it("the production submit hook reads only the hidden home baseline outside home cwd", async () => {
+  const cwd = path.join(home, "project");
+  await fs.mkdir(cwd);
+  const options = { configOnly: true, cwd };
+  await fs.writeFile(
+    path.join(home, "langsmith-plugins.json"),
+    JSON.stringify({ enabled: true, defaultMuted: false }),
+  );
+  expect(await hook("work", "old-only", false, false, options)).toEqual({
+    code: 0,
+    stdout: "",
+    stderr: "",
+  });
+  await fs.writeFile(
+    path.join(home, ".langsmith-plugins.json"),
+    JSON.stringify({ enabled: true, defaultMuted: true }),
+  );
+  expect(await hook("work", "hidden", false, false, options)).toEqual({
+    code: 0,
+    stdout: "",
+    stderr: "",
+  });
+  const policy = JSON.parse(
+    await fs.readFile(path.join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+  );
+  expect(policy.threads.thread.turns).toEqual({ "old-only": "off", hidden: "metadata" });
 });
