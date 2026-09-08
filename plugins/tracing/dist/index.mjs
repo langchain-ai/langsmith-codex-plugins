@@ -1,5 +1,5 @@
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync } from "node:fs";
+import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -15508,7 +15508,7 @@ const ZodObject = /*@__PURE__*/ $constructor("ZodObject", (inst, def) => {
 		}
 	});
 });
-function object(shape, params) {
+function object$1(shape, params) {
 	const def = {
 		type: "object",
 		shape: shape ?? {},
@@ -15777,6 +15777,192 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
+//#region src/shared-config.ts
+const COMMON_BOOLEAN_SETTINGS = {
+	enabled: {
+		default: false,
+		restrictive: false
+	},
+	defaultMuted: {
+		default: false,
+		restrictive: true
+	}
+};
+function object(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function invalid(raw) {
+	return {
+		status: "invalid",
+		common: {
+			enabled: false,
+			defaultMuted: true
+		},
+		...raw === void 0 ? {} : { raw },
+		diagnostics: ["Invalid or unreadable common config; ordinary fields discarded, privacy switches restricted."]
+	};
+}
+function parseReplica(value) {
+	if (!object(value)) return void 0;
+	const replica = {};
+	for (const [canonical, alias] of [
+		["api_url", "apiUrl"],
+		["api_key", "apiKey"],
+		["project", "projectName"]
+	]) {
+		const selected = Object.hasOwn(value, canonical) ? canonical : alias;
+		if (Object.hasOwn(value, selected)) {
+			const entry = value[selected];
+			if (typeof entry !== "string") return void 0;
+			replica[canonical] = entry;
+		}
+	}
+	if (Object.hasOwn(value, "updates")) {
+		if (!object(value.updates)) return void 0;
+		replica.updates = value.updates;
+	}
+	return replica;
+}
+/** Parse a decoded JSON value (not JSON text). Unknown/adapter fields do not affect common validity. */
+function parseCommonConfig(value) {
+	if (!object(value)) return invalid();
+	const common = {};
+	const diagnostics = [];
+	for (const field of ["enabled", "defaultMuted"]) {
+		if (!Object.hasOwn(value, field)) continue;
+		const entry = value[field];
+		common[field] = typeof entry === "boolean" ? entry : COMMON_BOOLEAN_SETTINGS[field].restrictive;
+		if (typeof entry !== "boolean") diagnostics.push(`Invalid ${field}; using restrictive value.`);
+	}
+	for (const field of [
+		"api_key",
+		"api_url",
+		"project"
+	]) {
+		if (!Object.hasOwn(value, field)) continue;
+		if (typeof value[field] !== "string") return invalid(value);
+		common[field] = value[field];
+	}
+	if (Object.hasOwn(value, "redact")) {
+		if (typeof value.redact !== "boolean") return invalid(value);
+		common.redact = value.redact;
+	}
+	if (Object.hasOwn(value, "metadata")) {
+		if (!object(value.metadata)) return invalid(value);
+		common.metadata = value.metadata;
+	}
+	if (Object.hasOwn(value, "replicas")) {
+		if (!Array.isArray(value.replicas)) return invalid(value);
+		const replicas = [];
+		for (const entry of value.replicas) {
+			const replica = parseReplica(entry);
+			if (replica === void 0) return invalid(value);
+			replicas.push(replica);
+		}
+		common.replicas = replicas;
+	}
+	if (Object.hasOwn(value, "redact_extra_rules")) {
+		if (!Array.isArray(value.redact_extra_rules)) return invalid(value);
+		const rules = [];
+		for (const rule of value.redact_extra_rules) {
+			if (!object(rule) || typeof rule.pattern !== "string" || !Object.hasOwn(rule, "pattern")) return invalid(value);
+			const hasReplace = Object.hasOwn(rule, "replace");
+			if (hasReplace && typeof rule.replace !== "string") return invalid(value);
+			try {
+				new RegExp(rule.pattern, "g");
+			} catch {
+				return invalid(value);
+			}
+			rules.push({
+				pattern: rule.pattern,
+				...hasReplace ? { replace: rule.replace } : {}
+			});
+		}
+		common.redact_extra_rules = rules;
+	}
+	return {
+		status: "valid",
+		common,
+		raw: value,
+		diagnostics
+	};
+}
+/** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
+function readCommonConfigFile(path) {
+	try {
+		if (!statSync(path).isFile()) return invalid();
+	} catch (error) {
+		if (error.code === "ENOENT") try {
+			lstatSync(path);
+		} catch (lstatError) {
+			if (lstatError.code === "ENOENT") return {
+				status: "absent",
+				common: {},
+				diagnostics: []
+			};
+		}
+		return invalid();
+	}
+	try {
+		return parseCommonConfig(JSON.parse(readFileSync(path, "utf8")));
+	} catch {
+		return invalid();
+	}
+}
+/** Resolve the first supplied value from sources ordered highest priority first. */
+function resolveField(sources, field) {
+	return sources.find((source) => source[field] !== void 0)?.[field];
+}
+/**
+* Metadata shallow-merges per key. envFirst opts into uniform environment-first
+* precedence; by default switches retain the legacy file-first precedence.
+*/
+function mergeCommonConfig(sources, options = {}) {
+	const { harness = {}, root = {}, user = {}, userRoot = {}, env = {}, defaults = {} } = sources;
+	const files = [
+		harness,
+		root,
+		user,
+		userRoot
+	];
+	const precedence = [
+		env,
+		...files,
+		defaults
+	];
+	const switches = options.envFirst ? precedence : [
+		...files,
+		env,
+		defaults
+	];
+	const merged = {
+		enabled: false,
+		defaultMuted: false,
+		redact: true
+	};
+	for (const field of ["enabled", "defaultMuted"]) merged[field] = resolveField(switches, field) ?? COMMON_BOOLEAN_SETTINGS[field].default;
+	merged.api_key = resolveField(precedence, "api_key");
+	merged.api_url = resolveField(precedence, "api_url");
+	merged.project = resolveField(precedence, "project");
+	merged.replicas = resolveField(precedence, "replicas");
+	merged.redact = resolveField(precedence, "redact") ?? true;
+	merged.redact_extra_rules = resolveField(precedence, "redact_extra_rules");
+	if (precedence.some((source) => source.metadata !== void 0)) merged.metadata = [...precedence].reverse().reduce((metadata, source) => ({
+		...metadata,
+		...source.metadata
+	}), {});
+	return merged;
+}
+/** Convert validated canonical FILE replicas only. Legacy SDK environment tuples belong to adapters. */
+function toSdkReplicas(replicas) {
+	return replicas?.map((replica) => ({
+		...replica.api_url === void 0 ? {} : { apiUrl: replica.api_url },
+		...replica.api_key === void 0 ? {} : { apiKey: replica.api_key },
+		...replica.project === void 0 ? {} : { projectName: replica.project },
+		...replica.updates === void 0 ? {} : { updates: replica.updates }
+	}));
+}
+//#endregion
 //#region src/config.ts
 const ReplicaSchema = preprocess((value) => {
 	if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
@@ -15787,25 +15973,26 @@ const ReplicaSchema = preprocess((value) => {
 		project: replica.project ?? replica.projectName,
 		updates: replica.updates
 	};
-}, object({
+}, object$1({
 	api_url: string().optional(),
 	api_key: string().optional(),
 	project: string().optional(),
 	updates: record(string(), unknown()).optional()
 }));
-const ConfigSchema = object({
+const ConfigSchema = object$1({
 	enabled: boolean(),
+	defaultMuted: boolean(),
 	api_key: string().optional(),
 	api_url: string().optional(),
 	project: string().optional(),
 	metadata: record(string(), unknown()).optional(),
 	replicas: array(ReplicaSchema).optional(),
-	parent_headers: object({
+	parent_headers: object$1({
 		"langsmith-trace": string(),
 		baggage: string().optional()
 	}).optional(),
 	redact: boolean(),
-	redact_extra_rules: array(object({
+	redact_extra_rules: array(object$1({
 		pattern: string(),
 		replace: string().optional()
 	})).optional()
@@ -15840,22 +16027,42 @@ function parseJson(value) {
 const stripUndefined$1 = (value) => {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 };
-async function readConfigFile(file) {
-	try {
-		const data = await nodeFsPromises.readFile(file, "utf-8");
-		return PartialConfigSchema.parse(JSON.parse(data));
-	} catch {
-		return;
+/** Default mute deliberately accepts no aliases or surrounding whitespace. */
+function parseStrictBoolean(value) {
+	const normalized = value.toLowerCase();
+	if (normalized === "true") return true;
+	if (normalized === "false") return false;
+}
+const BOOLEAN_SETTINGS = {
+	enabled: {
+		env: ["TRACE_TO_LANGSMITH"],
+		parse: parseBoolean,
+		...COMMON_BOOLEAN_SETTINGS.enabled
+	},
+	defaultMuted: {
+		env: ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"],
+		parse: parseStrictBoolean,
+		...COMMON_BOOLEAN_SETTINGS.defaultMuted
 	}
+};
+/** File extensions are independent: malformed parent headers cannot disable common tracing. */
+function parentHeaders(result) {
+	const parsed = ConfigSchema.shape.parent_headers.safeParse(result.raw?.parent_headers);
+	return parsed.success ? parsed.data : void 0;
+}
+/** Keep each switch's adapter-owned environment parser and restrictive fallback. */
+function envBoolean(field, env) {
+	const setting = BOOLEAN_SETTINGS[field];
+	const value = setting.env.map((key) => env[key]).find((value) => value !== void 0);
+	if (value === void 0) return void 0;
+	return setting.parse(value) ?? setting.restrictive;
 }
 function getVar(suffix, env) {
 	return env[`LANGSMITH_CODEX_${suffix}`] ?? env[`LANGSMITH_${suffix}`];
 }
 const readConfigEnv = (env) => {
-	const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
 	try {
 		return stripUndefined$1(PartialConfigSchema.parse({
-			enabled,
 			api_key: getVar("API_KEY", env),
 			api_url: getVar("ENDPOINT", env),
 			project: getVar("PROJECT", env),
@@ -15875,15 +16082,30 @@ async function getConfig(options) {
 	const cwd = options?.cwd ?? process.cwd();
 	const env = options?.env ?? process.env;
 	const envConfig = readConfigEnv(env);
-	const [globalConfig, localConfig] = await Promise.all([readConfigFile(nodePath.join(home, ".codex", "langsmith.json")), readConfigFile(nodePath.join(cwd, ".codex", "langsmith.json"))]);
-	return ConfigSchema.parse({
-		project: "codex",
-		enabled: false,
-		redact: true,
-		...globalConfig,
-		...localConfig,
-		...envConfig
-	});
+	const user = readCommonConfigFile(nodePath.join(home, ".codex", "langsmith.json"));
+	const root = readCommonConfigFile(nodePath.join(cwd, "langsmith-plugins.json"));
+	const harness = readCommonConfigFile(nodePath.join(cwd, ".codex", "langsmith.json"));
+	const userRoot = readCommonConfigFile(nodePath.join(home, ".langsmith-plugins.json"));
+	const common = mergeCommonConfig({
+		userRoot: userRoot.common,
+		user: user.common,
+		root: root.common,
+		harness: harness.common,
+		env: {
+			...envConfig,
+			enabled: envBoolean("enabled", env),
+			defaultMuted: envBoolean("defaultMuted", env)
+		},
+		defaults: { project: "codex" }
+	}, { envFirst: true });
+	const parent = envConfig.parent_headers ?? parentHeaders(harness) ?? parentHeaders(root) ?? parentHeaders(user) ?? parentHeaders(userRoot);
+	return {
+		...stripUndefined$1({ ...common }),
+		enabled: common.enabled,
+		defaultMuted: common.defaultMuted,
+		redact: common.redact,
+		...parent === void 0 ? {} : { parent_headers: parent }
+	};
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -16295,13 +16517,13 @@ function requireIds(sessionId, turnId) {
 	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
 }
 /** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command) {
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
 	requireIds(sessionId, turnId);
 	return updatePolicy(file, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
 		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
 			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? "full" : "off")
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
 		};
 		if (command) thread.preference = command === "mute" ? "metadata" : "full";
 		policy.threads = {
@@ -17040,7 +17262,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 			cwd: input.cwd,
 			env: process.env
 		});
-		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command);
+		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
 		if (!command) {
 			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
 			return;
@@ -17108,7 +17330,7 @@ async function runHook() {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: config.replicas,
+		replicas: toSdkReplicas(config.replicas),
 		parentRunTree
 	});
 }

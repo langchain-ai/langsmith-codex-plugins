@@ -1,6 +1,7 @@
 import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
+import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { readStdin } from "./utils/stdin.js";
@@ -53,7 +54,7 @@ export async function runHook() {
     client,
     projectName: config.project,
     metadata: config.metadata,
-    replicas: config.replicas,
+    replicas: toSdkReplicas(config.replicas),
     parentRunTree,
   });
 }

@@ -19,6 +19,7 @@ export async function handlePromptSubmit(
       input.turn_id,
       config.enabled,
       command,
+      config.defaultMuted,
     );
     if (!command) {
       if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);

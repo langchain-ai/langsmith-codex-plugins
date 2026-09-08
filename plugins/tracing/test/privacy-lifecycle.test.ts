@@ -211,3 +211,35 @@ it("an inherited launch snapshot survives missing ancestry and child controls", 
     ),
   ).toBe(true);
 });
+
+it.each([true, false])(
+  "default changes do not rewrite launch, descendants, or replay: muted=%s",
+  async (muted) => {
+    await submitPreference(privacyPath, "root", "launch", true, undefined, muted);
+    await submitPreference(privacyPath, "root", "next", true, undefined, !muted);
+    const root = await rollout("root", [
+      ...turn("launch", muted ? "PRIVATE_ROOT" : "PUBLIC_ROOT", "child"),
+      ...turn("next", muted ? "PUBLIC_NEXT" : "PRIVATE_NEXT"),
+    ]);
+    const child = await rollout(
+      "child",
+      turn("child-turn", muted ? "PRIVATE_CHILD" : "PUBLIC_CHILD"),
+      "root",
+    );
+    const direct = await upload(child, "child-turn");
+    if (muted) expectMuted(direct);
+    else expect(JSON.stringify(direct)).toContain("PUBLIC_CHILD");
+    await fs.unlink(`${child}.langsmith`);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const runs = await upload(root, "next");
+      expectMuted(
+        runs.filter((run: any) => run.extra.metadata.turn_id === (muted ? "launch" : "next")),
+      );
+      expect(JSON.stringify(runs)).not.toContain(muted ? "PRIVATE_ROOT" : "PRIVATE_NEXT");
+      expect(JSON.stringify(runs)).not.toContain("PRIVATE_CHILD");
+      expect(JSON.stringify(runs)).toContain(muted ? "PUBLIC_NEXT" : "PUBLIC_ROOT");
+      await fs.unlink(`${root}.langsmith`);
+      await fs.unlink(`${child}.langsmith`);
+    }
+  },
+);
