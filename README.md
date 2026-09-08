@@ -5,7 +5,7 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 ## Prerequisites
 
 - Node.js >= 22.x
-- Codex >= 0.128
+- Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
 - A LangSmith account and API key
 
 ## Installation
@@ -27,6 +27,10 @@ plugin_hooks = true
 [plugins."tracing@langsmith-codex-plugins"]
 enabled = true
 ```
+
+Enable/trust this plugin’s hooks in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Restart Codex after installation or hook changes. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
+
+Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
 ### Setting environment variables
 
@@ -64,9 +68,39 @@ Config files are loaded from `~/.codex/langsmith.json` first, then `<project>/.c
 
 Complete a Codex turn, then look for runs in the `codex` project in LangSmith.
 
+## Per-thread privacy controls
+
+Submit exactly one of these as an ordinary chat message, **without a leading slash**, whitespace, arguments, or extra prose:
+
+```text
+langsmith-tracing:mute
+```
+
+```text
+langsmith-tracing:unmute
+```
+
+The synchronous `UserPromptSubmit` hook consumes the control locally, does not invoke the model, and displays: **“Preference saved for the next turn; the current turn is unchanged.”** Additional feedback identifies the saved mode and any master-off or filesystem warning. No model skill is required. Codex’s TUI rejects unknown slash commands before they reach this hook, so `/langsmith-tracing:mute` is not supported.
+
+- **Mute** saves metadata-only tracing for subsequent turns in this native thread; **unmute** saves full tracing. Threads without an explicit override use full tracing when master tracing is enabled.
+- Each submitted turn receives an immutable launch snapshot. Controls do not change active or already-snapshotted queued turns, or subagents they launched. All descendants inherit their launch mode, including direct child Stop hooks that arrive before the parent Stop.
+- Controls also work while master tracing is off; neither command enables it or supplies credentials. Off launch snapshots remain off if tracing is later enabled.
+- Wait for the local confirmation before submitting sensitive work. If no confirmation appears, do not assume mute worked: check version, hook enablement/trust, and installation cache.
+- Mute affects LangSmith uploads, **not** what Codex/the model can read or retain locally. It does not delete earlier uploads or remove context. After unmute, future full turns can include earlier sensitive material if Codex repeats it or includes it in their context.
+
+### Persistence and replay
+
+Preferences and immutable per-turn/descendant evidence live in `~/.codex/langsmith-state.privacy.json` (using the hook process’s `HOME`), shared across hook processes and projects, keyed by native thread ID. Resuming the same thread after restart keeps its preference. This file is separate from each rollout’s `.langsmith` upload-dedup sidecar and is not pruned with it.
+
+The strict privacy schema is `{ "version": 1, "threads": { "thread-id": { "turns": { "turn-id": "metadata" } } } }`. Each thread requires `turns` (values `"off"`, `"full"`, or `"metadata"`), and may have an explicit `preference` (`"full"` or `"metadata"`) and an `inherited` launch snapshot (`"off"`, `"full"`, or `"metadata"`). No other top-level or thread fields are allowed. A missing file means no overrides or evidence. The default is full tracing; no persisted global default or migration/compatibility format is supported. Invalid state fails closed and writers refuse to overwrite it.
+
+Stop replays the whole rollout. Historical muted/off snapshots are never upgraded by unmute, even after dedup sidecar deletion. Missing native launch evidence, missing/ambiguous child ancestry, and corrupt/unreadable privacy state fall back to metadata-only uploads rather than today’s full preference. Ordinary prompts are blocked if their launch evidence cannot be saved; corrupt files are not silently overwritten.
+
+Writes use a private `0700` directory lock, a two-second acquisition deadline with 10–30 ms retry jitter, and a `0600` temporary file followed by fsync/atomic rename and directory fsync. A post-rename durability/cleanup failure reports that the preference was saved with a warning. A crashed writer’s lock is never stolen: remove `~/.codex/langsmith-state.privacy.json.lock` only after confirming no preference writer is running. Repair corrupt state/permissions and retry; do not delete the privacy file as a routine reset. Deletion loses sticky preferences and new submissions use full tracing when master tracing is enabled, although historical turns without evidence remain metadata-only. The evidence file currently grows with thread/turn count; there is no automatic retention policy.
+
 ## What gets traced
 
-Each LLM run includes:
+In full mode, each LLM run includes:
 
 - **Inputs**: accumulated conversation messages
 - **Outputs**: assistant response content
@@ -75,6 +109,8 @@ Each LLM run includes:
 Subagent threads are resolved and uploaded as nested child runs under the parent turn. Tool calls (function calls, shell calls, computer calls, file reads, web searches) are included with inputs and outputs.
 
 Interrupted turns (where the user cancels mid-response) are still uploaded upon session completion.
+
+In metadata-only mode, root, model, and tool inputs/outputs are replaced by role-bearing placeholder messages containing `[LangSmith system notice: content omitted because tracing is muted.]`. Runs retain topology, parent IDs, trace ordering, timestamps, status, native IDs, model/tool identity, numeric token usage, and safe coding-agent schema fields. Metadata includes `ls_tracing_mode: "metadata"`. Message content, tool arguments/results, raw errors, attachments, arbitrary custom metadata (including allowlist-key collisions), paths/repository/user identity, SDK runtime/environment enrichment, and replica update overrides are excluded. Destination/auth configuration remains in use. Secret redaction still applies to retained values; turning redaction off does not disable the metadata-only projection.
 
 ## Secret redaction
 
@@ -172,7 +208,7 @@ export LANGSMITH_CODEX_RUNS_ENDPOINTS='[{"apiUrl":"https://api.smith.langchain.c
 
 ## Data sent to LangSmith
 
-When enabled, the plugin uploads completed Codex transcript data to LangSmith, including messages, tool call inputs and outputs, model metadata, token usage, and subagent thread structure. Do not enable tracing for sessions that contain data you do not want stored in LangSmith.
+When master tracing is enabled, full launch snapshots upload transcript messages, tool inputs/outputs, metadata, usage, and subagent structure. Metadata-only snapshots upload the safe structure and placeholders described above; off snapshots upload nothing. Metadata-only still sends structural identifiers and usage to LangSmith. Keep master tracing off if none of that data may leave your machine.
 
 ## Development
 

@@ -2,6 +2,7 @@ import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
 import { convertToRunTree } from "./trace.js";
+import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { readStdin } from "./utils/stdin.js";
 
 export async function runHook() {
@@ -9,10 +10,18 @@ export async function runHook() {
     session_id: string;
     turn_id: string;
     transcript_path: string;
-    hook_event_name: "Stop";
+    hook_event_name: "Stop" | "UserPromptSubmit";
+    cwd: string;
+    prompt: string;
   }>();
 
-  const config = await getConfig();
+  if (content.hook_event_name === "UserPromptSubmit") {
+    const result = await handlePromptSubmit(content);
+    if (result) console.log(JSON.stringify(result));
+    return;
+  }
+  if (content.hook_event_name !== "Stop") return;
+  const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
 
   // Skip entirely if tracing is disabled
   if (!config.enabled) return;
@@ -29,6 +38,7 @@ export async function runHook() {
     apiKey: config.api_key,
     apiUrl: config.api_url,
     anonymizer,
+    hideMetadata: anonymizer,
   });
 
   // (Optionally) reconstruct the distributed parent so Codex runs attach to the target trace.

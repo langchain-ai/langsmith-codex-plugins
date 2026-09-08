@@ -1,3 +1,4 @@
+import { seedFullLaunchEvidence } from "./utils/launch.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
@@ -202,6 +203,7 @@ async function buildRuns() {
     [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
   });
 
+  seedFullLaunchEvidence();
   await convertToRunTree(
     {
       transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
@@ -238,6 +240,7 @@ async function getRootRunForTerminal(terminal: Record<string, unknown>) {
     [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
   });
 
+  seedFullLaunchEvidence();
   await convertToRunTree(
     {
       transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
@@ -302,6 +305,7 @@ describe("coding-agent-v1 contract", () => {
       [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
       [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
     });
+    seedFullLaunchEvidence();
     await convertToRunTree(
       {
         transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),

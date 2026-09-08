@@ -181,3 +181,18 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
     sandbox_type: ctx.sandboxType,
   });
 }
+
+// Provenance is attached to the actual merged object, never recovered by key
+// name. Custom metadata cannot impersonate safe structural fields.
+const trustedMetadata = new WeakMap<Record<string, unknown>, Record<string, unknown>>();
+export function withTrustedMetadata(
+  untrusted: Record<string, unknown>,
+  structural: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = { ...untrusted, ...structural };
+  trustedMetadata.set(merged, { ...structural });
+  return merged;
+}
+export function trustedCodingAgentMetadata(metadata?: Record<string, unknown>) {
+  return metadata ? trustedMetadata.get(metadata) : undefined;
+}

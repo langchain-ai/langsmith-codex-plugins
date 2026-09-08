@@ -6,7 +6,7 @@ Thanks for contributing to the LangSmith Codex plugins repository.
 
 - Node.js 22 or later
 - [pnpm](https://pnpm.io/) 10.33.0 (the version declared in `package.json`)
-- OpenAI Codex 0.128 or later
+- OpenAI Codex 0.153.4 or later with enabled/trusted synchronous plugin hooks
 - A LangSmith account and API key for end-to-end testing
 
 If your Codex installation does not recognize `codex plugin`, update it before continuing:
@@ -43,6 +43,8 @@ plugin_hooks = true
 enabled = true
 ```
 
+Trust/enable the plugin hooks in Codex when prompted. See the README for exact non-slash controls, next-turn semantics, and the released hook-source contract; plugin enablement alone is not hook trust.
+
 Using an absolute path ensures Codex can resolve the marketplace regardless of the directory from which it starts.
 
 Configure LangSmith without committing credentials to the repository. For example:
@@ -73,7 +75,7 @@ For a release, bump `version` in `plugins/tracing/.codex-plugin/plugin.json` ins
 ## Development commands
 
 ```bash
-pnpm test          # Run the Vitest suite
+pnpm test --run    # Run the full Vitest suite once
 pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
@@ -87,9 +89,11 @@ pnpm test
 pnpm lint
 ```
 
+Privacy tests exercise actual concurrent processes, immutable launch evidence and replay, filesystem failures, and real LangSmith SDK HTTP serialization (non-batched, JSON batch, multipart, and replicas). They do not substitute for a live Codex hook-trust/control smoke test. Do not claim that manual validation unless you performed it.
+
 The configuration tests verify environment-variable precedence. If you normally export `LANGSMITH_*`, `LANGSMITH_CODEX_*`, or `TRACE_TO_LANGSMITH`, run the tests from a shell where those variables are unset.
 
-`plugins/tracing/dist/index.mjs` is committed. Include its updated output when a source change modifies the bundle. The `lint:dist` check rebuilds it and fails if the committed bundle is stale.
+`plugins/tracing/dist/index.mjs` is committed. Include its updated output when a source change modifies the bundle. The `lint:dist` check rebuilds it and compares against the Git index, so an intentionally unstaged regenerated bundle fails that gate even when current and reproducible. Report this distinctly from formatter/typecheck/test results; do not stage or commit someone else’s work to make the gate pass.
 
 ## Repository layout
 
