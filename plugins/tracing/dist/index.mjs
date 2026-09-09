@@ -16281,33 +16281,10 @@ const METADATA_KEYS = /* @__PURE__ */ new Set([
 	"ls_subagent_id",
 	"ls_subagent_type"
 ]);
-function numericFields(value, keys) {
-	const safe = {};
-	if (!value || typeof value !== "object" || Array.isArray(value)) return safe;
-	for (const key of keys) {
-		const count = value[key];
-		if (typeof count === "number" && Number.isFinite(count) && count >= 0) safe[key] = count;
-	}
-	return safe;
-}
-/** Explicit token schema, not an arbitrary recursively allowed object. */
+/** Usage metadata is extensible; validate only its outer object shape. */
 function usageForMetadata(value) {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return void 0;
-	const usage = value;
-	const safe = numericFields(usage, [
-		"input_tokens",
-		"output_tokens",
-		"total_tokens"
-	]);
-	for (const [key, keys] of [["input_token_details", [
-		"cache_read",
-		"cache_creation",
-		"audio"
-	]], ["output_token_details", ["reasoning", "audio"]]]) {
-		const details = numericFields(usage[key], keys);
-		if (Object.keys(details).length) safe[key] = details;
-	}
-	return Object.keys(safe).length ? safe : void 0;
+	return value;
 }
 function projectMetadata(metadata, status) {
 	const safe = {};

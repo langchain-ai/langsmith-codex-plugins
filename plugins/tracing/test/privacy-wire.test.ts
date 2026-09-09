@@ -28,6 +28,18 @@ let clients: Set<SDKClient>;
 let requests: RequestBody[];
 let transport: Transport;
 
+// Usage content is allowed, unlike general run/custom metadata content.
+const allowedUsage = {
+  input_tokens: 2,
+  output_tokens: 3,
+  total_tokens: 5,
+  costs: { input: 0.25, total: 0.75, currency: "USD" },
+  input_token_details: { cache_read: 1, video: { frames: 12, annotation: "estimated" } },
+  output_token_details: { new_modality: { units: 4, empty: {} } },
+  annotations: ["ALLOWED_USAGE_MARKER", false, null, { nested: [1, "note", {}] }],
+  custom: "ALLOWED_USAGE_CUSTOM",
+};
+
 const allowedMetadata = {
   thread_id: "thread",
   turn_id: "turn",
@@ -41,7 +53,8 @@ const allowedMetadata = {
   ls_trace_schema_version: "coding-agent-v1",
   ls_model_name: SECRET,
   ls_tool_name: "exec_command",
-  usage_metadata: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+  usage_metadata: allowedUsage,
+  ls_raw_aggregated_usage: allowedUsage,
   ls_subagent_id: "subagent",
   ls_subagent_type: "Explore",
 };
@@ -107,7 +120,8 @@ beforeEach(async () => {
   // isolate its shared client/cache from other cases (and ambient tracing env).
   vi.resetModules();
   for (const key of Object.keys(process.env)) {
-    if (/^(LANGCHAIN_|LANGSMITH_|LANGSMITH_CODEX_)/.test(key)) vi.stubEnv(key, undefined);
+    if (/^(LANGCHAIN_|LANGSMITH_|CC_LANGSMITH_)|^TRACE_TO_LANGSMITH$/.test(key))
+      vi.stubEnv(key, undefined);
   }
   vi.stubEnv("LANGCHAIN_REVISION_ID", REVISION);
   vi.stubEnv("LANGSMITH_WORKSPACE_ID", WORKSPACE);
@@ -269,43 +283,72 @@ function replicaUpdates(): Payload {
 }
 
 describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
-  it("uses an explicit numeric usage schema and rejects plain custom metadata", async () => {
+  it.each([allowedUsage, {}, { annotation: "ALLOWED_USAGE_ONLY", empty: {} }])(
+    "preserves arbitrary trusted usage but rejects plain custom metadata: %j",
+    async (usage) => {
+      transport = selectedTransport;
+      const client = makeClient();
+      const initial = config(client);
+      initial.extra = {
+        metadata: withTrustedMetadata(
+          { custom: FORBIDDEN, usage_metadata: { annotation: FORBIDDEN } },
+          {
+            usage_metadata: usage,
+            ls_raw_aggregated_usage: usage,
+            cwd: FORBIDDEN,
+            custom: FORBIDDEN,
+          },
+        ),
+      };
+      await createRunTree(initial, "metadata").postRun();
+      await flush();
+      initial.extra = { metadata: { ...allowedMetadata, ls_model_name: FORBIDDEN } };
+      await createRunTree({ ...initial, id: randomUUID() }, "metadata").postRun();
+      await flush();
+      const operations = expectTransport(2);
+      expectMutedContent(operations[0].payload);
+      expect(operations[0].payload.extra).toEqual({
+        metadata: {
+          usage_metadata: usage,
+          ls_raw_aggregated_usage: usage,
+          status: "running",
+          ls_tracing_mode: "metadata",
+        },
+      });
+      expect(operations[1].payload.extra).toEqual({
+        metadata: { status: "running", ls_tracing_mode: "metadata" },
+      });
+      for (const request of requests) expect(request.raw).not.toContain(FORBIDDEN);
+    },
+  );
+
+  it("does not restore usage annotations removed by SDK anonymization", async () => {
     transport = selectedTransport;
-    const client = makeClient();
-    const initial = config(client);
+    const initial = config(makeClient());
+    const usage = { ...allowedUsage, annotation: { model: SECRET } };
     initial.extra = {
       metadata: withTrustedMetadata(
         {},
         {
-          usage_metadata: {
-            input_tokens: 2,
-            output_tokens: -1,
-            total_tokens: Number.POSITIVE_INFINITY,
-            input_token_details: { cache_read: 1, path: FORBIDDEN },
-            custom: FORBIDDEN,
-          },
-          ls_raw_aggregated_usage: { total_tokens: 9, custom: FORBIDDEN },
+          usage_metadata: usage,
+          ls_raw_aggregated_usage: usage,
         },
       ),
     };
     await createRunTree(initial, "metadata").postRun();
     await flush();
-    initial.extra = { metadata: { ...allowedMetadata, ls_model_name: FORBIDDEN } };
-    await createRunTree({ ...initial, id: randomUUID() }, "metadata").postRun();
-    await flush();
-    const operations = expectTransport(2);
-    expect(operations[0].payload.extra).toEqual({
+    const [operation] = expectTransport(1);
+    const redactedUsage = { ...allowedUsage, annotation: { model: REDACTED } };
+    expect(operation.payload.extra).toEqual({
       metadata: {
-        usage_metadata: { input_tokens: 2, input_token_details: { cache_read: 1 } },
-        ls_raw_aggregated_usage: { total_tokens: 9 },
+        usage_metadata: redactedUsage,
+        ls_raw_aggregated_usage: redactedUsage,
         status: "running",
         ls_tracing_mode: "metadata",
       },
     });
-    expect(operations[1].payload.extra).toEqual({
-      metadata: { status: "running", ls_tracing_mode: "metadata" },
-    });
-    for (const request of requests) expect(request.raw).not.toContain(FORBIDDEN);
+    expect(requests[0].raw).not.toContain(SECRET);
+    expect(requests[0].raw).not.toContain(FORBIDDEN);
   });
 
   it("rejects custom allowlist collisions and parent baggage at the wire", async () => {
