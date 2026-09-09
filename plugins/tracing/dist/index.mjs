@@ -16015,17 +16015,17 @@ function codingAgentMetadata(ctx) {
 		sandbox_type: ctx.sandboxType
 	});
 }
-const trustedMetadata = /* @__PURE__ */ new WeakMap();
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
 function withTrustedMetadata(untrusted, structural) {
 	const merged = {
 		...untrusted,
 		...structural
 	};
-	trustedMetadata.set(merged, { ...structural });
+	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
 	return merged;
 }
 function trustedCodingAgentMetadata(metadata) {
-	return metadata ? trustedMetadata.get(metadata) : void 0;
+	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
 //#region src/utils/isPrimitive.ts

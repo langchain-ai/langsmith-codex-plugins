@@ -182,17 +182,22 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
   });
 }
 
-// Provenance is attached to the actual merged object, never recovered by key
-// name. Custom metadata cannot impersonate safe structural fields.
-const trustedMetadata = new WeakMap<Record<string, unknown>, Record<string, unknown>>();
+// Private, non-serializable provenance: custom metadata cannot impersonate
+// safe structural fields. Pass the merged result directly to privacy helpers;
+// spreading/JSON-cloning metadata itself loses provenance.
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
 export function withTrustedMetadata(
   untrusted: Record<string, unknown>,
   structural: Record<string, unknown>,
 ): Record<string, unknown> {
   const merged = { ...untrusted, ...structural };
-  trustedMetadata.set(merged, { ...structural });
+  Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
   return merged;
 }
-export function trustedCodingAgentMetadata(metadata?: Record<string, unknown>) {
-  return metadata ? trustedMetadata.get(metadata) : undefined;
+export function trustedCodingAgentMetadata(
+  metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  return (metadata as { [TRUSTED_METADATA]?: Record<string, unknown> } | undefined)?.[
+    TRUSTED_METADATA
+  ];
 }
