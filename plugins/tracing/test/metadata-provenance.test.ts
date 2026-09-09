@@ -36,3 +36,45 @@ describe("trusted metadata provenance", () => {
     expect(metadataForMode(metadata, "full")).toBe(metadata);
   });
 });
+
+describe.each(["usage_metadata", "ls_raw_aggregated_usage"])("muted %s", (key) => {
+  it.each([
+    {},
+    { annotation: "ALLOWED_USAGE_ANNOTATION", empty: {} },
+    {
+      input_tokens: 2,
+      output_tokens: -1,
+      total_tokens: Number.POSITIVE_INFINITY,
+      costs: { input: 0.25, currency: "USD" },
+      input_token_details: { video: { frames: 12, annotation: "estimated" } },
+      output_token_details: { new_modality: [1, "annotation", null, false, {}] },
+      custom: { nested: { empty: {} } },
+    },
+  ])("preserves the entire trusted usage object unchanged: %j", (usage) => {
+    const metadata = withTrustedMetadata(
+      { custom: "PRIVATE_CUSTOM", [key]: { annotation: "PRIVATE_COLLISION" } },
+      { [key]: usage, cwd: "PRIVATE_CWD" },
+    );
+    const projected = metadataForMode(metadata, "metadata");
+    expect(projected).toEqual({
+      [key]: usage,
+      status: "running",
+      ls_tracing_mode: "metadata",
+    });
+    expect(projected?.[key]).toBe(usage);
+    expect(metadataForMode({ [key]: usage }, "metadata")).toEqual({
+      status: "running",
+      ls_tracing_mode: "metadata",
+    });
+  });
+
+  it.each([undefined, null, [], [{ input_tokens: 2 }], "annotation", 2, false])(
+    "rejects non-object or array outer usage: %j",
+    (usage) => {
+      expect(metadataForMode(withTrustedMetadata({}, { [key]: usage }), "metadata")).toEqual({
+        status: "running",
+        ls_tracing_mode: "metadata",
+      });
+    },
+  );
+});

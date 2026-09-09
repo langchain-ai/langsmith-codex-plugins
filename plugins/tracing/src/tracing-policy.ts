@@ -205,6 +205,7 @@ export async function submitPreference(
   turnId: string,
   enabled: boolean,
   command?: "mute" | "unmute",
+  defaultMuted = false,
 ): Promise<{ warning?: string }> {
   requireIds(sessionId, turnId);
   return updatePolicy(file, (policy) => {
@@ -212,7 +213,9 @@ export async function submitPreference(
     if (!Object.hasOwn(thread.turns, turnId)) {
       thread.turns = {
         ...thread.turns,
-        [turnId]: thread.inherited ?? (enabled ? (thread.preference ?? "full") : "off"),
+        [turnId]:
+          thread.inherited ??
+          (enabled ? (thread.preference ?? (defaultMuted ? "metadata" : "full")) : "off"),
       };
     }
     if (command) thread.preference = command === "mute" ? "metadata" : "full";

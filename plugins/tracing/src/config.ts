@@ -1,8 +1,13 @@
-import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
+import {
+  COMMON_BOOLEAN_SETTINGS,
+  mergeCommonConfig,
+  readCommonConfigFile,
+  type CommonConfigResult,
+} from "./shared-config.js";
 
 const ReplicaSchema = z.preprocess(
   (value) => {
@@ -27,8 +32,11 @@ const ReplicaSchema = z.preprocess(
 );
 
 export const ConfigSchema = z.object({
-  // TRACE_TO_LANGSMITH == true
+  // Environment > project .codex > project root > user .codex > home root > false
   enabled: z.boolean(),
+
+  // Default for threads without an explicit override; independent of enabled.
+  defaultMuted: z.boolean(),
 
   // LANGSMITH_CODEX_API_KEY or LANGSMITH_API_KEY
   api_key: z.string().optional(),
@@ -92,13 +100,42 @@ const stripUndefined = <T extends Record<string, unknown>>(value: T): Partial<T>
   ) as Partial<T>;
 };
 
-async function readConfigFile(file: string): Promise<Partial<Config> | undefined> {
-  try {
-    const data = await fs.readFile(file, "utf-8");
-    return PartialConfigSchema.parse(JSON.parse(data));
-  } catch {
-    return undefined;
-  }
+/** Default mute deliberately accepts no aliases or surrounding whitespace. */
+function parseStrictBoolean(value: string): boolean | undefined {
+  const normalized = value.toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return undefined;
+}
+
+const BOOLEAN_SETTINGS = {
+  enabled: {
+    env: ["TRACE_TO_LANGSMITH"],
+    parse: parseBoolean, // Preserve the historical trimmed master-switch aliases.
+    ...COMMON_BOOLEAN_SETTINGS.enabled,
+  },
+  defaultMuted: {
+    env: ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"],
+    parse: parseStrictBoolean,
+    ...COMMON_BOOLEAN_SETTINGS.defaultMuted,
+  },
+} as const;
+type BooleanSetting = keyof typeof BOOLEAN_SETTINGS;
+/** File extensions are independent: malformed parent headers cannot disable common tracing. */
+function parentHeaders(result: CommonConfigResult): Config["parent_headers"] {
+  const parsed = ConfigSchema.shape.parent_headers.safeParse(result.raw?.parent_headers);
+  return parsed.success ? parsed.data : undefined;
+}
+
+/** Keep each switch's adapter-owned environment parser and restrictive fallback. */
+function envBoolean(
+  field: BooleanSetting,
+  env: Record<string, string | undefined>,
+): boolean | undefined {
+  const setting = BOOLEAN_SETTINGS[field];
+  const value = setting.env.map((key) => env[key]).find((value) => value !== undefined);
+  if (value === undefined) return undefined;
+  return setting.parse(value) ?? setting.restrictive;
 }
 
 function getVar(suffix: string, env: Record<string, string | undefined>): string | undefined {
@@ -106,12 +143,9 @@ function getVar(suffix: string, env: Record<string, string | undefined>): string
 }
 
 const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config> => {
-  const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
-
   try {
     return stripUndefined(
       PartialConfigSchema.parse({
-        enabled,
         api_key: getVar("API_KEY", env),
         api_url: getVar("ENDPOINT", env),
         project: getVar("PROJECT", env),
@@ -125,8 +159,8 @@ const readConfigEnv = (env: Record<string, string | undefined>): Partial<Config>
   } catch {
     // A malformed env value (e.g. METADATA / RUNS_ENDPOINTS / REDACT_EXTRA that
     // parses as JSON but doesn't match the schema) would otherwise throw and
-    // crash the hook. Fall back to file config + defaults, mirroring
-    // readConfigFile().
+    // crash the hook. Preserve the legacy whole ordinary-env-layer fallback.
+    // Privacy switches are parsed independently; files use the common contract.
     return {};
   }
 };
@@ -143,17 +177,38 @@ export async function getConfig(options?: {
   const env = options?.env ?? process.env;
 
   const envConfig = readConfigEnv(env);
-  const [globalConfig, localConfig] = await Promise.all([
-    readConfigFile(path.join(home, ".codex", "langsmith.json")),
-    readConfigFile(path.join(cwd, ".codex", "langsmith.json")),
-  ]);
+  const user = readCommonConfigFile(path.join(home, ".codex", "langsmith.json"));
+  const root = readCommonConfigFile(path.join(cwd, "langsmith-plugins.json"));
+  const harness = readCommonConfigFile(path.join(cwd, ".codex", "langsmith.json"));
+  const userRoot = readCommonConfigFile(path.join(home, ".langsmith-plugins.json"));
+  const common = mergeCommonConfig(
+    {
+      userRoot: userRoot.common,
+      user: user.common,
+      root: root.common,
+      harness: harness.common,
+      env: {
+        ...envConfig,
+        enabled: envBoolean("enabled", env),
+        defaultMuted: envBoolean("defaultMuted", env),
+      },
+      defaults: { project: "codex" },
+    },
+    { envFirst: true },
+  );
 
-  return ConfigSchema.parse({
-    project: "codex",
-    enabled: false,
-    redact: true,
-    ...globalConfig,
-    ...localConfig,
-    ...envConfig,
-  });
+  const parent =
+    envConfig.parent_headers ??
+    parentHeaders(harness) ??
+    parentHeaders(root) ??
+    parentHeaders(user) ??
+    parentHeaders(userRoot);
+  // Common fields are already validated. Do not run them through the extension/env schema.
+  return {
+    ...stripUndefined({ ...common }),
+    enabled: common.enabled,
+    defaultMuted: common.defaultMuted,
+    redact: common.redact,
+    ...(parent === undefined ? {} : { parent_headers: parent }),
+  } satisfies Config;
 }

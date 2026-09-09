@@ -258,6 +258,39 @@ it("serializes independent hook processes and retains preferences after restart"
   expect(savedTurnMode(file, "process-0", "after-restart")).toBe("metadata");
 });
 
+it("normal submissions never materialize a default preference; existing threads follow config", async () => {
+  expect(savedTurnMode(file, "thread", "missing")).toBe("metadata");
+  await expect(fs.stat(file)).rejects.toMatchObject({ code: "ENOENT" });
+  await submitPreference(file, "thread", "full", true, undefined, false);
+  await submitPreference(file, "thread", "muted", true, undefined, true);
+  await submitPreference(file, "new-muted", "first", true, undefined, true);
+  await submitPreference(file, "thread", "off", false, undefined, true);
+  await submitPreference(file, "thread", "future", true, undefined, false);
+  // Repeated launch IDs retain all three snapshot modes despite config changes.
+  for (const turn of ["full", "muted", "off"])
+    await submitPreference(file, "thread", turn, true, undefined, false);
+  const policy = JSON.parse(await fs.readFile(file, "utf8"));
+  expect(policy).toEqual({
+    version: 1,
+    threads: {
+      thread: { turns: { full: "full", muted: "metadata", off: "off", future: "full" } },
+      "new-muted": { turns: { first: "metadata" } },
+    },
+  });
+});
+it.each([true, false])(
+  "explicit overrides win over changing defaults, initial=%s",
+  async (initial) => {
+    await submitPreference(file, "thread", "control", true, "unmute", initial);
+    await submitPreference(file, "thread", "unmuted", true, undefined, true);
+    expect(savedTurnMode(file, "thread", "unmuted")).toBe("full");
+    await submitPreference(file, "thread", "unmuted", true, "mute", false);
+    await submitPreference(file, "thread", "muted", true, undefined, false);
+    expect(savedTurnMode(file, "thread", "muted")).toBe("metadata");
+    expect(savedTurnMode(file, "thread", "control")).toBe(initial ? "metadata" : "full");
+    expect(savedTurnMode(file, "thread", "unknown")).toBe("metadata");
+  },
+);
 it.each(["full", "metadata", "off"] as const)(
   "inheritance preserves %s launch, not config or child preference",
   async (mode) => {
@@ -266,12 +299,38 @@ it.each(["full", "metadata", "off"] as const)(
       inherited: mode,
       turns: {},
     });
-    await submitPreference(file, "child", "control", true, "unmute");
-    await submitPreference(file, "child", "next", true);
+    await submitPreference(file, "child", "control", true, "unmute", true);
+    await submitPreference(file, "child", "next", true, undefined, false);
     await inheritThreadMode(file, "child", "metadata");
     expect(savedTurnMode(file, "child", "next")).toBe(mode);
   },
 );
+it("the hook resolves config at each submission using payload cwd, without saving a global default", async () => {
+  const cwd = path.join(home, "project");
+  await fs.mkdir(path.join(cwd, ".codex"), { recursive: true });
+  const configPath = path.join(cwd, ".codex/langsmith.json");
+  vi.stubEnv("TRACE_TO_LANGSMITH", "true");
+  const input = { session_id: "thread", turn_id: "muted", cwd, prompt: "work" };
+  await fs.writeFile(configPath, JSON.stringify({ defaultMuted: true }));
+  expect(await handlePromptSubmit(input)).toBeUndefined();
+  await fs.writeFile(configPath, JSON.stringify({ defaultMuted: false }));
+  expect(await handlePromptSubmit({ ...input, turn_id: "full" })).toBeUndefined();
+  vi.stubEnv("LANGSMITH_CODEX_DEFAULT_MUTED", "true");
+  expect(await handlePromptSubmit({ ...input, turn_id: "env-muted" })).toBeUndefined();
+  await fs.writeFile(configPath, JSON.stringify({ defaultMuted: true }));
+  vi.stubEnv("LANGSMITH_CODEX_DEFAULT_MUTED", "false");
+  expect(await handlePromptSubmit({ ...input, turn_id: "env-full" })).toBeUndefined();
+  // Re-submitting earlier turn IDs cannot rewrite their immutable launch snapshots.
+  expect(await handlePromptSubmit(input)).toBeUndefined();
+  expect(JSON.parse(await fs.readFile(file, "utf8"))).toEqual({
+    version: 1,
+    threads: {
+      thread: {
+        turns: { muted: "metadata", full: "full", "env-muted": "metadata", "env-full": "full" },
+      },
+    },
+  });
+});
 it.each([
   { version: 1, default: "full", threads: {} },
   { version: 1, defaultMuted: false, threads: {} },
@@ -283,13 +342,14 @@ it.each([
   const raw = JSON.stringify(policy);
   await fs.writeFile(file, raw);
   expect(savedTurnMode(file, "thread", "turn")).toBe("metadata");
-  await expect(submitPreference(file, "thread", "turn", true, "unmute")).rejects.toThrow(
+  await expect(submitPreference(file, "thread", "turn", true, "unmute", false)).rejects.toThrow(
     "Refusing to overwrite",
   );
   expect(await fs.readFile(file, "utf8")).toBe(raw);
 });
 
-it("unmute saves an explicit full override even while master off", async () => {
+it("unmute under default mute saves an explicit override even while master off", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_DEFAULT_MUTED", "true");
   const input = {
     session_id: "thread",
     turn_id: "off",
