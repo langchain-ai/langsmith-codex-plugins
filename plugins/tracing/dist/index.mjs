@@ -1,10 +1,16 @@
 import * as nodeFs from "node:fs";
+import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
+import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
+import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { randomUUID } from "node:crypto";
+import { performance as performance$1 } from "node:perf_hooks";
+import { setTimeout as setTimeout$1 } from "node:timers/promises";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -5002,7 +5008,7 @@ function parseHubIdentifier(identifier) {
 * via the package.json browser field.
 */
 const path = nodePath;
-async function mkdir(dir) {
+async function mkdir$1(dir) {
 	await nodeFsPromises.mkdir(dir, { recursive: true });
 }
 async function writeFileAtomic(filePath, content) {
@@ -5034,7 +5040,7 @@ function renameSync(oldPath, newPath) {
 function unlinkSync(filePath) {
 	nodeFs.unlinkSync(filePath);
 }
-function readFileSync(filePath) {
+function readFileSync$1(filePath) {
 	return nodeFs.readFileSync(filePath, "utf-8");
 }
 async function mkdirExclusive(dir) {
@@ -5267,7 +5273,7 @@ var PromptCache = class {
 		if (!existsSync(filePath)) return 0;
 		let entries;
 		try {
-			const content = readFileSync(filePath);
+			const content = readFileSync$1(filePath);
 			entries = JSON.parse(content).entries ?? null;
 		} catch {
 			return 0;
@@ -5370,7 +5376,7 @@ function isEEXIST(err) {
 }
 function lockMetadataLines(lockDir) {
 	try {
-		return readFileSync(path.join(lockDir, LOCK_METADATA_FILE)).split("\n");
+		return readFileSync$1(path.join(lockDir, LOCK_METADATA_FILE)).split("\n");
 	} catch {
 		return;
 	}
@@ -5405,7 +5411,7 @@ async function removeStaleLock(lockDir) {
 async function acquireOAuthRefreshLock(configPath, deadline) {
 	const lockDir = `${configPath}.oauth.lock.lock`;
 	const parent = path.dirname(lockDir);
-	if (parent) await mkdir(parent);
+	if (parent) await mkdir$1(parent);
 	const owner = globalThis.crypto.randomUUID();
 	for (;;) {
 		try {
@@ -5457,7 +5463,7 @@ function loadProfileState() {
 	const configPath = getProfileConfigPath();
 	if (!configPath || !existsSync(configPath)) return;
 	try {
-		const config = JSON.parse(readFileSync(configPath));
+		const config = JSON.parse(readFileSync$1(configPath));
 		const profileName = resolveProfileName(config);
 		const profile = profileName ? config.profiles?.[profileName] : void 0;
 		if (!profileName || !profile) return;
@@ -5672,7 +5678,7 @@ var ProfileAuth = class {
 	}
 	reloadProfile() {
 		try {
-			const config = JSON.parse(readFileSync(this.state.configPath));
+			const config = JSON.parse(readFileSync$1(this.state.configPath));
 			const profile = config.profiles?.[this.state.profileName];
 			if (!profile) return;
 			this.state.config = config;
@@ -7466,7 +7472,7 @@ var Client = class Client {
 			const filename = `trace_${Date.now()}_${v4().slice(0, 8)}.json`;
 			const filepath = path.join(directory, filename);
 			if (!Client._fallbackDirsCreated.has(directory)) {
-				await mkdir(directory);
+				await mkdir$1(directory);
 				Client._fallbackDirsCreated.add(directory);
 			}
 			if (maxBytes !== void 0 && maxBytes > 0) try {
@@ -12059,7 +12065,7 @@ function slugify(input) {
 	return input.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
 }
 const captureStackTrace = "captureStackTrace" in Error ? Error.captureStackTrace : (..._args) => {};
-function isObject(data) {
+function isObject$1(data) {
 	return typeof data === "object" && data !== null && !Array.isArray(data);
 }
 const allowsEval = /* @__PURE__*/ cached(() => {
@@ -12073,12 +12079,12 @@ const allowsEval = /* @__PURE__*/ cached(() => {
 	}
 });
 function isPlainObject(o) {
-	if (isObject(o) === false) return false;
+	if (isObject$1(o) === false) return false;
 	const ctor = o.constructor;
 	if (ctor === void 0) return true;
 	if (typeof ctor !== "function") return true;
 	const prot = ctor.prototype;
-	if (isObject(prot) === false) return false;
+	if (isObject$1(prot) === false) return false;
 	if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) return false;
 	return true;
 }
@@ -13310,13 +13316,13 @@ const $ZodObject = /*@__PURE__*/ $constructor("$ZodObject", (inst, def) => {
 		}
 		return propValues;
 	});
-	const isObject$1 = isObject;
+	const isObject = isObject$1;
 	const catchall = def.catchall;
 	let value;
 	inst._zod.parse = (payload, ctx) => {
 		value ?? (value = _normalized.value);
 		const input = payload.value;
-		if (!isObject$1(input)) {
+		if (!isObject(input)) {
 			payload.issues.push({
 				expected: "object",
 				code: "invalid_type",
@@ -13439,7 +13445,7 @@ const $ZodObjectJIT = /*@__PURE__*/ $constructor("$ZodObjectJIT", (inst, def) =>
 		return (payload, ctx) => fn(shape, payload, ctx);
 	};
 	let fastpass;
-	const isObject$2 = isObject;
+	const isObject = isObject$1;
 	const jit = !globalConfig.jitless;
 	const fastEnabled = jit && allowsEval.value;
 	const catchall = def.catchall;
@@ -13447,7 +13453,7 @@ const $ZodObjectJIT = /*@__PURE__*/ $constructor("$ZodObjectJIT", (inst, def) =>
 	inst._zod.parse = (payload, ctx) => {
 		value ?? (value = _normalized.value);
 		const input = payload.value;
-		if (!isObject$2(input)) {
+		if (!isObject(input)) {
 			payload.issues.push({
 				expected: "object",
 				code: "invalid_type",
@@ -15502,7 +15508,7 @@ const ZodObject = /*@__PURE__*/ $constructor("ZodObject", (inst, def) => {
 		}
 	});
 });
-function object(shape, params) {
+function object$1(shape, params) {
 	const def = {
 		type: "object",
 		shape: shape ?? {},
@@ -15771,6 +15777,192 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
+//#region src/shared-config.ts
+const COMMON_BOOLEAN_SETTINGS = {
+	enabled: {
+		default: false,
+		restrictive: false
+	},
+	defaultMuted: {
+		default: false,
+		restrictive: true
+	}
+};
+function object(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function invalid(raw) {
+	return {
+		status: "invalid",
+		common: {
+			enabled: false,
+			defaultMuted: true
+		},
+		...raw === void 0 ? {} : { raw },
+		diagnostics: ["Invalid or unreadable common config; ordinary fields discarded, privacy switches restricted."]
+	};
+}
+function parseReplica(value) {
+	if (!object(value)) return void 0;
+	const replica = {};
+	for (const [canonical, alias] of [
+		["api_url", "apiUrl"],
+		["api_key", "apiKey"],
+		["project", "projectName"]
+	]) {
+		const selected = Object.hasOwn(value, canonical) ? canonical : alias;
+		if (Object.hasOwn(value, selected)) {
+			const entry = value[selected];
+			if (typeof entry !== "string") return void 0;
+			replica[canonical] = entry;
+		}
+	}
+	if (Object.hasOwn(value, "updates")) {
+		if (!object(value.updates)) return void 0;
+		replica.updates = value.updates;
+	}
+	return replica;
+}
+/** Parse a decoded JSON value (not JSON text). Unknown/adapter fields do not affect common validity. */
+function parseCommonConfig(value) {
+	if (!object(value)) return invalid();
+	const common = {};
+	const diagnostics = [];
+	for (const field of ["enabled", "defaultMuted"]) {
+		if (!Object.hasOwn(value, field)) continue;
+		const entry = value[field];
+		common[field] = typeof entry === "boolean" ? entry : COMMON_BOOLEAN_SETTINGS[field].restrictive;
+		if (typeof entry !== "boolean") diagnostics.push(`Invalid ${field}; using restrictive value.`);
+	}
+	for (const field of [
+		"api_key",
+		"api_url",
+		"project"
+	]) {
+		if (!Object.hasOwn(value, field)) continue;
+		if (typeof value[field] !== "string") return invalid(value);
+		common[field] = value[field];
+	}
+	if (Object.hasOwn(value, "redact")) {
+		if (typeof value.redact !== "boolean") return invalid(value);
+		common.redact = value.redact;
+	}
+	if (Object.hasOwn(value, "metadata")) {
+		if (!object(value.metadata)) return invalid(value);
+		common.metadata = value.metadata;
+	}
+	if (Object.hasOwn(value, "replicas")) {
+		if (!Array.isArray(value.replicas)) return invalid(value);
+		const replicas = [];
+		for (const entry of value.replicas) {
+			const replica = parseReplica(entry);
+			if (replica === void 0) return invalid(value);
+			replicas.push(replica);
+		}
+		common.replicas = replicas;
+	}
+	if (Object.hasOwn(value, "redact_extra_rules")) {
+		if (!Array.isArray(value.redact_extra_rules)) return invalid(value);
+		const rules = [];
+		for (const rule of value.redact_extra_rules) {
+			if (!object(rule) || typeof rule.pattern !== "string" || !Object.hasOwn(rule, "pattern")) return invalid(value);
+			const hasReplace = Object.hasOwn(rule, "replace");
+			if (hasReplace && typeof rule.replace !== "string") return invalid(value);
+			try {
+				new RegExp(rule.pattern, "g");
+			} catch {
+				return invalid(value);
+			}
+			rules.push({
+				pattern: rule.pattern,
+				...hasReplace ? { replace: rule.replace } : {}
+			});
+		}
+		common.redact_extra_rules = rules;
+	}
+	return {
+		status: "valid",
+		common,
+		raw: value,
+		diagnostics
+	};
+}
+/** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
+function readCommonConfigFile(path) {
+	try {
+		if (!statSync(path).isFile()) return invalid();
+	} catch (error) {
+		if (error.code === "ENOENT") try {
+			lstatSync(path);
+		} catch (lstatError) {
+			if (lstatError.code === "ENOENT") return {
+				status: "absent",
+				common: {},
+				diagnostics: []
+			};
+		}
+		return invalid();
+	}
+	try {
+		return parseCommonConfig(JSON.parse(readFileSync(path, "utf8")));
+	} catch {
+		return invalid();
+	}
+}
+/** Resolve the first supplied value from sources ordered highest priority first. */
+function resolveField(sources, field) {
+	return sources.find((source) => source[field] !== void 0)?.[field];
+}
+/**
+* Metadata shallow-merges per key. envFirst opts into uniform environment-first
+* precedence; by default switches retain the legacy file-first precedence.
+*/
+function mergeCommonConfig(sources, options = {}) {
+	const { harness = {}, root = {}, user = {}, userRoot = {}, env = {}, defaults = {} } = sources;
+	const files = [
+		harness,
+		root,
+		user,
+		userRoot
+	];
+	const precedence = [
+		env,
+		...files,
+		defaults
+	];
+	const switches = options.envFirst ? precedence : [
+		...files,
+		env,
+		defaults
+	];
+	const merged = {
+		enabled: false,
+		defaultMuted: false,
+		redact: true
+	};
+	for (const field of ["enabled", "defaultMuted"]) merged[field] = resolveField(switches, field) ?? COMMON_BOOLEAN_SETTINGS[field].default;
+	merged.api_key = resolveField(precedence, "api_key");
+	merged.api_url = resolveField(precedence, "api_url");
+	merged.project = resolveField(precedence, "project");
+	merged.replicas = resolveField(precedence, "replicas");
+	merged.redact = resolveField(precedence, "redact") ?? true;
+	merged.redact_extra_rules = resolveField(precedence, "redact_extra_rules");
+	if (precedence.some((source) => source.metadata !== void 0)) merged.metadata = [...precedence].reverse().reduce((metadata, source) => ({
+		...metadata,
+		...source.metadata
+	}), {});
+	return merged;
+}
+/** Convert validated canonical FILE replicas only. Legacy SDK environment tuples belong to adapters. */
+function toSdkReplicas(replicas) {
+	return replicas?.map((replica) => ({
+		...replica.api_url === void 0 ? {} : { apiUrl: replica.api_url },
+		...replica.api_key === void 0 ? {} : { apiKey: replica.api_key },
+		...replica.project === void 0 ? {} : { projectName: replica.project },
+		...replica.updates === void 0 ? {} : { updates: replica.updates }
+	}));
+}
+//#endregion
 //#region src/config.ts
 const ReplicaSchema = preprocess((value) => {
 	if (value == null || typeof value !== "object" || Array.isArray(value)) return value;
@@ -15781,25 +15973,26 @@ const ReplicaSchema = preprocess((value) => {
 		project: replica.project ?? replica.projectName,
 		updates: replica.updates
 	};
-}, object({
+}, object$1({
 	api_url: string().optional(),
 	api_key: string().optional(),
 	project: string().optional(),
 	updates: record(string(), unknown()).optional()
 }));
-const ConfigSchema = object({
+const ConfigSchema = object$1({
 	enabled: boolean(),
+	defaultMuted: boolean(),
 	api_key: string().optional(),
 	api_url: string().optional(),
 	project: string().optional(),
 	metadata: record(string(), unknown()).optional(),
 	replicas: array(ReplicaSchema).optional(),
-	parent_headers: object({
+	parent_headers: object$1({
 		"langsmith-trace": string(),
 		baggage: string().optional()
 	}).optional(),
 	redact: boolean(),
-	redact_extra_rules: array(object({
+	redact_extra_rules: array(object$1({
 		pattern: string(),
 		replace: string().optional()
 	})).optional()
@@ -15834,22 +16027,42 @@ function parseJson(value) {
 const stripUndefined$1 = (value) => {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 };
-async function readConfigFile(file) {
-	try {
-		const data = await nodeFsPromises.readFile(file, "utf-8");
-		return PartialConfigSchema.parse(JSON.parse(data));
-	} catch {
-		return;
+/** Default mute deliberately accepts no aliases or surrounding whitespace. */
+function parseStrictBoolean(value) {
+	const normalized = value.toLowerCase();
+	if (normalized === "true") return true;
+	if (normalized === "false") return false;
+}
+const BOOLEAN_SETTINGS = {
+	enabled: {
+		env: ["TRACE_TO_LANGSMITH"],
+		parse: parseBoolean,
+		...COMMON_BOOLEAN_SETTINGS.enabled
+	},
+	defaultMuted: {
+		env: ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"],
+		parse: parseStrictBoolean,
+		...COMMON_BOOLEAN_SETTINGS.defaultMuted
 	}
+};
+/** File extensions are independent: malformed parent headers cannot disable common tracing. */
+function parentHeaders(result) {
+	const parsed = ConfigSchema.shape.parent_headers.safeParse(result.raw?.parent_headers);
+	return parsed.success ? parsed.data : void 0;
+}
+/** Keep each switch's adapter-owned environment parser and restrictive fallback. */
+function envBoolean(field, env) {
+	const setting = BOOLEAN_SETTINGS[field];
+	const value = setting.env.map((key) => env[key]).find((value) => value !== void 0);
+	if (value === void 0) return void 0;
+	return setting.parse(value) ?? setting.restrictive;
 }
 function getVar(suffix, env) {
 	return env[`LANGSMITH_CODEX_${suffix}`] ?? env[`LANGSMITH_${suffix}`];
 }
 const readConfigEnv = (env) => {
-	const enabled = parseBoolean(env.TRACE_TO_LANGSMITH);
 	try {
 		return stripUndefined$1(PartialConfigSchema.parse({
-			enabled,
 			api_key: getVar("API_KEY", env),
 			api_url: getVar("ENDPOINT", env),
 			project: getVar("PROJECT", env),
@@ -15869,15 +16082,30 @@ async function getConfig(options) {
 	const cwd = options?.cwd ?? process.cwd();
 	const env = options?.env ?? process.env;
 	const envConfig = readConfigEnv(env);
-	const [globalConfig, localConfig] = await Promise.all([readConfigFile(nodePath.join(home, ".codex", "langsmith.json")), readConfigFile(nodePath.join(cwd, ".codex", "langsmith.json"))]);
-	return ConfigSchema.parse({
-		project: "codex",
-		enabled: false,
-		redact: true,
-		...globalConfig,
-		...localConfig,
-		...envConfig
-	});
+	const user = readCommonConfigFile(nodePath.join(home, ".codex", "langsmith.json"));
+	const root = readCommonConfigFile(nodePath.join(cwd, "langsmith-plugins.json"));
+	const harness = readCommonConfigFile(nodePath.join(cwd, ".codex", "langsmith.json"));
+	const userRoot = readCommonConfigFile(nodePath.join(home, ".langsmith-plugins.json"));
+	const common = mergeCommonConfig({
+		userRoot: userRoot.common,
+		user: user.common,
+		root: root.common,
+		harness: harness.common,
+		env: {
+			...envConfig,
+			enabled: envBoolean("enabled", env),
+			defaultMuted: envBoolean("defaultMuted", env)
+		},
+		defaults: { project: "codex" }
+	}, { envFirst: true });
+	const parent = envConfig.parent_headers ?? parentHeaders(harness) ?? parentHeaders(root) ?? parentHeaders(user) ?? parentHeaders(userRoot);
+	return {
+		...stripUndefined$1({ ...common }),
+		enabled: common.enabled,
+		defaultMuted: common.defaultMuted,
+		redact: common.redact,
+		...parent === void 0 ? {} : { parent_headers: parent }
+	};
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -16009,10 +16237,292 @@ function codingAgentMetadata(ctx) {
 		sandbox_type: ctx.sandboxType
 	});
 }
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
+function withTrustedMetadata(untrusted, structural) {
+	const merged = {
+		...untrusted,
+		...structural
+	};
+	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
+	return merged;
+}
+function trustedCodingAgentMetadata(metadata) {
+	return metadata?.[TRUSTED_METADATA];
+}
 //#endregion
 //#region src/utils/isPrimitive.ts
 function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+//#endregion
+//#region src/privacy.ts
+const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
+const METADATA_KEYS = /* @__PURE__ */ new Set([
+	"thread_id",
+	"turn_number",
+	"turn_id",
+	"status",
+	"ls_tracing_mode",
+	"ls_agent_purpose",
+	"ls_agent_type",
+	"ls_agent_runtime",
+	"ls_agent_runtime_version",
+	"ls_integration",
+	"ls_integration_version",
+	"ls_trace_schema_version",
+	"ls_model_name",
+	"ls_provider",
+	"ls_model_type",
+	"ls_message_format",
+	"codex_cli_version",
+	"ls_raw_aggregated_usage",
+	"ls_tool_name",
+	"usage_metadata",
+	"ls_subagent_id",
+	"ls_subagent_type"
+]);
+/** Usage metadata is extensible; validate only its outer object shape. */
+function usageForMetadata(value) {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return void 0;
+	return value;
+}
+function projectMetadata(metadata, status) {
+	const safe = {};
+	for (const [key, value] of Object.entries(metadata ?? {})) {
+		if (!METADATA_KEYS.has(key)) continue;
+		if (key === "usage_metadata" || key === "ls_raw_aggregated_usage") {
+			const usage = usageForMetadata(value);
+			if (usage) safe[key] = usage;
+		} else if (key === "turn_number") {
+			if (typeof value === "number" && Number.isSafeInteger(value) && value >= 1) safe[key] = value;
+		} else if (typeof value === "string" && value.length) safe[key] = value;
+	}
+	safe.status = status === "error" || status === "completed" ? status : "running";
+	safe.ls_tracing_mode = "metadata";
+	return safe;
+}
+function metadataForMode(metadata, mode = "full", status) {
+	if (mode === "full") return metadata;
+	return projectMetadata(trustedCodingAgentMetadata(metadata), status);
+}
+function sanitizeReplica(replica, mode) {
+	if (mode === "full" || !replica || typeof replica !== "object") return replica;
+	if (Array.isArray(replica)) return { projectName: replica[0] };
+	const { updates: _updates, ...safe } = replica;
+	return safe;
+}
+function runConfigForMode(config, mode = "full") {
+	if (mode === "full") return config;
+	const status = config.error ? "error" : config.end_time != null ? "completed" : "running";
+	const extra = config.extra;
+	const safe = {};
+	for (const key of [
+		"client",
+		"id",
+		"name",
+		"run_type",
+		"project_name",
+		"start_time",
+		"end_time",
+		"parent_run_id",
+		"trace_id",
+		"dotted_order"
+	]) if (key in config && config[key] !== void 0) safe[key] = config[key];
+	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
+	safe.inputs = { messages: [{
+		role: "user",
+		content: MUTED_TRACE_CONTENT
+	}] };
+	safe.outputs = { messages: [{
+		role: "assistant",
+		content: MUTED_TRACE_CONTENT
+	}] };
+	safe.extra = {
+		metadata: metadataForMode(extra?.metadata, mode, status),
+		toJSON() {
+			return { metadata: projectMetadata(this.metadata, typeof this.metadata?.status === "string" ? this.metadata.status : status) };
+		}
+	};
+	return safe;
+}
+/**
+* Payload boundary only: callers retain control of posting, patching, timing and
+* parentage. Reconstruct updates through this wrapper too; do not mutate a muted
+* RunTree with raw payloads after construction. No shared client or mode state is
+* changed, so full and metadata runs can safely share a client.
+*/
+function createRunTree(config, mode = "full", parent) {
+	const safe = runConfigForMode(config, mode);
+	const run = parent?.createChild(safe) ?? new RunTree(safe);
+	if (mode === "metadata") {
+		run.extra = safe.extra;
+		if (run.replicas) run.replicas = run.replicas.map((replica) => sanitizeReplica(replica, mode));
+	}
+	return run;
+}
+//#endregion
+//#region src/tracing-policy.ts
+function isMode(value) {
+	return value === "full" || value === "metadata";
+}
+function isTurnMode(value) {
+	return isMode(value) || value === "off";
+}
+function validThread(value) {
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
+		"preference",
+		"turns",
+		"inherited"
+	].includes(key));
+}
+function isObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasCode(error, code) {
+	return isObject(error) && error.code === code;
+}
+/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
+function readPolicy(path) {
+	let raw;
+	try {
+		raw = readFileSync(path, "utf8");
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) try {
+			lstatSync(path);
+		} catch (statError) {
+			if (hasCode(statError, "ENOENT")) return {
+				version: 1,
+				threads: {}
+			};
+			throw statError;
+		}
+		throw error;
+	}
+	const value = JSON.parse(raw);
+	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+	return value;
+}
+function defaultPrivacyPath() {
+	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+}
+function threadPolicy(policy, id) {
+	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
+}
+/** No launch evidence means metadata-only, never today's sticky preference. */
+function savedTurnMode(file, sessionId, turnId) {
+	try {
+		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.inherited) return thread.inherited;
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+	} catch {
+		return "metadata";
+	}
+}
+/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
+function parseTracingCommand(prompt) {
+	if (prompt === "langsmith-tracing:mute") return "mute";
+	if (prompt === "langsmith-tracing:unmute") return "unmute";
+}
+/**
+* Independent of tracing state and its pruning. Writers serialize through an
+* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
+* No age/PID-based stealing: even a slow live writer is safe.
+* A crashed writer's lock requires explicit removal after confirming it is idle.
+* Rename commits the effective preference. Later durability/cleanup failures are
+* returned as local warnings, not thrown as if the preference were unchanged.
+*/
+async function updatePolicy(path, update) {
+	const lockPath = `${path}.lock`;
+	await mkdir(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const deadline = performance$1.now() + 2e3;
+	let locked = false;
+	while (!locked) try {
+		await mkdir(lockPath, { mode: 448 });
+		locked = true;
+	} catch (error) {
+		if (!hasCode(error, "EEXIST")) throw error;
+		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
+		await setTimeout$1(10 + Math.random() * 20);
+	}
+	const warnings = [];
+	async function bestEffort(action, message) {
+		try {
+			await action();
+		} catch (error) {
+			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	let tempPath;
+	try {
+		let policy;
+		try {
+			policy = readPolicy(path);
+		} catch (error) {
+			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
+		}
+		update(policy);
+		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+		const temp = await open(tempPath, "wx", 384);
+		try {
+			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
+			await temp.sync();
+		} catch (error) {
+			await bestEffort(() => temp.close(), "Temporary file close failed");
+			throw error;
+		}
+		await temp.close();
+		await rename(tempPath, path);
+		tempPath = void 0;
+		await bestEffort(async () => {
+			const directory = await open(dirname(path), "r");
+			try {
+				await directory.sync();
+			} finally {
+				await bestEffort(() => directory.close(), "Directory close cleanup failed");
+			}
+		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
+	} finally {
+		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
+		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+function requireIds(sessionId, turnId) {
+	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
+}
+/** One atomic transaction preserves active/queued snapshots before changing preference. */
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+	requireIds(sessionId, turnId);
+	return updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
+			...thread.turns,
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+		};
+		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+}
+/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
+async function inheritThreadMode(file, sessionId, mode) {
+	let inherited = "metadata";
+	const result = await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.inherited ??= mode;
+		inherited = thread.inherited;
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	return inherited;
 }
 //#endregion
 //#region src/utils/enumerate.ts
@@ -16125,6 +16635,48 @@ async function findRolloutFileByThreadId(parentFileName, threadId, sessionsRoot)
 		}
 	}
 	return walk(root);
+}
+/** Resolve direct child Stops exactly as recursive uploads: use the spawning
+* parent's native turn, not the parent's current preference or Stop turn_id.
+* Missing/ambiguous launch evidence is metadata-only. No timing heuristic. */
+async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoot, visited = /* @__PURE__ */ new Set()) {
+	if (visited.has(sessionId)) return "metadata";
+	visited.add(sessionId);
+	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return "metadata";
+	const source = meta.payload.source;
+	const parentId = source && typeof source === "object" ? source.subagent?.thread_spawn?.parent_thread_id ?? meta.payload.parent_thread_id : meta.payload.parent_thread_id;
+	if (!(!!parentId || meta.payload.thread_source === "subagent" || source && typeof source === "object" && !!source.subagent)) return savedTurnMode(privacyPath, sessionId, turnId);
+	let mode = "metadata";
+	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
+	if (parentFile && parentId) {
+		let nativeTurn;
+		const calls = /* @__PURE__ */ new Map();
+		const launches = /* @__PURE__ */ new Set();
+		for (const event of await loadSession(parentFile)) {
+			if (event.type === "event_msg") {
+				if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
+				const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
+				if (event.payload.type === "collab_agent_spawn_end" && typeof event.payload.new_thread_id === "string") ids.push(event.payload.new_thread_id);
+				if (nativeTurn && ids.includes(sessionId)) launches.add(nativeTurn);
+				if ([
+					"task_complete",
+					"turn_complete",
+					"turn_aborted"
+				].includes(event.payload.type)) nativeTurn = void 0;
+			}
+			if (event.type === "response_item") {
+				if (event.payload.type === "function_call" && event.payload.name === "spawn_agent" && nativeTurn) calls.set(event.payload.call_id, nativeTurn);
+				if (event.payload.type === "function_call_output" && calls.has(event.payload.call_id) && extractSpawnedAgentId(event.payload.output) === sessionId) launches.add(calls.get(event.payload.call_id));
+			}
+		}
+		if (launches.size === 1) mode = await rolloutTurnMode(parentFile, parentId, [...launches][0], privacyPath, sessionsRoot, visited);
+	}
+	try {
+		return await inheritThreadMode(privacyPath, sessionId, mode);
+	} catch {
+		return "metadata";
+	}
 }
 function mergeMessages(result) {
 	return result.reduce((acc, { message, timestamp, tokenCount, subagentThreads }) => {
@@ -16324,7 +16876,12 @@ function getUsageMetadata(counts) {
 	};
 }
 const PROMISE_QUEUE = [];
-async function postTurn(task, sessionMeta, { rolloutFile, options }) {
+async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options }) {
+	const mode = sessionMeta?.session_id ? await rolloutTurnMode(rolloutFile, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : "metadata";
+	for (const child of task.subagentThreads) try {
+		await inheritThreadMode(options?.privacyPath ?? defaultPrivacyPath(), child, mode);
+	} catch {}
+	if (mode === "off") return;
 	const fallbackTime = Date.now();
 	const getSystemMessage = (session, task) => {
 		if (session?.base_instructions == null || task?.turnId == null) return [];
@@ -16364,7 +16921,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		if (typeof policy === "string") return policy;
 		if (policy != null) return JSON.stringify(policy);
 	})();
-	const git = await resolveGitInfo(cwd, sessionMeta?.git);
+	const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : void 0;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
@@ -16377,7 +16934,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		git,
 		sandboxType
 	});
-	const parentConfig = {
+	const parent = createRunTree({
 		name: "openai.codex",
 		client: options?.client,
 		project_name: options?.projectName,
@@ -16388,9 +16945,10 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
-		extra: { metadata: {
+		extra: { metadata: withTrustedMetadata({
 			...options?.metadata,
-			...task.context,
+			...task.context
+		}, {
 			...base,
 			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {},
 			approval_policy: isSubagent ? void 0 : approvalPolicy,
@@ -16399,9 +16957,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			codex_cli_version: sessionMeta?.cli_version,
 			ls_message_format: "anthropic",
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
-		} }
-	};
-	const parent = options?.parentRunTree?.createChild(parentConfig) ?? new RunTree(parentConfig);
+		}) }
+	}, mode, options?.parentRunTree);
 	PROMISE_QUEUE.push(parent.postRun());
 	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 	const outputs = fullMessages.reduce((acc, item, idx) => {
@@ -16446,15 +17003,14 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
-		const llmChild = parent.createChild({
+		const llmChild = createRunTree({
 			name: "openai.codex.turn",
 			run_type: "llm",
 			start_time: outputStartTime,
 			end_time: outputEndTime,
 			inputs: { messages: inputMessages.map((i) => i.message) },
 			outputs: { messages: aiMessage.map((i) => i.message) },
-			extra: { metadata: {
-				...options?.metadata,
+			extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 				...base,
 				...CHILD_SCOPE_RESET,
 				ls_model_type: "chat",
@@ -16462,8 +17018,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 				ls_model_name: task.context?.model,
 				ls_invocation_params: task.context,
 				usage_metadata: getUsageMetadata(tokenCounts)
-			} }
-		});
+			}) }
+		}, mode, parent);
 		PROMISE_QUEUE.push(llmChild.postRun());
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
@@ -16480,7 +17036,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
-			const toolRun = parent.createChild({
+			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
 				start_time: min,
@@ -16491,8 +17047,7 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 					messages: [toolMessage.message]
 				},
 				error: toolCall.error,
-				extra: { metadata: {
-					...options?.metadata,
+				extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 					...base,
 					...CHILD_SCOPE_RESET,
 					ls_model_type: "chat",
@@ -16501,8 +17056,8 @@ async function postTurn(task, sessionMeta, { rolloutFile, options }) {
 					ls_invocation_params: task.context,
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
 					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
-				} }
-			});
+				}) }
+			}, mode, parent);
 			PROMISE_QUEUE.push(toolRun.postRun());
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
@@ -16648,6 +17203,7 @@ async function convertToRunTree(input, options) {
 			}
 			if (payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || task != null && index === arr.length - 1 && input.turn_id != null) {
 				task ??= createTask();
+				const privacyTurnId = task.turnId?.id;
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
 				if (task.turnId == null && completedTurnId != null) task.turnId = {
 					id: completedTurnId,
@@ -16658,7 +17214,7 @@ async function convertToRunTree(input, options) {
 					task.turnNumber = turnNumber;
 				}
 				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
-					await postTurn(task, sessionMeta, {
+					await postTurn(task, sessionMeta, privacyTurnId, {
 						rolloutFile: input.transcript_path,
 						options
 					});
@@ -16672,6 +17228,35 @@ async function convertToRunTree(input, options) {
 		}
 	}
 	await Promise.all(PROMISE_QUEUE);
+}
+//#endregion
+//#region src/user-prompt-submit.ts
+async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
+	const command = parseTracingCommand(input.prompt);
+	try {
+		const config = await getConfig({
+			home: process.env.HOME,
+			cwd: input.cwd,
+			env: process.env
+		});
+		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		if (!command) {
+			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+			return;
+		}
+		let reason = `Thread tracing ${command === "mute" ? "muted (metadata-only)" : "unmuted (full content)"}. Preference saved for the next turn; the current turn is unchanged.`;
+		if (!config.enabled) reason += " Master tracing is disabled; this preference does not enable it.";
+		if (result.warning) reason += ` Warning: ${result.warning}.`;
+		return {
+			decision: "block",
+			reason
+		};
+	} catch (error) {
+		return {
+			decision: "block",
+			reason: `Could not save tracing preference/turn evidence: ${error instanceof Error ? error.message : String(error)}. Repair the privacy file or permissions and retry. Command/prompt blocked; no model turn was started.`
+		};
+	}
 }
 //#endregion
 //#region src/utils/stdin.ts
@@ -16695,13 +17280,24 @@ function readStdin() {
 //#region src/index.ts
 async function runHook() {
 	const content = await readStdin();
-	const config = await getConfig();
+	if (content.hook_event_name === "UserPromptSubmit") {
+		const result = await handlePromptSubmit(content);
+		if (result) console.log(JSON.stringify(result));
+		return;
+	}
+	if (content.hook_event_name !== "Stop") return;
+	const config = await getConfig({
+		home: process.env.HOME,
+		cwd: content.cwd,
+		env: process.env
+	});
 	if (!config.enabled) return;
 	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
 	const client = new Client({
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
-		anonymizer
+		anonymizer,
+		hideMetadata: anonymizer
 	});
 	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
@@ -16711,7 +17307,7 @@ async function runHook() {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: config.replicas,
+		replicas: toSdkReplicas(config.replicas),
 		parentRunTree
 	});
 }
