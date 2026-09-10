@@ -1,3 +1,4 @@
+import { seedFullLaunchEvidence } from "./utils/launch.js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convertToRunTree } from "../src/trace.js";
 import { vol } from "memfs";
@@ -125,6 +126,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
 
     vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete }));
 
+    seedFullLaunchEvidence();
     await convertToRunTree(
       {
         transcript_path: path.join(
@@ -504,6 +506,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
     const { client, callSpy } = mockClient();
     vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete }));
 
+    seedFullLaunchEvidence();
     await convertToRunTree(
       {
         transcript_path: path.join(
@@ -633,6 +636,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
     const { client, callSpy } = mockClient();
     vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete }));
 
+    seedFullLaunchEvidence();
     await convertToRunTree(
       {
         transcript_path: path.join(
@@ -1058,6 +1062,7 @@ it("discovers subagents from current Codex v2 activity items", async () => {
   const { client, callSpy } = mockClient();
   vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete: false, subagentProtocol: "v2" }));
 
+  seedFullLaunchEvidence();
   await convertToRunTree(
     {
       transcript_path: path.join(

@@ -11,6 +11,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$PLUGIN_ROOT/dist/index.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
