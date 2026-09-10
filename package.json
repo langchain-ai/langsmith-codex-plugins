@@ -37,17 +37,17 @@
     "lint": "pnpm run lint:oxfmt && pnpm run lint:tsc && pnpm run lint:dist"
   },
   "dependencies": {
-    "langsmith": "^0.8.11",
-    "uuid": "^14.0.1",
-    "zod": "^4.4.3"
+    "langsmith": "^0.9.0",
+    "uuid": "^14.0.2",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
-    "memfs": "^4.68.1",
-    "oxfmt": "^0.63.0",
+    "@types/node": "^26.4.0",
+    "memfs": "^4.68.2",
+    "oxfmt": "^0.65.0",
     "tsdown": "^0.22.14",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22"

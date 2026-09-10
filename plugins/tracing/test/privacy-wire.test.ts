@@ -377,6 +377,16 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     expect(JSON.stringify(operation)).not.toContain(FORBIDDEN);
   });
 
+  it("omits patch inputs by default while preserving muted outputs", async () => {
+    transport = selectedTransport;
+    await createRunTree(config(makeClient(), "completed"), "metadata").patchRun();
+    await flush();
+    const [operation] = expectTransport(1);
+    expect(operation.action).toBe("patch");
+    expectMutedContent(operation.payload, true);
+    expect(requests[0].raw).not.toContain(FORBIDDEN);
+  });
+
   it("preserves parent identity, trace ordering and lifecycle timestamps on the wire", async () => {
     transport = selectedTransport;
     const client = makeClient();
@@ -393,7 +403,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     await createRunTree(
       { ...initial, end_time: "2025-01-01T00:00:01Z", error: `${FORBIDDEN}_failure` },
       "metadata",
-    ).patchRun();
+    ).patchRun({ excludeInputs: false });
     await flush();
     const operations = expectTransport(2);
     expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
@@ -435,7 +445,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
       await createRunTree(
         config(client, i === 2 ? "completed" : "error", ids[i]),
         modes[i],
-      ).patchRun();
+      ).patchRun({ excludeInputs: false });
     }
     await flush();
     const operations = expectTransport(transport === "non-batched" ? 6 : 2);
@@ -502,7 +512,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
       await createRunTree(
         { ...config(primary, "error", initial.id), replicas },
         "metadata",
-      ).patchRun();
+      ).patchRun({ excludeInputs: false });
       await flush();
       const operations = expectTransport(2);
       expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
@@ -556,7 +566,7 @@ describe("environment and shared SDK clients", () => {
     await createRunTree(
       { ...initial, ...config(undefined, "completed", initial.id) },
       "metadata",
-    ).patchRun();
+    ).patchRun({ excludeInputs: false });
     await flush();
     const operations = expectTransport(2);
     expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
@@ -598,7 +608,7 @@ describe("environment and shared SDK clients", () => {
       await createRunTree(
         { ...config(client, "error", initial.id), replicas },
         "metadata",
-      ).patchRun();
+      ).patchRun({ excludeInputs: false });
       await flush();
       const operations = expectTransport(2);
       expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
