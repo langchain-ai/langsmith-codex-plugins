@@ -14549,7 +14549,7 @@ function bucketFor(state, inst) {
 	return bucket;
 }
 let handoff;
-const open = [];
+const open$1 = [];
 const memo = {
 	alloc(_inst, payload, empty) {
 		const bucket = handoff;
@@ -14560,7 +14560,7 @@ const memo = {
 			issues: null
 		};
 		bucket.set(payload.value, entry);
-		open.push(entry);
+		open$1.push(entry);
 		return empty;
 	},
 	guard(inst) {
@@ -14623,10 +14623,10 @@ const memo = {
 					return payload;
 				}
 				handoff = bucket;
-				const depth = open.length;
+				const depth = open$1.length;
 				const result = base(payload, ctx);
 				handoff = void 0;
-				const entry = open.length > depth ? open.pop() : void 0;
+				const entry = open$1.length > depth ? open$1.pop() : void 0;
 				if (result instanceof Promise) return result.then((r) => {
 					if (entry) entry.issues = r.issues.length ? cloneIssues(r.issues) : NO_ISSUES;
 					return r;
