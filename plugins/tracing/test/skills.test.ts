@@ -95,8 +95,7 @@ describe("skillNamesFromToolCall", () => {
     ).toEqual(["local-development"]);
   });
 
-  // The program is one the shell tools would read a skill from, so only the
-  // tool name can be what makes this empty.
+  // A shell tool would find a skill in this program, so only the tool name empties it.
   it.each(["apply_patch", "shell", undefined])("ignores the %s tool", (toolName) => {
     const program = `text(await tools.exec_command({cmd:"cat ${SKILL}"}));`;
     expect(skillNamesFromToolCall(toolName, program)).toEqual([]);

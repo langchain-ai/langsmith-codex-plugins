@@ -35,8 +35,7 @@ export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 export const READ_COMMAND =
   /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
 
-// The segment rewrites the file rather than reading it.
-// The digit guard spares `2>/dev/null`.
+// A write, not a read; the digit guard spares `2>/dev/null`.
 export const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 
 // Quoted runs are data, not syntax: `grep '>' file` redirects nothing.
@@ -50,6 +49,5 @@ export const COMMAND_LITERAL =
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
 
-// One command per run of non-separator characters.
-// A separator inside quotes does not split.
+// One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;

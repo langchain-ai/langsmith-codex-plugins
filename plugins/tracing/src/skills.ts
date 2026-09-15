@@ -1,7 +1,4 @@
-// Skill detection for Codex rollouts.
-//
-// Codex has no skill tool, so reading `.../skills/<name>/SKILL.md` is the only
-// sign of a skill. Everything here parses the shell command that did the read.
+// Codex has no skill tool, so reading `.../skills/<name>/SKILL.md` is the only sign of one.
 
 import {
   BACKSLASH_ESCAPE,
