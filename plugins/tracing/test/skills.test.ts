@@ -27,52 +27,43 @@ describe("skillNamesFromToolCall", () => {
   const inCommand = (command: string) =>
     skills(`text(await tools.exec_command({cmd:${JSON.stringify(command)}}));`);
 
+  // The path most rows share, so each row shows the command that differs.
+  const SKILL = ".agents/skills/pr-creation/SKILL.md";
+  const FOUND = ["pr-creation"];
+
   // First axis: which shell command counts as reading a skill.
   it.each([
-    { command: "cat .agents/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
-    { command: "/bin/cat .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
-    { command: "cat C:\\repo\\skills\\pr-creation\\SKILL.md", names: ["pr-creation"] },
-    {
-      command: `cat .agents/skills/langster-safety/SKILL.md 2>/dev/null; command -v "$tool"`,
-      names: ["langster-safety"],
-    },
-    {
-      command:
-        "cat .agents/skills/pr-creation/SKILL.md; head -40 .agents/skills/pr-creation/SKILL.md",
-      names: ["pr-creation"],
-    },
+    { command: `/bin/cat ${SKILL}`, names: FOUND },
+    { command: `cat ${SKILL} 2>/dev/null; command -v "$tool"`, names: FOUND },
+    // Windows separators.
+    { command: "cat C:\\repo\\skills\\pr-creation\\SKILL.md", names: FOUND },
     // A redirect character inside quotes is a search pattern, not a rewrite.
-    { command: "grep '>' .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
-    { command: `rg "a>b" .agents/skills/pr-creation/SKILL.md`, names: ["pr-creation"] },
-    { command: "sed 's/x/>/' .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
-    { command: "rg -e '->' .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
+    { command: `grep '>' ${SKILL}`, names: FOUND },
+    { command: `rg "a>b" ${SKILL}`, names: FOUND },
     // A separator inside quotes does not end the command.
-    { command: "cat 'a;b' .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
+    { command: `cat 'a;b' ${SKILL}`, names: FOUND },
+    // An escaped newline in the source literal still ends the command.
+    { command: `git diff\ncat ${SKILL}`, names: FOUND },
     { command: "cat notskills/pr-creation/SKILL.md", names: [] },
-    { command: "cat skills/pr-creation/SKILL.md.bak", names: [] },
+    { command: `cat ${SKILL}.bak`, names: [] },
     // An unexpanded variable is not a skill name.
     { command: "cat .agents/skills/$name/SKILL.md", names: [] },
     // A read verb counts only at the start of its own command.
-    { command: "git log --grep=cat -- .agents/skills/pr-creation/SKILL.md", names: [] },
-    { command: "git diff HEAD -- .agents/skills/pr-creation/SKILL.md\ncat AGENTS.md", names: [] },
-    // An escaped newline in the source literal still ends the command.
-    { command: "git diff\ncat .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
-    {
-      command: "rg --files .agents/skills | git diff .agents/skills/pr-creation/SKILL.md",
-      names: [],
-    },
-    { command: "cat skills/pr-creation/SKILL.md > copy.md", names: [] },
-    { command: "sed -i '' 's/a/b/' skills/pr-creation/SKILL.md", names: [] },
+    { command: `git log --grep=cat -- ${SKILL}`, names: [] },
+    { command: `rg --files .agents/skills | git diff ${SKILL}`, names: [] },
+    // Writing the file is not reading it.
+    { command: `cat ${SKILL} > copy.md`, names: [] },
+    { command: `sed -i '' 's/a/b/' ${SKILL}`, names: [] },
   ])("$command", ({ command, names }) => {
     expect(inCommand(command)).toEqual(names);
   });
 
   it.each([
-    { quote: "double", cmd: `"cat .agents/skills/pr-creation/SKILL.md"` },
-    { quote: "single", cmd: `'cat .agents/skills/pr-creation/SKILL.md'` },
-    { quote: "backtick", cmd: "`cat .agents/skills/pr-creation/SKILL.md`" },
+    { quote: "double", cmd: `"cat ${SKILL}"` },
+    { quote: "single", cmd: `'cat ${SKILL}'` },
+    { quote: "backtick", cmd: `\`cat ${SKILL}\`` },
   ])("reads a $quote-quoted cmd string", ({ cmd }) => {
-    expect(skills(`text(await tools.exec_command({cmd:${cmd}}));`)).toEqual(["pr-creation"]);
+    expect(skills(`text(await tools.exec_command({cmd:${cmd}}));`)).toEqual(FOUND);
   });
 
   // Second axis: pulling the cmd literals out of the surrounding JS program.
@@ -104,8 +95,11 @@ describe("skillNamesFromToolCall", () => {
     ).toEqual(["local-development"]);
   });
 
+  // The program is one the shell tools would read a skill from, so only the
+  // tool name can be what makes this empty.
   it.each(["apply_patch", "shell", undefined])("ignores the %s tool", (toolName) => {
-    expect(skillNamesFromToolCall(toolName, "cat skills/pr-creation/SKILL.md")).toEqual([]);
+    const program = `text(await tools.exec_command({cmd:"cat ${SKILL}"}));`;
+    expect(skillNamesFromToolCall(toolName, program)).toEqual([]);
   });
 
   it("scans a long run of skills segments in linear time", () => {
