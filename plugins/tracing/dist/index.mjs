@@ -17334,6 +17334,41 @@ function codingAgentMetadata(ctx) {
 		sandbox_type: ctx.sandboxType
 	});
 }
+const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
+const PATH_TOKEN = /[^\s"']+/g;
+const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*(?!&)\S|\bsed\b[^\n]*\s-i\b/;
+const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const STRING_ESCAPES = {
+	n: "\n",
+	t: "	",
+	r: "\r"
+};
+const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+function skillDirectoryInPath(token) {
+	const parts = token.split(/[/\\]/);
+	const name = parts.at(-2);
+	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
+	return parts.slice(0, -2).includes("skills") ? name : void 0;
+}
+function shellCommands(args) {
+	if (typeof args === "string") return [...args.matchAll(COMMAND_LITERAL)].map((match) => (match[1] ?? match[2] ?? match[3]).replace(/\\([\s\S])/g, (_, escaped) => STRING_ESCAPES[escaped] ?? escaped));
+	const cmd = args?.cmd;
+	return typeof cmd === "string" ? [cmd] : [];
+}
+function skillNamesFromToolCall(toolName, args) {
+	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
+	const names = /* @__PURE__ */ new Set();
+	for (const command of shellCommands(args)) for (const segment of command.match(SHELL_SEGMENT) ?? []) {
+		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(segment)) continue;
+		for (const [token] of segment.matchAll(PATH_TOKEN)) {
+			const name = skillDirectoryInPath(token);
+			if (name != null) names.add(name);
+		}
+	}
+	return [...names];
+}
 const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
 function withTrustedMetadata(untrusted, structural) {
 	const merged = {
@@ -18076,6 +18111,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			length: 1
 		};
 	});
+	const taggedSkills = /* @__PURE__ */ new Set();
 	const postedSubagentThreads = /* @__PURE__ */ new Set();
 	async function postSubagentThread(subagentThread) {
 		if (postedSubagentThreads.has(subagentThread)) return;
@@ -18133,6 +18169,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
+			const skillName = skillNamesFromToolCall(nativeToolName, msgToolCall.args).find((name) => !taggedSkills.has(name));
+			if (skillName != null) taggedSkills.add(skillName);
 			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
@@ -18152,7 +18190,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					ls_model_name: task.context?.model,
 					ls_invocation_params: task.context,
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
+					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {},
+					...skillName != null ? { ls_skill_name: skillName } : {}
 				}) }
 			}, mode, parent);
 			PROMISE_QUEUE.push(toolRun.postRun());

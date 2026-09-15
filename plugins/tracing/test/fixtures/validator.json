@@ -144,6 +144,15 @@
       "requiredWhereKnown": true
     },
     {
+      "key": "ls_skill_name",
+      "appliesTo": ["tool"],
+      "type": "string",
+      "allowedValues": null,
+      "requirement": "contextual",
+      "requiredWhereKnown": false,
+      "note": "Invoked skill name, taken from the skill's directory name. Emitted on the tool run that loads or invokes the skill; how that run is identified varies by harness. Queryable via RunQueryStats group_by metadata path=ls_skill_name."
+    },
+    {
       "key": "user_id",
       "appliesTo": ["root", "llm", "tool", "subagent", "interrupted"],
       "type": "string",

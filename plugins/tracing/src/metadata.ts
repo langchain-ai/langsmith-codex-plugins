@@ -182,6 +182,74 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
   });
 }
 
+// Codex has no skill tool and no skill-invocation event, so a skill read is just a shell command
+// on `.../skills/<name>/SKILL.md`. The shell tool is `exec` on cli 0.153+, `exec_command` before.
+const SHELL_TOOL_NAMES = new Set(["exec", "exec_command"]);
+
+// Path-shaped words in a segment: a shell word holds no whitespace or quotes.
+const PATH_TOKEN = /[^\s"']+/g;
+const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+// Anchored at the start of a segment so a path argument containing a verb is not read as one.
+const READ_COMMAND =
+  /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+
+// Redirect or in-place edit: the segment rewrites the skill rather than loading it. The lookbehind
+// keeps `=>`, `->`, `2>&1` and `2>/dev/null` from reading as redirects.
+const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*(?!&)\S|\bsed\b[^\n]*\s-i\b/;
+
+// The `cmd` of one exec_command call, capturing the string literal's body with escapes intact.
+const COMMAND_LITERAL =
+  /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+
+const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
+
+// One shell command per run of non-separator characters; a separator inside quotes does not split.
+const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+
+// The skill directory of `<...>/skills/<...>/<name>/SKILL.md`, for POSIX and Windows separators.
+// Split rather than match the whole path: a single pattern spanning the middle segments backtracks
+// for seconds on a long run of `/skills/`.
+function skillDirectoryInPath(token: string): string | undefined {
+  const parts = token.split(/[/\\]/);
+  const name = parts.at(-2);
+  if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return undefined;
+  return parts.slice(0, -2).includes("skills") ? name : undefined;
+}
+
+// Codex 0.153+ passes a JS program that may call exec_command several times. Pull out each `cmd`
+// so the shell text is gated on its own rather than together with the surrounding JS.
+function shellCommands(args: unknown): string[] {
+  if (typeof args === "string") {
+    return [...args.matchAll(COMMAND_LITERAL)].map((match) =>
+      (match[1] ?? match[2] ?? match[3]).replace(
+        /\\([\s\S])/g,
+        (_, escaped: string) => STRING_ESCAPES[escaped] ?? escaped,
+      ),
+    );
+  }
+  const cmd = (args as { cmd?: unknown } | undefined)?.cmd;
+  return typeof cmd === "string" ? [cmd] : [];
+}
+
+// Skills read by one tool call, deduplicated, in the order they appear. Each shell segment is
+// gated on its own: a read verb or redirect in one segment says nothing about the next.
+export function skillNamesFromToolCall(toolName: string | undefined, args: unknown): string[] {
+  if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
+
+  const names = new Set<string>();
+  for (const command of shellCommands(args)) {
+    for (const segment of command.match(SHELL_SEGMENT) ?? []) {
+      if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(segment)) continue;
+      for (const [token] of segment.matchAll(PATH_TOKEN)) {
+        const name = skillDirectoryInPath(token);
+        if (name != null) names.add(name);
+      }
+    }
+  }
+  return [...names];
+}
+
 // Private, non-serializable provenance: custom metadata cannot impersonate
 // safe structural fields. Pass the merged result directly to privacy helpers;
 // spreading/JSON-cloning metadata itself loses provenance.
