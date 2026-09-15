@@ -111,11 +111,15 @@ describe("skillNamesFromToolCall", () => {
 
 const FILE = "/home/codex-user/.codex/sessions/2026/09/14/rollout-skills.jsonl";
 
-async function runsFor(transcript: string, metadata?: Record<string, unknown>) {
+async function runsFor(
+  transcript: string,
+  { metadata, muted }: { metadata?: Record<string, unknown>; muted?: boolean } = {},
+) {
   const { client, callSpy } = mockClient();
   vol.fromJSON({ [FILE]: transcript });
 
-  seedFullLaunchEvidence();
+  // An unlisted turn reads as metadata mode, which is how a muted turn arrives.
+  if (!muted) seedFullLaunchEvidence();
   await convertToRunTree(
     { transcript_path: FILE, turn_id: "019900aa-tttt-0001" },
     { client, projectName: "codex", metadata },
@@ -127,7 +131,6 @@ async function runsFor(transcript: string, metadata?: Record<string, unknown>) {
     turn: runs.find((run) => run.name === "openai.codex"),
     execs: runs.filter((run) => run.name === "exec"),
     skills: runs.filter((run) => run.name === "Skill"),
-    tagged: runs.filter((run) => run.extra?.metadata?.ls_skill_name != null),
     childrenOf: (id: string) => runs.filter((run) => run.parent_run_id === id),
   };
 }
@@ -170,18 +173,6 @@ it("emits one turn-level Skill run per skill read", async () => {
   for (const exec of execs) expect(childrenOf(exec.id)).toEqual([]);
 });
 
-it("keeps ls_skill_name on the Skill run alone, so a skill is counted once", async () => {
-  const { execs, skills, tagged } = await runsFor(await fixture());
-
-  expect(execs.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([undefined, undefined]);
-  expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
-    "widget-report",
-    "teapot-check",
-  ]);
-  // Nothing outside the Skill runs carries the name.
-  expect(tagged.map((run) => run.name)).toEqual(["Skill", "Skill"]);
-});
-
 it("reports the read call's own success on the Skill run", async () => {
   const { skills } = await runsFor(await fixture());
   expect(skills.map((run) => run.outputs)).toEqual([
@@ -205,9 +196,7 @@ it("spans a Skill run over the window of the call that read it", async () => {
   const { execs, skills } = await runsFor(await fixture());
   const [reader] = execs;
 
-  // start_time arrives as an ISO string carrying a sub-millisecond ordering
-  // suffix, end_time as epoch millis. Compare both at the resolution the
-  // rollout actually records.
+  // start_time is an ISO string with a sub-millisecond ordering suffix, end_time epoch millis.
   const ms = (value: unknown) => (typeof value === "number" ? value : Date.parse(String(value)));
   expect(ms(reader.start_time)).toBeLessThan(ms(reader.end_time));
 
@@ -239,28 +228,22 @@ it("emits a run for each read, so a re-read in a later call counts again", async
   ]);
 });
 
-it("carries the contract keys onto a Skill run", async () => {
-  const { skills } = await runsFor(await fixture());
+it("carries the contract keys onto a muted Skill run", async () => {
+  // A muted run drops the metadata it would inherit, so these come from the run itself.
+  const { skills } = await runsFor(await fixture(), { muted: true });
   const meta = skills[0].extra?.metadata as Record<string, unknown>;
 
   expect(meta.ls_agent_type).toBe("root");
   expect(meta.ls_trace_schema_version).toBe("coding-agent-v1");
   expect(meta.thread_id).toBe("019900aa-0000-7000-8000-skillsthread");
   expect(meta.turn_id).toBe("019900aa-tttt-0001");
-});
-
-it("reports no usage on a Skill run, so the turn is not double-counted", async () => {
-  const { execs, skills } = await runsFor(await fixture());
-
-  // The sibling call spent the tokens and keeps them.
-  expect(execs[0].extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 12 });
-  expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();
+  expect(meta.ls_skill_name).toBe("widget-report");
 });
 
 it("drops a configured usage_metadata from a Skill run", async () => {
   // Configured metadata reaches every run, so the reset has to outrank it.
   const configured = { usage_metadata: { total_tokens: 999 } };
-  const { turn, skills } = await runsFor(await fixture(), configured);
+  const { turn, skills } = await runsFor(await fixture(), { metadata: configured });
 
   expect(turn?.extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 999 });
   expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();

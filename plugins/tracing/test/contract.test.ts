@@ -468,8 +468,7 @@ describe("coding-agent-v1 contract", () => {
         expect(meta.ls_skill_name, `${type} ls_skill_name`).toBeUndefined();
       }
     }
-    // Root turn: exec run, its Skill run, the spawn_agent run. Subagent turn:
-    // its exec run and its own Skill run.
+    // Root turn: exec, its Skill run, spawn_agent. Subagent turn: exec and its Skill run.
     expect(byType.tool.map((meta) => meta.ls_skill_name)).toEqual([
       undefined,
       "pr-creation",

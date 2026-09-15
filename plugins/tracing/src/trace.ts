@@ -805,7 +805,7 @@ async function postTurn(
                 {
                   ...base,
                   ...CHILD_SCOPE_RESET,
-                  // Configured metadata reaches every run; the tokens belong to the call that spent them.
+                  // Configured metadata reaches every run; the tokens belong to the call.
                   usage_metadata: undefined,
                   ls_skill_name: skillName,
                 },
