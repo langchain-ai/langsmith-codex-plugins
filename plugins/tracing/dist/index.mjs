@@ -18214,11 +18214,11 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					run_type: "tool",
 					start_time: min,
 					end_time: max,
-					inputs: { skill: skillName },
-					outputs: {
+					inputs: { input: { skill: skillName } },
+					outputs: { output: {
 						commandName: skillName,
 						success: toolCall.error == null
-					},
+					} },
 					extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 						...base,
 						...CHILD_SCOPE_RESET,

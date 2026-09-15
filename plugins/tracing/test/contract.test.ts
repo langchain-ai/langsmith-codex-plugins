@@ -174,6 +174,18 @@ function subagentTranscript(): string {
       content: [{ type: "input_text", text: "do research" }],
     }),
     line("response_item", {
+      type: "function_call",
+      name: "exec_command",
+      call_id: "call_sub_exec_1",
+      // A subagent reads skills too, and its Skill run belongs to its own turn.
+      arguments: JSON.stringify({ cmd: "cat .agents/skills/local-development/SKILL.md" }),
+    }),
+    line("response_item", {
+      type: "function_call_output",
+      call_id: "call_sub_exec_1",
+      output: "name: local-development",
+    }),
+    line("response_item", {
       type: "message",
       role: "assistant",
       content: [{ type: "output_text", text: "research done" }],
@@ -232,6 +244,36 @@ async function buildRuns() {
   }
 
   return byType;
+}
+
+type TreeRun = {
+  id: string;
+  name?: string;
+  run_type?: string;
+  parent_run_id?: string | null;
+  extra?: { metadata?: Record<string, unknown> };
+};
+
+async function buildTree(): Promise<TreeRun[]> {
+  const { client, callSpy } = mockClient();
+
+  vol.fromJSON({
+    [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(),
+    [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+  });
+
+  seedFullLaunchEvidence();
+  await convertToRunTree(
+    {
+      transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+      turn_id: PARENT_TURN,
+    },
+    { client, projectName: "codex" },
+  );
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  return Object.values(tree.data) as TreeRun[];
 }
 
 async function getRootRunForTerminal(terminal: Record<string, unknown>) {
@@ -426,11 +468,44 @@ describe("coding-agent-v1 contract", () => {
         expect(meta.ls_skill_name, `${type} ls_skill_name`).toBeUndefined();
       }
     }
+    // Root turn: exec run, its Skill run, the spawn_agent run. Subagent turn:
+    // its exec run and its own Skill run.
     expect(byType.tool.map((meta) => meta.ls_skill_name)).toEqual([
       undefined,
       "pr-creation",
       undefined,
+      undefined,
+      "local-development",
     ]);
+  });
+
+  it("puts a subagent's Skill run on the subagent's own turn", async () => {
+    const runs = await buildTree();
+
+    const skills = runs.filter((run) => run.name === "Skill");
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
+      "pr-creation",
+      "local-development",
+    ]);
+
+    const subSkill = skills[1];
+    const subTurn = runs.find(
+      (run) => run.run_type === "chain" && run.extra?.metadata?.ls_agent_type === "subagent",
+    );
+    expect(subTurn).toBeDefined();
+    expect(subSkill.parent_run_id).toBe(subTurn?.id);
+
+    // Scoped to the subagent's turn, not the root turn that spawned it.
+    const meta = subSkill.extra?.metadata ?? {};
+    expect(meta.ls_agent_type).toBe("subagent");
+    expect(meta.turn_id).toBe(SUB_TURN);
+    // Subagent identity stays on the chain run; tool runs reset it.
+    expect(meta.ls_subagent_id).toBeUndefined();
+    expect(meta.ls_subagent_type).toBeUndefined();
+
+    // The root turn's own Skill run is unaffected.
+    expect(skills[0].parent_run_id).not.toBe(subTurn?.id);
+    expect(skills[0].extra?.metadata?.turn_id).toBe(PARENT_TURN);
   });
 
   it.each(["root", "subagent", "middleware", "compaction"] as const)(

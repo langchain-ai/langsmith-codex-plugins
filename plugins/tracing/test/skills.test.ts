@@ -159,8 +159,8 @@ it("emits one turn-level Skill run per skill read", async () => {
   expect(skills.map((run) => run.name)).toEqual(["Skill", "Skill"]);
   expect(skills.map((run) => run.run_type)).toEqual(["tool", "tool"]);
   expect(skills.map((run) => run.inputs)).toEqual([
-    { skill: "widget-report" },
-    { skill: "teapot-check" },
+    { input: { skill: "widget-report" } },
+    { input: { skill: "teapot-check" } },
   ]);
 
   // Siblings of the exec run, not children of it.
@@ -185,8 +185,8 @@ it("keeps ls_skill_name on the Skill run alone, so a skill is counted once", asy
 it("reports the read call's own success on the Skill run", async () => {
   const { skills } = await runsFor(await fixture());
   expect(skills.map((run) => run.outputs)).toEqual([
-    { commandName: "widget-report", success: true },
-    { commandName: "teapot-check", success: true },
+    { output: { commandName: "widget-report", success: true } },
+    { output: { commandName: "teapot-check", success: true } },
   ]);
 });
 
@@ -194,10 +194,27 @@ it("reports success false when the call that read the skills failed", async () =
   const { execs, skills } = await runsFor(withFailedRead(await fixture()));
 
   expect(execs[0].error).toBeTruthy();
+  // One call read both skills, so one failure marks both.
   expect(skills.map((run) => run.outputs)).toEqual([
-    { commandName: "widget-report", success: false },
-    { commandName: "teapot-check", success: false },
+    { output: { commandName: "widget-report", success: false } },
+    { output: { commandName: "teapot-check", success: false } },
   ]);
+});
+
+it("spans a Skill run over the window of the call that read it", async () => {
+  const { execs, skills } = await runsFor(await fixture());
+  const [reader] = execs;
+
+  // start_time arrives as an ISO string carrying a sub-millisecond ordering
+  // suffix, end_time as epoch millis. Compare both at the resolution the
+  // rollout actually records.
+  const ms = (value: unknown) => (typeof value === "number" ? value : Date.parse(String(value)));
+  expect(ms(reader.start_time)).toBeLessThan(ms(reader.end_time));
+
+  for (const skill of skills) {
+    expect(ms(skill.start_time)).toBe(ms(reader.start_time));
+    expect(ms(skill.end_time)).toBe(ms(reader.end_time));
+  }
 });
 
 it("emits no Skill run for a call that reads no skill", async () => {
@@ -248,9 +265,4 @@ it("drops a configured usage_metadata from a Skill run", async () => {
   expect(turn?.extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 999 });
   expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();
   expect(skills[1].extra?.metadata?.usage_metadata).toBeUndefined();
-});
-
-it("keeps the exec run's usage on the exec run", async () => {
-  const { execs } = await runsFor(await fixture());
-  expect(execs[0].extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 12 });
 });

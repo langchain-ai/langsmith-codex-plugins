@@ -795,16 +795,17 @@ async function postTurn(
             // Only the call's own window is known, not when each read ran inside it.
             start_time: min,
             end_time: max,
-            inputs: { skill: skillName },
-            // The skill's own outcome is never observed, only the read's, so
-            // report the success of the call that loaded it.
-            outputs: { commandName: skillName, success: toolCall.error == null },
+            // Wrapped like every other tool run, so one JSON path fits every harness.
+            inputs: { input: { skill: skillName } },
+            // The rollout never shows the skill's own result, only the read's.
+            outputs: { output: { commandName: skillName, success: toolCall.error == null } },
             extra: {
               metadata: withTrustedMetadata(
                 { ...options?.metadata },
                 {
                   ...base,
                   ...CHILD_SCOPE_RESET,
+                  // Configured metadata reaches every run; the tokens belong to the call that spent them.
                   usage_metadata: undefined,
                   ls_skill_name: skillName,
                 },
