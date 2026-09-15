@@ -17229,13 +17229,20 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/constants.ts
+/** What the traced agent is for, per the coding-agent-v1 contract. */
+const LS_AGENT_PURPOSE = "coding";
+/** Identifies this plugin as the trace source. */
+const LS_INTEGRATION = "openai-codex";
+/** Display name of the harness the trace came from. */
+const LS_AGENT_RUNTIME = "Codex";
+/** Metadata contract the emitted runs conform to. */
+const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+/** Plugin version, or undefined outside a bundled build. */
+const LS_INTEGRATION_VERSION = "0.1.0";
+//#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
-const LS_AGENT_PURPOSE = "coding";
-const LS_INTEGRATION = "openai-codex";
-const LS_AGENT_RUNTIME = "Codex";
-const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.1.0";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -17334,6 +17341,20 @@ function codingAgentMetadata(ctx) {
 		sandbox_type: ctx.sandboxType
 	});
 }
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
+function withTrustedMetadata(untrusted, structural) {
+	const merged = {
+		...untrusted,
+		...structural
+	};
+	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
+	return merged;
+}
+function trustedCodingAgentMetadata(metadata) {
+	return metadata?.[TRUSTED_METADATA];
+}
+//#endregion
+//#region src/skills.ts
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -17374,18 +17395,6 @@ function skillNamesFromToolCall(toolName, args) {
 		}
 	}
 	return [...names];
-}
-const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-function withTrustedMetadata(untrusted, structural) {
-	const merged = {
-		...untrusted,
-		...structural
-	};
-	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
-	return merged;
-}
-function trustedCodingAgentMetadata(metadata) {
-	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
 //#region src/utils/isPrimitive.ts

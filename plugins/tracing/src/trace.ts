@@ -6,12 +6,8 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import {
-  codingAgentMetadata,
-  resolveGitInfo,
-  skillNamesFromToolCall,
-  withTrustedMetadata,
-} from "./metadata.js";
+import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
+import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
   TokenCount,
@@ -791,7 +787,6 @@ async function postTurn(
       );
       PROMISE_QUEUE.push(toolRun.postRun());
 
-      // One run per skill, so every harness reports a skill invocation the same way.
       for (const skillName of skillNames) {
         const skillRun = createRunTree(
           {
@@ -808,7 +803,6 @@ async function postTurn(
                 {
                   ...base,
                   ...CHILD_SCOPE_RESET,
-                  // A child inherits the call's metadata; usage belongs on the call alone.
                   usage_metadata: undefined,
                   ls_skill_name: skillName,
                 },

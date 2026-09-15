@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
-import { skillNamesFromToolCall } from "../src/metadata.js";
+import { skillNamesFromToolCall } from "../src/skills.js";
 import { convertToRunTree } from "../src/trace.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
@@ -27,6 +27,7 @@ describe("skillNamesFromToolCall", () => {
   const inCommand = (command: string) =>
     skills(`text(await tools.exec_command({cmd:${JSON.stringify(command)}}));`);
 
+  // First axis: which shell command counts as reading a skill.
   it.each([
     { command: "cat .agents/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
     { command: "/bin/cat .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
@@ -54,6 +55,8 @@ describe("skillNamesFromToolCall", () => {
     // A read verb counts only at the start of its own command.
     { command: "git log --grep=cat -- .agents/skills/pr-creation/SKILL.md", names: [] },
     { command: "git diff HEAD -- .agents/skills/pr-creation/SKILL.md\ncat AGENTS.md", names: [] },
+    // An escaped newline in the source literal still ends the command.
+    { command: "git diff\ncat .agents/skills/pr-creation/SKILL.md", names: ["pr-creation"] },
     {
       command: "rg --files .agents/skills | git diff .agents/skills/pr-creation/SKILL.md",
       names: [],
@@ -72,27 +75,25 @@ describe("skillNamesFromToolCall", () => {
     expect(skills(`text(await tools.exec_command({cmd:${cmd}}));`)).toEqual(["pr-creation"]);
   });
 
-  it("decodes escapes so an escaped newline still ends the command", () => {
-    expect(inCommand("git diff\ncat .agents/skills/pr-creation/SKILL.md")).toEqual(["pr-creation"]);
-  });
-
-  it("finds every skill across the commands of one program", () => {
-    expect(
-      skills(
+  // Second axis: pulling the cmd literals out of the surrounding JS program.
+  it.each([
+    {
+      what: "collects every skill across several calls in one program",
+      program:
         `const results = await Promise.allSettled([\n` +
-          `tools.exec_command({cmd:"cat .agents/skills/pr-creation/SKILL.md .agents/skills/local-development/SKILL.md"}),\n` +
-          `tools.exec_command({"cmd":"cat /root/.codex/skills/.system/openai-docs/SKILL.md"})]);`,
-      ),
-    ).toEqual(["pr-creation", "local-development", "openai-docs"]);
-  });
-
-  it("is unaffected by the JS around the commands", () => {
-    expect(
-      skills(
+        `tools.exec_command({cmd:"cat .agents/skills/pr-creation/SKILL.md .agents/skills/local-development/SKILL.md"}),\n` +
+        `tools.exec_command({"cmd":"cat /root/.codex/skills/.system/openai-docs/SKILL.md"})]);`,
+      names: ["pr-creation", "local-development", "openai-docs"],
+    },
+    {
+      what: "ignores JS that is not an exec_command call",
+      program:
         `text(ALL_TOOLS.filter(x=>/exec/.test(x.name)));\n` +
-          `text(await tools.exec_command({cmd:"cat .agents/skills/langster-safety/SKILL.md"}));`,
-      ),
-    ).toEqual(["langster-safety"]);
+        `text(await tools.exec_command({cmd:"cat .agents/skills/langster-safety/SKILL.md"}));`,
+      names: ["langster-safety"],
+    },
+  ])("$what", ({ program, names }) => {
+    expect(skills(program)).toEqual(names);
   });
 
   it("reads the pre-0.153 exec_command argument object", () => {
@@ -107,7 +108,7 @@ describe("skillNamesFromToolCall", () => {
     expect(skillNamesFromToolCall(toolName, "cat skills/pr-creation/SKILL.md")).toEqual([]);
   });
 
-  it("scans a crafted run of skills segments in linear time", () => {
+  it("scans a long run of skills segments in linear time", () => {
     const crafted = `cat /skills/${"/skills/!".repeat(20_000)}`;
     const started = performance.now();
     expect(inCommand(crafted)).toEqual([]);
