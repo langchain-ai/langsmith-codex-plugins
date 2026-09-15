@@ -17240,6 +17240,20 @@ const LS_AGENT_RUNTIME = "Codex";
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.1.0";
+const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
+const SHELL_WORD = /[^\s"']+/g;
+const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
+const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
+const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const BACKSLASH_ESCAPE = /\\([\s\S])/g;
+const STRING_ESCAPES = {
+	n: "\n",
+	t: "	",
+	r: "\r"
+};
+const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 //#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
@@ -17355,20 +17369,6 @@ function trustedCodingAgentMetadata(metadata) {
 }
 //#endregion
 //#region src/skills.ts
-const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
-const SHELL_WORD = /[^\s"']+/g;
-const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
-const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
-const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
-const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const BACKSLASH_ESCAPE = /\\([\s\S])/g;
-const STRING_ESCAPES = {
-	n: "\n",
-	t: "	",
-	r: "\r"
-};
-const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
 	const name = parts.at(-2);
