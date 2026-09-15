@@ -17415,6 +17415,7 @@ const METADATA_KEYS = /* @__PURE__ */ new Set([
 	"codex_cli_version",
 	"ls_raw_aggregated_usage",
 	"ls_tool_name",
+	"ls_skill_name",
 	"usage_metadata",
 	"ls_subagent_id",
 	"ls_subagent_type"

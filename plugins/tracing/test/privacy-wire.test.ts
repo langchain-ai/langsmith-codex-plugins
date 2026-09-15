@@ -53,6 +53,7 @@ const allowedMetadata = {
   ls_trace_schema_version: "coding-agent-v1",
   ls_model_name: SECRET,
   ls_tool_name: "exec_command",
+  ls_skill_name: "widget-report",
   usage_metadata: allowedUsage,
   ls_raw_aggregated_usage: allowedUsage,
   ls_subagent_id: "subagent",
