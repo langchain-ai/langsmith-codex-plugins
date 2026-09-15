@@ -101,12 +101,13 @@ function parentTranscript(
       type: "function_call",
       name: "exec_command",
       call_id: "call_exec_1",
-      arguments: JSON.stringify({ cmd: "pwd" }),
+      // Reads a skill, so ls_skill_name has a value to be scoped to the tool run.
+      arguments: JSON.stringify({ cmd: "cat .agents/skills/pr-creation/SKILL.md" }),
     }),
     line("response_item", {
       type: "function_call_output",
       call_id: "call_exec_1",
-      output: "/Users/dev",
+      output: "name: pr-creation",
     }),
     // Live schema: spawn_agent's output carries the child id as `agent_id`
     // (no collab_* event) — the real discovery trigger.
@@ -418,6 +419,14 @@ describe("coding-agent-v1 contract", () => {
     for (const meta of byType.tool) {
       if (meta.ls_tool_name !== undefined) expect(typeof meta.ls_tool_name).toBe("string");
     }
+
+    // ls_skill_name — tool runs only, and only the call that read a SKILL.md.
+    for (const type of ["root", "llm", "subagent"] as const) {
+      for (const meta of byType[type]) {
+        expect(meta.ls_skill_name, `${type} ls_skill_name`).toBeUndefined();
+      }
+    }
+    expect(byType.tool.map((meta) => meta.ls_skill_name)).toEqual(["pr-creation", undefined]);
   });
 
   it.each(["root", "subagent", "middleware", "compaction"] as const)(

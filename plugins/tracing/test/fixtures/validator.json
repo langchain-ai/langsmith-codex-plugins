@@ -144,6 +144,15 @@
       "requiredWhereKnown": true
     },
     {
+      "key": "ls_skill_name",
+      "appliesTo": ["tool"],
+      "type": "string",
+      "allowedValues": null,
+      "requirement": "contextual",
+      "requiredWhereKnown": false,
+      "note": "Name of the invoked skill. Source depends on the harness: a skill tool's argument, or the SKILL.md path."
+    },
+    {
       "key": "user_id",
       "appliesTo": ["root", "llm", "tool", "subagent", "interrupted"],
       "type": "string",

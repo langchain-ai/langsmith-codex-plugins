@@ -6,7 +6,12 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
+import {
+  codingAgentMetadata,
+  resolveGitInfo,
+  skillNamesFromToolCall,
+  withTrustedMetadata,
+} from "./metadata.js";
 import type {
   Session,
   TokenCount,
@@ -648,6 +653,9 @@ async function postTurn(
     return { start, length: 1 };
   });
 
+  // One name per run, so a call that reads several skills records only the first.
+  const taggedSkills = new Set<string>();
+
   const postedSubagentThreads = new Set<string>();
   async function postSubagentThread(subagentThread: string) {
     if (postedSubagentThreads.has(subagentThread)) return;
@@ -751,6 +759,11 @@ async function postTurn(
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
 
+      const skillName = skillNamesFromToolCall(nativeToolName, msgToolCall.args).find(
+        (name) => !taggedSkills.has(name),
+      );
+      if (skillName != null) taggedSkills.add(skillName);
+
       const toolRun = createRunTree(
         {
           name: runName,
@@ -775,6 +788,7 @@ async function postTurn(
                 ...(nativeToolName != null && runName !== nativeToolName
                   ? { ls_tool_name: nativeToolName }
                   : {}),
+                ...(skillName != null ? { ls_skill_name: skillName } : {}),
               },
             ),
           },
