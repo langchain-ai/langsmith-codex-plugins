@@ -18118,7 +18118,6 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			length: 1
 		};
 	});
-	const taggedSkills = /* @__PURE__ */ new Set();
 	const postedSubagentThreads = /* @__PURE__ */ new Set();
 	async function postSubagentThread(subagentThread) {
 		if (postedSubagentThreads.has(subagentThread)) return;
@@ -18176,8 +18175,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
-			const skillName = skillNamesFromToolCall(nativeToolName, msgToolCall.args).find((name) => !taggedSkills.has(name));
-			if (skillName != null) taggedSkills.add(skillName);
+			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
 			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
@@ -18197,11 +18195,27 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					ls_model_name: task.context?.model,
 					ls_invocation_params: task.context,
 					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {},
-					...skillName != null ? { ls_skill_name: skillName } : {}
+					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
 				}) }
 			}, mode, parent);
 			PROMISE_QUEUE.push(toolRun.postRun());
+			for (const skillName of skillNames) {
+				const skillRun = createRunTree({
+					name: skillName,
+					run_type: "tool",
+					start_time: min,
+					end_time: max,
+					inputs: { skill: skillName },
+					outputs: {},
+					extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
+						...base,
+						...CHILD_SCOPE_RESET,
+						usage_metadata: void 0,
+						ls_skill_name: skillName
+					}) }
+				}, mode, toolRun);
+				PROMISE_QUEUE.push(skillRun.postRun());
+			}
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}

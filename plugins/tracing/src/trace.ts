@@ -653,9 +653,6 @@ async function postTurn(
     return { start, length: 1 };
   });
 
-  // One name per run, so a call that reads several skills records only the first.
-  const taggedSkills = new Set<string>();
-
   const postedSubagentThreads = new Set<string>();
   async function postSubagentThread(subagentThread: string) {
     if (postedSubagentThreads.has(subagentThread)) return;
@@ -759,10 +756,7 @@ async function postTurn(
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
 
-      const skillName = skillNamesFromToolCall(nativeToolName, msgToolCall.args).find(
-        (name) => !taggedSkills.has(name),
-      );
-      if (skillName != null) taggedSkills.add(skillName);
+      const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
 
       const toolRun = createRunTree(
         {
@@ -788,7 +782,6 @@ async function postTurn(
                 ...(nativeToolName != null && runName !== nativeToolName
                   ? { ls_tool_name: nativeToolName }
                   : {}),
-                ...(skillName != null ? { ls_skill_name: skillName } : {}),
               },
             ),
           },
@@ -797,6 +790,36 @@ async function postTurn(
         parent,
       );
       PROMISE_QUEUE.push(toolRun.postRun());
+
+      // One run per skill, so every harness reports a skill invocation the same way.
+      for (const skillName of skillNames) {
+        const skillRun = createRunTree(
+          {
+            name: skillName,
+            run_type: "tool",
+            // Only the call's own window is known, not when each read ran inside it.
+            start_time: min,
+            end_time: max,
+            inputs: { skill: skillName },
+            outputs: {},
+            extra: {
+              metadata: withTrustedMetadata(
+                { ...options?.metadata },
+                {
+                  ...base,
+                  ...CHILD_SCOPE_RESET,
+                  // A child inherits the call's metadata; usage belongs on the call alone.
+                  usage_metadata: undefined,
+                  ls_skill_name: skillName,
+                },
+              ),
+            },
+          },
+          mode,
+          toolRun,
+        );
+        PROMISE_QUEUE.push(skillRun.postRun());
+      }
     }
 
     for (const subagentThread of subagentThreads ?? []) {

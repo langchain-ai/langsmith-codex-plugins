@@ -420,13 +420,17 @@ describe("coding-agent-v1 contract", () => {
       if (meta.ls_tool_name !== undefined) expect(typeof meta.ls_tool_name).toBe("string");
     }
 
-    // ls_skill_name — tool runs only, and only the call that read a SKILL.md.
+    // ls_skill_name — tool runs only, on the per-skill run rather than the call that read it.
     for (const type of ["root", "llm", "subagent"] as const) {
       for (const meta of byType[type]) {
         expect(meta.ls_skill_name, `${type} ls_skill_name`).toBeUndefined();
       }
     }
-    expect(byType.tool.map((meta) => meta.ls_skill_name)).toEqual(["pr-creation", undefined]);
+    expect(byType.tool.map((meta) => meta.ls_skill_name)).toEqual([
+      undefined,
+      "pr-creation",
+      undefined,
+    ]);
   });
 
   it.each(["root", "subagent", "middleware", "compaction"] as const)(

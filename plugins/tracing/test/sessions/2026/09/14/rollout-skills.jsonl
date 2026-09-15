@@ -3,7 +3,8 @@
 {"timestamp":"2026-09-14T00:00:04.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Follow the widget-report skill."}]}}
 {"timestamp":"2026-09-14T00:00:05.000Z","type":"response_item","payload":{"type":"custom_tool_call","call_id":"call_read_skills","name":"exec","input":"const r = await Promise.allSettled([tools.exec_command({cmd:\"cat .agents/skills/widget-report/SKILL.md\"}),tools.exec_command({cmd:\"cat .agents/skills/teapot-check/SKILL.md\"})]);\nfor (const x of r) text(x);\n"}}
 {"timestamp":"2026-09-14T00:00:06.000Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_read_skills","output":[{"type":"input_text","text":"Report the widget count from widgets.txt.\n"}]}}
-{"timestamp":"2026-09-14T00:00:07.000Z","type":"response_item","payload":{"type":"custom_tool_call","call_id":"call_read_widgets","name":"exec","input":"const r = await Promise.allSettled([tools.exec_command({cmd:\"cat widgets.txt\"})]);\nfor (const x of r) text(x);\n"}}
-{"timestamp":"2026-09-14T00:00:08.000Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_read_widgets","output":[{"type":"input_text","text":"bolt\nnut\nwasher\n"}]}}
-{"timestamp":"2026-09-14T00:00:09.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"widgets: 3"}]}}
-{"timestamp":"2026-09-14T00:00:10.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"019900aa-tttt-0001"}}
+{"timestamp":"2026-09-14T00:00:07.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":10,"output_tokens":2,"total_tokens":12},"total_token_usage":{"input_tokens":10,"output_tokens":2,"total_tokens":12}}}}
+{"timestamp":"2026-09-14T00:00:08.000Z","type":"response_item","payload":{"type":"custom_tool_call","call_id":"call_read_widgets","name":"exec","input":"const r = await Promise.allSettled([tools.exec_command({cmd:\"cat widgets.txt\"})]);\nfor (const x of r) text(x);\n"}}
+{"timestamp":"2026-09-14T00:00:09.000Z","type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"call_read_widgets","output":[{"type":"input_text","text":"bolt\nnut\nwasher\n"}]}}
+{"timestamp":"2026-09-14T00:00:10.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"widgets: 3"}]}}
+{"timestamp":"2026-09-14T00:00:11.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"019900aa-tttt-0001"}}
