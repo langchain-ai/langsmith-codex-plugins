@@ -790,13 +790,15 @@ async function postTurn(
       for (const skillName of skillNames) {
         const skillRun = createRunTree(
           {
-            name: skillName,
+            name: "Skill",
             run_type: "tool",
             // Only the call's own window is known, not when each read ran inside it.
             start_time: min,
             end_time: max,
             inputs: { skill: skillName },
-            outputs: {},
+            // The skill's own outcome is never observed, only the read's, so
+            // report the success of the call that loaded it.
+            outputs: { commandName: skillName, success: toolCall.error == null },
             extra: {
               metadata: withTrustedMetadata(
                 { ...options?.metadata },
@@ -810,7 +812,7 @@ async function postTurn(
             },
           },
           mode,
-          toolRun,
+          parent,
         );
         PROMISE_QUEUE.push(skillRun.postRun());
       }
