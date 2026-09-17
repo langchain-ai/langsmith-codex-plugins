@@ -18210,19 +18210,22 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			PROMISE_QUEUE.push(toolRun.postRun());
 			for (const skillName of skillNames) {
 				const skillRun = createRunTree({
-					name: skillName,
+					name: "Skill",
 					run_type: "tool",
 					start_time: min,
 					end_time: max,
-					inputs: { skill: skillName },
-					outputs: {},
+					inputs: { input: { skill: skillName } },
+					outputs: { output: {
+						commandName: skillName,
+						success: toolCall.error == null
+					} },
 					extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 						...base,
 						...CHILD_SCOPE_RESET,
 						usage_metadata: void 0,
 						ls_skill_name: skillName
 					}) }
-				}, mode, toolRun);
+				}, mode, parent);
 				PROMISE_QUEUE.push(skillRun.postRun());
 			}
 		}

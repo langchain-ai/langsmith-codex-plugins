@@ -790,19 +790,22 @@ async function postTurn(
       for (const skillName of skillNames) {
         const skillRun = createRunTree(
           {
-            name: skillName,
+            name: "Skill",
             run_type: "tool",
             // Only the call's own window is known, not when each read ran inside it.
             start_time: min,
             end_time: max,
-            inputs: { skill: skillName },
-            outputs: {},
+            // Wrapped like every other tool run, so one JSON path fits every harness.
+            inputs: { input: { skill: skillName } },
+            // The rollout never shows the skill's own result, only the read's.
+            outputs: { output: { commandName: skillName, success: toolCall.error == null } },
             extra: {
               metadata: withTrustedMetadata(
                 { ...options?.metadata },
                 {
                   ...base,
                   ...CHILD_SCOPE_RESET,
+                  // Configured metadata reaches every run; the tokens belong to the call.
                   usage_metadata: undefined,
                   ls_skill_name: skillName,
                 },
@@ -810,7 +813,7 @@ async function postTurn(
             },
           },
           mode,
-          toolRun,
+          parent,
         );
         PROMISE_QUEUE.push(skillRun.postRun());
       }

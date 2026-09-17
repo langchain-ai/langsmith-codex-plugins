@@ -111,21 +111,26 @@ describe("skillNamesFromToolCall", () => {
 
 const FILE = "/home/codex-user/.codex/sessions/2026/09/14/rollout-skills.jsonl";
 
-async function runsFor(transcript: string) {
+async function runsFor(
+  transcript: string,
+  { metadata, muted }: { metadata?: Record<string, unknown>; muted?: boolean } = {},
+) {
   const { client, callSpy } = mockClient();
   vol.fromJSON({ [FILE]: transcript });
 
-  seedFullLaunchEvidence();
+  // An unlisted turn reads as metadata mode, which is how a muted turn arrives.
+  if (!muted) seedFullLaunchEvidence();
   await convertToRunTree(
     { transcript_path: FILE, turn_id: "019900aa-tttt-0001" },
-    { client, projectName: "codex" },
+    { client, projectName: "codex", metadata },
   );
 
   const { data } = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
   const runs = Object.values(data);
   return {
+    turn: runs.find((run) => run.name === "openai.codex"),
     execs: runs.filter((run) => run.name === "exec"),
-    skills: runs.filter((run) => run.extra?.metadata?.ls_skill_name != null),
+    skills: runs.filter((run) => run.name === "Skill"),
     childrenOf: (id: string) => runs.filter((run) => run.parent_run_id === id),
   };
 }
@@ -137,21 +142,76 @@ async function fixture(): Promise<string> {
   });
 }
 
-it("emits one run per skill, under the call that read it", async () => {
-  const { execs, skills, childrenOf } = await runsFor(await fixture());
+// An end event marks the call that read both skills as failed.
+function withFailedRead(transcript: string): string {
+  const end =
+    `{"timestamp":"2026-09-14T00:00:06.500Z","type":"event_msg","payload":` +
+    `{"type":"exec_command_end","call_id":"call_read_skills","turn_id":"019900aa-tttt-0001",` +
+    `"stdout":"","stderr":"cat: no such file","aggregated_output":"cat: no such file",` +
+    `"exit_code":1,"status":"failed"}}`;
+  const lines = transcript.trimEnd().split("\n");
+  const at = lines.findIndex((line) => line.includes("custom_tool_call_output"));
+  lines.splice(at + 1, 0, end);
+  return `${lines.join("\n")}\n`;
+}
+
+it("emits one turn-level Skill run per skill read", async () => {
+  const { turn, execs, skills, childrenOf } = await runsFor(await fixture());
 
   // The first exec reads two skills, the second reads none.
-  expect(execs.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([undefined, undefined]);
-  expect(skills.map((run) => run.name)).toEqual(["widget-report", "teapot-check"]);
-  expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
-    "widget-report",
-    "teapot-check",
-  ]);
+  expect(skills.map((run) => run.name)).toEqual(["Skill", "Skill"]);
   expect(skills.map((run) => run.run_type)).toEqual(["tool", "tool"]);
+  expect(skills.map((run) => run.inputs)).toEqual([
+    { input: { skill: "widget-report" } },
+    { input: { skill: "teapot-check" } },
+  ]);
 
-  const [reader, other] = execs;
-  expect(skills.map((run) => run.parent_run_id)).toEqual([reader.id, reader.id]);
-  expect(childrenOf(other.id)).toEqual([]);
+  // Siblings of the exec run, not children of it.
+  expect(turn).toBeDefined();
+  expect(execs.map((run) => run.parent_run_id)).toEqual([turn?.id, turn?.id]);
+  expect(skills.map((run) => run.parent_run_id)).toEqual([turn?.id, turn?.id]);
+  for (const exec of execs) expect(childrenOf(exec.id)).toEqual([]);
+});
+
+it("reports the read call's own success on the Skill run", async () => {
+  const { skills } = await runsFor(await fixture());
+  expect(skills.map((run) => run.outputs)).toEqual([
+    { output: { commandName: "widget-report", success: true } },
+    { output: { commandName: "teapot-check", success: true } },
+  ]);
+});
+
+it("reports success false when the call that read the skills failed", async () => {
+  const { execs, skills } = await runsFor(withFailedRead(await fixture()));
+
+  expect(execs[0].error).toBeTruthy();
+  // One call read both skills, so one failure marks both.
+  expect(skills.map((run) => run.outputs)).toEqual([
+    { output: { commandName: "widget-report", success: false } },
+    { output: { commandName: "teapot-check", success: false } },
+  ]);
+});
+
+it("spans a Skill run over the window of the call that read it", async () => {
+  const { execs, skills } = await runsFor(await fixture());
+  const [reader] = execs;
+
+  // start_time is an ISO string with a sub-millisecond ordering suffix, end_time epoch millis.
+  const ms = (value: unknown) => (typeof value === "number" ? value : Date.parse(String(value)));
+  expect(ms(reader.start_time)).toBeLessThan(ms(reader.end_time));
+
+  for (const skill of skills) {
+    expect(ms(skill.start_time)).toBe(ms(reader.start_time));
+    expect(ms(skill.end_time)).toBe(ms(reader.end_time));
+  }
+});
+
+it("emits no Skill run for a call that reads no skill", async () => {
+  const noSkills = (await fixture()).replaceAll(".agents/skills/", ".agents/notes/");
+  const { execs, skills } = await runsFor(noSkills);
+
+  expect(execs).toHaveLength(2);
+  expect(skills).toEqual([]);
 });
 
 it("emits a run for each read, so a re-read in a later call counts again", async () => {
@@ -159,30 +219,33 @@ it("emits a run for each read, so a re-read in a later call counts again", async
     "cat widgets.txt",
     "cat .agents/skills/widget-report/SKILL.md",
   );
-  const { execs, skills } = await runsFor(reread);
+  const { skills } = await runsFor(reread);
 
   expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
     "widget-report",
     "teapot-check",
     "widget-report",
   ]);
-  // The repeat hangs off the second call, not the first.
-  expect(skills.at(-1)?.parent_run_id).toBe(execs[1].id);
 });
 
-it("carries the contract keys onto a skill run", async () => {
-  const { skills } = await runsFor(await fixture());
+it("carries the contract keys onto a muted Skill run", async () => {
+  // A muted run drops the metadata it would inherit, so these come from the run itself.
+  const { skills } = await runsFor(await fixture(), { muted: true });
   const meta = skills[0].extra?.metadata as Record<string, unknown>;
 
   expect(meta.ls_agent_type).toBe("root");
   expect(meta.ls_trace_schema_version).toBe("coding-agent-v1");
   expect(meta.thread_id).toBe("019900aa-0000-7000-8000-skillsthread");
   expect(meta.turn_id).toBe("019900aa-tttt-0001");
-  // A child inherits the exec run's metadata, so usage has to be reset or the turn double-counts.
-  expect(meta.usage_metadata).toBeUndefined();
+  expect(meta.ls_skill_name).toBe("widget-report");
 });
 
-it("keeps the exec run's usage on the exec run", async () => {
-  const { execs } = await runsFor(await fixture());
-  expect(execs[0].extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 12 });
+it("drops a configured usage_metadata from a Skill run", async () => {
+  // Configured metadata reaches every run, so the reset has to outrank it.
+  const configured = { usage_metadata: { total_tokens: 999 } };
+  const { turn, skills } = await runsFor(await fixture(), { metadata: configured });
+
+  expect(turn?.extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 999 });
+  expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();
+  expect(skills[1].extra?.metadata?.usage_metadata).toBeUndefined();
 });
