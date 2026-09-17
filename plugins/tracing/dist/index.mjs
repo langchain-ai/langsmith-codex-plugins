@@ -17229,13 +17229,34 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/constants.ts
+/** What the traced agent is for, per the coding-agent-v1 contract. */
+const LS_AGENT_PURPOSE = "coding";
+/** Identifies this plugin as the trace source. */
+const LS_INTEGRATION = "openai-codex";
+/** Display name of the harness the trace came from. */
+const LS_AGENT_RUNTIME = "Codex";
+/** Metadata contract the emitted runs conform to. */
+const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+/** Plugin version, or undefined outside a bundled build. */
+const LS_INTEGRATION_VERSION = "0.1.0";
+const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
+const SHELL_WORD = /[^\s"']+/g;
+const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
+const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
+const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const BACKSLASH_ESCAPE = /\\([\s\S])/g;
+const STRING_ESCAPES = {
+	n: "\n",
+	t: "	",
+	r: "\r"
+};
+const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+//#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
-const LS_AGENT_PURPOSE = "coding";
-const LS_INTEGRATION = "openai-codex";
-const LS_AGENT_RUNTIME = "Codex";
-const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-const LS_INTEGRATION_VERSION = "0.1.0";
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -17347,6 +17368,35 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
+//#region src/skills.ts
+function skillDirectoryInPath(word) {
+	const parts = word.split(/[/\\]/);
+	const name = parts.at(-2);
+	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
+	return parts.slice(0, -2).includes("skills") ? name : void 0;
+}
+function shellCommands(args) {
+	if (typeof args !== "string") {
+		const cmd = args?.cmd;
+		return typeof cmd === "string" ? [cmd] : [];
+	}
+	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+}
+function skillNamesFromToolCall(toolName, args) {
+	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
+	const segments = shellCommands(args).flatMap((command) => command.match(SHELL_SEGMENT) ?? []);
+	const names = /* @__PURE__ */ new Set();
+	for (const segment of segments) {
+		const unquoted = segment.replace(QUOTED_RUN, " ");
+		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
+		for (const word of segment.match(SHELL_WORD) ?? []) {
+			const name = skillDirectoryInPath(word);
+			if (name != null) names.add(name);
+		}
+	}
+	return [...names];
+}
+//#endregion
 //#region src/utils/isPrimitive.ts
 function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
@@ -17374,6 +17424,7 @@ const METADATA_KEYS = /* @__PURE__ */ new Set([
 	"codex_cli_version",
 	"ls_raw_aggregated_usage",
 	"ls_tool_name",
+	"ls_skill_name",
 	"usage_metadata",
 	"ls_subagent_id",
 	"ls_subagent_type"
@@ -18133,6 +18184,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
+			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
 			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
@@ -18156,6 +18208,23 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				}) }
 			}, mode, parent);
 			PROMISE_QUEUE.push(toolRun.postRun());
+			for (const skillName of skillNames) {
+				const skillRun = createRunTree({
+					name: skillName,
+					run_type: "tool",
+					start_time: min,
+					end_time: max,
+					inputs: { skill: skillName },
+					outputs: {},
+					extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
+						...base,
+						...CHILD_SCOPE_RESET,
+						usage_metadata: void 0,
+						ls_skill_name: skillName
+					}) }
+				}, mode, toolRun);
+				PROMISE_QUEUE.push(skillRun.postRun());
+			}
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}

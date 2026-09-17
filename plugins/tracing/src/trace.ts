@@ -7,6 +7,7 @@ import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
+import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
   TokenCount,
@@ -751,6 +752,8 @@ async function postTurn(
       const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : undefined;
       const runName = nativeToolName ?? "openai.codex.tool";
 
+      const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+
       const toolRun = createRunTree(
         {
           name: runName,
@@ -783,6 +786,34 @@ async function postTurn(
         parent,
       );
       PROMISE_QUEUE.push(toolRun.postRun());
+
+      for (const skillName of skillNames) {
+        const skillRun = createRunTree(
+          {
+            name: skillName,
+            run_type: "tool",
+            // Only the call's own window is known, not when each read ran inside it.
+            start_time: min,
+            end_time: max,
+            inputs: { skill: skillName },
+            outputs: {},
+            extra: {
+              metadata: withTrustedMetadata(
+                { ...options?.metadata },
+                {
+                  ...base,
+                  ...CHILD_SCOPE_RESET,
+                  usage_metadata: undefined,
+                  ls_skill_name: skillName,
+                },
+              ),
+            },
+          },
+          mode,
+          toolRun,
+        );
+        PROMISE_QUEUE.push(skillRun.postRun());
+      }
     }
 
     for (const subagentThread of subagentThreads ?? []) {

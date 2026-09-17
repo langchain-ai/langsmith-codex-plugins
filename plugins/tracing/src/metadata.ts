@@ -4,25 +4,18 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { GitInfo } from "./types.js";
+import {
+  LS_AGENT_PURPOSE,
+  LS_AGENT_RUNTIME,
+  LS_INTEGRATION,
+  LS_INTEGRATION_VERSION,
+  LS_TRACE_SCHEMA_VERSION,
+} from "./constants.js";
 
 const execFileAsync = promisify(execFile);
 
-// Frozen literals for the Codex integration (see validator.json).
-export const LS_AGENT_PURPOSE = "coding";
-export const LS_INTEGRATION = "openai-codex";
-export const LS_AGENT_RUNTIME = "Codex";
-export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-
 /** The role a run plays within a coding-agent trace. */
 export type LSAgentType = "root" | "subagent" | "middleware" | "compaction";
-
-// Plugin version, injected at build time via bundler `define`.
-// `typeof` guards the case where the define was not applied.
-declare const __LS_INTEGRATION_VERSION__: string;
-export const LS_INTEGRATION_VERSION: string | undefined =
-  typeof __LS_INTEGRATION_VERSION__ === "string" && __LS_INTEGRATION_VERSION__.length > 0
-    ? __LS_INTEGRATION_VERSION__
-    : undefined;
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(
