@@ -79,6 +79,18 @@ pnpm test --run    # Run the full Vitest suite once
 pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
+pnpm build:sea     # Build the unsigned macOS arm64 binary
+```
+
+`pnpm build:sea` writes a standalone binary to `plugins/tracing/bin/`. It runs the tracing hook on machines with no Node installed. Only macOS arm64 is supported and it needs a newer Node than the rest of the repo. The build checks both and tells you which one failed.
+
+Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches the binary to that tag's GitHub Release as a draft.
+
+The binary is not Apple signed so macOS quarantines a download. Clear that before running it:
+
+```bash
+chmod +x <downloaded-binary>
+xattr -d com.apple.quarantine <downloaded-binary>
 ```
 
 Before submitting a pull request, run:
