@@ -1,3 +1,4 @@
+import { isSea } from "node:sea";
 import * as nodeFs from "node:fs";
 import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
@@ -7,8 +8,8 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { execFile } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 //#region \0rolldown/runtime.js
@@ -5037,7 +5038,7 @@ const path = nodePath;
 async function mkdir$1(dir) {
 	await nodeFsPromises.mkdir(dir, { recursive: true });
 }
-async function writeFileAtomic(filePath, content) {
+async function writeFileAtomic$1(filePath, content) {
 	const tempPath = `${filePath}.tmp`;
 	await nodeFsPromises.writeFile(tempPath, content, {
 		encoding: "utf8",
@@ -5451,7 +5452,7 @@ async function acquireOAuthRefreshLock(configPath, deadline) {
 			continue;
 		}
 		try {
-			await writeFileAtomic(path.join(lockDir, LOCK_METADATA_FILE), `${(/* @__PURE__ */ new Date()).toISOString()}\n${owner}\n`);
+			await writeFileAtomic$1(path.join(lockDir, LOCK_METADATA_FILE), `${(/* @__PURE__ */ new Date()).toISOString()}\n${owner}\n`);
 		} catch (err) {
 			await rmRecursive(lockDir);
 			throw err;
@@ -5740,7 +5741,7 @@ var ProfileAuth = class {
 			applyTokenResponse(this.state.profile, token);
 			this.state.config.profiles ??= {};
 			this.state.config.profiles[this.state.profileName] = this.state.profile;
-			await writeFileAtomic(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
+			await writeFileAtomic$1(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
 		} catch {
 			return;
 		} finally {
@@ -7513,7 +7514,7 @@ var Client = class Client {
 					return;
 				}
 			} catch {}
-			await writeFileAtomic(filepath, envelope);
+			await writeFileAtomic$1(filepath, envelope);
 			console.warn(`LangSmith trace upload failed; data saved to ${filepath} for later replay.`);
 		} catch (writeErr) {
 			console.error(`LangSmith tracing error: could not write trace to fallback dir ${directory}:`, writeErr);
@@ -17205,30 +17206,6 @@ async function getConfig(options) {
 	};
 }
 //#endregion
-//#region src/utils/findLast.ts
-const findLast = (array, predicate) => {
-	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
-};
-//#endregion
-//#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch (error) {
-		return false;
-	}
-}
-//#endregion
 //#region src/constants.ts
 /** What the traced agent is for, per the coding-agent-v1 contract. */
 const LS_AGENT_PURPOSE = "coding";
@@ -17254,6 +17231,432 @@ const STRING_ESCAPES = {
 	r: "\r"
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+//#endregion
+//#region hooks/hooks.sea.json
+var hooks = {
+	"Stop": [{ "hooks": [{
+		"type": "command",
+		"command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
+		"timeout": 30,
+		"statusMessage": "Uploading Codex trace to LangSmith"
+	}] }],
+	"UserPromptSubmit": [{ "hooks": [{
+		"type": "command",
+		"command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
+		"timeout": 10
+	}] }]
+};
+//#endregion
+//#region src/sea-constants.ts
+const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
+const PUBLISHED_PLATFORM = "darwin";
+const PUBLISHED_ARCH = "arm64";
+const UNSIGNED_ASSET_SUFFIX = "unsigned";
+const INSTALL_DIR_NAME = ".langsmith";
+const LOCK_FILE_NAME = ".update.lock";
+const LIST_TIMEOUT_MS = 15e3;
+const DOWNLOAD_TIMEOUT_MS = 3e5;
+const CODESIGN_TIMEOUT_MS = 12e4;
+//#endregion
+//#region src/updater-utils.ts
+function isPublishedSeaTarget(runtimePlatform, runtimeArch) {
+	return runtimePlatform === "darwin" && runtimeArch === "arm64";
+}
+function releaseAssetName(tag) {
+	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}-${UNSIGNED_ASSET_SUFFIX}`;
+}
+function versionFromTag(tag) {
+	return tag.trim().replace(/^v/, "");
+}
+function parseSemver(version) {
+	const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
+	return match ? [
+		Number(match[1]),
+		Number(match[2]),
+		Number(match[3])
+	] : void 0;
+}
+function isSemver(version) {
+	return parseSemver(version) !== void 0;
+}
+function isVersionNewer(candidate, current) {
+	const next = parseSemver(candidate);
+	const installed = parseSemver(current);
+	if (!next || !installed) return false;
+	for (let index = 0; index < next.length; index += 1) if (next[index] !== installed[index]) return next[index] > installed[index];
+	return false;
+}
+function isReleaseAsset(value) {
+	if (!value || typeof value !== "object") return false;
+	const asset = value;
+	return typeof asset.name === "string" && typeof asset.browser_download_url === "string" && typeof asset.size === "number" && (asset.digest == null || typeof asset.digest === "string");
+}
+function parseReleases(value) {
+	if (!Array.isArray(value)) throw new Error("invalid GitHub releases response");
+	const releases = [];
+	for (const entry of value) {
+		if (!entry || typeof entry !== "object") continue;
+		const release = entry;
+		if (typeof release.tag_name !== "string" || !Array.isArray(release.assets)) continue;
+		releases.push({
+			tag_name: release.tag_name,
+			draft: release.draft === true,
+			prerelease: release.prerelease === true,
+			assets: release.assets.filter(isReleaseAsset)
+		});
+	}
+	return releases;
+}
+function githubHeaders(currentVersion) {
+	return {
+		Accept: "application/vnd.github+json",
+		"User-Agent": `langsmith-codex/${currentVersion}`,
+		"X-GitHub-Api-Version": "2022-11-28"
+	};
+}
+function assertAllowedDownloadUrl(asset, releaseApi) {
+	const downloadUrl = new URL(asset.browser_download_url);
+	if (!(releaseApi === "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases" ? downloadUrl.href.startsWith("https://github.com/langchain-ai/langsmith-codex-plugins/releases/download/") : downloadUrl.origin === new URL(releaseApi).origin)) throw new Error(`release asset ${asset.name} has an unexpected download URL`);
+	return downloadUrl;
+}
+function sha256FromDigestField(value) {
+	return /^sha256:([a-f0-9]{64})$/i.exec(value ?? "")?.[1].toLowerCase();
+}
+function sha256FromSidecarText(text, assetName) {
+	const match = /^([a-f0-9]{64})\s+[* ]?(\S+)\s*$/im.exec(text);
+	if (!match || nodePath.basename(match[2]) !== assetName) throw new Error(`release asset ${assetName} has an invalid SHA-256 sidecar`);
+	return match[1].toLowerCase();
+}
+//#endregion
+//#region src/updater-download.ts
+async function expectedSha256(asset, sidecar, fetchImpl, releaseApi, currentVersion) {
+	const fromField = sha256FromDigestField(asset.digest);
+	if (fromField) return fromField;
+	if (!sidecar) throw new Error(`release asset ${asset.name} has no SHA-256 digest or sidecar`);
+	if (sidecar.size <= 0 || sidecar.size > 1024) throw new Error(`release checksum size ${sidecar.size} is outside the allowed range`);
+	const response = await fetchImpl(assertAllowedDownloadUrl(sidecar, releaseApi), {
+		headers: githubHeaders(currentVersion),
+		signal: AbortSignal.timeout(LIST_TIMEOUT_MS)
+	});
+	if (!response.ok) throw new Error(`failed to download the release checksum: HTTP ${response.status}`);
+	return sha256FromSidecarText(await response.text(), asset.name);
+}
+async function writeWholeChunk(handle, chunk) {
+	let offset = 0;
+	while (offset < chunk.byteLength) {
+		const { bytesWritten } = await handle.write(chunk, offset);
+		if (bytesWritten === 0) throw new Error("could not write the release asset");
+		offset += bytesWritten;
+	}
+}
+async function downloadAndVerifyAsset(asset, sidecar, destination, fetchImpl, releaseApi, currentVersion) {
+	if (asset.size <= 0 || asset.size > 262144e3) throw new Error(`release asset size ${asset.size} is outside the allowed range`);
+	const downloadUrl = assertAllowedDownloadUrl(asset, releaseApi);
+	const expected = await expectedSha256(asset, sidecar, fetchImpl, releaseApi, currentVersion);
+	const response = await fetchImpl(downloadUrl, {
+		headers: githubHeaders(currentVersion),
+		signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)
+	});
+	if (!response.ok || !response.body) throw new Error(`failed to download the release asset: HTTP ${response.status}`);
+	const handle = await nodeFsPromises.open(destination, "wx", 448);
+	const hash = createHash("sha256");
+	let written = 0;
+	try {
+		for await (const rawChunk of response.body) {
+			const chunk = Buffer.from(rawChunk);
+			written += chunk.byteLength;
+			if (written > asset.size) throw new Error("the release asset exceeds its declared size");
+			hash.update(chunk);
+			await writeWholeChunk(handle, chunk);
+		}
+		await handle.sync();
+	} finally {
+		await handle.close();
+	}
+	if (written !== asset.size) throw new Error(`release asset size mismatch: expected ${asset.size}, got ${written}`);
+	if (hash.digest("hex") !== expected) throw new Error("release asset SHA-256 mismatch");
+}
+async function verifyAdHocSignature(binary) {
+	await new Promise((resolve, reject) => {
+		execFile("/usr/bin/codesign", [
+			"--verify",
+			"--strict",
+			binary
+		], { timeout: CODESIGN_TIMEOUT_MS }, (error) => error ? reject(error) : resolve());
+	});
+}
+//#endregion
+//#region src/updater-install.ts
+function defaultInstallDir(home = os.homedir()) {
+	return nodePath.join(home, INSTALL_DIR_NAME);
+}
+function installedExecutablePath(installDir) {
+	return nodePath.join(installDir, SEA_EXECUTABLE_NAME);
+}
+async function installReleaseAsset(release, installDir, fetchImpl, releaseApi, currentVersion, verifySignature, uniqueSuffix) {
+	const assetName = releaseAssetName(release.tag_name);
+	const asset = release.assets.find((candidate) => candidate.name === assetName);
+	if (!asset) throw new Error(`release ${release.tag_name} has no ${assetName} asset`);
+	const sidecar = release.assets.find((candidate) => candidate.name === `${assetName}.sha256`);
+	await nodeFsPromises.mkdir(installDir, {
+		recursive: true,
+		mode: 448
+	});
+	const target = installedExecutablePath(installDir);
+	const partial = nodePath.join(installDir, `.${SEA_EXECUTABLE_NAME}.${uniqueSuffix}.tmp`);
+	try {
+		await downloadAndVerifyAsset(asset, sidecar, partial, fetchImpl, releaseApi, currentVersion);
+		await nodeFsPromises.chmod(partial, 493);
+		await verifySignature?.(partial);
+		await nodeFsPromises.rename(partial, target);
+		return target;
+	} catch (error) {
+		await nodeFsPromises.unlink(partial).catch(() => void 0);
+		throw error;
+	}
+}
+//#endregion
+//#region src/updater-releases.ts
+function carriesOurAsset(release) {
+	const wanted = releaseAssetName(release.tag_name);
+	return release.assets.some((asset) => asset.name === wanted);
+}
+function newestInstallableRelease(releases, currentVersion) {
+	let best;
+	for (const release of releases) {
+		if (release.draft || release.prerelease) continue;
+		if (!isSemver(release.tag_name)) continue;
+		if (!carriesOurAsset(release)) continue;
+		if (currentVersion && !isVersionNewer(release.tag_name, currentVersion)) continue;
+		if (!best || isVersionNewer(release.tag_name, best.tag_name)) best = release;
+	}
+	return best;
+}
+async function fetchReleases(fetchImpl, releaseApi, currentVersion) {
+	const response = await fetchImpl(`${releaseApi}?per_page=30`, {
+		headers: githubHeaders(currentVersion),
+		signal: AbortSignal.timeout(LIST_TIMEOUT_MS)
+	});
+	if (!response.ok) throw new Error(`failed to list GitHub releases: HTTP ${response.status}`);
+	return parseReleases(await response.json());
+}
+//#endregion
+//#region src/install.ts
+function quoteForShell(value) {
+	return `'${value.split("'").join(`'\\''`)}'`;
+}
+function defaultHooksFile(projectScoped, cwd = process.cwd()) {
+	if (projectScoped) return nodePath.join(cwd, ".codex", "hooks.json");
+	return nodePath.join(process.env.CODEX_HOME ?? nodePath.join(os.homedir(), ".codex"), "hooks.json");
+}
+function pointedAtBinary(events, binary) {
+	const command = quoteForShell(binary);
+	return Object.fromEntries(Object.entries(events).map(([event, groups]) => [event, groups.map((group) => ({
+		...group,
+		hooks: (group.hooks ?? []).map((hook) => hook.type === "command" ? {
+			...hook,
+			command
+		} : hook)
+	}))]));
+}
+function withoutOurHooks(groups) {
+	return groups.map((group) => ({
+		...group,
+		hooks: (group.hooks ?? []).filter((hook) => typeof hook?.command !== "string" || !hook.command.includes("langsmith-codex-tracing"))
+	})).filter((group) => group.hooks.length > 0);
+}
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function renderHooksFile(existing, binary) {
+	const file = asRecord(existing);
+	const existingEvents = asRecord(file.hooks);
+	const hooks$1 = { ...existingEvents };
+	for (const [event, groups] of Object.entries(pointedAtBinary(hooks, binary))) hooks$1[event] = [...Array.isArray(existingEvents[event]) ? withoutOurHooks(existingEvents[event]) : [], ...groups];
+	return {
+		...file,
+		hooks: hooks$1
+	};
+}
+async function readHooksFile(hooksFile) {
+	try {
+		return JSON.parse(await nodeFsPromises.readFile(hooksFile, "utf-8"));
+	} catch {
+		return {};
+	}
+}
+async function existingMode(target) {
+	try {
+		return (await nodeFsPromises.stat(target)).mode & 511;
+	} catch {
+		return;
+	}
+}
+async function writeFileAtomic(target, contents) {
+	const directory = nodePath.dirname(target);
+	const partial = nodePath.join(directory, `.${nodePath.basename(target)}.${process.pid}.tmp`);
+	const mode = await existingMode(target);
+	try {
+		await nodeFsPromises.writeFile(partial, contents);
+		if (mode !== void 0) await nodeFsPromises.chmod(partial, mode);
+		await nodeFsPromises.rename(partial, target);
+	} catch (error) {
+		await nodeFsPromises.unlink(partial).catch(() => void 0);
+		throw error;
+	}
+}
+async function copyExecutable(source, target, verifySignature) {
+	const partial = `${target}.${process.pid}.tmp`;
+	try {
+		await nodeFsPromises.copyFile(source, partial);
+		await nodeFsPromises.chmod(partial, 493);
+		await verifySignature(partial);
+		await nodeFsPromises.rename(partial, target);
+	} catch (error) {
+		await nodeFsPromises.unlink(partial).catch(() => void 0);
+		throw error;
+	}
+}
+async function downloadExecutable(options, installDir, verifySignature) {
+	const fetchImpl = options.fetchImpl ?? fetch;
+	const releaseApi = options.releaseApi ?? process.env.LANGSMITH_CODEX_RELEASE_API ?? "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";
+	const releases = await fetchReleases(fetchImpl, releaseApi, options.currentVersion ?? "0.0.0");
+	const release = options.tag ? releases.find((candidate) => candidate.tag_name === options.tag) : newestInstallableRelease(releases);
+	if (!release) throw new Error(options.tag ? `no published release is tagged ${options.tag}` : `no published release carries a ${releaseAssetName("<tag>")} asset`);
+	await installReleaseAsset(release, installDir, fetchImpl, releaseApi, versionFromTag(release.tag_name), verifySignature, `${process.pid}.${Date.now()}`);
+}
+async function installBinary(options) {
+	const runtimePlatform = options.runtimePlatform ?? os.platform();
+	const runtimeArch = options.runtimeArch ?? os.arch();
+	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) throw new Error(`The standalone binary only runs on macOS arm64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`);
+	const installDir = options.installDir ?? defaultInstallDir();
+	const target = installedExecutablePath(installDir);
+	const hooksFile = options.hooksFile ?? defaultHooksFile(false);
+	const verifySignature = options.verifySignature ?? verifyAdHocSignature;
+	const copyable = options.tag === void 0 ? options.source : void 0;
+	await nodeFsPromises.mkdir(installDir, {
+		recursive: true,
+		mode: 448
+	});
+	if (copyable !== void 0) await copyExecutable(copyable, target, verifySignature);
+	else await downloadExecutable(options, installDir, verifySignature);
+	const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
+	await nodeFsPromises.mkdir(nodePath.dirname(hooksFile), { recursive: true });
+	await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
+	return {
+		binary: target,
+		hooks: hooksFile
+	};
+}
+function flagValue(argv, flag) {
+	const index = argv.indexOf(flag);
+	const value = index < 0 ? void 0 : argv[index + 1];
+	return value === void 0 || value.startsWith("-") ? void 0 : value;
+}
+async function runInstall(options) {
+	const hooksFile = defaultHooksFile(options.argv.includes("--project"));
+	try {
+		if (options.argv.includes("--print")) {
+			const target = installedExecutablePath(defaultInstallDir());
+			console.log(JSON.stringify(renderHooksFile(await readHooksFile(hooksFile), target), null, 2));
+			return;
+		}
+		const tag = flagValue(options.argv, "--tag");
+		const installed = await installBinary({
+			source: options.source,
+			currentVersion: options.currentVersion,
+			tag,
+			hooksFile
+		});
+		const from = tag ?? (options.source ? "this binary" : "the newest release");
+		console.log(`Installed the LangSmith Codex tracing binary from ${from}`);
+		console.log(`  binary:  ${installed.binary}`);
+		console.log(`  hooks:   ${installed.hooks}`);
+		console.log("");
+		console.log("Next:");
+		console.log("  1. Disable the \"tracing\" Codex plugin if it is enabled, or every turn traces twice.");
+		console.log("  2. Configure credentials as described in the README.");
+		console.log("  3. Restart Codex, then trust these hooks when it prompts.");
+	} catch (error) {
+		console.error(`install failed: ${error}`);
+		process.exitCode = 1;
+	}
+}
+//#endregion
+//#region src/updater.ts
+async function claimUpdateLock(lockFile, now) {
+	try {
+		return await nodeFsPromises.open(lockFile, "wx", 384);
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+	}
+	let held;
+	try {
+		held = await nodeFsPromises.open(lockFile, "r");
+		if (now - (await held.stat()).mtimeMs <= 6e5) return void 0;
+	} catch {
+		return;
+	} finally {
+		await held?.close().catch(() => void 0);
+	}
+	try {
+		await nodeFsPromises.unlink(lockFile);
+		return await nodeFsPromises.open(lockFile, "wx", 384);
+	} catch {
+		return;
+	}
+}
+async function updateFromGitHub(options) {
+	if (!isPublishedSeaTarget(options.runtimePlatform ?? os.platform(), options.runtimeArch ?? os.arch())) return { status: "unsupported" };
+	if (!isSemver(options.currentVersion)) return { status: "unsupported" };
+	const installDir = options.installDir ?? defaultInstallDir();
+	const now = (options.now ?? Date.now)();
+	const lockFile = nodePath.join(installDir, LOCK_FILE_NAME);
+	await nodeFsPromises.mkdir(installDir, {
+		recursive: true,
+		mode: 448
+	});
+	const lock = await claimUpdateLock(lockFile, now);
+	if (!lock) return { status: "busy" };
+	try {
+		const fetchImpl = options.fetchImpl ?? fetch;
+		const releaseApi = options.releaseApi ?? "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";
+		const release = newestInstallableRelease(await fetchReleases(fetchImpl, releaseApi, options.currentVersion), options.currentVersion);
+		if (!release) return { status: "current" };
+		await installReleaseAsset(release, installDir, fetchImpl, releaseApi, options.currentVersion, options.verifySignature ?? verifyAdHocSignature, `${process.pid}.${now}`);
+		return {
+			status: "updated",
+			version: versionFromTag(release.tag_name)
+		};
+	} finally {
+		await lock.close().catch(() => void 0);
+		await nodeFsPromises.unlink(lockFile).catch(() => void 0);
+	}
+}
+//#endregion
+//#region src/utils/findLast.ts
+const findLast = (array, predicate) => {
+	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
+};
+//#endregion
+//#region src/sidecar.ts
+async function loadUploadedTurnIds(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
+		return new Set(data.split("\n").filter(Boolean));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		throw error;
+	}
+}
+async function markTurnUploaded(rolloutFile, turnId) {
+	try {
+		await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${turnId}\n`, "utf-8");
+		return true;
+	} catch (error) {
+		return false;
+	}
+}
 //#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
@@ -18480,6 +18883,60 @@ async function runHook() {
 		parentRunTree
 	});
 }
-runHook();
+const invocationArguments = process.argv.slice(1);
+const USAGE = `Usage:
+  ${SEA_EXECUTABLE_NAME} --install [--project] [--tag VERSION]
+  ${SEA_EXECUTABLE_NAME} --print [--project]
+  ${SEA_EXECUTABLE_NAME} --update
+  ${SEA_EXECUTABLE_NAME} --version
+
+Options:
+  --help, -h     Show this help and exit
+  --version, -v  Print the installed version and exit
+  --install      Install this binary and register the Codex hooks
+  --print        Print the hooks file --install would write, and change nothing
+  --project      Use .codex/hooks.json in the current directory
+  --tag VERSION  Install a published release instead of this binary
+  --update       Replace the installed binary with the newest release`;
+const KNOWN_FLAGS = /* @__PURE__ */ new Set([
+	"--help",
+	"-h",
+	"--version",
+	"-v",
+	"--install",
+	"--print",
+	"--project",
+	"--tag",
+	"--update"
+]);
+function wasInvokedWith(flag) {
+	return invocationArguments.includes(flag);
+}
+function unknownFlags() {
+	return invocationArguments.filter((arg) => arg.startsWith("-") && !KNOWN_FLAGS.has(arg));
+}
+async function runUpdate() {
+	try {
+		const result = await updateFromGitHub({ currentVersion: "0.1.0" });
+		console.log(result.status === "updated" ? `updated to ${result.version}` : result.status);
+	} catch (error) {
+		console.error(`update failed: ${error}`);
+		process.exitCode = 1;
+	}
+}
+const unrecognised = unknownFlags();
+if (wasInvokedWith("--help") || wasInvokedWith("-h")) console.log(USAGE);
+else if (wasInvokedWith("--version") || wasInvokedWith("-v")) console.log("0.1.0");
+else if (unrecognised.length > 0) {
+	console.error(`unknown option: ${unrecognised[0]}`);
+	console.error(USAGE);
+	process.exitCode = 1;
+} else if (wasInvokedWith("--install") || wasInvokedWith("--print")) runInstall({
+	source: isSea() ? process.execPath : void 0,
+	currentVersion: LS_INTEGRATION_VERSION,
+	argv: invocationArguments
+});
+else if (wasInvokedWith("--update")) runUpdate();
+else runHook();
 //#endregion
-export { runHook };
+export { runHook, runUpdate };

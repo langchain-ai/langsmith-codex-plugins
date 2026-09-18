@@ -4,7 +4,7 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Prerequisites
 
-- Node.js >= 22.x
+- Node.js >= 22.x, or none for the standalone binary
 - Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
 - A LangSmith account and API key
 
@@ -31,6 +31,24 @@ enabled = true
 Enable/trust this plugin’s hooks in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Restart Codex after installation or hook changes. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
+
+### As a standalone binary (macOS arm64)
+
+One executable installs and runs the hook without Node.js. Download a release asset:
+
+```bash
+chmod +x langsmith-codex-tracing-darwin-arm64-<tag>-unsigned
+xattr -d com.apple.quarantine langsmith-codex-tracing-darwin-arm64-<tag>-unsigned
+./langsmith-codex-tracing-darwin-arm64-<tag>-unsigned --install
+```
+
+That puts it at `~/.langsmith/langsmith-codex-tracing` and points `~/.codex/hooks.json` there, keeping any other hooks. Use `--project` for `./.codex/hooks.json`, `--print` to preview, or `--tag <version>` for a specific release.
+
+It never updates itself. Run `~/.langsmith/langsmith-codex-tracing --update` for the newest release.
+
+No release is published yet. Build it with `pnpm build:sea` and run that with `--install`.
+
+Do not run the plugin and the binary together, or every turn traces twice. Restart Codex and trust the hooks, the same as for the plugin.
 
 ### Setting environment variables
 

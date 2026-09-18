@@ -93,6 +93,15 @@ chmod +x <downloaded-binary>
 xattr -d com.apple.quarantine <downloaded-binary>
 ```
 
+### Installing the binary
+
+```bash
+plugins/tracing/bin/langsmith-codex-tracing --install   # install the binary you just built
+plugins/tracing/bin/langsmith-codex-tracing --print     # show the hooks.json it would write
+```
+
+The binary copies itself to `~/.langsmith/langsmith-codex-tracing` and points `~/.codex/hooks.json` there. Installing needs no Node at all, and an installed binary needs no `chmod` or `xattr`. Pass `--tag v0.2.0` to download that release instead, which is also what running the install through `node` does.
+
 Before submitting a pull request, run:
 
 ```bash
@@ -120,6 +129,7 @@ Keep `shared-config.ts` byte-identical to the canonical Claude helper (SHA-256 `
 - `.agents/plugins/marketplace.json` — local marketplace definition
 - `plugins/tracing/.codex-plugin/plugin.json` — plugin metadata and version
 - `plugins/tracing/hooks/hooks.json` — Codex lifecycle hook definition
+- `plugins/tracing/hooks/hooks.sea.json` — the same hooks pointed at the binary, compiled into it
 - `plugins/tracing/src/` — TypeScript source
 - `plugins/tracing/test/` — tests and transcript fixtures
 - `plugins/tracing/dist/index.mjs` — bundled hook executed by Codex
