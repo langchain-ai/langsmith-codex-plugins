@@ -11,7 +11,17 @@ on:
       - tsdown.sea.config.ts
       - sea-config.json
       - package.json
+      - plugins/tracing/hooks/hooks.sea.json
       - plugins/tracing/src/index.ts
+      - plugins/tracing/src/install.ts
+      - plugins/tracing/src/sea-constants.ts
+      - plugins/tracing/src/sea-models.ts
+      - plugins/tracing/src/updater-download.ts
+      - plugins/tracing/src/updater-install.ts
+      - plugins/tracing/src/updater-releases.ts
+      - plugins/tracing/src/updater-utils.ts
+      - plugins/tracing/src/updater.ts
+      - plugins/tracing/test/install-sea.test.ts
       - plugins/tracing/test/sea.test.ts
   # The only way to publish. A tag push deliberately does not trigger this.
   workflow_dispatch:
@@ -50,7 +60,7 @@ jobs:
         run: pnpm run build:sea
 
       - name: Test the Binary
-        run: pnpm vitest run plugins/tracing/test/sea.test.ts
+        run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
 
       - name: Upload the Binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -83,14 +93,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          asset="release/langsmith-codex-tracing-darwin-arm64-${TAG}-unsigned"
+          name="langsmith-codex-tracing-darwin-arm64-${TAG}-unsigned"
+          asset="release/${name}"
           mv release/langsmith-codex-tracing "$asset"
+          (cd release && sha256sum "$name" > "${name}.sha256")
           if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release upload "$TAG" "$asset" --clobber
+            gh release upload "$TAG" "$asset" "${asset}.sha256" --clobber
           else
-            gh release create "$TAG" "$asset" \
+            gh release create "$TAG" "$asset" "${asset}.sha256" \
               --draft \
               --verify-tag \
               --generate-notes \
-              --notes "This macOS arm64 binary is unsigned and not notarized. After downloading, run \`chmod +x\` on it and clear Gatekeeper quarantine with \`xattr -d com.apple.quarantine\`."
+              --notes "This macOS arm64 binary is unsigned and not notarized. Download it, then run \`chmod +x $name\`, \`xattr -d com.apple.quarantine $name\` and \`./$name --install\`. Check it against its SHA-256 sidecar first if you want to. It does not update itself, so run \`--update\` when you want the next release."
           fi

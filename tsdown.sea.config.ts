@@ -44,7 +44,7 @@ function readPluginVersion(pluginRoot: string) {
 }
 
 async function bundleHookAsCommonJs(pluginRoot: string, pluginVersion: string) {
-  console.log(`[sea] 1/3 bundling the hook into one CommonJS file for ${buildTarget}`);
+  console.log(`[sea] 1/4 bundling the hook into one CommonJS file for ${buildTarget}`);
 
   // A SEA holds exactly one CommonJS file, so this bundle is separate from the ESM one Codex loads.
   await build({
@@ -68,7 +68,7 @@ async function bundleHookAsCommonJs(pluginRoot: string, pluginVersion: string) {
 }
 
 async function injectBundleIntoNodeBinary() {
-  console.log("[sea] 2/3 injecting the bundle into a copy of the Node binary");
+  console.log("[sea] 2/4 injecting the bundle into a copy of the Node binary");
 
   const seaSettings = JSON.parse(readFileSync("sea-config.json", "utf-8"));
   const seaBinary = path.resolve(seaSettings.output);
@@ -95,10 +95,22 @@ async function injectBundleIntoNodeBinary() {
 }
 
 function signAdHoc(seaBinary: string) {
-  console.log("[sea] 3/3 applying an ad-hoc signature");
+  console.log("[sea] 3/4 applying an ad-hoc signature");
 
   // macOS will not run a freshly injected SEA unsigned, and an ad-hoc signature needs no credentials.
   execFileSync("/usr/bin/codesign", ["--force", "--sign", "-", seaBinary], { stdio: "inherit" });
+}
+
+function checkReportedVersion(seaBinary: string, pluginVersion: string) {
+  console.log("[sea] 4/4 checking the binary reports the plugin version");
+
+  const reportedVersion = execFileSync(seaBinary, ["--version"], { encoding: "utf8" }).trim();
+  if (reportedVersion !== pluginVersion) {
+    throw new Error(
+      `The built binary reports version ${reportedVersion}, but plugin.json declares ${pluginVersion}`,
+    );
+  }
+  return reportedVersion;
 }
 
 assertBuildHostIsSupported();
@@ -110,7 +122,8 @@ const pluginVersion = readPluginVersion(pluginRoot);
 await bundleHookAsCommonJs(pluginRoot, pluginVersion);
 const seaBinary = await injectBundleIntoNodeBinary();
 signAdHoc(seaBinary);
+const reportedVersion = checkReportedVersion(seaBinary, pluginVersion);
 
 console.log(
-  `[sea] built the ${buildTarget} binary ${seaBinary} (${statSync(seaBinary).size} bytes)`,
+  `[sea] built the ${buildTarget} binary ${seaBinary} (${statSync(seaBinary).size} bytes, version ${reportedVersion})`,
 );

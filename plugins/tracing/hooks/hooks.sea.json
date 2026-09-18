@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
+            "timeout": 30,
+            "statusMessage": "Uploading Codex trace to LangSmith"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
