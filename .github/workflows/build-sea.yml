@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/build-sea.yml
+      - install.sh
       - macos-entitlements.plist
       - tsdown.sea.config.ts
       - sea-config.json
@@ -125,9 +126,14 @@ jobs:
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "$asset" "${asset}.sha256" --clobber
           else
+            case "$TAG" in
+              *-*) prerelease=true ;;
+              *) prerelease=false ;;
+            esac
             gh release create "$TAG" "$asset" "${asset}.sha256" \
               --draft \
               --verify-tag \
+              --prerelease="$prerelease" \
               --generate-notes \
               --notes "This macOS arm64 binary is unsigned and not notarized. Download it, then run \`chmod +x $name\`, \`xattr -d com.apple.quarantine $name\` and \`./$name --install\`. Check it against its SHA-256 sidecar first if you want to. It does not update itself, so run \`--update\` when you want the next release."
           fi

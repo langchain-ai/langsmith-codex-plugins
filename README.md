@@ -10,6 +10,8 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Installation
 
+Every option below installs the same tracing integration. Only the delivery differs. The plugin runs on the Node on your PATH and the marketplace manages it. The standalone binary carries its own Node and you manage it. You are picking an install method, not a different product.
+
 ### As a Codex plugin
 
 Add the marketplace via Codex CLI:
@@ -32,23 +34,36 @@ Enable/trust this plugin’s hooks in Codex’s plugin UI when prompted; enablin
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
-### As a standalone binary (macOS arm64)
+### As a standalone binary (beta, macOS arm64)
 
-One executable installs and runs the hook without Node.js. Download a release asset:
+The same integration as the plugin, delivered as one file. It carries its own Node runtime so it needs no Node on your PATH. You install and update it yourself. The plugin is the supported path. This binary is the beta we are trialling and macOS arm64 is the only build.
 
-```bash
-chmod +x langsmith-codex-tracing-darwin-arm64-<tag>-unsigned
-xattr -d com.apple.quarantine langsmith-codex-tracing-darwin-arm64-<tag>-unsigned
-./langsmith-codex-tracing-darwin-arm64-<tag>-unsigned --install
-```
+Two things are not live yet, so the command below fails today:
 
-That puts it at `~/.langsmith/langsmith-codex-tracing` and points `~/.codex/hooks.json` there, keeping any other hooks. Use `--project` for `./.codex/hooks.json`, `--print` to preview, or `--tag <version>` for a specific release.
+- No release carries the binary. Build it with `pnpm build:sea` and run that binary with `--install`.
+- The short link is not registered. It redirects to the LangChain homepage, so piping it to bash runs HTML. Use `https://raw.githubusercontent.com/langchain-ai/langsmith-codex-plugins/main/install.sh` instead.
 
-It never updates itself. Run `~/.langsmith/langsmith-codex-tracing --update` for the newest release.
+1. Run the installer:
 
-No release is published yet. Build it with `pnpm build:sea` and run that with `--install`.
+   ```bash
+   curl -LsSf https://langch.in/codex-tracing | bash -s -- --beta
+   ```
 
-Do not run the plugin and the binary together, or every turn traces twice. Restart Codex and trust the hooks, the same as for the plugin.
+   `--beta` takes the newest prerelease. Drop it once a stable release carries the binary. The plain command takes the newest stable release and never a prerelease, so it fails while a prerelease is the only published build.
+
+   The installer checks the download against the SHA-256 the release publishes. It puts the binary at `~/.langsmith/langsmith-codex-tracing` and adds the tracing hooks to `~/.codex/hooks.json`. Run it with `--help` for version pinning and the other options.
+
+2. Set `enabled`, `api_key` and `project` in `~/.codex/langsmith.json`. `enabled` is false by default, so without this the hooks run and trace nothing:
+
+   ```json
+   { "enabled": true, "api_key": "lsv2_pt_...", "project": "codex" }
+   ```
+
+3. Restart Codex, then trust the hooks when prompted.
+
+The binary never updates itself. Run `~/.langsmith/langsmith-codex-tracing --update` for a newer release.
+
+To download a release asset by hand instead: `chmod +x` it, clear the macOS quarantine flag with `xattr -d com.apple.quarantine`, then run it with `--install`. The binary is unsigned.
 
 ### Setting environment variables
 

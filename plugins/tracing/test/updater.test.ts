@@ -79,7 +79,9 @@ function opts(fetchImpl: typeof fetch, extra: Record<string, unknown> = {}) {
 
 it("targets only newer stable releases carrying this plugin's asset, on the published platform", () => {
   expect(isVersionNewer("1.0.0", "0.99.99")).toBe(true);
-  expect(isVersionNewer("v0.2.0-beta.1", "0.1.0")).toBe(false);
+  expect(isVersionNewer("v0.2.0-beta.1", "0.1.0")).toBe(true);
+  expect(isVersionNewer("v0.2.0-beta", "0.1.0")).toBe(false);
+  expect(isVersionNewer("v0.2.0-Beta.1", "0.1.0")).toBe(false);
   expect(isVersionNewer("latest", "0.1.0")).toBe(false);
   expect(releaseAssetName("v0.1.0")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0-unsigned`);
   expect(isPublishedSeaTarget("darwin", "arm64")).toBe(true);
@@ -97,6 +99,40 @@ it("targets only newer stable releases carrying this plugin's asset, on the publ
   expect(newestInstallableRelease(releases)?.tag_name).toBe("v0.3.0");
   expect(newestInstallableRelease(releases, "0.3.0")).toBeUndefined();
   expect(() => parseReleases({ tag_name: "v0.1.0" })).toThrow("invalid GitHub releases response");
+});
+
+it("orders a prerelease below the release it leads to", () => {
+  expect(isVersionNewer("0.5.0", "0.5.0-beta.1")).toBe(true);
+  expect(isVersionNewer("0.5.0-beta.1", "0.5.0")).toBe(false);
+  expect(isVersionNewer("0.5.0-beta.1", "0.4.9")).toBe(true);
+  expect(isVersionNewer("0.4.9", "0.5.0-beta.1")).toBe(false);
+  expect(isVersionNewer("0.5.0-beta.10", "0.5.0-beta.2")).toBe(true);
+  expect(isVersionNewer("0.5.0-beta.2", "0.5.0-beta.10")).toBe(false);
+  expect(isVersionNewer("0.5.0-beta.1", "0.5.0-alpha.99")).toBe(true);
+  expect(isVersionNewer("0.5.0-alpha.99", "0.5.0-beta.1")).toBe(false);
+  expect(isVersionNewer("0.5.0-beta.1", "0.5.0-beta.1")).toBe(false);
+  expect(isVersionNewer("0.6.0-beta.1", "0.5.0")).toBe(true);
+
+  const prerelease = { ...release("0.5.0-beta.1"), prerelease: true };
+  const listed = parseReleases([prerelease, release("0.4.0")]);
+  expect(newestInstallableRelease(listed)?.tag_name).toBe("0.4.0");
+  expect(newestInstallableRelease(parseReleases([prerelease]))).toBeUndefined();
+});
+
+it("updates an installed prerelease to the release, and never to another prerelease", async () => {
+  const current = { currentVersion: "0.5.0-beta.1" };
+  const newer = { ...release("0.5.0-beta.2"), prerelease: true };
+
+  const stuck = fetchSequence(Response.json([newer]));
+  await expect(updateFromGitHub(opts(stuck, current))).resolves.toEqual({ status: "current" });
+  expect(readFileSync(target, "utf8")).toBe("the old binary");
+
+  const shipped = fetchSequence(Response.json([newer, release("0.5.0")]), new Response(BODY));
+  await expect(updateFromGitHub(opts(shipped, current))).resolves.toEqual({
+    status: "updated",
+    version: "0.5.0",
+  });
+  expect(readFileSync(target)).toEqual(Buffer.from(BODY));
 });
 
 describe("updateFromGitHub", () => {
