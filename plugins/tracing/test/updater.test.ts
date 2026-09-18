@@ -154,7 +154,7 @@ describe("updateFromGitHub", () => {
       version: "0.2.0",
     });
     expect(readFileSync(target)).toEqual(Buffer.from(BODY));
-    expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=30`);
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=100`);
     expect(execFile).toHaveBeenCalledWith(...CODESIGN, { timeout: 120_000 }, expect.any(Function));
   });
 

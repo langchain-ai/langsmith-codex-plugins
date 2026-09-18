@@ -19,6 +19,13 @@ const credentials: string[] = [...APPLE_CREDENTIALS];
 const allSet = Object.fromEntries(credentials.map((name) => [name, "set"]));
 const missing = (env: Record<string, string>): string[] => [...missingAppleCredentials(env)].sort();
 
+function job(name: string): string {
+  const start = workflow.indexOf(`\n  ${name}:\n`);
+  const rest = workflow.slice(start + 1);
+  const end = /\n {2}[a-z][\w-]*:\n/.exec(rest)?.index;
+  return end === undefined ? rest : rest.slice(0, end);
+}
+
 const FOUND_IDENTITIES = [
   '  1) 0000000000000000000000000000000000000001 "Apple Development: Someone (AAAAAAAAAA)"',
   '  2) 0000000000000000000000000000000000000002 "Developer ID Installer: LangChain (BBBBBBBBBB)"',
@@ -147,17 +154,52 @@ describe("the build workflow", () => {
     }
   });
 
-  it("signs only when the build is being released and the job found every credential", () => {
-    expect(workflow).toContain(
-      "if: steps.release-gate.outputs.publishing == 'true' && env.HAS_APPLE_CREDENTIALS == 'true'",
-    );
-    for (const name of credentials) expect(workflow).toContain(`secrets.${name} != ''`);
+  it("signs only when the job found every credential", () => {
+    expect(job("sign-and-notarize")).toContain("if: ${{ env.HAS_APPLE_CREDENTIALS == 'true' }}");
+    for (const name of credentials)
+      expect(job("sign-and-notarize")).toContain(`secrets.${name} != ''`);
   });
 
-  it("tests the ref for a tag once and shares that answer with the publish job", () => {
+  it("reads the Apple secrets only from the job that declares the environment", () => {
+    expect(workflow.match(/^\s+environment: /gm)).toHaveLength(1);
+    expect(job("sign-and-notarize")).toContain("environment: macos-signing");
+    for (const name of credentials) expect(job("build-sea")).not.toContain(`secrets.${name}`);
+    for (const name of credentials) expect(job("publish")).not.toContain(`secrets.${name}`);
+  });
+
+  it("holds every environment job behind the publishing gate", () => {
+    for (const name of ["build-sea", "sign-and-notarize", "publish"]) {
+      const body = job(name);
+      if (!body.includes("environment: ")) continue;
+      expect(body, name).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
+    }
+  });
+
+  it("signs the binary the build job produced and hands the signed one on", () => {
+    expect(job("sign-and-notarize")).toContain("pnpm run sign:sea");
+    expect(job("sign-and-notarize")).toContain("actions/download-artifact");
+    expect(job("sign-and-notarize")).toContain("overwrite: true");
+    expect(job("publish")).toContain("needs: [build-sea, sign-and-notarize]");
+  });
+
+  it("tests the signed binary the way it tested the unsigned one", () => {
+    const command = /pnpm vitest run .+/;
+    expect(job("sign-and-notarize").match(command)?.[0]).toBe(job("build-sea").match(command)?.[0]);
+  });
+
+  it("restores the executable bit once, in an unconditional step of its own", () => {
+    const body = job("sign-and-notarize");
+
+    expect(body.match(/chmod \+x/g)).toHaveLength(1);
+    expect(body).toContain(
+      "- name: Restore the Executable Bit\n        run: chmod +x plugins/tracing/bin/langsmith-codex-tracing\n",
+    );
+  });
+
+  it("tests the ref for a tag once and shares that answer with the other jobs", () => {
     expect(workflow.match(/refs\/tags\//g)).toHaveLength(1);
     expect(workflow).toContain("PUBLISHING: ${{ startsWith(github.ref, 'refs/tags/') }}");
     expect(workflow).toContain("publishing: ${{ steps.release-gate.outputs.publishing }}");
-    expect(workflow).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
+    expect(workflow.match(/needs\.build-sea\.outputs\.publishing == 'true'/g)).toHaveLength(2);
   });
 });

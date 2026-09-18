@@ -7,7 +7,9 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { flagValue, installBinary, renderHooksFile } from "../src/install.js";
+import { RELEASES_PER_PAGE } from "../src/sea-constants.js";
 import type { InstallBinaryOptions } from "../src/sea-models.js";
+import { fetchReleases } from "../src/updater-releases.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:fs/promises")>()),
@@ -168,7 +170,7 @@ it.each([
 
   await install({ tag, source: tag ? path.join(home, "downloaded") : undefined, fetchImpl });
 
-  expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=30`);
+  expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=100`);
   expect(fetchImpl.mock.calls[1][0]).toEqual(new URL(`http://releases.test/download/${wanted}`));
   expect(await fs.readFile(installed)).toEqual(Buffer.from(BODY));
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
@@ -372,5 +374,83 @@ describe.runIf(binaryExists)("installing the binary", () => {
     const stop = await fireHook("Stop", "work");
     expect(stop.stderr).toBe("");
     expect(stop.stdout).toBe("");
+  });
+});
+
+describe("listing releases", () => {
+  it("asks GitHub for the same page size install.sh uses", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(Response.json([]));
+
+    await fetchReleases(fetchImpl, RELEASE_API, "0.1.0");
+
+    expect(RELEASES_PER_PAGE).toBe(100);
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${RELEASE_API}?per_page=100`);
+    expect(readFileSync(new URL("install.sh", repoRoot), "utf8")).toContain(
+      `RELEASE_PAGE_SIZE=${RELEASES_PER_PAGE}`,
+    );
+  });
+});
+
+describe("the publish version gate", () => {
+  const workflow = () => readFileSync(new URL(".github/workflows/build-sea.yml", repoRoot), "utf8");
+
+  function stepScript(name: string): string {
+    const lines = workflow().split("\n");
+    const step = lines.findIndex((line) => line.trim() === `- name: ${name}`);
+    expect(step).toBeGreaterThan(-1);
+    const start = lines.findIndex((line, index) => index > step && line.trim() === "run: |");
+    expect(start).toBeGreaterThan(step);
+    const indent = lines[start].search(/\S/) + 2;
+    const body: string[] = [];
+    for (let index = start + 1; index < lines.length; index += 1) {
+      if (lines[index].trim() !== "" && lines[index].search(/\S/) < indent) break;
+      body.push(lines[index].slice(indent));
+    }
+    return body.join("\n");
+  }
+
+  async function runGate(version: string, tag: string) {
+    const manifest = path.join(home, "plugins", "tracing", ".codex-plugin");
+    await fs.mkdir(manifest, { recursive: true });
+    await fs.writeFile(path.join(manifest, "plugin.json"), JSON.stringify({ version }));
+    return run("bash", ["-c", stepScript("Check the Version Matches the Tag")], { TAG: tag });
+  }
+
+  it("passes when the manifest version equals the tag", async () => {
+    const result = await runGate("0.4.0", "0.4.0");
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("matches tag 0.4.0");
+  });
+
+  it.each([
+    ["the tag is ahead", "0.1.0", "9.9.9"],
+    ["the tag is behind", "0.4.0", "0.3.1"],
+    ["the tag carries a v prefix", "0.1.0", "v0.1.0"],
+    ["the tag is a prerelease of the same version", "0.1.0", "0.1.0-beta.1"],
+    ["the manifest was never bumped", "0.1.0", "0.2.0"],
+  ])("fails when %s", async (_label, version, tag) => {
+    const result = await runGate(version, tag);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(`plugin.json version ${version} does not match tag ${tag}`);
+  });
+
+  it("reads the manifest this repository actually ships", async () => {
+    const shipped = JSON.parse(
+      readFileSync(new URL("plugins/tracing/.codex-plugin/plugin.json", repoRoot), "utf8"),
+    );
+
+    expect(typeof shipped.version).toBe("string");
+    expect((await runGate(shipped.version, shipped.version)).code).toBe(0);
+  });
+
+  it("gates the check and the publish job on one ref test", () => {
+    const yaml = workflow();
+
+    expect(yaml).toContain("publishing: ${{ steps.release-gate.outputs.publishing }}");
+    expect(yaml).toContain("if: ${{ steps.release-gate.outputs.publishing == 'true' }}");
+    expect(yaml).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
+    expect(yaml.match(/refs\/tags\//g)).toHaveLength(1);
   });
 });

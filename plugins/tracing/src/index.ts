@@ -5,13 +5,19 @@ import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { runInstall } from "./install.js";
 import { SEA_EXECUTABLE_NAME } from "./sea-constants.js";
+import { pluginShouldStandDown } from "./stand-down.js";
 import { updateFromGitHub } from "./updater.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
-import { readStdin } from "./utils/stdin.js";
+import { drainStdin, readStdin } from "./utils/stdin.js";
 
 export async function runHook() {
+  if (await pluginShouldStandDown()) {
+    await drainStdin();
+    return;
+  }
+
   const content = await readStdin<{
     session_id: string;
     turn_id: string;

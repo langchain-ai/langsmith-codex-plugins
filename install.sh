@@ -42,8 +42,9 @@ Environment variables:
   LANGSMITH_CODEX_RELEASES_API    GitHub releases API to install from
   LANGSMITH_CODEX_DOWNLOAD_BASE   Release download base URL
 
-Only macOS arm64 is published. Disable the tracing Codex plugin first, or every
-turn is traced twice, and restart Codex when this finishes to trust the hooks.
+Only macOS arm64 is published. Leave the tracing Codex plugin enabled. It stops
+tracing once the binary's hooks are registered. Restart Codex when the install
+finishes. Trust the new hooks when it prompts.
 HELP
 }
 

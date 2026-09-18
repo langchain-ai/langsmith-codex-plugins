@@ -38,6 +38,8 @@ Current support is based on the released [Codex 0.153.4 UserPromptSubmit impleme
 
 The same integration as the plugin, delivered as one file. It carries its own Node runtime so it needs no Node on your PATH. You install and update it yourself. The plugin is the supported path. This binary is the beta we are trialling and macOS arm64 is the only build.
 
+The plugin stops tracing while the binary is installed and registered as a hook.
+
 Two things are not live yet, so the command below fails today:
 
 - No release carries the binary. Build it with `pnpm build:sea` and run that binary with `--install`.

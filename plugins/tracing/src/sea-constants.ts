@@ -7,7 +7,7 @@ export const DEFAULT_RELEASE_API =
   "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";
 export const RELEASE_DOWNLOAD_PREFIX =
   "https://github.com/langchain-ai/langsmith-codex-plugins/releases/download/";
-export const RELEASES_PER_PAGE = 30;
+export const RELEASES_PER_PAGE = 100;
 
 export const INSTALL_DIR_NAME = ".langsmith";
 export const LOCK_FILE_NAME = ".update.lock";
@@ -19,3 +19,5 @@ export const MAX_CHECKSUM_BYTES = 1024;
 export const LIST_TIMEOUT_MS = 15_000;
 export const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
 export const CODESIGN_TIMEOUT_MS = 120_000;
+
+export const CODEX_PLUGIN_SELECTOR = "tracing@langsmith-codex-plugins";

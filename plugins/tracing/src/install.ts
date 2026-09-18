@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import seaHooks from "../hooks/hooks.sea.json" with { type: "json" };
+import { printStandDownNotice } from "./plugin-status.ts";
 import { DEFAULT_RELEASE_API, SEA_EXECUTABLE_NAME } from "./sea-constants.ts";
 import type {
   HookEvents,
@@ -206,13 +207,11 @@ export async function runInstall(options: {
     console.log(`Installed the LangSmith Codex tracing binary from ${from}`);
     console.log(`  binary:  ${installed.binary}`);
     console.log(`  hooks:   ${installed.hooks}`);
+    await printStandDownNotice();
     console.log("");
     console.log("Next:");
-    console.log(
-      '  1. Disable the "tracing" Codex plugin if it is enabled, or every turn traces twice.',
-    );
-    console.log("  2. Configure credentials as described in the README.");
-    console.log("  3. Restart Codex, then trust these hooks when it prompts.");
+    console.log("  1. Configure credentials as described in the README.");
+    console.log("  2. Restart Codex, then trust these hooks when it prompts.");
   } catch (error) {
     console.error(`install failed: ${error}`);
     process.exitCode = 1;
