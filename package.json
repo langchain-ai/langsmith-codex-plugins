@@ -30,6 +30,7 @@
   "scripts": {
     "build": "tsdown --config plugins/tracing/tsdown.config.ts",
     "build:sea": "node tsdown.sea.config.ts",
+    "sign:sea": "node scripts/sign.sea.ts",
     "test": "vitest",
     "format": "oxfmt",
     "lint:dist": "pnpm run build && git diff --exit-code -- plugins/tracing/dist/index.mjs",

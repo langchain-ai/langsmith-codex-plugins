@@ -80,6 +80,7 @@ pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
 pnpm build:sea     # Build the unsigned macOS arm64 binary
+pnpm sign:sea      # Sign and notarize it when the Apple credentials exist
 ```
 
 `pnpm build:sea` writes a standalone binary to `plugins/tracing/bin/`. It runs the tracing hook on machines with no Node installed. Only macOS arm64 is supported and it needs a newer Node than the rest of the repo. The build checks both and tells you which one failed.
@@ -92,6 +93,8 @@ The binary is not Apple signed so macOS quarantines a download. Clear that befor
 chmod +x <downloaded-binary>
 xattr -d com.apple.quarantine <downloaded-binary>
 ```
+
+`pnpm sign:sea` replaces that with a Developer ID signature and notarizes the result. It skips while any of `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` is unset. Store `CSC_LINK` and `APPLE_API_KEY` base64 encoded with `base64 -i <file>`. `macos-entitlements.plist` grants `allow-jit`, without which the binary aborts with `Failed to reserve virtual memory for CodeRange` under the hardened runtime. Apple staples no ticket to a bare executable, so a notarized binary still needs one online Gatekeeper check on first run.
 
 ### Installing the binary
 

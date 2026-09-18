@@ -8,9 +8,11 @@ on:
   pull_request:
     paths:
       - .github/workflows/build-sea.yml
+      - macos-entitlements.plist
       - tsdown.sea.config.ts
       - sea-config.json
       - package.json
+      - scripts/sign.sea.ts
       - plugins/tracing/hooks/hooks.sea.json
       - plugins/tracing/src/index.ts
       - plugins/tracing/src/install.ts
@@ -23,6 +25,7 @@ on:
       - plugins/tracing/src/updater.ts
       - plugins/tracing/test/install-sea.test.ts
       - plugins/tracing/test/sea.test.ts
+      - plugins/tracing/test/sign-sea.test.ts
   # The only way to publish. A tag push deliberately does not trigger this.
   workflow_dispatch:
 
@@ -37,8 +40,20 @@ jobs:
   build-sea:
     name: Build Unsigned Binary
     runs-on: macos-26
+    outputs:
+      publishing: ${{ steps.release-gate.outputs.publishing }}
+    env:
+      HAS_APPLE_CREDENTIALS: >-
+        ${{ secrets.CSC_LINK != '' && secrets.CSC_KEY_PASSWORD != '' && secrets.APPLE_API_KEY != ''
+        && secrets.APPLE_API_KEY_ID != '' && secrets.APPLE_API_ISSUER != '' }}
 
     steps:
+      - name: Decide Whether the Build Is Being Released
+        id: release-gate
+        env:
+          PUBLISHING: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: echo "publishing=${PUBLISHING}" >> "$GITHUB_OUTPUT"
+
       - name: Check Out the Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -59,6 +74,16 @@ jobs:
       - name: Build the Unsigned Binary
         run: pnpm run build:sea
 
+      - name: Sign and Notarize the Binary
+        if: steps.release-gate.outputs.publishing == 'true' && env.HAS_APPLE_CREDENTIALS == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+        run: pnpm run sign:sea
+
       - name: Test the Binary
         run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
 
@@ -74,7 +99,7 @@ jobs:
     name: Publish Unsigned Binary
     needs: build-sea
     # A push to main runs this workflow too, so gate publishing on a tag.
-    if: ${{ github.event_name != 'pull_request' && github.ref_type == 'tag' }}
+    if: ${{ needs.build-sea.outputs.publishing == 'true' }}
     # The publish job only moves the artifact, so it does not need a Mac.
     runs-on: ubuntu-latest
 
