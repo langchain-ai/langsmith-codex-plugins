@@ -17216,7 +17216,7 @@ const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 /** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.1.0";
+const LS_INTEGRATION_VERSION = "0.2.0-beta.1";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -19044,7 +19044,7 @@ function unknownFlags() {
 }
 async function runUpdate() {
 	try {
-		const result = await updateFromGitHub({ currentVersion: "0.1.0" });
+		const result = await updateFromGitHub({ currentVersion: "0.2.0-beta.1" });
 		console.log(result.status === "updated" ? `updated to ${result.version}` : result.status);
 	} catch (error) {
 		console.error(`update failed: ${error}`);
@@ -19053,7 +19053,7 @@ async function runUpdate() {
 }
 const unrecognised = unknownFlags();
 if (wasInvokedWith("--help") || wasInvokedWith("-h")) console.log(USAGE);
-else if (wasInvokedWith("--version") || wasInvokedWith("-v")) console.log("0.1.0");
+else if (wasInvokedWith("--version") || wasInvokedWith("-v")) console.log("0.2.0-beta.1");
 else if (unrecognised.length > 0) {
 	console.error(`unknown option: ${unrecognised[0]}`);
 	console.error(USAGE);
