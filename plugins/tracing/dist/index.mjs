@@ -17269,12 +17269,24 @@ function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");
 }
 function parseSemver(version) {
-	const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
-	return match ? [
-		Number(match[1]),
-		Number(match[2]),
-		Number(match[3])
-	] : void 0;
+	const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)\.(\d+))?$/.exec(version.trim());
+	if (!match) return void 0;
+	return {
+		numbers: [
+			Number(match[1]),
+			Number(match[2]),
+			Number(match[3])
+		],
+		final: match[4] === void 0 ? 1 : 0,
+		label: match[4] ?? "",
+		iteration: match[5] === void 0 ? 0 : Number(match[5])
+	};
+}
+function compareSemver(next, installed) {
+	for (let index = 0; index < next.numbers.length; index += 1) if (next.numbers[index] !== installed.numbers[index]) return next.numbers[index] - installed.numbers[index];
+	if (next.final !== installed.final) return next.final - installed.final;
+	if (next.label !== installed.label) return next.label < installed.label ? -1 : 1;
+	return next.iteration - installed.iteration;
 }
 function isSemver(version) {
 	return parseSemver(version) !== void 0;
@@ -17283,8 +17295,7 @@ function isVersionNewer(candidate, current) {
 	const next = parseSemver(candidate);
 	const installed = parseSemver(current);
 	if (!next || !installed) return false;
-	for (let index = 0; index < next.length; index += 1) if (next[index] !== installed[index]) return next[index] > installed[index];
-	return false;
+	return compareSemver(next, installed) > 0;
 }
 function isReleaseAsset(value) {
 	if (!value || typeof value !== "object") return false;

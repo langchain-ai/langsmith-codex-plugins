@@ -61,3 +61,28 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: Shellcheck
+        run: shellcheck install.sh test/install/cases.sh test/install/variants.sh
+
+  installer:
+    name: Installer Shell Tests
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: Test install.sh
+        run: /bin/bash test/install/cases.sh
+
+      - name: Check the tests catch a broken install.sh
+        run: /bin/bash test/install/variants.sh

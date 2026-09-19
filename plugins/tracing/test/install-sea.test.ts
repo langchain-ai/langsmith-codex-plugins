@@ -75,12 +75,12 @@ function install(overrides: Partial<InstallBinaryOptions> = {}) {
   });
 }
 
-function releaseFetch(tags: string[]) {
+function releaseFetch(tags: string[], prereleases: string[] = []) {
   const digest = `sha256:${createHash("sha256").update(BODY).digest("hex")}`;
   const releases = tags.map((tag) => ({
     tag_name: tag,
     draft: false,
-    prerelease: false,
+    prerelease: prereleases.includes(tag),
     assets: [
       {
         name: `${EXECUTABLE}-darwin-arm64-${tag}-unsigned`,
@@ -172,6 +172,19 @@ it.each([
   expect(fetchImpl.mock.calls[1][0]).toEqual(new URL(`http://releases.test/download/${wanted}`));
   expect(await fs.readFile(installed)).toEqual(Buffer.from(BODY));
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
+});
+
+it("installs a prerelease only when --tag names it", async () => {
+  const tags = ["0.4.0", "0.5.0-beta.1"];
+  const named = releaseFetch(tags, ["0.5.0-beta.1"]);
+
+  await install({ tag: "0.5.0-beta.1", fetchImpl: named });
+
+  expect(named.mock.calls[1][0]).toEqual(new URL("http://releases.test/download/0.5.0-beta.1"));
+
+  const unpinned = releaseFetch(tags, ["0.5.0-beta.1"]);
+  await install({ source: undefined, fetchImpl: unpinned });
+  expect(unpinned.mock.calls[1][0]).toEqual(new URL("http://releases.test/download/0.4.0"));
 });
 
 describe("writing the hooks file", () => {
