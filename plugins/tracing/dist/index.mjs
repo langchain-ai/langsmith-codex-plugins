@@ -17257,6 +17257,66 @@ const LOCK_FILE_NAME = ".update.lock";
 const LIST_TIMEOUT_MS = 15e3;
 const DOWNLOAD_TIMEOUT_MS = 3e5;
 const CODESIGN_TIMEOUT_MS = 12e4;
+const CODEX_PLUGIN_SELECTOR = "tracing@langsmith-codex-plugins";
+//#endregion
+//#region src/plugin-status.ts
+const PLUGIN_TABLE = /^\[\s*plugins\s*\.\s*(.+?)\s*\]\s*(?:#.*)?$/;
+const ENABLED_KEY = /^enabled\s*=\s*(true|false)\s*(?:#.*)?$/;
+function unquoted(key) {
+	const quote = key[0];
+	return (quote === "\"" || quote === "'") && key.length > 1 && key.endsWith(quote) ? key.slice(1, -1) : key;
+}
+function pluginEnabledInToml(toml) {
+	let inOurTable = false;
+	for (const raw of toml.split("\n")) {
+		const line = raw.trim();
+		if (line.startsWith("[")) {
+			const table = PLUGIN_TABLE.exec(line);
+			inOurTable = table !== null && unquoted(table[1]) === "tracing@langsmith-codex-plugins";
+			continue;
+		}
+		if (!inOurTable) continue;
+		const enabled = ENABLED_KEY.exec(line);
+		if (enabled) return enabled[1] === "true";
+	}
+}
+function defaultConfigFile(projectScoped) {
+	if (projectScoped) return nodePath.join(process.cwd(), ".codex", "config.toml");
+	return nodePath.join(process.env.CODEX_HOME ?? nodePath.join(os.homedir(), ".codex"), "config.toml");
+}
+async function pluginEnabledIn(configFile) {
+	try {
+		return pluginEnabledInToml(await nodeFsPromises.readFile(configFile, "utf-8"));
+	} catch {
+		return;
+	}
+}
+async function codexPluginEnabled() {
+	const projectConfig = defaultConfigFile(true);
+	const userConfig = defaultConfigFile(false);
+	for (const configFile of [projectConfig, userConfig]) {
+		const enabled = await pluginEnabledIn(configFile);
+		if (enabled !== void 0) return enabled;
+	}
+	return false;
+}
+async function standDownNotice() {
+	if (!await codexPluginEnabled()) return [];
+	return [
+		"",
+		"LangSmith tracing is now installed twice, once as a Codex plugin and once as",
+		"this binary. Only the binary traces. The plugin still starts on every hook,",
+		"so remove it with:",
+		`  codex plugin remove ${CODEX_PLUGIN_SELECTOR}`
+	];
+}
+async function printStandDownNotice(log = console.log) {
+	try {
+		for (const line of await standDownNotice()) log(line);
+	} catch {
+		return;
+	}
+}
 //#endregion
 //#region src/updater-utils.ts
 function isPublishedSeaTarget(runtimePlatform, runtimeArch) {
@@ -17444,7 +17504,7 @@ function newestInstallableRelease(releases, currentVersion) {
 	return best;
 }
 async function fetchReleases(fetchImpl, releaseApi, currentVersion) {
-	const response = await fetchImpl(`${releaseApi}?per_page=30`, {
+	const response = await fetchImpl(`${releaseApi}?per_page=100`, {
 		headers: githubHeaders(currentVersion),
 		signal: AbortSignal.timeout(LIST_TIMEOUT_MS)
 	});
@@ -17583,14 +17643,50 @@ async function runInstall(options) {
 		console.log(`Installed the LangSmith Codex tracing binary from ${from}`);
 		console.log(`  binary:  ${installed.binary}`);
 		console.log(`  hooks:   ${installed.hooks}`);
+		await printStandDownNotice();
 		console.log("");
 		console.log("Next:");
-		console.log("  1. Disable the \"tracing\" Codex plugin if it is enabled, or every turn traces twice.");
-		console.log("  2. Configure credentials as described in the README.");
-		console.log("  3. Restart Codex, then trust these hooks when it prompts.");
+		console.log("  1. Configure credentials as described in the README.");
+		console.log("  2. Restart Codex, then trust these hooks when it prompts.");
 	} catch (error) {
 		console.error(`install failed: ${error}`);
 		process.exitCode = 1;
+	}
+}
+//#endregion
+//#region src/stand-down.ts
+async function binaryExists(binary) {
+	try {
+		await nodeFsPromises.stat(binary);
+		return true;
+	} catch {
+		return false;
+	}
+}
+function registeredCommands(parsed) {
+	const events = parsed?.hooks;
+	if (!events || typeof events !== "object") return [];
+	return Object.values(events).flatMap((groups) => Array.isArray(groups) ? groups : []).flatMap((group) => Array.isArray(group?.hooks) ? group.hooks : []).map((hook) => hook?.command).filter((command) => typeof command === "string");
+}
+async function hooksFileRunsBinary(hooksFile, binary) {
+	const written = /* @__PURE__ */ new Set([binary, quoteForShell(binary)]);
+	try {
+		return registeredCommands(JSON.parse(await nodeFsPromises.readFile(hooksFile, "utf-8"))).some((command) => written.has(command.trim()));
+	} catch {
+		return false;
+	}
+}
+async function pluginShouldStandDown() {
+	try {
+		if (isSea()) return false;
+		const binary = installedExecutablePath(defaultInstallDir());
+		if (!await binaryExists(binary)) return false;
+		const projectHooks = defaultHooksFile(true);
+		const userHooks = defaultHooksFile(false);
+		for (const hooksFile of [projectHooks, userHooks]) if (await hooksFileRunsBinary(hooksFile, binary)) return true;
+		return false;
+	} catch {
+		return false;
 	}
 }
 //#endregion
@@ -18843,6 +18939,22 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 }
 //#endregion
 //#region src/utils/stdin.ts
+const DRAIN_TIMEOUT_MS = 2e3;
+function drainStdin(timeoutMs = DRAIN_TIMEOUT_MS) {
+	return new Promise((resolve) => {
+		if (process.stdin.isTTY) return resolve();
+		let timer;
+		const finish = () => {
+			clearTimeout(timer);
+			process.stdin.pause();
+			resolve();
+		};
+		timer = setTimeout(finish, timeoutMs);
+		process.stdin.once("end", finish);
+		process.stdin.once("error", finish);
+		process.stdin.resume();
+	});
+}
 function readStdin() {
 	let buffer = "";
 	return new Promise((resolve, reject) => {
@@ -18862,6 +18974,10 @@ function readStdin() {
 //#endregion
 //#region src/index.ts
 async function runHook() {
+	if (await pluginShouldStandDown()) {
+		await drainStdin();
+		return;
+	}
 	const content = await readStdin();
 	if (content.hook_event_name === "UserPromptSubmit") {
 		const result = await handlePromptSubmit(content);

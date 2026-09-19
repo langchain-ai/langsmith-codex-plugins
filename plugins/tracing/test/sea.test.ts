@@ -87,6 +87,24 @@ describe.runIf(binaryExists)("the standalone binary", () => {
     expect(existsSync(path.join(codexHome, ".codex/langsmith-state.privacy.json"))).toBe(false);
   });
 
+  it("never stands down for its own registered hooks", async () => {
+    const installed = path.join(codexHome, ".langsmith", "langsmith-codex-tracing");
+    await fs.mkdir(path.dirname(installed), { recursive: true });
+    await fs.writeFile(installed, "#!/bin/sh\n", { mode: 0o755 });
+    await fs.mkdir(path.join(codexHome, ".codex"), { recursive: true });
+    await fs.writeFile(
+      path.join(codexHome, ".codex", "hooks.json"),
+      JSON.stringify({
+        hooks: {
+          UserPromptSubmit: [{ hooks: [{ type: "command", command: `'${installed}'` }] }],
+        },
+      }),
+    );
+    const result = await runHook("UserPromptSubmit", "langsmith-tracing:mute");
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout).decision).toBe("block");
+  });
+
   it("does nothing on a hook event it does not handle", async () => {
     const result = await runHook("SessionStart", "langsmith-tracing:mute", true);
     expect(result.code).toBe(0);
