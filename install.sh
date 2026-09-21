@@ -116,7 +116,18 @@ require_supported_platform() {
   local platform
   platform="$(uname -s)-$(uname -m)"
   if [[ "$platform" != "Darwin-arm64" ]]; then
-    die "The standalone binary is published only for macOS arm64, not $platform. Install the tracing Codex plugin instead."
+    die "The standalone binary is macOS arm64 only. This machine reports $platform.
+
+The plugin does the same tracing and works on Windows, Linux and Intel Macs.
+
+  codex plugin marketplace add langchain-ai/langsmith-codex-plugins
+
+Then enable it in ~/.codex/config.toml:
+
+  [plugins.\"tracing@langsmith-codex-plugins\"]
+  enabled = true
+
+Restart Codex, then run /hooks to trust the plugin's hooks."
   fi
 }
 
