@@ -17328,7 +17328,7 @@ function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");
 }
 function parseSemver(version) {
-	const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)\.(\d+))?$/.exec(version.trim());
+	const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)(?:\.(\d+))?)?$/.exec(version.trim());
 	if (!match) return void 0;
 	return {
 		numbers: [
