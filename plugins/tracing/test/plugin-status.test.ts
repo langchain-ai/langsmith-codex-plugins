@@ -145,7 +145,7 @@ describe("choosing which config.toml answers", () => {
 
   it("falls through a project config that says nothing about the plugin", async () => {
     await writeUserConfig(ENABLED_TOML);
-    await writeProjectConfig("[features]\nplugin_hooks = true\n");
+    await writeProjectConfig("[features]\nhooks = true\n");
 
     expect(await codexPluginEnabled()).toBe(true);
   });
@@ -204,7 +204,7 @@ describe("the notice itself", () => {
 
   it.each([
     ["the plugin is disabled", DISABLED_TOML],
-    ["the config says nothing about the plugin", "[features]\nplugin_hooks = true\n"],
+    ["the config says nothing about the plugin", "[features]\nhooks = true\n"],
     ["the config is malformed", "}{ not toml at all\n"],
   ])("says nothing when %s", async (_label, toml) => {
     await writeUserConfig(toml);

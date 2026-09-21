@@ -1085,3 +1085,53 @@ it("discovers subagents from current Codex v2 activity items", async () => {
     "019dbc03-79ee-7ee0-b40b-26920c74c524",
   ]);
 });
+
+const EDITING_FILE = path.join("/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl");
+const EDITING_TURN = "019dbc00-ede4-77c2-9e7a-b6876efeab9b";
+const EARLIER_TURN = "019dbc00-1111-77c2-9e7a-b6876efeab9b";
+
+// A rollout that already holds a completed turn the plugin never traced, as a
+// resumed thread or a fork does, followed by the turn this Stop hook fired for.
+async function preloadResumedThread() {
+  const files = await preloadTestFiles({ makeTurnIncomplete: false });
+  files[EDITING_FILE] =
+    files[EDITING_FILE].replaceAll(EDITING_TURN, EARLIER_TURN) + files[EDITING_FILE];
+  return files;
+}
+
+it("traces only the live turn on the first Stop for a resumed rollout", async () => {
+  const { client, callSpy } = mockClient();
+  vol.fromJSON(await preloadResumedThread());
+
+  seedFullLaunchEvidence();
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const turnIds = Object.values(tree.data)
+    .filter((run) => run.name === "openai.codex")
+    .map((run) => run.extra?.metadata?.turn_id);
+
+  // The backlog is not replayed...
+  expect.soft(turnIds).toEqual([EDITING_TURN]);
+  // ...but it is recorded, so the next Stop is an ordinary one.
+  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EARLIER_TURN}\n${EDITING_TURN}\n`);
+});
+
+it("still traces a backlog turn once the rollout has a traced history", async () => {
+  const { client, callSpy } = mockClient();
+  const files = await preloadResumedThread();
+  files[`${EDITING_FILE}.langsmith`] = "some-earlier-turn\n";
+  vol.fromJSON(files);
+
+  seedFullLaunchEvidence();
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const turnIds = Object.values(tree.data)
+    .filter((run) => run.name === "openai.codex")
+    .map((run) => run.extra?.metadata?.turn_id);
+
+  expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
+});

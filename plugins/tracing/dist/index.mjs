@@ -18662,7 +18662,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		}, {
 			...options,
 			parentRunTree: parent,
-			debugNow
+			debugNow,
+			replayHistory: true
 		});
 	}
 	for (const output of outputs) {
@@ -18781,6 +18782,7 @@ async function convertToRunTree(input, options) {
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
 	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
+	const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
@@ -18904,15 +18906,15 @@ async function convertToRunTree(input, options) {
 					turnNumber += 1;
 					task.turnNumber = turnNumber;
 				}
-				if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
-					await postTurn(task, sessionMeta, privacyTurnId, {
-						rolloutFile: input.transcript_path,
-						options
-					});
-					if (completedTurnId != null) {
-						uploadedTurnIds.add(completedTurnId);
-						await markTurnUploaded(input.transcript_path, completedTurnId);
-					}
+				const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+				const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
+				if (!alreadyUploaded && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
+					rolloutFile: input.transcript_path,
+					options
+				});
+				if (completedTurnId != null && !alreadyUploaded) {
+					uploadedTurnIds.add(completedTurnId);
+					await markTurnUploaded(input.transcript_path, completedTurnId);
 				}
 				task = void 0;
 			}
