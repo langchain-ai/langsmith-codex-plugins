@@ -17,6 +17,9 @@ vi.mock("node:fs/promises", async (importOriginal) => ({
 
 const repoRoot = new URL("../../../", import.meta.url);
 const seaSettings = JSON.parse(readFileSync(new URL("sea-config.json", repoRoot), "utf8"));
+const PLUGIN_VERSION = JSON.parse(
+  readFileSync(new URL("plugins/tracing/.codex-plugin/plugin.json", repoRoot), "utf8"),
+).version;
 const builtBinary = fileURLToPath(new URL(seaSettings.output, repoRoot));
 const binaryExists = existsSync(builtBinary);
 const EXECUTABLE = "langsmith-codex-tracing";
@@ -358,7 +361,7 @@ describe.runIf(binaryExists)("installing the binary", () => {
     expect(statSync(installed).mode & 0o777).toBe(0o755);
     expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
     expect(commandFor(hooksFile(), "UserPromptSubmit")).toBe(`'${installed}'`);
-    expect((await run(installed, ["--version"], {})).stdout.trim()).toBe("0.1.0");
+    expect((await run(installed, ["--version"], {})).stdout.trim()).toBe(PLUGIN_VERSION);
 
     const submit = await fireHook("UserPromptSubmit", "langsmith-tracing:mute");
     expect(submit.stderr).toBe("");
