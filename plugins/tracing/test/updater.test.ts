@@ -8,6 +8,7 @@ import { MAX_BINARY_BYTES } from "../src/sea-constants.js";
 import { newestInstallableRelease } from "../src/updater-releases.js";
 import {
   isPublishedSeaTarget,
+  isSemver,
   isVersionNewer,
   parseReleases,
   releaseAssetName,
@@ -80,7 +81,7 @@ function opts(fetchImpl: typeof fetch, extra: Record<string, unknown> = {}) {
 it("targets only newer stable releases carrying this plugin's asset, on the published platform", () => {
   expect(isVersionNewer("1.0.0", "0.99.99")).toBe(true);
   expect(isVersionNewer("v0.2.0-beta.1", "0.1.0")).toBe(true);
-  expect(isVersionNewer("v0.2.0-beta", "0.1.0")).toBe(false);
+  expect(isVersionNewer("v0.2.0-beta", "0.1.0")).toBe(true);
   expect(isVersionNewer("v0.2.0-Beta.1", "0.1.0")).toBe(false);
   expect(isVersionNewer("latest", "0.1.0")).toBe(false);
   expect(releaseAssetName("v0.1.0")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0`);
@@ -117,6 +118,20 @@ it("orders a prerelease below the release it leads to", () => {
   const listed = parseReleases([prerelease, release("0.4.0")]);
   expect(newestInstallableRelease(listed)?.tag_name).toBe("0.4.0");
   expect(newestInstallableRelease(parseReleases([prerelease]))).toBeUndefined();
+});
+
+it("parses a bare prerelease and sorts it as the first iteration of its label", () => {
+  expect(isSemver("0.4.0-beta")).toBe(true);
+  expect(isSemver("v0.4.0-beta")).toBe(true);
+  expect(isSemver("0.4.0-Beta")).toBe(false);
+
+  expect(isVersionNewer("0.4.0-beta.1", "0.4.0-beta")).toBe(true);
+  expect(isVersionNewer("0.4.0-beta", "0.4.0-beta.1")).toBe(false);
+  expect(isVersionNewer("0.4.0", "0.4.0-beta")).toBe(true);
+  expect(isVersionNewer("0.4.0-beta", "0.4.0")).toBe(false);
+  expect(isVersionNewer("0.4.0-beta", "0.4.0-alpha")).toBe(true);
+  expect(isVersionNewer("0.4.0-alpha", "0.4.0-beta")).toBe(false);
+  expect(isVersionNewer("0.4.0-beta", "0.4.0-beta")).toBe(false);
 });
 
 it("updates an installed prerelease to the release, and never to another prerelease", async () => {

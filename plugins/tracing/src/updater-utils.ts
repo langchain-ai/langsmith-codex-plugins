@@ -28,7 +28,7 @@ export type ParsedSemver = {
 };
 
 function parseSemver(version: string): ParsedSemver | undefined {
-  const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)\.(\d+))?$/.exec(version.trim());
+  const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)(?:\.(\d+))?)?$/.exec(version.trim());
   if (!match) return undefined;
   return {
     numbers: [Number(match[1]), Number(match[2]), Number(match[3])],

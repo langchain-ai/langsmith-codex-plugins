@@ -17328,7 +17328,7 @@ function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");
 }
 function parseSemver(version) {
-	const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)\.(\d+))?$/.exec(version.trim());
+	const match = /^v?(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)(?:\.(\d+))?)?$/.exec(version.trim());
 	if (!match) return void 0;
 	return {
 		numbers: [
@@ -17515,6 +17515,13 @@ async function fetchReleases(fetchImpl, releaseApi, currentVersion) {
 function quoteForShell(value) {
 	return `'${value.split("'").join(`'\\''`)}'`;
 }
+function underHome(target, home = os.homedir()) {
+	if (target === home) return "~";
+	return target.startsWith(`${home}${nodePath.sep}`) ? `~${nodePath.sep}${target.slice(home.length + 1)}` : target;
+}
+function hookCount(events) {
+	return Object.values(events).reduce((total, groups) => total + groups.reduce((inGroups, group) => inGroups + (group.hooks ?? []).length, 0), 0);
+}
 function defaultHooksFile(projectScoped, cwd = process.cwd()) {
 	if (projectScoped) return nodePath.join(cwd, ".codex", "hooks.json");
 	return nodePath.join(process.env.CODEX_HOME ?? nodePath.join(os.homedir(), ".codex"), "hooks.json");
@@ -17593,7 +17600,9 @@ async function downloadExecutable(options, installDir, verifySignature) {
 	const releases = await fetchReleases(fetchImpl, releaseApi, options.currentVersion ?? "0.0.0");
 	const release = options.tag ? releases.find((candidate) => candidate.tag_name === options.tag) : newestInstallableRelease(releases);
 	if (!release) throw new Error(options.tag ? `no published release is tagged ${options.tag}` : `no published release carries a ${releaseAssetName("<tag>")} asset`);
-	await installReleaseAsset(release, installDir, fetchImpl, releaseApi, versionFromTag(release.tag_name), verifySignature, `${process.pid}.${Date.now()}`);
+	const version = versionFromTag(release.tag_name);
+	await installReleaseAsset(release, installDir, fetchImpl, releaseApi, version, verifySignature, `${process.pid}.${Date.now()}`);
+	return version;
 }
 async function installBinary(options) {
 	const runtimePlatform = options.runtimePlatform ?? os.platform();
@@ -17608,14 +17617,16 @@ async function installBinary(options) {
 		recursive: true,
 		mode: 448
 	});
+	let version = options.currentVersion ?? "0.0.0";
 	if (copyable !== void 0) await copyExecutable(copyable, target, verifySignature);
-	else await downloadExecutable(options, installDir, verifySignature);
+	else version = await downloadExecutable(options, installDir, verifySignature);
 	const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
 	await nodeFsPromises.mkdir(nodePath.dirname(hooksFile), { recursive: true });
 	await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
 	return {
 		binary: target,
-		hooks: hooksFile
+		hooks: hooksFile,
+		version
 	};
 }
 function flagValue(argv, flag) {
@@ -17638,15 +17649,17 @@ async function runInstall(options) {
 			tag,
 			hooksFile
 		});
-		const from = tag ?? (options.source ? "this binary" : "the newest release");
-		console.log(`Installed the LangSmith Codex tracing binary from ${from}`);
-		console.log(`  binary:  ${installed.binary}`);
-		console.log(`  hooks:   ${installed.hooks}`);
+		const configFile = nodePath.join(nodePath.dirname(installed.hooks), "langsmith.json");
+		for (const line of [
+			`Installed ${SEA_EXECUTABLE_NAME} ${installed.version} to ${underHome(nodePath.dirname(installed.binary))}`,
+			`Registered ${hookCount(hooks)} hooks in ${underHome(installed.hooks)}`,
+			"",
+			"Next:",
+			`  1. Create ${underHome(configFile)} (if it doesn't exist already):`,
+			`       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
+			`  2. Restart Codex, then choose "Trust all and continue" when it asks`
+		]) console.log(line);
 		await printStandDownNotice();
-		console.log("");
-		console.log("Next:");
-		console.log("  1. Configure credentials as described in the README.");
-		console.log("  2. Restart Codex, then trust these hooks when it prompts.");
 	} catch (error) {
 		console.error(`install failed: ${error}`);
 		process.exitCode = 1;

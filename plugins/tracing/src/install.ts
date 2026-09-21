@@ -23,6 +23,21 @@ export function quoteForShell(value: string): string {
   return `'${value.split("'").join(`'\\''`)}'`;
 }
 
+function underHome(target: string, home = os.homedir()): string {
+  if (target === home) return "~";
+  return target.startsWith(`${home}${path.sep}`)
+    ? `~${path.sep}${target.slice(home.length + 1)}`
+    : target;
+}
+
+function hookCount(events: HookEvents): number {
+  return Object.values(events).reduce(
+    (total, groups) =>
+      total + groups.reduce((inGroups, group) => inGroups + (group.hooks ?? []).length, 0),
+    0,
+  );
+}
+
 export function defaultHooksFile(projectScoped: boolean, cwd = process.cwd()): string {
   if (projectScoped) return path.join(cwd, ".codex", "hooks.json");
   return path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"), "hooks.json");
@@ -122,7 +137,7 @@ async function downloadExecutable(
   options: InstallBinaryOptions,
   installDir: string,
   verifySignature: SignatureVerifier,
-): Promise<void> {
+): Promise<string> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const releaseApi =
     options.releaseApi ?? process.env.LANGSMITH_CODEX_RELEASE_API ?? DEFAULT_RELEASE_API;
@@ -138,20 +153,22 @@ async function downloadExecutable(
         : `no published release carries a ${releaseAssetName("<tag>")} asset`,
     );
   }
+  const version = versionFromTag(release.tag_name);
   await installReleaseAsset(
     release,
     installDir,
     fetchImpl,
     releaseApi,
-    versionFromTag(release.tag_name),
+    version,
     verifySignature,
     `${process.pid}.${Date.now()}`,
   );
+  return version;
 }
 
 export async function installBinary(
   options: InstallBinaryOptions,
-): Promise<{ binary: string; hooks: string }> {
+): Promise<{ binary: string; hooks: string; version: string }> {
   const runtimePlatform = options.runtimePlatform ?? os.platform();
   const runtimeArch = options.runtimeArch ?? os.arch();
   if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) {
@@ -167,14 +184,15 @@ export async function installBinary(
   const copyable = options.tag === undefined ? options.source : undefined;
 
   await fs.mkdir(installDir, { recursive: true, mode: 0o700 });
+  let version = options.currentVersion ?? "0.0.0";
   if (copyable !== undefined) await copyExecutable(copyable, target, verifySignature);
-  else await downloadExecutable(options, installDir, verifySignature);
+  else version = await downloadExecutable(options, installDir, verifySignature);
 
   const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
   await fs.mkdir(path.dirname(hooksFile), { recursive: true });
   await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
 
-  return { binary: target, hooks: hooksFile };
+  return { binary: target, hooks: hooksFile, version };
 }
 
 export function flagValue(argv: string[], flag: string): string | undefined {
@@ -203,15 +221,19 @@ export async function runInstall(options: {
       tag,
       hooksFile,
     });
-    const from = tag ?? (options.source ? "this binary" : "the newest release");
-    console.log(`Installed the LangSmith Codex tracing binary from ${from}`);
-    console.log(`  binary:  ${installed.binary}`);
-    console.log(`  hooks:   ${installed.hooks}`);
+    const configFile = path.join(path.dirname(installed.hooks), "langsmith.json");
+    for (const line of [
+      `Installed ${SEA_EXECUTABLE_NAME} ${installed.version} to ${underHome(path.dirname(installed.binary))}`,
+      `Registered ${hookCount(seaHooks.hooks)} hooks in ${underHome(installed.hooks)}`,
+      "",
+      "Next:",
+      `  1. Create ${underHome(configFile)} (if it doesn't exist already):`,
+      `       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
+      `  2. Restart Codex, then choose "Trust all and continue" when it asks`,
+    ]) {
+      console.log(line);
+    }
     await printStandDownNotice();
-    console.log("");
-    console.log("Next:");
-    console.log("  1. Configure credentials as described in the README.");
-    console.log("  2. Restart Codex, then trust these hooks when it prompts.");
   } catch (error) {
     console.error(`install failed: ${error}`);
     process.exitCode = 1;

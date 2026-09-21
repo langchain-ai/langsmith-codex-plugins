@@ -261,10 +261,17 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed the LangSmith Codex tracing binary");
+    expect(output.split("\n").slice(0, 7)).toEqual([
+      "Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith",
+      "Registered 2 hooks in ~/.codex/hooks.json",
+      "",
+      "Next:",
+      "  1. Create ~/.codex/langsmith.json (if it doesn't exist already):",
+      `       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
+      '  2. Restart Codex, then choose "Trust all and continue" when it asks',
+    ]);
     expect(output).toContain("installed twice");
     expect(output).toContain(REMOVE);
-    expect(output).toContain("Next:");
   });
 
   it.each([
@@ -276,19 +283,19 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed the LangSmith Codex tracing binary");
+    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
     expect(output).not.toContain("installed twice");
     expect(output).not.toContain("codex plugin remove");
-    expect(output).toContain("Next:");
+    expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
   });
 
   it("stays quiet and still succeeds when no config exists", async () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed the LangSmith Codex tracing binary");
+    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
     expect(output).not.toContain("installed twice");
-    expect(output).toContain("Next:");
+    expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
   });
 
   it("succeeds even when the config file cannot be read", async () => {
@@ -298,7 +305,7 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed the LangSmith Codex tracing binary");
-    expect(output).toContain("Next:");
+    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
+    expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
   });
 });
