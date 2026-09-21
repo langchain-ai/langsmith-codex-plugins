@@ -669,7 +669,7 @@ async function postTurn(
 
     await convertToRunTree(
       { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
-      { ...options, parentRunTree: parent, debugNow },
+      { ...options, parentRunTree: parent, debugNow, replayHistory: true },
     );
   }
 
@@ -841,6 +841,11 @@ export async function convertToRunTree(
     sessionsRoot?: string;
     privacyPath?: string;
     debugNow?: { now: number; startTime: number };
+    /**
+     * Post every turn the rollout holds, not just the one this hook fired for.
+     * Subagent rollouts are walked whole by design; the live Stop hook is not.
+     */
+    replayHistory?: boolean;
   },
 ) {
   let sessionMeta: Session | undefined;
@@ -882,6 +887,12 @@ export async function convertToRunTree(
   // same rollout file. Used to avoid replaying completed turns when the user
   // resumes or continues a conversation.
   const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
+  // First Stop for this rollout: the file can already hold turns we never
+  // traced -- a thread resumed after the plugin was installed, or a fork that
+  // copied its parent's turns. Uploading that whole backlog inside one Stop
+  // hook is what times the hook out, so record those turns as handled and
+  // trace from this turn on.
+  const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
   const events = await loadSession(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
@@ -1062,15 +1073,17 @@ export async function convertToRunTree(
           turnNumber += 1;
           task.turnNumber = turnNumber;
         }
-        if (completedTurnId == null || !uploadedTurnIds.has(completedTurnId)) {
+        const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+        const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
+        if (!alreadyUploaded && !isBacklog) {
           await postTurn(task, sessionMeta, privacyTurnId, {
             rolloutFile: input.transcript_path,
             options,
           });
-          if (completedTurnId != null) {
-            uploadedTurnIds.add(completedTurnId);
-            await markTurnUploaded(input.transcript_path, completedTurnId);
-          }
+        }
+        if (completedTurnId != null && !alreadyUploaded) {
+          uploadedTurnIds.add(completedTurnId);
+          await markTurnUploaded(input.transcript_path, completedTurnId);
         }
         task = undefined;
       }

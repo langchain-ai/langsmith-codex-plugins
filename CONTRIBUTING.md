@@ -36,9 +36,6 @@ The repository contains a marketplace manifest at `.agents/plugins/marketplace.j
 source_type = "local"
 source = "/absolute/path/to/langsmith-codex-plugins"
 
-[features]
-plugin_hooks = true
-
 [plugins."tracing@langsmith-codex-plugins"]
 enabled = true
 ```

@@ -101,6 +101,11 @@ async function upload(file: string, turnId: string) {
     ),
   );
 }
+// A first Stop for a rollout records its earlier turns without uploading them,
+// so give these cases a traced history to exercise the replay path itself.
+async function seedTracedHistory(file: string) {
+  await fs.writeFile(`${file}.langsmith`, "already-traced-turn\n");
+}
 function expectMuted(runs: any[]) {
   expect(runs.length).toBeGreaterThan(0);
   for (const run of runs) {
@@ -122,6 +127,7 @@ it("whole-rollout Stop and replay never upgrade older muted turns on unmute", as
     ...turn("private", "PRIVATE_OLD"),
     ...turn("future", "PUBLIC_FUTURE"),
   ]);
+  await seedTracedHistory(file);
   const runs = await upload(file, "future");
   expectMuted(runs.filter((run: any) => run.extra.metadata.turn_id === "private"));
   expect(
@@ -130,7 +136,7 @@ it("whole-rollout Stop and replay never upgrade older muted turns on unmute", as
       .some((run: any) => JSON.stringify(run).includes("PUBLIC_FUTURE")),
   ).toBe(true);
   expect(await upload(file, "future")).toEqual([]);
-  await fs.unlink(`${file}.langsmith`);
+  await seedTracedHistory(file);
   const replay = await upload(file, "future");
   expectMuted(replay.filter((run: any) => run.extra.metadata.turn_id === "private"));
 });
@@ -231,6 +237,7 @@ it.each([true, false])(
     else expect(JSON.stringify(direct)).toContain("PUBLIC_CHILD");
     await fs.unlink(`${child}.langsmith`);
     for (let attempt = 0; attempt < 2; attempt++) {
+      await seedTracedHistory(root);
       const runs = await upload(root, "next");
       expectMuted(
         runs.filter((run: any) => run.extra.metadata.turn_id === (muted ? "launch" : "next")),
