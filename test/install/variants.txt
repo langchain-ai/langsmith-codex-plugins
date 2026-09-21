@@ -52,3 +52,8 @@ the binary download is silent|||--progress-bar|||-s
 a bare suffix target is refused|||(-[a-z]+(\.[0-9]+)?)?$|||(-[a-z]+\.[0-9]+)?$
 the bare prerelease pattern is dropped|||-\([a-z][a-z]*\)$/\1 \2 \3 0 \4 0 &/p|||-\([a-z][a-z]*\)zzz$/\1 \2 \3 0 \4 0 &/p
 a bare prerelease outranks its iterations|||0 \4 0 &/p|||0 \4 9 &/p
+the unsupported platform message drops the plugin commands|||\n\n  codex plugin marketplace add langchain-ai/langsmith-codex-plugins\n\nThen enable it in ~/.codex/config.toml:\n\n  [plugins.\"tracing@langsmith-codex-plugins\"]\n  enabled = true\n\nRestart Codex, then run /hooks to trust the plugin's hooks.||| Install the tracing Codex plugin instead.
+the unsupported platform message loses its command indentation|||  codex plugin marketplace add|||codex plugin marketplace add
+the unsupported platform message does not name the platform|||This machine reports $platform.|||This machine is not supported.
+the unsupported platform message names the wrong marketplace|||marketplace add langchain-ai/langsmith-codex-plugins|||marketplace add langchain-ai/langsmith-plugins
+the unsupported platform message skips trusting the hooks|||Restart Codex, then run /hooks to trust the plugin's hooks.|||Restart Codex.
