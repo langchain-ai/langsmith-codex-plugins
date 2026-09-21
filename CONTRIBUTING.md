@@ -87,7 +87,7 @@ pnpm sign:sea      # Sign and notarize it when the Apple credentials exist
 
 Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches the binary to that tag's GitHub Release as a draft.
 
-The binary is not Apple signed so macOS quarantines a download. Clear that before running it:
+A locally built binary is not Apple signed so macOS quarantines it. Clear that before running it:
 
 ```bash
 chmod +x <downloaded-binary>
