@@ -1,4 +1,3 @@
-import { isSea } from "node:sea";
 import * as nodeFs from "node:fs";
 import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
@@ -11983,6 +11982,13 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
+//#region src/compiled.ts
+const BUNFS_PREFIX = "/$bunfs/";
+function runningCompiledBinary() {
+	const main = globalThis.Bun?.main;
+	return typeof main === "string" && main.startsWith(BUNFS_PREFIX);
+}
+//#endregion
 //#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
@@ -17690,7 +17696,7 @@ async function hooksFileRunsBinary(hooksFile, binary) {
 }
 async function pluginShouldStandDown() {
 	try {
-		if (isSea()) return false;
+		if (runningCompiledBinary()) return false;
 		const binary = installedExecutablePath(defaultInstallDir());
 		if (!await binaryExists(binary)) return false;
 		const projectHooks = defaultHooksFile(true);
@@ -19073,7 +19079,7 @@ else if (unrecognised.length > 0) {
 	console.error(USAGE);
 	process.exitCode = 1;
 } else if (wasInvokedWith("--install") || wasInvokedWith("--print")) runInstall({
-	source: isSea() ? process.execPath : void 0,
+	source: runningCompiledBinary() ? process.execPath : void 0,
 	currentVersion: LS_INTEGRATION_VERSION,
 	argv: invocationArguments
 });

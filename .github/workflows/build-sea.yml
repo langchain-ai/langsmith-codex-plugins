@@ -10,11 +10,12 @@ on:
       - .github/workflows/build-sea.yml
       - install.sh
       - macos-entitlements.plist
-      - tsdown.sea.config.ts
       - sea-config.json
       - package.json
+      - scripts/build.sea.ts
       - scripts/sign.sea.ts
       - plugins/tracing/hooks/hooks.sea.json
+      - plugins/tracing/src/compiled.ts
       - plugins/tracing/src/index.ts
       - plugins/tracing/src/install.ts
       - plugins/tracing/src/plugin-status.ts
@@ -59,13 +60,17 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
-      # node --build-sea needs Node >= 25.5.
       - name: Install Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 26.7.0
           architecture: arm64
           cache: "pnpm"
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
 
       - name: Check the Version Matches the Tag
         if: ${{ steps.release-gate.outputs.publishing == 'true' }}
@@ -82,8 +87,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build the Unsigned Binary
-        run: pnpm run build:sea
+      - name: Build the Unsigned Binaries
+        run: pnpm run build:sea -- --arch=all
 
       - name: Test the Binary
         run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
@@ -95,6 +100,56 @@ jobs:
           path: plugins/tracing/bin/langsmith-codex-tracing
           if-no-files-found: error
           retention-days: 7
+
+      - name: Upload the x64 Binary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: langsmith-codex-tracing-darwin-x64-unsigned
+          path: plugins/tracing/bin/langsmith-codex-tracing-darwin-x64
+          if-no-files-found: error
+          retention-days: 7
+
+  run-x64-on-intel:
+    name: Run the x64 Binary on Intel
+    needs: build-sea
+    runs-on: macos-26-intel
+
+    steps:
+      - name: Check Out the Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Install Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26.7.0
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download the x64 Binary
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: langsmith-codex-tracing-darwin-x64-unsigned
+          path: download
+
+      - name: Put It Where the Suite Looks
+        run: |
+          mkdir -p plugins/tracing/bin
+          mv download/langsmith-codex-tracing-darwin-x64 plugins/tracing/bin/langsmith-codex-tracing
+          chmod +x plugins/tracing/bin/langsmith-codex-tracing
+
+      - name: Report the Version
+        run: |
+          arch
+          file plugins/tracing/bin/langsmith-codex-tracing
+          ./plugins/tracing/bin/langsmith-codex-tracing --version
+
+      - name: Test the Binary
+        run: pnpm vitest run plugins/tracing/test/sea.test.ts
 
   sign-and-notarize:
     name: Sign and Notarize the Binary

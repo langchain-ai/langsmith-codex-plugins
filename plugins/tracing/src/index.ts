@@ -1,6 +1,6 @@
-import { isSea } from "node:sea";
 import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
+import { runningCompiledBinary } from "./compiled.js";
 import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { runInstall } from "./install.js";
@@ -129,7 +129,7 @@ if (wasInvokedWith("--help") || wasInvokedWith("-h")) {
   process.exitCode = 1;
 } else if (wasInvokedWith("--install") || wasInvokedWith("--print")) {
   runInstall({
-    source: isSea() ? process.execPath : undefined,
+    source: runningCompiledBinary() ? process.execPath : undefined,
     currentVersion: LS_INTEGRATION_VERSION,
     argv: invocationArguments,
   });

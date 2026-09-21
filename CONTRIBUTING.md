@@ -76,11 +76,11 @@ pnpm test --run    # Run the full Vitest suite once
 pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
-pnpm build:sea     # Build the unsigned macOS arm64 binary
+pnpm build:sea     # Build the unsigned binary for this host
 pnpm sign:sea      # Sign and notarize it when the Apple credentials exist
 ```
 
-`pnpm build:sea` writes a standalone binary to `plugins/tracing/bin/`. It runs the tracing hook on machines with no Node installed. Only macOS arm64 is supported and it needs a newer Node than the rest of the repo. The build checks both and tells you which one failed.
+`pnpm build:sea` writes a standalone binary to `plugins/tracing/bin/` with `bun build --compile`, so it needs Bun on the PATH. It runs the tracing hook on machines with no Node installed. Pass `--arch=x64` or `--arch=all` to cross compile; a binary for the host arch takes the plain name and the other arch gets a `-darwin-<arch>` suffix. Only the host arch is version checked after the build, because the other one cannot be executed.
 
 Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches the binary to that tag's GitHub Release as a draft.
 

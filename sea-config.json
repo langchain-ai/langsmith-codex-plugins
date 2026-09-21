@@ -1,9 +1,3 @@
 {
-  "main": "plugins/tracing/bundle/sea.cjs",
-  "mainFormat": "commonjs",
-  "output": "plugins/tracing/bin/langsmith-codex-tracing",
-  "disableExperimentalSEAWarning": true,
-  "useSnapshot": false,
-  "useCodeCache": false,
-  "execArgvExtension": "none"
+  "output": "plugins/tracing/bin/langsmith-codex-tracing"
 }
