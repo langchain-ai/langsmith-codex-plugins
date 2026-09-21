@@ -6,7 +6,7 @@ Thanks for contributing to the LangSmith Codex plugins repository.
 
 - Node.js 22 or later
 - [pnpm](https://pnpm.io/) 10.33.0 (the version declared in `package.json`)
-- OpenAI Codex 0.153.4 or later with enabled/trusted synchronous plugin hooks
+- OpenAI Codex 0.153.4 or later with trusted synchronous plugin hooks
 - A LangSmith account and API key for end-to-end testing
 
 If your Codex installation does not recognize `codex plugin`, update it before continuing:
@@ -36,14 +36,11 @@ The repository contains a marketplace manifest at `.agents/plugins/marketplace.j
 source_type = "local"
 source = "/absolute/path/to/langsmith-codex-plugins"
 
-[features]
-plugin_hooks = true
-
 [plugins."tracing@langsmith-codex-plugins"]
 enabled = true
 ```
 
-Trust/enable the plugin hooks in Codex when prompted. See the README for exact non-slash controls, next-turn semantics, and the released hook-source contract; plugin enablement alone is not hook trust.
+Trust the plugin hooks with `/hooks` when prompted. See the README for exact non-slash controls, next-turn semantics, and the released hook-source contract; plugin enablement alone is not hook trust.
 
 Using an absolute path ensures Codex can resolve the marketplace regardless of the directory from which it starts.
 

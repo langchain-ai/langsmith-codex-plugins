@@ -5,7 +5,7 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 ## Prerequisites
 
 - Node.js >= 22.x, or none for the standalone binary
-- Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
+- Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks trusted (see below)
 - A LangSmith account and API key
 
 ## Installation
@@ -20,17 +20,16 @@ Add the marketplace via Codex CLI:
 codex plugin marketplace add langchain-ai/langsmith-codex-plugins
 ```
 
-Then enable plugin hooks and the Tracing plugin globally in `~/.codex/config.toml` or only for a specific project in `.codex/config.toml`:
+Then enable the Tracing plugin globally in `~/.codex/config.toml` or only for a specific project in `.codex/config.toml`:
 
 ```toml
-[features]
-plugin_hooks = true
-
 [plugins."tracing@langsmith-codex-plugins"]
 enabled = true
 ```
 
-Enable/trust this plugin’s hooks in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Restart Codex after installation or hook changes. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
+Hooks load with the plugin. There is no separate feature flag to set.
+
+Trust this plugin’s hooks with `/hooks` when prompted; enabling the plugin alone is not sufficient. Restart Codex after installation or hook changes. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
@@ -291,7 +290,7 @@ File replicas accept SDK-style `apiUrl`, `apiKey`, and `projectName` aliases, bu
 
 ## Troubleshooting
 
-- **No runs appear**: confirm `plugin_hooks = true`, plugin hooks are trusted, the plugin is enabled, and the master-switch precedence permits tracing. A present `TRACE_TO_LANGSMITH` overrides file enablement; when unset, check all four config files.
+- **No runs appear**: confirm the plugin hooks are trusted, the plugin is enabled, and the master-switch precedence permits tracing. A present `TRACE_TO_LANGSMITH` overrides file enablement; when unset, check all four config files.
 - **Authentication fails**: check that `LANGSMITH_CODEX_API_KEY` or `LANGSMITH_API_KEY` is set and valid.
 - **Runs appear in the wrong project**: set `LANGSMITH_CODEX_PROJECT` or the `project` config key.
 - **Custom endpoint not used**: set `LANGSMITH_CODEX_ENDPOINT` or the `api_url` config key.
