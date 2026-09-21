@@ -1,14 +1,13 @@
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { outputPath } from "../../../scripts/build.sea.ts";
 
-const repoRoot = new URL("../../../", import.meta.url);
-const seaSettings = JSON.parse(readFileSync(new URL("sea-config.json", repoRoot), "utf8"));
-const binaryPath = fileURLToPath(new URL(seaSettings.output, repoRoot));
+const binaryPath = outputPath(process.arch);
 const binaryExists = existsSync(binaryPath);
 const ciShouldHaveBuiltBinary = Boolean(process.env.CI) && os.platform() === "darwin";
 

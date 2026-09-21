@@ -51,11 +51,12 @@ export async function updateFromGitHub(options: UpdateOptions): Promise<UpdateRe
     const fetchImpl = options.fetchImpl ?? fetch;
     const releaseApi = options.releaseApi ?? DEFAULT_RELEASE_API;
     const releases = await fetchReleases(fetchImpl, releaseApi, options.currentVersion);
-    const release = newestInstallableRelease(releases, options.currentVersion);
+    const release = newestInstallableRelease(releases, runtimeArch, options.currentVersion);
     if (!release) return { status: "current" };
 
     await installReleaseAsset(
       release,
+      runtimeArch,
       installDir,
       fetchImpl,
       releaseApi,

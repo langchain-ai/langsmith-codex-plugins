@@ -8,20 +8,21 @@ import {
   releaseAssetName,
 } from "./updater-utils.ts";
 
-function carriesOurAsset(release: Release): boolean {
-  const wanted = releaseAssetName(release.tag_name);
+function carriesOurAsset(release: Release, arch: string): boolean {
+  const wanted = releaseAssetName(release.tag_name, arch);
   return release.assets.some((asset) => asset.name === wanted);
 }
 
 export function newestInstallableRelease(
   releases: Release[],
+  arch: string,
   currentVersion?: string,
 ): Release | undefined {
   let best: Release | undefined;
   for (const release of releases) {
     if (release.draft || release.prerelease) continue;
     if (!isSemver(release.tag_name)) continue;
-    if (!carriesOurAsset(release)) continue;
+    if (!carriesOurAsset(release, arch)) continue;
     if (currentVersion && !isVersionNewer(release.tag_name, currentVersion)) continue;
     if (!best || isVersionNewer(release.tag_name, best.tag_name)) best = release;
   }

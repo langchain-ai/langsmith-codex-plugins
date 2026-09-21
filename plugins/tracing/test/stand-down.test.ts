@@ -4,7 +4,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { pluginShouldStandDown } from "../src/stand-down.js";
 import { DRAIN_TIMEOUT_MS } from "../src/utils/stdin.js";
 
@@ -102,6 +102,21 @@ it("stands down when the installed binary exists and the user hooks file runs it
   await installBinary();
   await writeHooks(userHooks, hooksRunning(`'${installed}'`));
   expect(await pluginShouldStandDown()).toBe(true);
+});
+
+it.each([
+  ["never stands down when it is the compiled binary", "/$bunfs/root/index.ts", false],
+  ["still stands down when Bun is only running the source", "/repo/src/index.ts", true],
+])("%s", async (_label, bunMain, expected) => {
+  await installBinary();
+  await writeHooks(userHooks, hooksRunning(`'${installed}'`));
+  vi.stubGlobal("Bun", { main: bunMain });
+
+  try {
+    expect(await pluginShouldStandDown()).toBe(expected);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
 
 it("keeps tracing when the hooks file runs a binary that is not installed", async () => {

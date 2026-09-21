@@ -10,7 +10,7 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Installation
 
-Every option below installs the same tracing integration. Only the delivery differs. The plugin runs on the Node on your PATH and the marketplace manages it. The standalone binary carries its own Node and you manage it. You are picking an install method, not a different product.
+Every option below installs the same tracing integration. Only the delivery differs. The plugin runs on the Node on your PATH and the marketplace manages it. The standalone binary carries its own JavaScript runtime and you manage it. You are picking an install method, not a different product.
 
 ### As a Codex plugin
 
@@ -33,9 +33,9 @@ Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompt
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
-### As a standalone binary (beta, macOS arm64)
+### As a standalone binary (beta, macOS arm64 and x64)
 
-The same integration as the plugin, delivered as one file. It carries its own Node runtime so it needs no Node on your PATH. You install and update it yourself. The plugin is the supported path. This binary is the beta we are trialling and macOS arm64 is the only build.
+The same integration as the plugin, delivered as one file. It carries its own JavaScript runtime so it needs no Node on your PATH. You install and update it yourself. The plugin is the supported path. This binary is the beta we are trialling and macOS arm64 and x64 are the only builds. The installer picks the one matching your Mac.
 
 The plugin stops tracing while the binary is installed and registered as a hook.
 
@@ -64,7 +64,7 @@ Two things are not live yet, so the command below fails today:
 
 The binary never updates itself. Run `~/.langsmith/langsmith-codex-tracing --update` for a newer release.
 
-To download a release asset by hand instead: `chmod +x` it, then run it with `--install`. The binary is signed and notarized, so macOS clears it after one online Gatekeeper check.
+To download a release asset by hand instead: take the `-arm64-` or `-x64-` asset matching your Mac, `chmod +x` it, then run it with `--install`. The binary is signed and notarized, so macOS clears it after one online Gatekeeper check.
 
 ### Setting environment variables
 

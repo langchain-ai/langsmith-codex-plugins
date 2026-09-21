@@ -30,7 +30,7 @@ while IFS= read -r line; do
     printf 'UNCHANGED %s\n' "$name"
     continue
   fi
-  if INSTALLER="$variant" /bin/bash "$HERE/cases.sh" >/dev/null 2>&1; then
+  if INSTALLER="$variant" FAIL_FAST=1 /bin/bash "$HERE/cases.sh" >/dev/null 2>&1; then
     MISSED=$((MISSED + 1))
     printf 'MISSED %s\n' "$name"
   else

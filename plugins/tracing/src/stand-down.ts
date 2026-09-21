@@ -1,8 +1,8 @@
 import * as fs from "node:fs/promises";
-import { isSea } from "node:sea";
 import { defaultHooksFile, quoteForShell } from "./install.ts";
 import type { HookEntry, HookGroup } from "./sea-models.ts";
 import { defaultInstallDir, installedExecutablePath } from "./updater-install.ts";
+import { runningCompiledBinary } from "./utils/runningCompiledBinary.ts";
 
 async function binaryExists(binary: string): Promise<boolean> {
   try {
@@ -35,7 +35,7 @@ async function hooksFileRunsBinary(hooksFile: string, binary: string): Promise<b
 
 export async function pluginShouldStandDown(): Promise<boolean> {
   try {
-    if (isSea()) return false;
+    if (runningCompiledBinary()) return false;
     const binary = installedExecutablePath(defaultInstallDir());
     if (!(await binaryExists(binary))) return false;
     const projectHooks = defaultHooksFile(true);

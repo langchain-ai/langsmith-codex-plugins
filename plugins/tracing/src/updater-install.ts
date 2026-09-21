@@ -16,6 +16,7 @@ export function installedExecutablePath(installDir: string): string {
 
 export async function installReleaseAsset(
   release: Release,
+  arch: string,
   installDir: string,
   fetchImpl: typeof fetch,
   releaseApi: string,
@@ -23,7 +24,7 @@ export async function installReleaseAsset(
   verifySignature: SignatureVerifier | undefined,
   uniqueSuffix: string,
 ): Promise<string> {
-  const assetName = releaseAssetName(release.tag_name);
+  const assetName = releaseAssetName(release.tag_name, arch);
   const asset = release.assets.find((candidate) => candidate.name === assetName);
   if (!asset) throw new Error(`release ${release.tag_name} has no ${assetName} asset`);
   const sidecar = release.assets.find((candidate) => candidate.name === `${assetName}.sha256`);

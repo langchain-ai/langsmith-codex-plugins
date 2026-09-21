@@ -76,13 +76,13 @@ pnpm test --run    # Run the full Vitest suite once
 pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
-pnpm build:sea     # Build the unsigned macOS arm64 binary
-pnpm sign:sea      # Sign and notarize it when the Apple credentials exist
+pnpm build:sea     # Build the unsigned macOS binary for this machine
+pnpm sign:sea      # Sign and notarize it, with the Apple credentials set
 ```
 
-`pnpm build:sea` writes a standalone binary to `plugins/tracing/bin/`. It runs the tracing hook on machines with no Node installed. Only macOS arm64 is supported and it needs a newer Node than the rest of the repo. The build checks both and tells you which one failed.
+`pnpm build:sea` writes a standalone binary with `bun build --compile`, so it needs Bun on the PATH. It runs the tracing hook on machines with no Node installed. Only macOS arm64 and x64 are published. Pass `--arch=x64` or `--arch=all` to cross compile. The binary for this machine lands at `plugins/tracing/bin/langsmith-codex-tracing`, where the tests and `pnpm sign:sea` look for it, and a cross compiled one lands in `plugins/tracing/bin/darwin-<arch>/` under the same name. Only the binary for this machine is version checked after the build, because the other one cannot be run here.
 
-Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches the binary to that tag's GitHub Release as a draft.
+Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches an arm64 binary and an x64 binary, each with a SHA-256 sidecar, to that tag's GitHub Release as a draft.
 
 A locally built binary is not Apple signed so macOS quarantines it. Clear that before running it:
 

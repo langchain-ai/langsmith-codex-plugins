@@ -29,7 +29,7 @@
   },
   "scripts": {
     "build": "tsdown --config plugins/tracing/tsdown.config.ts",
-    "build:sea": "node tsdown.sea.config.ts",
+    "build:sea": "bun scripts/build.sea.ts",
     "sign:sea": "node scripts/sign.sea.ts",
     "test": "vitest",
     "format": "oxfmt",

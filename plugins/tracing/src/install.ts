@@ -137,6 +137,7 @@ async function downloadExecutable(
   options: InstallBinaryOptions,
   installDir: string,
   verifySignature: SignatureVerifier,
+  arch: string,
 ): Promise<string> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const releaseApi =
@@ -145,17 +146,18 @@ async function downloadExecutable(
   const releases = await fetchReleases(fetchImpl, releaseApi, currentVersion);
   const release = options.tag
     ? releases.find((candidate) => candidate.tag_name === options.tag)
-    : newestInstallableRelease(releases);
+    : newestInstallableRelease(releases, arch);
   if (!release) {
     throw new Error(
       options.tag
         ? `no published release is tagged ${options.tag}`
-        : `no published release carries a ${releaseAssetName("<tag>")} asset`,
+        : `no published release carries a ${releaseAssetName("<tag>", arch)} asset`,
     );
   }
   const version = versionFromTag(release.tag_name);
   await installReleaseAsset(
     release,
+    arch,
     installDir,
     fetchImpl,
     releaseApi,
@@ -173,7 +175,7 @@ export async function installBinary(
   const runtimeArch = options.runtimeArch ?? os.arch();
   if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) {
     throw new Error(
-      `The standalone binary only runs on macOS arm64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`,
+      `The standalone binary only runs on macOS arm64 and x64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`,
     );
   }
 
@@ -186,7 +188,7 @@ export async function installBinary(
   await fs.mkdir(installDir, { recursive: true, mode: 0o700 });
   let version = options.currentVersion ?? "0.0.0";
   if (copyable !== undefined) await copyExecutable(copyable, target, verifySignature);
-  else version = await downloadExecutable(options, installDir, verifySignature);
+  else version = await downloadExecutable(options, installDir, verifySignature, runtimeArch);
 
   const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
   await fs.mkdir(path.dirname(hooksFile), { recursive: true });

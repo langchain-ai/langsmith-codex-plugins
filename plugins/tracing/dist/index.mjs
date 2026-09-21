@@ -1,4 +1,3 @@
-import { isSea } from "node:sea";
 import * as nodeFs from "node:fs";
 import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
@@ -17216,7 +17215,7 @@ const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 /** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.1.0";
+const LS_INTEGRATION_VERSION = "0.2.0-beta.3";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -17250,7 +17249,7 @@ var hooks = {
 //#region src/sea-constants.ts
 const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
 const PUBLISHED_PLATFORM = "darwin";
-const PUBLISHED_ARCH = "arm64";
+const PUBLISHED_ARCHES = ["arm64", "x64"];
 const INSTALL_DIR_NAME = ".langsmith";
 const LOCK_FILE_NAME = ".update.lock";
 const LIST_TIMEOUT_MS = 15e3;
@@ -17319,10 +17318,10 @@ async function printStandDownNotice(log = console.log) {
 //#endregion
 //#region src/updater-utils.ts
 function isPublishedSeaTarget(runtimePlatform, runtimeArch) {
-	return runtimePlatform === "darwin" && runtimeArch === "arm64";
+	return runtimePlatform === "darwin" && PUBLISHED_ARCHES.includes(runtimeArch);
 }
-function releaseAssetName(tag) {
-	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}`;
+function releaseAssetName(tag, arch) {
+	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${arch}-${tag}`;
 }
 function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");
@@ -17463,8 +17462,8 @@ function defaultInstallDir(home = os.homedir()) {
 function installedExecutablePath(installDir) {
 	return nodePath.join(installDir, SEA_EXECUTABLE_NAME);
 }
-async function installReleaseAsset(release, installDir, fetchImpl, releaseApi, currentVersion, verifySignature, uniqueSuffix) {
-	const assetName = releaseAssetName(release.tag_name);
+async function installReleaseAsset(release, arch, installDir, fetchImpl, releaseApi, currentVersion, verifySignature, uniqueSuffix) {
+	const assetName = releaseAssetName(release.tag_name, arch);
 	const asset = release.assets.find((candidate) => candidate.name === assetName);
 	if (!asset) throw new Error(`release ${release.tag_name} has no ${assetName} asset`);
 	const sidecar = release.assets.find((candidate) => candidate.name === `${assetName}.sha256`);
@@ -17487,16 +17486,16 @@ async function installReleaseAsset(release, installDir, fetchImpl, releaseApi, c
 }
 //#endregion
 //#region src/updater-releases.ts
-function carriesOurAsset(release) {
-	const wanted = releaseAssetName(release.tag_name);
+function carriesOurAsset(release, arch) {
+	const wanted = releaseAssetName(release.tag_name, arch);
 	return release.assets.some((asset) => asset.name === wanted);
 }
-function newestInstallableRelease(releases, currentVersion) {
+function newestInstallableRelease(releases, arch, currentVersion) {
 	let best;
 	for (const release of releases) {
 		if (release.draft || release.prerelease) continue;
 		if (!isSemver(release.tag_name)) continue;
-		if (!carriesOurAsset(release)) continue;
+		if (!carriesOurAsset(release, arch)) continue;
 		if (currentVersion && !isVersionNewer(release.tag_name, currentVersion)) continue;
 		if (!best || isVersionNewer(release.tag_name, best.tag_name)) best = release;
 	}
@@ -17594,20 +17593,20 @@ async function copyExecutable(source, target, verifySignature) {
 		throw error;
 	}
 }
-async function downloadExecutable(options, installDir, verifySignature) {
+async function downloadExecutable(options, installDir, verifySignature, arch) {
 	const fetchImpl = options.fetchImpl ?? fetch;
 	const releaseApi = options.releaseApi ?? process.env.LANGSMITH_CODEX_RELEASE_API ?? "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";
 	const releases = await fetchReleases(fetchImpl, releaseApi, options.currentVersion ?? "0.0.0");
-	const release = options.tag ? releases.find((candidate) => candidate.tag_name === options.tag) : newestInstallableRelease(releases);
-	if (!release) throw new Error(options.tag ? `no published release is tagged ${options.tag}` : `no published release carries a ${releaseAssetName("<tag>")} asset`);
+	const release = options.tag ? releases.find((candidate) => candidate.tag_name === options.tag) : newestInstallableRelease(releases, arch);
+	if (!release) throw new Error(options.tag ? `no published release is tagged ${options.tag}` : `no published release carries a ${releaseAssetName("<tag>", arch)} asset`);
 	const version = versionFromTag(release.tag_name);
-	await installReleaseAsset(release, installDir, fetchImpl, releaseApi, version, verifySignature, `${process.pid}.${Date.now()}`);
+	await installReleaseAsset(release, arch, installDir, fetchImpl, releaseApi, version, verifySignature, `${process.pid}.${Date.now()}`);
 	return version;
 }
 async function installBinary(options) {
 	const runtimePlatform = options.runtimePlatform ?? os.platform();
 	const runtimeArch = options.runtimeArch ?? os.arch();
-	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) throw new Error(`The standalone binary only runs on macOS arm64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`);
+	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) throw new Error(`The standalone binary only runs on macOS arm64 and x64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`);
 	const installDir = options.installDir ?? defaultInstallDir();
 	const target = installedExecutablePath(installDir);
 	const hooksFile = options.hooksFile ?? defaultHooksFile(false);
@@ -17619,7 +17618,7 @@ async function installBinary(options) {
 	});
 	let version = options.currentVersion ?? "0.0.0";
 	if (copyable !== void 0) await copyExecutable(copyable, target, verifySignature);
-	else version = await downloadExecutable(options, installDir, verifySignature);
+	else version = await downloadExecutable(options, installDir, verifySignature, runtimeArch);
 	const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
 	await nodeFsPromises.mkdir(nodePath.dirname(hooksFile), { recursive: true });
 	await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
@@ -17666,6 +17665,13 @@ async function runInstall(options) {
 	}
 }
 //#endregion
+//#region src/utils/runningCompiledBinary.ts
+const BUNFS_PREFIX = "/$bunfs/";
+function runningCompiledBinary() {
+	const main = globalThis.Bun?.main;
+	return typeof main === "string" && main.startsWith(BUNFS_PREFIX);
+}
+//#endregion
 //#region src/stand-down.ts
 async function binaryExists(binary) {
 	try {
@@ -17690,7 +17696,7 @@ async function hooksFileRunsBinary(hooksFile, binary) {
 }
 async function pluginShouldStandDown() {
 	try {
-		if (isSea()) return false;
+		if (runningCompiledBinary()) return false;
 		const binary = installedExecutablePath(defaultInstallDir());
 		if (!await binaryExists(binary)) return false;
 		const projectHooks = defaultHooksFile(true);
@@ -17726,7 +17732,9 @@ async function claimUpdateLock(lockFile, now) {
 	}
 }
 async function updateFromGitHub(options) {
-	if (!isPublishedSeaTarget(options.runtimePlatform ?? os.platform(), options.runtimeArch ?? os.arch())) return { status: "unsupported" };
+	const runtimePlatform = options.runtimePlatform ?? os.platform();
+	const runtimeArch = options.runtimeArch ?? os.arch();
+	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) return { status: "unsupported" };
 	if (!isSemver(options.currentVersion)) return { status: "unsupported" };
 	const installDir = options.installDir ?? defaultInstallDir();
 	const now = (options.now ?? Date.now)();
@@ -17740,9 +17748,9 @@ async function updateFromGitHub(options) {
 	try {
 		const fetchImpl = options.fetchImpl ?? fetch;
 		const releaseApi = options.releaseApi ?? "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";
-		const release = newestInstallableRelease(await fetchReleases(fetchImpl, releaseApi, options.currentVersion), options.currentVersion);
+		const release = newestInstallableRelease(await fetchReleases(fetchImpl, releaseApi, options.currentVersion), runtimeArch, options.currentVersion);
 		if (!release) return { status: "current" };
-		await installReleaseAsset(release, installDir, fetchImpl, releaseApi, options.currentVersion, options.verifySignature ?? verifyAdHocSignature, `${process.pid}.${now}`);
+		await installReleaseAsset(release, runtimeArch, installDir, fetchImpl, releaseApi, options.currentVersion, options.verifySignature ?? verifyAdHocSignature, `${process.pid}.${now}`);
 		return {
 			status: "updated",
 			version: versionFromTag(release.tag_name)
@@ -19058,7 +19066,7 @@ function unknownFlags() {
 }
 async function runUpdate() {
 	try {
-		const result = await updateFromGitHub({ currentVersion: "0.1.0" });
+		const result = await updateFromGitHub({ currentVersion: "0.2.0-beta.3" });
 		console.log(result.status === "updated" ? `updated to ${result.version}` : result.status);
 	} catch (error) {
 		console.error(`update failed: ${error}`);
@@ -19067,13 +19075,13 @@ async function runUpdate() {
 }
 const unrecognised = unknownFlags();
 if (wasInvokedWith("--help") || wasInvokedWith("-h")) console.log(USAGE);
-else if (wasInvokedWith("--version") || wasInvokedWith("-v")) console.log("0.1.0");
+else if (wasInvokedWith("--version") || wasInvokedWith("-v")) console.log("0.2.0-beta.3");
 else if (unrecognised.length > 0) {
 	console.error(`unknown option: ${unrecognised[0]}`);
 	console.error(USAGE);
 	process.exitCode = 1;
 } else if (wasInvokedWith("--install") || wasInvokedWith("--print")) runInstall({
-	source: isSea() ? process.execPath : void 0,
+	source: runningCompiledBinary() ? process.execPath : void 0,
 	currentVersion: LS_INTEGRATION_VERSION,
 	argv: invocationArguments
 });

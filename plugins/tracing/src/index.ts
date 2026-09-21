@@ -1,4 +1,3 @@
-import { isSea } from "node:sea";
 import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
@@ -10,6 +9,7 @@ import { updateFromGitHub } from "./updater.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
+import { runningCompiledBinary } from "./utils/runningCompiledBinary.js";
 import { drainStdin, readStdin } from "./utils/stdin.js";
 
 export async function runHook() {
@@ -129,7 +129,7 @@ if (wasInvokedWith("--help") || wasInvokedWith("-h")) {
   process.exitCode = 1;
 } else if (wasInvokedWith("--install") || wasInvokedWith("--print")) {
   runInstall({
-    source: isSea() ? process.execPath : undefined,
+    source: runningCompiledBinary() ? process.execPath : undefined,
     currentVersion: LS_INTEGRATION_VERSION,
     argv: invocationArguments,
   });

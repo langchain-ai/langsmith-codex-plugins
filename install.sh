@@ -9,6 +9,7 @@ RELEASES_API="${LANGSMITH_CODEX_RELEASES_API:-https://api.github.com/repos/$REPO
 DOWNLOAD_BASE="${LANGSMITH_CODEX_DOWNLOAD_BASE:-https://github.com/$REPOSITORY/releases/download}"
 
 TARGET_VERSION=""
+ASSET_ARCH=""
 WANT_BETA=0
 BINARY_ARGUMENTS=()
 TEMP_BINARY=""
@@ -42,9 +43,9 @@ Environment variables:
   LANGSMITH_CODEX_RELEASES_API    GitHub releases API to install from
   LANGSMITH_CODEX_DOWNLOAD_BASE   Release download base URL
 
-Only macOS arm64 is published. Leave the tracing Codex plugin enabled. It stops
-tracing once the binary's hooks are registered. Restart Codex when the install
-finishes. Trust the new hooks when it prompts.
+Only macOS arm64 and x64 are published. Leave the tracing Codex plugin enabled.
+It stops tracing once the binary's hooks are registered. Restart Codex when the
+install finishes. Trust the new hooks when it prompts.
 HELP
 }
 
@@ -112,13 +113,16 @@ parse_arguments() {
   fi
 }
 
-require_supported_platform() {
+resolve_asset_arch() {
   local platform
   platform="$(uname -s)-$(uname -m)"
-  if [[ "$platform" != "Darwin-arm64" ]]; then
-    die "The standalone binary is macOS arm64 only. This machine reports $platform.
+  case "$platform" in
+    Darwin-arm64) ASSET_ARCH="arm64" ;;
+    Darwin-x86_64) ASSET_ARCH="x64" ;;
+    *)
+      die "The standalone binary is macOS arm64 and x64 only. This machine reports $platform.
 
-The plugin does the same tracing and works on Windows, Linux and Intel Macs.
+The plugin does the same tracing and works on Windows and Linux.
 
   codex plugin marketplace add langchain-ai/langsmith-codex-plugins
 
@@ -128,7 +132,8 @@ Then enable it in ~/.codex/config.toml:
   enabled = true
 
 Restart Codex, then run /hooks to trust the plugin's hooks."
-  fi
+      ;;
+  esac
 }
 
 fetch_releases() {
@@ -140,7 +145,7 @@ tokenize_releases() {
     -e 's/^    "tag_name": *"\([^"]*\)".*/T \1/p' \
     -e 's/^    "draft": *true.*/S/p' \
     -e 's/^    "prerelease": *true.*/P/p' \
-    -e "s/^        \"name\": *\"$EXECUTABLE-darwin-arm64-\([^\"]*\)\".*/A \1/p" \
+    -e "s/^        \"name\": *\"$EXECUTABLE-darwin-$ASSET_ARCH-\([^\"]*\)\".*/A \1/p" \
     -e 's/^        "digest": *"[Ss][Hh][Aa]256:\([0-9a-fA-F]\{64\}\)".*/H \1/p' \
     -e 's/^        "browser_download_url":.*/E/p'
 }
@@ -211,9 +216,9 @@ select_pinned() {
   SELECTED="$(grep "^$pattern " <<<"$VERIFIED" || true)"
   if [[ -z "$SELECTED" ]]; then
     if grep -q "^$pattern\$" <<<"$UNVERIFIED"; then
-      die "Release $TARGET_VERSION publishes its macOS arm64 binary without a SHA-256 digest, so it cannot be verified."
+      die "Release $TARGET_VERSION publishes its macOS $ASSET_ARCH binary without a SHA-256 digest, so it cannot be verified."
     fi
-    die "None of the newest $RELEASE_PAGE_SIZE releases is $TARGET_VERSION carrying a macOS arm64 binary."
+    die "None of the newest $RELEASE_PAGE_SIZE releases is $TARGET_VERSION carrying a macOS $ASSET_ARCH binary."
   fi
 }
 
@@ -222,20 +227,20 @@ select_newest() {
   newest="$(printf '%s%s' "$VERIFIED" "$UNVERIFIED" | newest_version)"
   if [[ -z "$newest" ]]; then
     if [[ "$WANT_BETA" == 1 ]]; then
-      die "None of the newest $RELEASE_PAGE_SIZE releases is a prerelease carrying a macOS arm64 binary."
+      die "None of the newest $RELEASE_PAGE_SIZE releases is a prerelease carrying a macOS $ASSET_ARCH binary."
     fi
-    die "None of the newest $RELEASE_PAGE_SIZE releases carries a macOS arm64 binary."
+    die "None of the newest $RELEASE_PAGE_SIZE releases carries a macOS $ASSET_ARCH binary."
   fi
   SELECTED="$(grep "^$(escape_dots "$newest") " <<<"$VERIFIED" || true)"
   [[ -n "$SELECTED" ]] ||
-    die "Release $newest is the newest carrying a macOS arm64 binary and publishes it without a SHA-256 digest, so it cannot be verified."
+    die "Release $newest is the newest carrying a macOS $ASSET_ARCH binary and publishes it without a SHA-256 digest, so it cannot be verified."
 }
 
 install_selected() {
   local tag expected_sha asset actual_sha
   tag="${SELECTED%% *}"
   expected_sha="${SELECTED##* }"
-  asset="$EXECUTABLE-darwin-arm64-$tag"
+  asset="$EXECUTABLE-darwin-$ASSET_ARCH-$tag"
 
   say "Downloading $asset."
   TEMP_BINARY="$(mktemp "${TMPDIR:-/tmp}/$EXECUTABLE.XXXXXX")"
@@ -256,7 +261,7 @@ main() {
   trap cleanup EXIT
   trap 'exit 130' INT
   parse_arguments "$@"
-  require_supported_platform
+  resolve_asset_arch
   say "Finding the release to install."
   local releases
   releases="$(fetch_releases)" ||

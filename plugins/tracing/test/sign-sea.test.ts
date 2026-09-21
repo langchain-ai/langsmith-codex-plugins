@@ -11,6 +11,7 @@ import {
   missingAppleCredentials,
   sign,
 } from "../../../scripts/sign.sea.ts";
+import { PUBLISHED_ARCHES, SEA_EXECUTABLE_NAME } from "../src/sea-constants.ts";
 import { releaseAssetName } from "../src/updater-utils.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -56,27 +57,20 @@ describe("the Apple credentials", () => {
 describe("sign", () => {
   const absent = join(root, "plugins/tracing/bin/no-such-binary");
 
-  it("keeps the ad-hoc signature and names what is absent when nothing is set", async () => {
+  it("refuses to run and names every credential when nothing is set", async () => {
     const lines: string[] = [];
-    await expect(
-      sign({ binaryPath: absent, env: {}, out: (line: string) => lines.push(line) }),
-    ).resolves.toBeUndefined();
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("Keeping the ad-hoc signature");
-    for (const name of credentials) expect(lines[0]).toContain(name);
+    const attempt = sign({ binaryPath: absent, env: {}, out: (line: string) => lines.push(line) });
+
+    await expect(attempt).rejects.toThrow("these Apple credentials are not set");
+    await expect(attempt).rejects.toThrow(credentials.join(", "));
+    expect(lines).toEqual([]);
   });
 
-  it("keeps the ad-hoc signature when only some credentials are set", async () => {
-    const lines: string[] = [];
-    await expect(
-      sign({
-        binaryPath: absent,
-        env: { ...allSet, APPLE_API_ISSUER: "" },
-        out: (line: string) => lines.push(line),
-      }),
-    ).resolves.toBeUndefined();
-    expect(lines[0]).toContain("APPLE_API_ISSUER");
-    expect(lines[0]).not.toContain("CSC_LINK");
+  it("refuses to run when only some credentials are set", async () => {
+    const attempt = sign({ binaryPath: absent, env: { ...allSet, APPLE_API_ISSUER: "" } });
+
+    await expect(attempt).rejects.toThrow("APPLE_API_ISSUER");
+    await expect(attempt).rejects.not.toThrow("CSC_LINK");
   });
 });
 
@@ -148,6 +142,7 @@ describe("the build workflow", () => {
     const paths = /paths:\n((?:\s+- \S+\n)+)/.exec(workflow)?.[1] ?? "";
     for (const path of [
       "macos-entitlements.plist",
+      "scripts/build.sea.ts",
       "scripts/sign.sea.ts",
       "plugins/tracing/test/sign-sea.test.ts",
     ]) {
@@ -155,10 +150,14 @@ describe("the build workflow", () => {
     }
   });
 
-  it("signs only when the job found every credential", () => {
-    expect(job("sign-and-notarize")).toContain("if: ${{ env.HAS_APPLE_CREDENTIALS == 'true' }}");
-    for (const name of credentials)
-      expect(job("sign-and-notarize")).toContain(`secrets.${name} != ''`);
+  it("always signs, so a release can never go out unsigned", () => {
+    const step = /- name: Sign and Notarize the Binary\n((?: {8}.+\n|\n)+)/.exec(
+      job("sign-and-notarize"),
+    )?.[1];
+
+    expect(step).toBeDefined();
+    expect(step).not.toContain("if:");
+    for (const name of credentials) expect(step).toContain(`${name}: \${{ secrets.${name} }}`);
   });
 
   it("reads the Apple secrets only from the job that declares the environment", () => {
@@ -179,13 +178,15 @@ describe("the build workflow", () => {
   it("signs the binary the build job produced and hands the signed one on", () => {
     expect(job("sign-and-notarize")).toContain("pnpm run sign:sea");
     expect(job("sign-and-notarize")).toContain("actions/download-artifact");
-    expect(job("sign-and-notarize")).toContain("overwrite: true");
     expect(job("publish")).toContain("needs: [build-sea, sign-and-notarize]");
   });
 
-  it("tests the signed binary the way it tested the unsigned one", () => {
+  it("runs the same suite against the unsigned, the Intel and the signed binary", () => {
     const command = /pnpm vitest run .+/;
-    expect(job("sign-and-notarize").match(command)?.[0]).toBe(job("build-sea").match(command)?.[0]);
+    const built = job("build-sea").match(command)?.[0];
+    expect(built).toBeDefined();
+    expect(job("run-x64-on-intel").match(command)?.[0]).toBe(built);
+    expect(job("sign-and-notarize").match(command)?.[0]).toBe(built);
   });
 
   it("restores the executable bit once, in an unconditional step of its own", () => {
@@ -198,7 +199,69 @@ describe("the build workflow", () => {
   });
 
   it("publishes the asset name the updater and the installer look for", () => {
-    expect(/^ +name="(.+)"$/m.exec(job("publish"))?.[1]).toBe(releaseAssetName("${TAG}"));
+    expect(/^ +name="(.+)"$/m.exec(job("publish"))?.[1]).toBe(
+      releaseAssetName("${TAG}", "${arch}"),
+    );
+    expect(job("publish")).toContain(`for arch in ${PUBLISHED_ARCHES.join(" ")}; do`);
+  });
+
+  it("attaches a SHA-256 sidecar beside every published architecture", () => {
+    const body = job("publish");
+    expect(body).toContain('sha256sum "$name" > "${name}.sha256"');
+    expect(body).toContain('assets+=("release/${name}" "release/${name}.sha256")');
+    expect(body.match(/gh release (upload|create) "\$TAG" "\$\{assets\[@\]\}"/g)).toHaveLength(2);
+  });
+
+  it("cross compiles every published architecture in one build job", () => {
+    const body = job("build-sea");
+
+    expect(body).toContain("runs-on: macos-26\n");
+    expect(body).toContain("pnpm run build:sea -- --arch=all");
+    expect(body).not.toContain("matrix.");
+  });
+
+  it("signs each published architecture on a runner of that architecture", () => {
+    const body = job("sign-and-notarize");
+    const legs = [...body.matchAll(/^ {10}- arch: (\S+)$/gm)].map((match) => match[1]);
+
+    expect(legs).toEqual(PUBLISHED_ARCHES);
+    expect(body).toContain("runs-on: ${{ matrix.runner }}");
+    expect(body).toContain("architecture: ${{ matrix.arch }}");
+    expect(body.match(/runner: macos-26\n/g)).toHaveLength(1);
+    expect(body.match(/runner: macos-26-intel\n/g)).toHaveLength(1);
+  });
+
+  it("runs the x64 binary on an Intel runner on every build", () => {
+    const body = job("run-x64-on-intel");
+
+    expect(body).toContain("runs-on: macos-26-intel");
+    expect(body).toContain("needs: build-sea");
+    expect(body).not.toContain("publishing == 'true'");
+    expect(body).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-x64-unsigned`);
+  });
+
+  it("uploads every architecture under the one name the later jobs look for", () => {
+    const uploads = [...job("build-sea").matchAll(/^ {10}path: (\S+)$/gm)].map((match) => match[1]);
+
+    expect(uploads).toEqual([
+      `plugins/tracing/bin/${SEA_EXECUTABLE_NAME}`,
+      `plugins/tracing/bin/darwin-x64/${SEA_EXECUTABLE_NAME}`,
+    ]);
+    for (const arch of PUBLISHED_ARCHES) {
+      expect(job("build-sea"), arch).toContain(
+        `name: ${SEA_EXECUTABLE_NAME}-darwin-${arch}-unsigned\n`,
+      );
+    }
+  });
+
+  it("publishes only what the signing job signed, never the unsigned build", () => {
+    const signing = job("sign-and-notarize");
+
+    expect(signing).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-\${{ matrix.arch }}-unsigned`);
+    expect(signing).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-\${{ matrix.arch }}-signed`);
+    expect(job("publish")).toContain(`pattern: ${SEA_EXECUTABLE_NAME}-darwin-*-signed`);
+    expect(job("publish")).toContain(`-signed/${SEA_EXECUTABLE_NAME}" "release/`);
+    expect(job("publish")).not.toContain("-unsigned");
   });
 
   it("tests the ref for a tag once and shares that answer with the other jobs", () => {

@@ -6,8 +6,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { outputPath } from "../../../scripts/build.sea.ts";
 import { flagValue, installBinary, renderHooksFile } from "../src/install.js";
-import { RELEASES_PER_PAGE } from "../src/sea-constants.js";
+import { PUBLISHED_ARCHES, RELEASES_PER_PAGE } from "../src/sea-constants.js";
 import type { InstallBinaryOptions } from "../src/sea-models.js";
 import { fetchReleases } from "../src/updater-releases.js";
 
@@ -16,11 +17,10 @@ vi.mock("node:fs/promises", async (importOriginal) => ({
 }));
 
 const repoRoot = new URL("../../../", import.meta.url);
-const seaSettings = JSON.parse(readFileSync(new URL("sea-config.json", repoRoot), "utf8"));
 const PLUGIN_VERSION = JSON.parse(
   readFileSync(new URL("plugins/tracing/.codex-plugin/plugin.json", repoRoot), "utf8"),
 ).version;
-const builtBinary = fileURLToPath(new URL(seaSettings.output, repoRoot));
+const builtBinary = outputPath(process.arch);
 const binaryExists = existsSync(builtBinary);
 const EXECUTABLE = "langsmith-codex-tracing";
 const RELEASE_API = "http://releases.test/releases";
@@ -98,6 +98,23 @@ function releaseFetch(tags: string[], prereleases: string[] = []) {
   return vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(Response.json(releases))
+    .mockResolvedValueOnce(new Response(BODY));
+}
+
+function everyArchFetch(tag: string, arches = PUBLISHED_ARCHES, sidecarFirst = false) {
+  const digest = `sha256:${createHash("sha256").update(BODY).digest("hex")}`;
+  const assets = arches.flatMap((arch) => {
+    const name = `${EXECUTABLE}-darwin-${arch}-${tag}`;
+    const url = `http://releases.test/download/${tag}/${arch}`;
+    const binary = { name, browser_download_url: url, size: BODY.byteLength, digest };
+    const sidecar = { name: `${name}.sha256`, browser_download_url: `${url}.sha256`, size: 80 };
+    return sidecarFirst ? [sidecar, binary] : [binary, sidecar];
+  });
+  return vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json([{ tag_name: tag, draft: false, prerelease: false, assets }]),
+    )
     .mockResolvedValueOnce(new Response(BODY));
 }
 
@@ -188,6 +205,39 @@ it.each([
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
 });
 
+describe.each([
+  ["the binary listed before its sidecar", false],
+  ["the sidecar listed before its binary", true],
+])("a release carrying all four assets with %s", (_label, sidecarFirst) => {
+  it.each(PUBLISHED_ARCHES)("picks the %s binary and never a sidecar", async (arch) => {
+    const fetchImpl = everyArchFetch("v0.3.0", PUBLISHED_ARCHES, sidecarFirst);
+
+    await install({ source: undefined, runtimeArch: arch, fetchImpl });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[1][0]).toEqual(
+      new URL(`http://releases.test/download/v0.3.0/${arch}`),
+    );
+    expect(await fs.readFile(installed)).toEqual(Buffer.from(BODY));
+  });
+});
+
+it("installs a release that carries only this machine's architecture", async () => {
+  const fetchImpl = everyArchFetch("v0.3.0", ["x64"]);
+
+  await install({ source: undefined, runtimeArch: "x64", fetchImpl });
+
+  expect(fetchImpl.mock.calls[1][0]).toEqual(new URL("http://releases.test/download/v0.3.0/x64"));
+});
+
+it("refuses a release that carries only the other architecture", async () => {
+  const fetchImpl = everyArchFetch("v0.3.0", ["arm64"]);
+
+  await expect(install({ source: undefined, runtimeArch: "x64", fetchImpl })).rejects.toThrow(
+    `no published release carries a ${EXECUTABLE}-darwin-x64-<tag> asset`,
+  );
+});
+
 it("installs a prerelease only when --tag names it", async () => {
   const tags = ["0.4.0", "0.5.0-beta.1"];
   const named = releaseFetch(tags, ["0.5.0-beta.1"]);
@@ -274,7 +324,12 @@ it.each<[string, Partial<InstallBinaryOptions>, string]>([
   [
     "the platform has no published binary",
     { runtimePlatform: "win32", runtimeArch: "x64" },
-    "only runs on macOS arm64",
+    "only runs on macOS arm64 and x64, not win32-x64",
+  ],
+  [
+    "the architecture has no published binary",
+    { runtimePlatform: "darwin", runtimeArch: "ia32" },
+    "only runs on macOS arm64 and x64, not darwin-ia32",
   ],
   [
     "the copy fails its signature check",
@@ -398,7 +453,7 @@ describe.runIf(binaryExists)("installing the binary", () => {
     const stop = await fireHook("Stop", "work");
     expect(stop.stderr).toBe("");
     expect(stop.stdout).toBe("");
-  });
+  }, 30_000);
 });
 
 describe("listing releases", () => {

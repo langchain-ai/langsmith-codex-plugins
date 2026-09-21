@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { updateFromGitHub } from "../src/updater.js";
-import { MAX_BINARY_BYTES } from "../src/sea-constants.js";
+import { MAX_BINARY_BYTES, PUBLISHED_ARCHES } from "../src/sea-constants.js";
 import { newestInstallableRelease } from "../src/updater-releases.js";
 import {
   isPublishedSeaTarget,
@@ -39,8 +39,13 @@ function stamp(file: string, mtimeMs: number): string {
   return file;
 }
 
-function release(tag: string, body = BODY, digest: string | null = `sha256:${sha256(body)}`) {
-  const name = releaseAssetName(tag);
+function release(
+  tag: string,
+  body = BODY,
+  digest: string | null = `sha256:${sha256(body)}`,
+  arch = "arm64",
+) {
+  const name = releaseAssetName(tag, arch);
   const url = `http://releases.test/download/${tag}/${name}`;
   const asset = { name, browser_download_url: url, size: body.byteLength, digest };
   const sidecar = { name: `${name}.sha256`, browser_download_url: `${url}.sha256`, size: 80 };
@@ -84,9 +89,12 @@ it("targets only newer stable releases carrying this plugin's asset, on the publ
   expect(isVersionNewer("v0.2.0-beta", "0.1.0")).toBe(true);
   expect(isVersionNewer("v0.2.0-Beta.1", "0.1.0")).toBe(false);
   expect(isVersionNewer("latest", "0.1.0")).toBe(false);
-  expect(releaseAssetName("v0.1.0")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0`);
+  expect(releaseAssetName("v0.1.0", "arm64")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0`);
+  expect(releaseAssetName("v0.1.0", "x64")).toBe(`${EXECUTABLE}-darwin-x64-v0.1.0`);
+  expect(PUBLISHED_ARCHES).toEqual(["arm64", "x64"]);
   expect(isPublishedSeaTarget("darwin", "arm64")).toBe(true);
-  expect(isPublishedSeaTarget("darwin", "x64")).toBe(false);
+  expect(isPublishedSeaTarget("darwin", "x64")).toBe(true);
+  expect(isPublishedSeaTarget("darwin", "ia32")).toBe(false);
   expect(isPublishedSeaTarget("win32", "x64")).toBe(false);
   expect(isPublishedSeaTarget("linux", "arm64")).toBe(false);
 
@@ -97,8 +105,8 @@ it("targets only newer stable releases carrying this plugin's asset, on the publ
     release("v0.2.0"),
     release("v0.3.0"),
   ]);
-  expect(newestInstallableRelease(releases)?.tag_name).toBe("v0.3.0");
-  expect(newestInstallableRelease(releases, "0.3.0")).toBeUndefined();
+  expect(newestInstallableRelease(releases, "arm64")?.tag_name).toBe("v0.3.0");
+  expect(newestInstallableRelease(releases, "arm64", "0.3.0")).toBeUndefined();
   expect(() => parseReleases({ tag_name: "v0.1.0" })).toThrow("invalid GitHub releases response");
 });
 
@@ -116,8 +124,84 @@ it("orders a prerelease below the release it leads to", () => {
 
   const prerelease = { ...release("0.5.0-beta.1"), prerelease: true };
   const listed = parseReleases([prerelease, release("0.4.0")]);
-  expect(newestInstallableRelease(listed)?.tag_name).toBe("0.4.0");
-  expect(newestInstallableRelease(parseReleases([prerelease]))).toBeUndefined();
+  expect(newestInstallableRelease(listed, "arm64")?.tag_name).toBe("0.4.0");
+  expect(newestInstallableRelease(parseReleases([prerelease]), "arm64")).toBeUndefined();
+});
+
+const ARM_BODY = new TextEncoder().encode("the arm64 binary");
+const INTEL_BODY = new TextEncoder().encode("the x64 binary");
+
+function bothArches(tag: string, sidecarFirst = false) {
+  const assets = [];
+  for (const [arch, body] of [
+    ["arm64", ARM_BODY],
+    ["x64", INTEL_BODY],
+  ] as const) {
+    const name = releaseAssetName(tag, arch);
+    const url = `http://releases.test/download/${tag}/${name}`;
+    const binary = {
+      name,
+      browser_download_url: url,
+      size: body.byteLength,
+      digest: `sha256:${sha256(body)}`,
+    };
+    const sidecar = { name: `${name}.sha256`, browser_download_url: `${url}.sha256`, size: 80 };
+    assets.push(...(sidecarFirst ? [sidecar, binary] : [binary, sidecar]));
+  }
+  return { tag_name: tag, draft: false, prerelease: false, assets };
+}
+
+describe.each([
+  ["the binary listed before its sidecar", false],
+  ["the sidecar listed before its binary", true],
+])("a release carrying all four assets with %s", (_label, sidecarFirst) => {
+  it.each([
+    ["arm64", ARM_BODY],
+    ["x64", INTEL_BODY],
+  ])("installs the %s binary and never a sidecar", async (arch, body) => {
+    const listing = bothArches("0.2.0", sidecarFirst);
+    const fetchImpl = fetchSequence(Response.json([listing]), new Response(body));
+
+    await expect(updateFromGitHub(opts(fetchImpl, { runtimeArch: arch }))).resolves.toEqual({
+      status: "updated",
+      version: "0.2.0",
+    });
+    expect(readFileSync(target)).toEqual(Buffer.from(body));
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(String(fetchImpl.mock.calls[1][0])).toBe(
+      `http://releases.test/download/0.2.0/${releaseAssetName("0.2.0", arch)}`,
+    );
+  });
+});
+
+describe("selecting a release by architecture", () => {
+  it("finds a release carrying all four assets for either architecture", () => {
+    const releases = parseReleases([bothArches("0.2.0")]);
+    for (const arch of PUBLISHED_ARCHES) {
+      expect(newestInstallableRelease(releases, arch)?.tag_name).toBe("0.2.0");
+    }
+    expect(newestInstallableRelease(releases, "ia32")).toBeUndefined();
+  });
+
+  it("installs a release that carries only this machine's architecture", async () => {
+    const only = release("0.2.0", INTEL_BODY, `sha256:${sha256(INTEL_BODY)}`, "x64");
+    const fetchImpl = fetchSequence(Response.json([only]), new Response(INTEL_BODY));
+
+    await expect(updateFromGitHub(opts(fetchImpl, { runtimeArch: "x64" }))).resolves.toEqual({
+      status: "updated",
+      version: "0.2.0",
+    });
+    expect(readFileSync(target)).toEqual(Buffer.from(INTEL_BODY));
+  });
+
+  it("leaves the binary alone when only the other architecture is published", async () => {
+    const fetchImpl = fetchSequence(Response.json([release("0.2.0")]));
+
+    await expect(updateFromGitHub(opts(fetchImpl, { runtimeArch: "x64" }))).resolves.toEqual({
+      status: "current",
+    });
+    expect(readFileSync(target, "utf8")).toBe("the old binary");
+  });
 });
 
 it("parses a bare prerelease and sorts it as the first iteration of its label", () => {
@@ -157,7 +241,7 @@ describe("updateFromGitHub", () => {
       "the published checksum sidecar",
       [
         Response.json([release("v0.2.0", BODY, null)]),
-        new Response(`${sha256(BODY)}  ${releaseAssetName("v0.2.0")}\n`),
+        new Response(`${sha256(BODY)}  ${releaseAssetName("v0.2.0", "arm64")}\n`),
         new Response(BODY),
       ],
     ],

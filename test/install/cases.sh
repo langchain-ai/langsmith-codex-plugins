@@ -6,24 +6,27 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 INSTALLER="${INSTALLER:-$ROOT/install.sh}"
 EXECUTABLE="langsmith-codex-tracing"
 REPO="langchain-ai/langsmith-codex-plugins"
+ARCHES=(arm64 x64)
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/install-test.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/dl" "$WORK/shim"
 
+ARCH=""
+OTHER=""
 PASSED=0
 FAILED=0
 LAST_OUTPUT=""
 LAST_STATUS=0
 
 publish_binary() {
-  local tag="$1" asset dir
+  local tag="$1" arch="${2:-$ARCH}" asset dir
   dir="$WORK/dl/$tag"
-  asset="$EXECUTABLE-darwin-arm64-$tag"
+  asset="$EXECUTABLE-darwin-$arch-$tag"
   mkdir -p "$dir"
   cat >"$dir/$asset" <<EOF
 #!/bin/bash
-if [ "\$1" = "--install" ]; then printf 'RAN $tag args=%s\n' "\$*"; exit 0; fi
+if [ "\$1" = "--install" ]; then printf 'RAN $tag $arch args=%s\n' "\$*"; exit 0; fi
 printf 'Unknown hook event: (none)\n'
 exit 0
 EOF
@@ -48,7 +51,11 @@ asset_json() {
 }
 
 binary_asset_json() {
-  asset_json "$EXECUTABLE-darwin-arm64-$1" "$2"
+  asset_json "$EXECUTABLE-darwin-${3:-$ARCH}-$1" "$2"
+}
+
+sidecar_asset_json() {
+  asset_json "$EXECUTABLE-darwin-${3:-$ARCH}-$1.sha256" "$2"
 }
 
 release_json() {
@@ -71,7 +78,7 @@ release_json() {
   done
   if [[ $first -eq 0 ]]; then printf '\n'; fi
   printf '    ],\n'
-  printf '    "body": "Notes quoting \\"draft\\": true and \\"prerelease\\": true and \\"tag_name\\": \\"9.9.9\\" and \\"name\\": \\"%s-darwin-arm64-9.9.9\\""\n' "$EXECUTABLE"
+  printf '    "body": "Notes quoting \\"draft\\": true and \\"prerelease\\": true and \\"tag_name\\": \\"9.9.9\\" and \\"name\\": \\"%s-darwin-%s-9.9.9\\""\n' "$EXECUTABLE" "$ARCH"
   printf '  }'
 }
 
@@ -107,6 +114,27 @@ shim() {
   chmod +x "$WORK/shim/$1"
 }
 
+machine_shim() {
+  shim uname <<EOF
+#!/bin/bash
+if [ "\$1" = "-m" ]; then printf '%s\n' "$2"; else printf '%s\n' "$1"; fi
+EOF
+}
+
+select_arch() {
+  ARCH="$1"
+  case "$ARCH" in
+    arm64)
+      OTHER=x64
+      machine_shim Darwin arm64
+      ;;
+    x64)
+      OTHER=arm64
+      machine_shim Darwin x86_64
+      ;;
+  esac
+}
+
 run_installer() {
   local fixture="$1"
   shift
@@ -139,6 +167,7 @@ report() {
     FAILED=$((FAILED + 1))
     printf 'FAIL %s\n' "$name"
     printf '     status %s, output: %s\n' "$LAST_STATUS" "$LAST_OUTPUT"
+    if [[ -n "${FAIL_FAST:-}" ]]; then exit 1; fi
   fi
 }
 
@@ -151,201 +180,244 @@ expect_output() {
   fi
 }
 
-SHA_040="$(publish_binary 0.4.0)"
-SHA_030="$(publish_binary 0.3.0)"
-SHA_0100="$(publish_binary 0.10.0)"
-SHA_999="$(publish_binary 9.9.9)"
-UPPER_040="$(printf '%s' "$SHA_040" | tr '[:lower:]' '[:upper:]')"
+write_fixtures() {
+  SHA_040="$(publish_binary 0.4.0)"
+  SHA_030="$(publish_binary 0.3.0)"
+  SHA_0100="$(publish_binary 0.10.0)"
+  SHA_999="$(publish_binary 9.9.9)"
+  SHA_040_OTHER="$(publish_binary 0.4.0 "$OTHER")"
+  UPPER_040="$(printf '%s' "$SHA_040" | tr '[:lower:]' '[:upper:]')"
 
-write_releases good \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")" \
-  "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
+  write_releases good \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")" \
+    "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
 
-write_releases sidecar \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")" \
-    "$(asset_json "$EXECUTABLE-darwin-arm64-0.4.0.sha256" "sha256:$SHA_030")")"
+  write_releases sidecar \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")" \
+      "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030")")"
 
-write_releases sidecarfirst \
-  "$(stable 0.4.0 "$(asset_json "$EXECUTABLE-darwin-arm64-0.4.0.sha256" "sha256:$SHA_030")" \
-    "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases sidecarfirst \
+    "$(stable 0.4.0 "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030")" \
+      "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases titled \
-  "$(release_json 9.9.9 "$EXECUTABLE-darwin-arm64-9.9.9" false true \
-    "$(asset_json notes.txt "sha256:$SHA_999")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases everyasset \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")" \
+      "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030")" \
+      "$(binary_asset_json 0.4.0 "sha256:$SHA_040_OTHER" "$OTHER")" \
+      "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030" "$OTHER")")"
 
-write_releases titled-stable \
-  "$(release_json 9.9.9 "$EXECUTABLE-darwin-arm64-9.9.9" false false \
-    "$(asset_json notes.txt "sha256:$SHA_999")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases everyassetreversed \
+    "$(stable 0.4.0 "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030" "$OTHER")" \
+      "$(binary_asset_json 0.4.0 "sha256:$SHA_040_OTHER" "$OTHER")" \
+      "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030")" \
+      "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases prerelease \
-  "$(beta 9.9.9 "$(binary_asset_json 9.9.9 "sha256:$SHA_999")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases otherarchonly \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040_OTHER" "$OTHER")" \
+      "$(sidecar_asset_json 0.4.0 "sha256:$SHA_030" "$OTHER")")"
 
-write_releases draft \
-  "$(release_json 9.9.9 9.9.9 true false "$(binary_asset_json 9.9.9 "sha256:$SHA_999")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases otherarchnewer \
+    "$(stable 0.9.0 "$(binary_asset_json 0.9.0 "sha256:$SHA_040_OTHER" "$OTHER")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases nulldigest \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 null)")" \
-  "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
+  write_releases titled \
+    "$(release_json 9.9.9 "$EXECUTABLE-darwin-$ARCH-9.9.9" false true \
+      "$(asset_json notes.txt "sha256:$SHA_999")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases nodigest \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 omit)")" \
-  "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
+  write_releases titled-stable \
+    "$(release_json 9.9.9 "$EXECUTABLE-darwin-$ARCH-9.9.9" false false \
+      "$(asset_json notes.txt "sha256:$SHA_999")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases shortdigest \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:${SHA_040:0:40}")")"
+  write_releases prerelease \
+    "$(beta 9.9.9 "$(binary_asset_json 9.9.9 "sha256:$SHA_999")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases updigest \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$UPPER_040")")" \
-  "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
+  write_releases draft \
+    "$(release_json 9.9.9 9.9.9 true false "$(binary_asset_json 9.9.9 "sha256:$SHA_999")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases mismatch \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_030")")"
+  write_releases nulldigest \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 null)")" \
+    "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
 
-write_releases missingasset \
-  "$(stable 0.7.0 "$(binary_asset_json 0.7.0 "sha256:$SHA_040")")"
+  write_releases nodigest \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 omit)")" \
+    "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
 
-write_releases wrongversion \
-  "$(stable 0.5.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases shortdigest \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:${SHA_040:0:40}")")"
 
-write_releases ordering \
-  "$(stable 0.9.0 "$(binary_asset_json 0.9.0 "sha256:$SHA_030")")" \
-  "$(stable 0.10.0 "$(binary_asset_json 0.10.0 "sha256:$SHA_0100")")"
+  write_releases updigest \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$UPPER_040")")" \
+    "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
 
-SHA_BETA1="$(publish_binary 0.5.0-beta.1)"
-SHA_BETA2="$(publish_binary 0.5.0-beta.2)"
-SHA_BETA10="$(publish_binary 0.5.0-beta.10)"
-SHA_ALPHA99="$(publish_binary 0.5.0-alpha.99)"
-SHA_050="$(publish_binary 0.5.0)"
-SHA_040BETA1="$(publish_binary 0.4.0-beta.1)"
+  write_releases mismatch \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_030")")"
 
-write_releases beta \
-  "$(beta 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases missingasset \
+    "$(stable 0.7.0 "$(binary_asset_json 0.7.0 "sha256:$SHA_040")")"
 
-write_releases betaonly \
-  "$(beta 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")"
+  write_releases wrongversion \
+    "$(stable 0.5.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases betadraft \
-  "$(release_json 0.5.0-beta.1 0.5.0-beta.1 true true \
-    "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")"
+  write_releases ordering \
+    "$(stable 0.9.0 "$(binary_asset_json 0.9.0 "sha256:$SHA_030")")" \
+    "$(stable 0.10.0 "$(binary_asset_json 0.10.0 "sha256:$SHA_0100")")"
 
-write_releases betaolder \
-  "$(stable 0.5.0 "$(binary_asset_json 0.5.0 "sha256:$SHA_050")")" \
-  "$(beta 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")"
+  SHA_BETA1="$(publish_binary 0.5.0-beta.1)"
+  SHA_BETA2="$(publish_binary 0.5.0-beta.2)"
+  SHA_BETA10="$(publish_binary 0.5.0-beta.10)"
+  SHA_ALPHA99="$(publish_binary 0.5.0-alpha.99)"
+  SHA_050="$(publish_binary 0.5.0)"
+  SHA_040BETA1="$(publish_binary 0.4.0-beta.1)"
 
-write_releases betaladderpre \
-  "$(beta 0.5.0-beta.2 "$(binary_asset_json 0.5.0-beta.2 "sha256:$SHA_BETA2")")" \
-  "$(beta 0.5.0-beta.10 "$(binary_asset_json 0.5.0-beta.10 "sha256:$SHA_BETA10")")" \
-  "$(beta 0.5.0-alpha.99 "$(binary_asset_json 0.5.0-alpha.99 "sha256:$SHA_ALPHA99")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases beta \
+    "$(beta 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases betamislabelled \
-  "$(stable 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")" \
-  "$(stable 0.5.0 "$(binary_asset_json 0.5.0 "sha256:$SHA_050")")"
+  write_releases betaonly \
+    "$(beta 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")"
 
-write_releases betaladder \
-  "$(stable 0.5.0-beta.2 "$(binary_asset_json 0.5.0-beta.2 "sha256:$SHA_BETA2")")" \
-  "$(stable 0.5.0-beta.10 "$(binary_asset_json 0.5.0-beta.10 "sha256:$SHA_BETA10")")" \
-  "$(stable 0.5.0-alpha.99 "$(binary_asset_json 0.5.0-alpha.99 "sha256:$SHA_ALPHA99")")"
+  write_releases betadraft \
+    "$(release_json 0.5.0-beta.1 0.5.0-beta.1 true true \
+      "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")"
 
-write_releases unparsabletag \
-  "$(stable v9.9.9 "$(binary_asset_json v9.9.9 "sha256:$SHA_999")")" \
-  "$(stable 9.9.9-Beta.1 "$(binary_asset_json 9.9.9-Beta.1 "sha256:$SHA_999")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases betaolder \
+    "$(stable 0.5.0 "$(binary_asset_json 0.5.0 "sha256:$SHA_050")")" \
+    "$(beta 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")"
 
-SHA_040BETA="$(publish_binary 0.4.0-beta)"
+  write_releases betaladderpre \
+    "$(beta 0.5.0-beta.2 "$(binary_asset_json 0.5.0-beta.2 "sha256:$SHA_BETA2")")" \
+    "$(beta 0.5.0-beta.10 "$(binary_asset_json 0.5.0-beta.10 "sha256:$SHA_BETA10")")" \
+    "$(beta 0.5.0-alpha.99 "$(binary_asset_json 0.5.0-alpha.99 "sha256:$SHA_ALPHA99")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-write_releases bareonly \
-  "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")"
+  SHA_040BETA="$(publish_binary 0.4.0-beta)"
 
-write_releases bareladder \
-  "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
-  "$(stable 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")"
+  write_releases bareonly \
+    "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")"
 
-write_releases bareladderstable \
-  "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
-  "$(stable 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")" \
-  "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases bareladder \
+    "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
+    "$(stable 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")"
 
-write_releases barebeta \
-  "$(beta 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
-  "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
+  write_releases bareladderstable \
+    "$(stable 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
+    "$(stable 0.4.0-beta.1 "$(binary_asset_json 0.4.0-beta.1 "sha256:$SHA_040BETA1")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
 
-MANY=()
-for index in $(seq 40 -1 11); do
-  MANY+=("$(stable "1.0.$index")")
-done
-write_releases many30 "${MANY[@]}"
-write_releases many31 "${MANY[@]}" "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+  write_releases barebeta \
+    "$(beta 0.4.0-beta "$(binary_asset_json 0.4.0-beta "sha256:$SHA_040BETA")")" \
+    "$(stable 0.3.0 "$(binary_asset_json 0.3.0 "sha256:$SHA_030")")"
 
-while IFS='|' read -r name fixture args needle status <&3; do
-  [[ -n "$name" ]] || continue
-  argv=()
-  if [[ -n "$args" ]]; then read -r -a argv <<<"$args"; fi
-  run_installer "$fixture" ${argv[@]+"${argv[@]}"}
-  expect_output "$name" "$needle" "$status"
-done 3<<'CASES'
-newest stable wins|good||RAN 0.4.0 args=--install|0
-pinned release wins|good|0.3.0|RAN 0.3.0 args=--install|0
-a SHA-256 sidecar is not the binary|sidecar||RAN 0.4.0 args=--install|0
-a SHA-256 sidecar listed first is not the binary|sidecarfirst||RAN 0.4.0 args=--install|0
-an asset-shaped prerelease title loses|titled||RAN 0.4.0 args=--install|0
-an asset-shaped stable title is not an asset|titled-stable||RAN 0.4.0 args=--install|0
-a prerelease is skipped|prerelease||RAN 0.4.0 args=--install|0
-a draft is skipped|draft||RAN 0.4.0 args=--install|0
+  write_releases betamislabelled \
+    "$(stable 0.5.0-beta.1 "$(binary_asset_json 0.5.0-beta.1 "sha256:$SHA_BETA1")")" \
+    "$(stable 0.5.0 "$(binary_asset_json 0.5.0 "sha256:$SHA_050")")"
+
+  write_releases betaladder \
+    "$(stable 0.5.0-beta.2 "$(binary_asset_json 0.5.0-beta.2 "sha256:$SHA_BETA2")")" \
+    "$(stable 0.5.0-beta.10 "$(binary_asset_json 0.5.0-beta.10 "sha256:$SHA_BETA10")")" \
+    "$(stable 0.5.0-alpha.99 "$(binary_asset_json 0.5.0-alpha.99 "sha256:$SHA_ALPHA99")")"
+
+  write_releases unparsabletag \
+    "$(stable v9.9.9 "$(binary_asset_json v9.9.9 "sha256:$SHA_999")")" \
+    "$(stable 9.9.9-Beta.1 "$(binary_asset_json 9.9.9-Beta.1 "sha256:$SHA_999")")" \
+    "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+
+  local index
+  MANY=()
+  for index in $(seq 40 -1 11); do
+    MANY+=("$(stable "1.0.$index")")
+  done
+  write_releases many30 "${MANY[@]}"
+  write_releases many31 "${MANY[@]}" "$(stable 0.4.0 "$(binary_asset_json 0.4.0 "sha256:$SHA_040")")"
+}
+
+run_cases() {
+  local name fixture args needle status
+  while IFS='|' read -r name fixture args needle status <&3; do
+    [[ -n "$name" ]] || continue
+    argv=()
+    if [[ -n "$args" ]]; then read -r -a argv <<<"$args"; fi
+    run_installer "$fixture" ${argv[@]+"${argv[@]}"}
+    expect_output "$name ($ARCH)" "${needle//@ARCH@/$ARCH}" "$status"
+  done 3<<'CASES'
+newest stable wins|good||RAN 0.4.0 @ARCH@ args=--install|0
+pinned release wins|good|0.3.0|RAN 0.3.0 @ARCH@ args=--install|0
+a SHA-256 sidecar is not the binary|sidecar||RAN 0.4.0 @ARCH@ args=--install|0
+a SHA-256 sidecar listed first is not the binary|sidecarfirst||RAN 0.4.0 @ARCH@ args=--install|0
+all four published assets still resolve to this machine's binary|everyasset||RAN 0.4.0 @ARCH@ args=--install|0
+all four listed in reverse still resolve to this machine's binary|everyassetreversed||RAN 0.4.0 @ARCH@ args=--install|0
+a pinned release with all four assets resolves to this machine's binary|everyasset|0.4.0|RAN 0.4.0 @ARCH@ args=--install|0
+only the other architecture leaves nothing to install|otherarchonly||None of the newest 100 releases carries a macOS @ARCH@ binary.|1
+a pinned release carrying only the other architecture is refused|otherarchonly|0.4.0|None of the newest 100 releases is 0.4.0 carrying a macOS @ARCH@ binary.|1
+a newer release for the other architecture does not win|otherarchnewer||RAN 0.4.0 @ARCH@ args=--install|0
+an asset-shaped prerelease title loses|titled||RAN 0.4.0 @ARCH@ args=--install|0
+an asset-shaped stable title is not an asset|titled-stable||RAN 0.4.0 @ARCH@ args=--install|0
+a prerelease is skipped|prerelease||RAN 0.4.0 @ARCH@ args=--install|0
+a draft is skipped|draft||RAN 0.4.0 @ARCH@ args=--install|0
 a pinned draft is refused|draft|9.9.9|None of the newest 100 releases is 9.9.9|1
 a null digest does not downgrade|nulldigest||without a SHA-256 digest|1
-a pinned null digest names the cause|nulldigest|0.4.0|Release 0.4.0 publishes its macOS arm64 binary without a SHA-256 digest|1
+a pinned null digest names the cause|nulldigest|0.4.0|Release 0.4.0 publishes its macOS @ARCH@ binary without a SHA-256 digest|1
 an absent digest does not downgrade|nodigest||without a SHA-256 digest|1
 a truncated digest is not a digest|shortdigest||without a SHA-256 digest|1
-an uppercase digest is accepted|updigest||RAN 0.4.0 args=--install|0
-release 31 is still reachable|many31||RAN 0.4.0 args=--install|0
-an empty page names the page size|many30||None of the newest 100 releases carries a macOS arm64 binary.|1
+an uppercase digest is accepted|updigest||RAN 0.4.0 @ARCH@ args=--install|0
+release 31 is still reachable|many31||RAN 0.4.0 @ARCH@ args=--install|0
+an empty page names the page size|many30||None of the newest 100 releases carries a macOS @ARCH@ binary.|1
 a digest mismatch fails the install|mismatch||failed its SHA-256 check|1
 a missing download is reported|missingasset||Could not download|1
 an asset version must match the tag|wrongversion||None of the newest 100 releases carries|1
-0.10.0 sorts above 0.9.0|ordering||RAN 0.10.0 args=--install|0
+0.10.0 sorts above 0.9.0|ordering||RAN 0.10.0 @ARCH@ args=--install|0
 an unreachable API is reported|absent||Could not read the releases API|1
---tag and --project reach the binary|good|--tag 0.4.0 --project|RAN 0.4.0 args=--install --tag 0.4.0 --project|0
-a target and a forwarded flag coexist|good|0.3.0 --print|RAN 0.3.0 args=--install --print|0
+--tag and --project reach the binary|good|--tag 0.4.0 --project|RAN 0.4.0 @ARCH@ args=--install --tag 0.4.0 --project|0
+a target and a forwarded flag coexist|good|0.3.0 --print|RAN 0.3.0 @ARCH@ args=--install --print|0
 --help exits clean|good|--help|Install the LangSmith tracing binary|0
 --version exits clean|good|--version|installer 1.0|0
 two targets are refused|good|0.1.0 0.2.0|Only one target is allowed|2
 a non-version target is refused|good|nope|Invalid version target|2
 the release lookup is announced|good||Finding the release to install.|0
-the download names the resolved version|good||Downloading langsmith-codex-tracing-darwin-arm64-0.4.0.|0
+the download names the resolved version|good||Downloading langsmith-codex-tracing-darwin-@ARCH@-0.4.0.|0
 the handoff to the binary is announced|good||Installing 0.4.0.|0
 a pinned install announces the pinned version|good|0.3.0|Installing 0.3.0.|0
-a prerelease never wins on its own|beta||RAN 0.4.0 args=--install|0
+a prerelease never wins on its own|beta||RAN 0.4.0 @ARCH@ args=--install|0
 a prerelease alone leaves nothing to install|betaonly||None of the newest 100 releases carries|1
-a named prerelease installs|beta|0.5.0-beta.1|RAN 0.5.0-beta.1 args=--install|0
-a named prerelease is the only one served|betaonly|0.5.0-beta.1|RAN 0.5.0-beta.1 args=--install|0
+a named prerelease installs|beta|0.5.0-beta.1|RAN 0.5.0-beta.1 @ARCH@ args=--install|0
+a named prerelease is the only one served|betaonly|0.5.0-beta.1|RAN 0.5.0-beta.1 @ARCH@ args=--install|0
 a named prerelease that is a draft is refused|betadraft|0.5.0-beta.1|None of the newest 100 releases is 0.5.0-beta.1|1
-a mislabelled prerelease still loses to the release|betamislabelled||RAN 0.5.0 args=--install|0
-beta.10 sorts above beta.2 and above alpha.99|betaladder||RAN 0.5.0-beta.10 args=--install|0
-an unparsable tag cannot be newest|unparsabletag||RAN 0.4.0 args=--install|0
+a mislabelled prerelease still loses to the release|betamislabelled||RAN 0.5.0 @ARCH@ args=--install|0
+beta.10 sorts above beta.2 and above alpha.99|betaladder||RAN 0.5.0-beta.10 @ARCH@ args=--install|0
+an unparsable tag cannot be newest|unparsabletag||RAN 0.4.0 @ARCH@ args=--install|0
 a version with a suffix is a valid target|good|0.5.0-beta.1|None of the newest 100 releases is 0.5.0-beta.1|1
-a bare suffix is a valid target|barebeta|0.4.0-beta|RAN 0.4.0-beta args=--install|0
+a bare suffix is a valid target|barebeta|0.4.0-beta|RAN 0.4.0-beta @ARCH@ args=--install|0
 a trailing dash is refused|good|0.4.0-|Invalid version target|2
 an uppercase suffix is refused|good|0.4.0-Beta|Invalid version target|2
-a bare prerelease can be the newest|bareonly||RAN 0.4.0-beta args=--install|0
-a bare prerelease sorts below its first iteration|bareladder||RAN 0.4.0-beta.1 args=--install|0
-the release outranks both of its prereleases|bareladderstable||RAN 0.4.0 args=--install|0
---beta selects a bare-tagged prerelease|barebeta|--beta|RAN 0.4.0-beta args=--install|0
---beta installs the newest prerelease|betaladderpre|--beta|RAN 0.5.0-beta.10 args=--install|0
-the same ladder without --beta installs the stable|betaladderpre||RAN 0.4.0 args=--install|0
---beta passes over a newer stable|betaolder|--beta|RAN 0.4.0-beta.1 args=--install|0
---beta without a prerelease says so|good|--beta|None of the newest 100 releases is a prerelease carrying a macOS arm64 binary.|1
---beta skips a drafted prerelease|betadraft|--beta|None of the newest 100 releases is a prerelease carrying a macOS arm64 binary.|1
+a bare prerelease can be the newest|bareonly||RAN 0.4.0-beta @ARCH@ args=--install|0
+a bare prerelease sorts below its first iteration|bareladder||RAN 0.4.0-beta.1 @ARCH@ args=--install|0
+the release outranks both of its prereleases|bareladderstable||RAN 0.4.0 @ARCH@ args=--install|0
+--beta selects a bare-tagged prerelease|barebeta|--beta|RAN 0.4.0-beta @ARCH@ args=--install|0
+--beta installs the newest prerelease|betaladderpre|--beta|RAN 0.5.0-beta.10 @ARCH@ args=--install|0
+the same ladder without --beta installs the stable|betaladderpre||RAN 0.4.0 @ARCH@ args=--install|0
+--beta passes over a newer stable|betaolder|--beta|RAN 0.4.0-beta.1 @ARCH@ args=--install|0
+--beta without a prerelease says so|good|--beta|None of the newest 100 releases is a prerelease carrying a macOS @ARCH@ binary.|1
+--beta skips a drafted prerelease|betadraft|--beta|None of the newest 100 releases is a prerelease carrying a macOS @ARCH@ binary.|1
 --beta before a target is refused|good|--beta 0.4.0|--beta and a version target are contradictory|2
 --beta after a target is refused|good|0.4.0 --beta|--beta and a version target are contradictory|2
---beta still forwards later flags|beta|--beta --print|RAN 0.5.0-beta.1 args=--install --print|0
+--beta still forwards later flags|beta|--beta --print|RAN 0.5.0-beta.1 @ARCH@ args=--install --print|0
 --help documents --beta|good|--help|--beta            Install the newest prerelease|0
+--help names both published architectures|good|--help|Only macOS arm64 and x64 are published|0
 CASES
+}
+
+for arch in "${ARCHES[@]}"; do
+  select_arch "$arch"
+  write_fixtures
+  run_cases
+done
+
+select_arch arm64
+write_fixtures
 
 shim sed <<'EOF'
 #!/bin/bash
@@ -355,13 +427,11 @@ run_installer good
 expect_output "a parser failure is not a missing release" "Could not read the release list" 1
 rm -f "$WORK/shim/sed"
 
-shim uname <<'EOF'
-#!/bin/bash
-if [ "$1" = "-m" ]; then printf 'x86_64\n'; else printf 'Darwin\n'; fi
-EOF
+machine_shim Darwin i386
 run_installer good
-expect_output "an unsupported platform is refused" "The standalone binary is macOS arm64 only. This machine reports Darwin-x86_64." 1
-expect_output "an unsupported platform gives the plugin commands" "The plugin does the same tracing and works on Windows, Linux and Intel Macs.
+expect_output "an unsupported macOS architecture is refused" \
+  "The standalone binary is macOS arm64 and x64 only. This machine reports Darwin-i386." 1
+expect_output "an unsupported platform gives the plugin commands" "The plugin does the same tracing and works on Windows and Linux.
 
   codex plugin marketplace add langchain-ai/langsmith-codex-plugins
 
@@ -371,15 +441,17 @@ Then enable it in ~/.codex/config.toml:
   enabled = true
 
 Restart Codex, then run /hooks to trust the plugin's hooks." 1
-rm -f "$WORK/shim/uname"
 
-shim uname <<'EOF'
-#!/bin/bash
-if [ "$1" = "-m" ]; then printf 'x86_64\n'; else printf 'MINGW64_NT-10.0-22631\n'; fi
-EOF
+machine_shim Linux x86_64
+run_installer good
+expect_output "an unsupported kernel is refused" \
+  "The standalone binary is macOS arm64 and x64 only. This machine reports Linux-x86_64." 1
+
+machine_shim MINGW64_NT-10.0-22631 x86_64
 run_installer good
 expect_output "an unsupported platform is named verbatim" "This machine reports MINGW64_NT-10.0-22631-x86_64." 1
-rm -f "$WORK/shim/uname"
+
+select_arch arm64
 
 shim curl <<EOF
 #!/bin/bash
@@ -423,7 +495,7 @@ run_installer_split good
 CLEAN_STDOUT="$LAST_OUTPUT"
 PROGRESS_STDERR="$(cat "$WORK/stderr.txt")"
 LAST_OUTPUT="stdout: $CLEAN_STDOUT"
-if [[ "$CLEAN_STDOUT" == "RAN 0.4.0 args=--install" &&
+if [[ "$CLEAN_STDOUT" == "RAN 0.4.0 arm64 args=--install" &&
   "$PROGRESS_STDERR" == *"Finding the release to install."* &&
   "$PROGRESS_STDERR" == *"Downloading "* &&
   "$PROGRESS_STDERR" == *"Installing 0.4.0."* ]]; then
