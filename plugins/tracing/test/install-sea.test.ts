@@ -156,7 +156,11 @@ it("copies the running binary into place as an executable, without the network",
   const fetchImpl = vi.fn<typeof fetch>();
   await fs.writeFile(path.join(home, "downloaded"), "the downloaded asset", { mode: 0o644 });
 
-  expect(await install({ fetchImpl })).toEqual({ binary: installed, hooks: hooksPath });
+  expect(await install({ fetchImpl, currentVersion: "0.4.0" })).toEqual({
+    binary: installed,
+    hooks: hooksPath,
+    version: "0.4.0",
+  });
   expect(fetchImpl).not.toHaveBeenCalled();
   expect(await fs.readFile(installed, "utf8")).toBe("the downloaded asset");
   expect((await fs.stat(installed)).mode & 0o777).toBe(0o755);
@@ -171,8 +175,13 @@ it.each([
 ])("downloads the release when %s", async (_label, tag, wanted) => {
   const fetchImpl = releaseFetch(["v0.2.0", "v0.3.0"]);
 
-  await install({ tag, source: tag ? path.join(home, "downloaded") : undefined, fetchImpl });
+  const result = await install({
+    tag,
+    source: tag ? path.join(home, "downloaded") : undefined,
+    fetchImpl,
+  });
 
+  expect(result.version).toBe(wanted.replace(/^v/, ""));
   expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=100`);
   expect(fetchImpl.mock.calls[1][0]).toEqual(new URL(`http://releases.test/download/${wanted}`));
   expect(await fs.readFile(installed)).toEqual(Buffer.from(BODY));
@@ -357,6 +366,18 @@ describe.runIf(binaryExists)("installing the binary", () => {
     const result = await run(builtBinary, ["--install"], {});
     expect(result.stderr).toBe("");
     expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      [
+        `Installed ${EXECUTABLE} ${PLUGIN_VERSION} to ~/.langsmith`,
+        "Registered 2 hooks in ~/.codex/hooks.json",
+        "",
+        "Next:",
+        "  1. Create ~/.codex/langsmith.json (if it doesn't exist already):",
+        `       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
+        '  2. Restart Codex, then choose "Trust all and continue" when it asks',
+        "",
+      ].join("\n"),
+    );
     expect(statSync(installed).size).toBe(statSync(builtBinary).size);
     expect(statSync(installed).mode & 0o777).toBe(0o755);
     expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
