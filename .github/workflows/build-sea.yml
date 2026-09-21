@@ -176,6 +176,7 @@ jobs:
       - name: Attach the Binary to the Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
           name="langsmith-codex-tracing-darwin-arm64-${TAG}-unsigned"
