@@ -85,7 +85,7 @@ function releaseFetch(tags: string[], prereleases: string[] = []) {
     prerelease: prereleases.includes(tag),
     assets: [
       {
-        name: `${EXECUTABLE}-darwin-arm64-${tag}-unsigned`,
+        name: `${EXECUTABLE}-darwin-arm64-${tag}`,
         browser_download_url: `http://releases.test/download/${tag}`,
         size: BODY.byteLength,
         digest,

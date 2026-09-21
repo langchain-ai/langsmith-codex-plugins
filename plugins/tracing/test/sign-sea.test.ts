@@ -11,6 +11,7 @@ import {
   missingAppleCredentials,
   sign,
 } from "../../../scripts/sign.sea.ts";
+import { releaseAssetName } from "../src/updater-utils.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workflow = readFileSync(join(root, ".github/workflows/build-sea.yml"), "utf8");
@@ -194,6 +195,10 @@ describe("the build workflow", () => {
     expect(body).toContain(
       "- name: Restore the Executable Bit\n        run: chmod +x plugins/tracing/bin/langsmith-codex-tracing\n",
     );
+  });
+
+  it("publishes the asset name the updater and the installer look for", () => {
+    expect(/^ +name="(.+)"$/m.exec(job("publish"))?.[1]).toBe(releaseAssetName("${TAG}"));
   });
 
   it("tests the ref for a tag once and shares that answer with the other jobs", () => {

@@ -83,7 +83,7 @@ it("targets only newer stable releases carrying this plugin's asset, on the publ
   expect(isVersionNewer("v0.2.0-beta", "0.1.0")).toBe(false);
   expect(isVersionNewer("v0.2.0-Beta.1", "0.1.0")).toBe(false);
   expect(isVersionNewer("latest", "0.1.0")).toBe(false);
-  expect(releaseAssetName("v0.1.0")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0-unsigned`);
+  expect(releaseAssetName("v0.1.0")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0`);
   expect(isPublishedSeaTarget("darwin", "arm64")).toBe(true);
   expect(isPublishedSeaTarget("darwin", "x64")).toBe(false);
   expect(isPublishedSeaTarget("win32", "x64")).toBe(false);

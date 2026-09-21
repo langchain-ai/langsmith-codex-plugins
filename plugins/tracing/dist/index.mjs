@@ -17251,7 +17251,6 @@ var hooks = {
 const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
 const PUBLISHED_PLATFORM = "darwin";
 const PUBLISHED_ARCH = "arm64";
-const UNSIGNED_ASSET_SUFFIX = "unsigned";
 const INSTALL_DIR_NAME = ".langsmith";
 const LOCK_FILE_NAME = ".update.lock";
 const LIST_TIMEOUT_MS = 15e3;
@@ -17323,7 +17322,7 @@ function isPublishedSeaTarget(runtimePlatform, runtimeArch) {
 	return runtimePlatform === "darwin" && runtimeArch === "arm64";
 }
 function releaseAssetName(tag) {
-	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}-${UNSIGNED_ASSET_SUFFIX}`;
+	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}`;
 }
 function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");

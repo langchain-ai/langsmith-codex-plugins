@@ -1,7 +1,6 @@
 export const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
 export const PUBLISHED_PLATFORM = "darwin";
 export const PUBLISHED_ARCH = "arm64";
-export const UNSIGNED_ASSET_SUFFIX = "unsigned";
 
 export const DEFAULT_RELEASE_API =
   "https://api.github.com/repos/langchain-ai/langsmith-codex-plugins/releases";

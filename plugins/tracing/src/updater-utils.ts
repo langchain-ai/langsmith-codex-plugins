@@ -5,7 +5,6 @@ import {
   PUBLISHED_PLATFORM,
   RELEASE_DOWNLOAD_PREFIX,
   SEA_EXECUTABLE_NAME,
-  UNSIGNED_ASSET_SUFFIX,
 } from "./sea-constants.ts";
 import type { Release, ReleaseAsset } from "./sea-models.ts";
 
@@ -14,7 +13,7 @@ export function isPublishedSeaTarget(runtimePlatform: string, runtimeArch: strin
 }
 
 export function releaseAssetName(tag: string): string {
-  return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}-${UNSIGNED_ASSET_SUFFIX}`;
+  return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${PUBLISHED_ARCH}-${tag}`;
 }
 
 export function versionFromTag(tag: string): string {
