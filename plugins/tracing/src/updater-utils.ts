@@ -1,19 +1,19 @@
 import * as path from "node:path";
 import {
   DEFAULT_RELEASE_API,
+  BINARY_NAME,
   PUBLISHED_ARCHES,
   PUBLISHED_PLATFORM,
   RELEASE_DOWNLOAD_PREFIX,
-  SEA_EXECUTABLE_NAME,
-} from "./sea-constants.ts";
-import type { Release, ReleaseAsset } from "./sea-models.ts";
+} from "./binary-constants.ts";
+import type { Release, ReleaseAsset } from "./binary-models.ts";
 
-export function isPublishedSeaTarget(runtimePlatform: string, runtimeArch: string): boolean {
+export function isPublishedTarget(runtimePlatform: string, runtimeArch: string): boolean {
   return runtimePlatform === PUBLISHED_PLATFORM && PUBLISHED_ARCHES.includes(runtimeArch);
 }
 
 export function releaseAssetName(tag: string, arch: string): string {
-  return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${arch}-${tag}`;
+  return `${BINARY_NAME}-${PUBLISHED_PLATFORM}-${arch}-${tag}`;
 }
 
 export function versionFromTag(tag: string): string {

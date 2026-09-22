@@ -1,4 +1,4 @@
-export const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
+export const BINARY_NAME = "langsmith-codex-tracing";
 export const PUBLISHED_PLATFORM = "darwin";
 export const PUBLISHED_ARCHES = ["arm64", "x64"];
 

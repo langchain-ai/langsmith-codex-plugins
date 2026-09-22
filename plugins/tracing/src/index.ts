@@ -3,7 +3,7 @@ import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { runInstall } from "./install.js";
-import { SEA_EXECUTABLE_NAME } from "./sea-constants.js";
+import { BINARY_NAME } from "./binary-constants.js";
 import { pluginShouldStandDown } from "./stand-down.js";
 import { updateFromGitHub } from "./updater.js";
 import { toSdkReplicas } from "./shared-config.js";
@@ -73,10 +73,10 @@ export async function runHook() {
 const invocationArguments = process.argv.slice(1);
 
 const USAGE = `Usage:
-  ${SEA_EXECUTABLE_NAME} --install [--project] [--tag VERSION]
-  ${SEA_EXECUTABLE_NAME} --print [--project]
-  ${SEA_EXECUTABLE_NAME} --update
-  ${SEA_EXECUTABLE_NAME} --version
+  ${BINARY_NAME} --install [--project] [--tag VERSION]
+  ${BINARY_NAME} --print [--project]
+  ${BINARY_NAME} --update
+  ${BINARY_NAME} --version
 
 Options:
   --help, -h     Show this help and exit

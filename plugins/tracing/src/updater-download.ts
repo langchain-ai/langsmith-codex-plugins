@@ -7,8 +7,8 @@ import {
   LIST_TIMEOUT_MS,
   MAX_BINARY_BYTES,
   MAX_CHECKSUM_BYTES,
-} from "./sea-constants.ts";
-import type { ReleaseAsset } from "./sea-models.ts";
+} from "./binary-constants.ts";
+import type { ReleaseAsset } from "./binary-models.ts";
 import {
   assertAllowedDownloadUrl,
   githubHeaders,

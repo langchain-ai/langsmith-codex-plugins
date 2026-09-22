@@ -4,10 +4,10 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  BINARY_NAME,
   PUBLISHED_ARCHES,
   PUBLISHED_PLATFORM,
-  SEA_EXECUTABLE_NAME,
-} from "../plugins/tracing/src/sea-constants.ts";
+} from "../plugins/tracing/src/binary-constants.ts";
 
 const MACH_O_ARCHES: Record<string, string> = { arm64: "arm64", x64: "x86_64" };
 
@@ -34,8 +34,8 @@ export function machOArch(arch: string): string {
 }
 
 export function outputPath(arch: string): string {
-  if (arch === process.arch) return path.join(binDirectory, SEA_EXECUTABLE_NAME);
-  return path.join(binDirectory, `${PUBLISHED_PLATFORM}-${arch}`, SEA_EXECUTABLE_NAME);
+  if (arch === process.arch) return path.join(binDirectory, BINARY_NAME);
+  return path.join(binDirectory, `${PUBLISHED_PLATFORM}-${arch}`, BINARY_NAME);
 }
 
 function readPluginVersion(): string {
@@ -44,7 +44,7 @@ function readPluginVersion(): string {
 }
 
 async function compile(arch: string, version: string, binary: string) {
-  console.log(`[sea] 1/4 compiling the hook into a ${PUBLISHED_PLATFORM}-${arch} binary`);
+  console.log(`[binary] 1/4 compiling the hook into a ${PUBLISHED_PLATFORM}-${arch} binary`);
 
   await fs.mkdir(path.dirname(binary), { recursive: true });
   await fs.rm(binary, { force: true });
@@ -66,7 +66,7 @@ async function compile(arch: string, version: string, binary: string) {
 }
 
 export function checkBuiltArch(binary: string, arch: string) {
-  console.log(`[sea] 2/4 checking the binary is ${PUBLISHED_PLATFORM}-${arch}`);
+  console.log(`[binary] 2/4 checking the binary is ${PUBLISHED_PLATFORM}-${arch}`);
 
   const wanted = machOArch(arch);
   const built = execFileSync("/usr/bin/lipo", ["-archs", binary], { encoding: "utf8" }).trim();
@@ -76,17 +76,17 @@ export function checkBuiltArch(binary: string, arch: string) {
 }
 
 function signAdHoc(binary: string) {
-  console.log("[sea] 3/4 applying an ad-hoc signature");
+  console.log("[binary] 3/4 applying an ad-hoc signature");
 
   execFileSync("/usr/bin/codesign", ["--force", "--sign", "-", binary], { stdio: "inherit" });
 }
 
 function checkReportedVersion(binary: string, arch: string, version: string) {
   if (arch !== process.arch) {
-    console.log(`[sea] 4/4 skipping the version check, ${arch} does not run on this host`);
+    console.log(`[binary] 4/4 skipping the version check, ${arch} does not run on this host`);
     return;
   }
-  console.log("[sea] 4/4 checking the binary reports the plugin version");
+  console.log("[binary] 4/4 checking the binary reports the plugin version");
 
   const reported = execFileSync(binary, ["--version"], { encoding: "utf8" }).trim();
   if (reported !== version) {
@@ -111,7 +111,7 @@ export async function build(argv: string[]) {
     signAdHoc(binary);
     checkReportedVersion(binary, arch, version);
     console.log(
-      `[sea] built the ${PUBLISHED_PLATFORM}-${arch} binary ${binary} (${statSync(binary).size} bytes, version ${version})`,
+      `[binary] built the ${PUBLISHED_PLATFORM}-${arch} binary ${binary} (${statSync(binary).size} bytes, version ${version})`,
     );
   }
 }

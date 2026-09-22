@@ -10,12 +10,12 @@ import {
   developerIdRequirement,
   missingAppleCredentials,
   sign,
-} from "../../../scripts/sign.sea.ts";
-import { PUBLISHED_ARCHES, SEA_EXECUTABLE_NAME } from "../src/sea-constants.ts";
+} from "../../../scripts/sign.binary.ts";
+import { PUBLISHED_ARCHES, BINARY_NAME } from "../src/binary-constants.ts";
 import { releaseAssetName } from "../src/updater-utils.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-const workflow = readFileSync(join(root, ".github/workflows/build-sea.yml"), "utf8");
+const workflow = readFileSync(join(root, ".github/workflows/build-binary.yml"), "utf8");
 const entitlements = readFileSync(join(root, "macos-entitlements.plist"), "utf8");
 const credentials: string[] = [...APPLE_CREDENTIALS];
 const allSet = Object.fromEntries(credentials.map((name) => [name, "set"]));
@@ -142,9 +142,9 @@ describe("the build workflow", () => {
     const paths = /paths:\n((?:\s+- \S+\n)+)/.exec(workflow)?.[1] ?? "";
     for (const path of [
       "macos-entitlements.plist",
-      "scripts/build.sea.ts",
-      "scripts/sign.sea.ts",
-      "plugins/tracing/test/sign-sea.test.ts",
+      "scripts/build.bun.ts",
+      "scripts/sign.binary.ts",
+      "plugins/tracing/test/sign-binary.test.ts",
     ]) {
       expect(paths).toContain(`- ${path}\n`);
     }
@@ -163,27 +163,27 @@ describe("the build workflow", () => {
   it("reads the Apple secrets only from the job that declares the environment", () => {
     expect(workflow.match(/^\s+environment: /gm)).toHaveLength(1);
     expect(job("sign-and-notarize")).toContain("environment: macos-signing");
-    for (const name of credentials) expect(job("build-sea")).not.toContain(`secrets.${name}`);
+    for (const name of credentials) expect(job("build-binary")).not.toContain(`secrets.${name}`);
     for (const name of credentials) expect(job("publish")).not.toContain(`secrets.${name}`);
   });
 
   it("holds every environment job behind the publishing gate", () => {
-    for (const name of ["build-sea", "sign-and-notarize", "publish"]) {
+    for (const name of ["build-binary", "sign-and-notarize", "publish"]) {
       const body = job(name);
       if (!body.includes("environment: ")) continue;
-      expect(body, name).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
+      expect(body, name).toContain("if: ${{ needs.build-binary.outputs.publishing == 'true' }}");
     }
   });
 
   it("signs the binary the build job produced and hands the signed one on", () => {
-    expect(job("sign-and-notarize")).toContain("pnpm run sign:sea");
+    expect(job("sign-and-notarize")).toContain("pnpm run sign:binary");
     expect(job("sign-and-notarize")).toContain("actions/download-artifact");
-    expect(job("publish")).toContain("needs: [build-sea, sign-and-notarize]");
+    expect(job("publish")).toContain("needs: [build-binary, sign-and-notarize]");
   });
 
   it("runs the same suite against the unsigned, the Intel and the signed binary", () => {
     const command = /pnpm vitest run .+/;
-    const built = job("build-sea").match(command)?.[0];
+    const built = job("build-binary").match(command)?.[0];
     expect(built).toBeDefined();
     expect(job("run-x64-on-intel").match(command)?.[0]).toBe(built);
     expect(job("sign-and-notarize").match(command)?.[0]).toBe(built);
@@ -213,10 +213,10 @@ describe("the build workflow", () => {
   });
 
   it("cross compiles every published architecture in one build job", () => {
-    const body = job("build-sea");
+    const body = job("build-binary");
 
     expect(body).toContain("runs-on: macos-26\n");
-    expect(body).toContain("pnpm run build:sea -- --arch=all");
+    expect(body).toContain("pnpm run build:binary -- --arch=all");
     expect(body).not.toContain("matrix.");
   });
 
@@ -235,32 +235,32 @@ describe("the build workflow", () => {
     const body = job("run-x64-on-intel");
 
     expect(body).toContain("runs-on: macos-26-intel");
-    expect(body).toContain("needs: build-sea");
+    expect(body).toContain("needs: build-binary");
     expect(body).not.toContain("publishing == 'true'");
-    expect(body).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-x64-unsigned`);
+    expect(body).toContain(`name: ${BINARY_NAME}-darwin-x64-unsigned`);
   });
 
   it("uploads every architecture under the one name the later jobs look for", () => {
-    const uploads = [...job("build-sea").matchAll(/^ {10}path: (\S+)$/gm)].map((match) => match[1]);
+    const uploads = [...job("build-binary").matchAll(/^ {10}path: (\S+)$/gm)].map(
+      (match) => match[1],
+    );
 
     expect(uploads).toEqual([
-      `plugins/tracing/bin/${SEA_EXECUTABLE_NAME}`,
-      `plugins/tracing/bin/darwin-x64/${SEA_EXECUTABLE_NAME}`,
+      `plugins/tracing/bin/${BINARY_NAME}`,
+      `plugins/tracing/bin/darwin-x64/${BINARY_NAME}`,
     ]);
     for (const arch of PUBLISHED_ARCHES) {
-      expect(job("build-sea"), arch).toContain(
-        `name: ${SEA_EXECUTABLE_NAME}-darwin-${arch}-unsigned\n`,
-      );
+      expect(job("build-binary"), arch).toContain(`name: ${BINARY_NAME}-darwin-${arch}-unsigned\n`);
     }
   });
 
   it("publishes only what the signing job signed, never the unsigned build", () => {
     const signing = job("sign-and-notarize");
 
-    expect(signing).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-\${{ matrix.arch }}-unsigned`);
-    expect(signing).toContain(`name: ${SEA_EXECUTABLE_NAME}-darwin-\${{ matrix.arch }}-signed`);
-    expect(job("publish")).toContain(`pattern: ${SEA_EXECUTABLE_NAME}-darwin-*-signed`);
-    expect(job("publish")).toContain(`-signed/${SEA_EXECUTABLE_NAME}" "release/`);
+    expect(signing).toContain(`name: ${BINARY_NAME}-darwin-\${{ matrix.arch }}-unsigned`);
+    expect(signing).toContain(`name: ${BINARY_NAME}-darwin-\${{ matrix.arch }}-signed`);
+    expect(job("publish")).toContain(`pattern: ${BINARY_NAME}-darwin-*-signed`);
+    expect(job("publish")).toContain(`-signed/${BINARY_NAME}" "release/`);
     expect(job("publish")).not.toContain("-unsigned");
   });
 
@@ -268,6 +268,6 @@ describe("the build workflow", () => {
     expect(workflow.match(/refs\/tags\//g)).toHaveLength(1);
     expect(workflow).toContain("PUBLISHING: ${{ startsWith(github.ref, 'refs/tags/') }}");
     expect(workflow).toContain("publishing: ${{ steps.release-gate.outputs.publishing }}");
-    expect(workflow.match(/needs\.build-sea\.outputs\.publishing == 'true'/g)).toHaveLength(2);
+    expect(workflow.match(/needs\.build-binary\.outputs\.publishing == 'true'/g)).toHaveLength(2);
   });
 });

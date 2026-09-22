@@ -1,15 +1,15 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import seaHooks from "../hooks/hooks.sea.json" with { type: "json" };
+import binaryHooks from "../hooks/hooks.binary.json" with { type: "json" };
 import { printStandDownNotice } from "./plugin-status.ts";
-import { DEFAULT_RELEASE_API, SEA_EXECUTABLE_NAME } from "./sea-constants.ts";
+import { BINARY_NAME, DEFAULT_RELEASE_API } from "./binary-constants.ts";
 import type {
   HookEvents,
   HookGroup,
   InstallBinaryOptions,
   SignatureVerifier,
-} from "./sea-models.ts";
+} from "./binary-models.ts";
 import { verifyAdHocSignature } from "./updater-download.ts";
 import {
   defaultInstallDir,
@@ -17,7 +17,7 @@ import {
   installedExecutablePath,
 } from "./updater-install.ts";
 import { fetchReleases, newestInstallableRelease } from "./updater-releases.ts";
-import { isPublishedSeaTarget, releaseAssetName, versionFromTag } from "./updater-utils.ts";
+import { isPublishedTarget, releaseAssetName, versionFromTag } from "./updater-utils.ts";
 
 export function quoteForShell(value: string): string {
   return `'${value.split("'").join(`'\\''`)}'`;
@@ -63,7 +63,7 @@ function withoutOurHooks(groups: HookGroup[]): HookGroup[] {
     .map((group) => ({
       ...group,
       hooks: (group.hooks ?? []).filter(
-        (hook) => typeof hook?.command !== "string" || !hook.command.includes(SEA_EXECUTABLE_NAME),
+        (hook) => typeof hook?.command !== "string" || !hook.command.includes(BINARY_NAME),
       ),
     }))
     .filter((group) => group.hooks.length > 0);
@@ -79,7 +79,7 @@ export function renderHooksFile(existing: unknown, binary: string): Record<strin
   const file = asRecord(existing);
   const existingEvents = asRecord(file.hooks) as HookEvents;
   const hooks: HookEvents = { ...existingEvents };
-  for (const [event, groups] of Object.entries(pointedAtBinary(seaHooks.hooks, binary))) {
+  for (const [event, groups] of Object.entries(pointedAtBinary(binaryHooks.hooks, binary))) {
     const kept = Array.isArray(existingEvents[event]) ? withoutOurHooks(existingEvents[event]) : [];
     hooks[event] = [...kept, ...groups];
   }
@@ -173,7 +173,7 @@ export async function installBinary(
 ): Promise<{ binary: string; hooks: string; version: string }> {
   const runtimePlatform = options.runtimePlatform ?? os.platform();
   const runtimeArch = options.runtimeArch ?? os.arch();
-  if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) {
+  if (!isPublishedTarget(runtimePlatform, runtimeArch)) {
     throw new Error(
       `The standalone binary only runs on macOS arm64 and x64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`,
     );
@@ -225,8 +225,8 @@ export async function runInstall(options: {
     });
     const configFile = path.join(path.dirname(installed.hooks), "langsmith.json");
     for (const line of [
-      `Installed ${SEA_EXECUTABLE_NAME} ${installed.version} to ${underHome(path.dirname(installed.binary))}`,
-      `Registered ${hookCount(seaHooks.hooks)} hooks in ${underHome(installed.hooks)}`,
+      `Installed ${BINARY_NAME} ${installed.version} to ${underHome(path.dirname(installed.binary))}`,
+      `Registered ${hookCount(binaryHooks.hooks)} hooks in ${underHome(installed.hooks)}`,
       "",
       "Next:",
       `  1. Create ${underHome(configFile)} (if it doesn't exist already):`,

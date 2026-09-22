@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { outputPath } from "./build.sea.ts";
+import { outputPath } from "./build.bun.ts";
 
 const DEVELOPER_ID_PREFIX = "Developer ID Application:";
 const IDENTITY_LINE = /^\s*\d+\)\s+[0-9A-Fa-f]{40}\s+"([^"]+)"$/gm;
@@ -89,7 +89,7 @@ async function signAndNotarize(
   binaryPath: string,
   env: AppleCredentials,
 ): Promise<{ identity: string; submissionId: string }> {
-  const workspace = await mkdtemp(join(tmpdir(), "langsmith-sea-signing-"));
+  const workspace = await mkdtemp(join(tmpdir(), "langsmith-binary-signing-"));
   const keychain = join(workspace, "signing.keychain-db");
   const password = randomBytes(32).toString("hex");
   const originalKeychains = userKeychains();

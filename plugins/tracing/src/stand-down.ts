@@ -1,6 +1,6 @@
 import * as fs from "node:fs/promises";
 import { defaultHooksFile, quoteForShell } from "./install.ts";
-import type { HookEntry, HookGroup } from "./sea-models.ts";
+import type { HookEntry, HookGroup } from "./binary-models.ts";
 import { defaultInstallDir, installedExecutablePath } from "./updater-install.ts";
 import { runningCompiledBinary } from "./utils/runningCompiledBinary.ts";
 

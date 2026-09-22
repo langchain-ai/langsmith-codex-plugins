@@ -1,5 +1,5 @@
-import { LIST_TIMEOUT_MS, RELEASES_PER_PAGE } from "./sea-constants.ts";
-import type { Release } from "./sea-models.ts";
+import { LIST_TIMEOUT_MS, RELEASES_PER_PAGE } from "./binary-constants.ts";
+import type { Release } from "./binary-models.ts";
 import {
   githubHeaders,
   isSemver,

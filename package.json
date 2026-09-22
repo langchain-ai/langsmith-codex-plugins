@@ -29,8 +29,8 @@
   },
   "scripts": {
     "build": "tsdown --config plugins/tracing/tsdown.config.ts",
-    "build:sea": "bun scripts/build.sea.ts",
-    "sign:sea": "node scripts/sign.sea.ts",
+    "build:binary": "bun scripts/build.bun.ts",
+    "sign:binary": "node scripts/sign.binary.ts",
     "test": "vitest",
     "format": "oxfmt",
     "lint:dist": "pnpm run build && git diff --exit-code -- plugins/tracing/dist/index.mjs",

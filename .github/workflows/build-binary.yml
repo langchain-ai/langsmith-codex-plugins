@@ -7,18 +7,18 @@ on:
     branches: ["main"]
   pull_request:
     paths:
-      - .github/workflows/build-sea.yml
+      - .github/workflows/build-binary.yml
       - install.sh
       - macos-entitlements.plist
       - package.json
-      - scripts/build.sea.ts
-      - scripts/sign.sea.ts
-      - plugins/tracing/hooks/hooks.sea.json
+      - scripts/build.bun.ts
+      - scripts/sign.binary.ts
+      - plugins/tracing/hooks/hooks.binary.json
       - plugins/tracing/src/index.ts
       - plugins/tracing/src/install.ts
       - plugins/tracing/src/plugin-status.ts
-      - plugins/tracing/src/sea-constants.ts
-      - plugins/tracing/src/sea-models.ts
+      - plugins/tracing/src/binary-constants.ts
+      - plugins/tracing/src/binary-models.ts
       - plugins/tracing/src/stand-down.ts
       - plugins/tracing/src/updater-download.ts
       - plugins/tracing/src/updater-install.ts
@@ -26,10 +26,10 @@ on:
       - plugins/tracing/src/updater-utils.ts
       - plugins/tracing/src/updater.ts
       - plugins/tracing/src/utils/runningCompiledBinary.ts
-      - plugins/tracing/test/build-sea.test.ts
-      - plugins/tracing/test/install-sea.test.ts
-      - plugins/tracing/test/sea.test.ts
-      - plugins/tracing/test/sign-sea.test.ts
+      - plugins/tracing/test/build-binary.test.ts
+      - plugins/tracing/test/install-binary.test.ts
+      - plugins/tracing/test/binary.test.ts
+      - plugins/tracing/test/sign-binary.test.ts
   # The only way to publish. A tag push deliberately does not trigger this.
   workflow_dispatch:
 
@@ -41,7 +41,7 @@ permissions:
   contents: read
 
 jobs:
-  build-sea:
+  build-binary:
     name: Build the Unsigned Binaries
     runs-on: macos-26
     outputs:
@@ -88,10 +88,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the Unsigned Binaries
-        run: pnpm run build:sea -- --arch=all
+        run: pnpm run build:binary -- --arch=all
 
       - name: Test the Binary
-        run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
+        run: pnpm vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/install-binary.test.ts
 
       - name: Upload the arm64 Binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -111,7 +111,7 @@ jobs:
 
   run-x64-on-intel:
     name: Run the x64 Binary on Intel
-    needs: build-sea
+    needs: build-binary
     runs-on: macos-26-intel
 
     steps:
@@ -147,12 +147,12 @@ jobs:
           ./plugins/tracing/bin/langsmith-codex-tracing --version
 
       - name: Test the Binary
-        run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
+        run: pnpm vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/install-binary.test.ts
 
   sign-and-notarize:
     name: Sign and Notarize the Binary (${{ matrix.arch }})
-    needs: build-sea
-    if: ${{ needs.build-sea.outputs.publishing == 'true' }}
+    needs: build-binary
+    if: ${{ needs.build-binary.outputs.publishing == 'true' }}
     runs-on: ${{ matrix.runner }}
     environment: macos-signing
 
@@ -198,10 +198,10 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
-        run: pnpm run sign:sea
+        run: pnpm run sign:binary
 
       - name: Test the Signed Binary
-        run: pnpm vitest run plugins/tracing/test/sea.test.ts plugins/tracing/test/install-sea.test.ts
+        run: pnpm vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/install-binary.test.ts
 
       - name: Upload the Signed Binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -213,8 +213,8 @@ jobs:
 
   publish:
     name: Publish the Binaries to the Release
-    needs: [build-sea, sign-and-notarize]
-    if: ${{ needs.build-sea.outputs.publishing == 'true' }}
+    needs: [build-binary, sign-and-notarize]
+    if: ${{ needs.build-binary.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
 
     permissions:

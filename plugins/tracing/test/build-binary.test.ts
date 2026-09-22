@@ -7,8 +7,8 @@ import {
   machOArch,
   outputPath,
   requestedArches,
-} from "../../../scripts/build.sea.ts";
-import { PUBLISHED_ARCHES, SEA_EXECUTABLE_NAME } from "../src/sea-constants.ts";
+} from "../../../scripts/build.bun.ts";
+import { PUBLISHED_ARCHES, BINARY_NAME } from "../src/binary-constants.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const binDirectory = join(root, "plugins", "tracing", "bin");
@@ -36,13 +36,11 @@ describe("requestedArches", () => {
 
 describe("outputPath", () => {
   it("writes this machine's binary where the tests and the signer look for it", () => {
-    expect(outputPath(process.arch)).toBe(join(binDirectory, SEA_EXECUTABLE_NAME));
+    expect(outputPath(process.arch)).toBe(join(binDirectory, BINARY_NAME));
   });
 
   it("writes a cross compiled binary into a directory of its own, under the same name", () => {
-    expect(outputPath(otherArch)).toBe(
-      join(binDirectory, `darwin-${otherArch}`, SEA_EXECUTABLE_NAME),
-    );
+    expect(outputPath(otherArch)).toBe(join(binDirectory, `darwin-${otherArch}`, BINARY_NAME));
   });
 
   it("never writes two architectures to the same path", () => {

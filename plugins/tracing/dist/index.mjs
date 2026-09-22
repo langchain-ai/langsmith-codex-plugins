@@ -17231,7 +17231,7 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 //#endregion
-//#region hooks/hooks.sea.json
+//#region hooks/hooks.binary.json
 var hooks = {
 	"Stop": [{ "hooks": [{
 		"type": "command",
@@ -17246,8 +17246,8 @@ var hooks = {
 	}] }]
 };
 //#endregion
-//#region src/sea-constants.ts
-const SEA_EXECUTABLE_NAME = "langsmith-codex-tracing";
+//#region src/binary-constants.ts
+const BINARY_NAME = "langsmith-codex-tracing";
 const PUBLISHED_PLATFORM = "darwin";
 const PUBLISHED_ARCHES = ["arm64", "x64"];
 const INSTALL_DIR_NAME = ".langsmith";
@@ -17317,11 +17317,11 @@ async function printStandDownNotice(log = console.log) {
 }
 //#endregion
 //#region src/updater-utils.ts
-function isPublishedSeaTarget(runtimePlatform, runtimeArch) {
+function isPublishedTarget(runtimePlatform, runtimeArch) {
 	return runtimePlatform === "darwin" && PUBLISHED_ARCHES.includes(runtimeArch);
 }
 function releaseAssetName(tag, arch) {
-	return `${SEA_EXECUTABLE_NAME}-${PUBLISHED_PLATFORM}-${arch}-${tag}`;
+	return `${BINARY_NAME}-${PUBLISHED_PLATFORM}-${arch}-${tag}`;
 }
 function versionFromTag(tag) {
 	return tag.trim().replace(/^v/, "");
@@ -17460,7 +17460,7 @@ function defaultInstallDir(home = os.homedir()) {
 	return nodePath.join(home, INSTALL_DIR_NAME);
 }
 function installedExecutablePath(installDir) {
-	return nodePath.join(installDir, SEA_EXECUTABLE_NAME);
+	return nodePath.join(installDir, BINARY_NAME);
 }
 async function installReleaseAsset(release, arch, installDir, fetchImpl, releaseApi, currentVersion, verifySignature, uniqueSuffix) {
 	const assetName = releaseAssetName(release.tag_name, arch);
@@ -17472,7 +17472,7 @@ async function installReleaseAsset(release, arch, installDir, fetchImpl, release
 		mode: 448
 	});
 	const target = installedExecutablePath(installDir);
-	const partial = nodePath.join(installDir, `.${SEA_EXECUTABLE_NAME}.${uniqueSuffix}.tmp`);
+	const partial = nodePath.join(installDir, `.${BINARY_NAME}.${uniqueSuffix}.tmp`);
 	try {
 		await downloadAndVerifyAsset(asset, sidecar, partial, fetchImpl, releaseApi, currentVersion);
 		await nodeFsPromises.chmod(partial, 493);
@@ -17606,7 +17606,7 @@ async function downloadExecutable(options, installDir, verifySignature, arch) {
 async function installBinary(options) {
 	const runtimePlatform = options.runtimePlatform ?? os.platform();
 	const runtimeArch = options.runtimeArch ?? os.arch();
-	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) throw new Error(`The standalone binary only runs on macOS arm64 and x64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`);
+	if (!isPublishedTarget(runtimePlatform, runtimeArch)) throw new Error(`The standalone binary only runs on macOS arm64 and x64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`);
 	const installDir = options.installDir ?? defaultInstallDir();
 	const target = installedExecutablePath(installDir);
 	const hooksFile = options.hooksFile ?? defaultHooksFile(false);
@@ -17650,7 +17650,7 @@ async function runInstall(options) {
 		});
 		const configFile = nodePath.join(nodePath.dirname(installed.hooks), "langsmith.json");
 		for (const line of [
-			`Installed ${SEA_EXECUTABLE_NAME} ${installed.version} to ${underHome(nodePath.dirname(installed.binary))}`,
+			`Installed ${BINARY_NAME} ${installed.version} to ${underHome(nodePath.dirname(installed.binary))}`,
 			`Registered ${hookCount(hooks)} hooks in ${underHome(installed.hooks)}`,
 			"",
 			"Next:",
@@ -17734,7 +17734,7 @@ async function claimUpdateLock(lockFile, now) {
 async function updateFromGitHub(options) {
 	const runtimePlatform = options.runtimePlatform ?? os.platform();
 	const runtimeArch = options.runtimeArch ?? os.arch();
-	if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) return { status: "unsupported" };
+	if (!isPublishedTarget(runtimePlatform, runtimeArch)) return { status: "unsupported" };
 	if (!isSemver(options.currentVersion)) return { status: "unsupported" };
 	const installDir = options.installDir ?? defaultInstallDir();
 	const now = (options.now ?? Date.now)();
@@ -19034,10 +19034,10 @@ async function runHook() {
 }
 const invocationArguments = process.argv.slice(1);
 const USAGE = `Usage:
-  ${SEA_EXECUTABLE_NAME} --install [--project] [--tag VERSION]
-  ${SEA_EXECUTABLE_NAME} --print [--project]
-  ${SEA_EXECUTABLE_NAME} --update
-  ${SEA_EXECUTABLE_NAME} --version
+  ${BINARY_NAME} --install [--project] [--tag VERSION]
+  ${BINARY_NAME} --print [--project]
+  ${BINARY_NAME} --update
+  ${BINARY_NAME} --version
 
 Options:
   --help, -h     Show this help and exit

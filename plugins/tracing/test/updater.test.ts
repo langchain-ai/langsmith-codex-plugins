@@ -4,10 +4,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { updateFromGitHub } from "../src/updater.js";
-import { MAX_BINARY_BYTES, PUBLISHED_ARCHES } from "../src/sea-constants.js";
+import { MAX_BINARY_BYTES, PUBLISHED_ARCHES } from "../src/binary-constants.js";
 import { newestInstallableRelease } from "../src/updater-releases.js";
 import {
-  isPublishedSeaTarget,
+  isPublishedTarget,
   isSemver,
   isVersionNewer,
   parseReleases,
@@ -92,11 +92,11 @@ it("targets only newer stable releases carrying this plugin's asset, on the publ
   expect(releaseAssetName("v0.1.0", "arm64")).toBe(`${EXECUTABLE}-darwin-arm64-v0.1.0`);
   expect(releaseAssetName("v0.1.0", "x64")).toBe(`${EXECUTABLE}-darwin-x64-v0.1.0`);
   expect(PUBLISHED_ARCHES).toEqual(["arm64", "x64"]);
-  expect(isPublishedSeaTarget("darwin", "arm64")).toBe(true);
-  expect(isPublishedSeaTarget("darwin", "x64")).toBe(true);
-  expect(isPublishedSeaTarget("darwin", "ia32")).toBe(false);
-  expect(isPublishedSeaTarget("win32", "x64")).toBe(false);
-  expect(isPublishedSeaTarget("linux", "arm64")).toBe(false);
+  expect(isPublishedTarget("darwin", "arm64")).toBe(true);
+  expect(isPublishedTarget("darwin", "x64")).toBe(true);
+  expect(isPublishedTarget("darwin", "ia32")).toBe(false);
+  expect(isPublishedTarget("win32", "x64")).toBe(false);
+  expect(isPublishedTarget("linux", "arm64")).toBe(false);
 
   const releases = parseReleases([
     { ...release("v0.9.0"), draft: true },

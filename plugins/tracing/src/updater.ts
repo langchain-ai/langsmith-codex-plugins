@@ -1,12 +1,12 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { ABANDONED_LOCK_MS, DEFAULT_RELEASE_API, LOCK_FILE_NAME } from "./sea-constants.ts";
-import type { UpdateOptions, UpdateResult } from "./sea-models.ts";
+import { ABANDONED_LOCK_MS, DEFAULT_RELEASE_API, LOCK_FILE_NAME } from "./binary-constants.ts";
+import type { UpdateOptions, UpdateResult } from "./binary-models.ts";
 import { verifyAdHocSignature } from "./updater-download.ts";
 import { defaultInstallDir, installReleaseAsset } from "./updater-install.ts";
 import { fetchReleases, newestInstallableRelease } from "./updater-releases.ts";
-import { isPublishedSeaTarget, isSemver, versionFromTag } from "./updater-utils.ts";
+import { isPublishedTarget, isSemver, versionFromTag } from "./updater-utils.ts";
 
 async function claimUpdateLock(lockFile: string, now: number): Promise<fs.FileHandle | undefined> {
   try {
@@ -36,7 +36,7 @@ async function claimUpdateLock(lockFile: string, now: number): Promise<fs.FileHa
 export async function updateFromGitHub(options: UpdateOptions): Promise<UpdateResult> {
   const runtimePlatform = options.runtimePlatform ?? os.platform();
   const runtimeArch = options.runtimeArch ?? os.arch();
-  if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) return { status: "unsupported" };
+  if (!isPublishedTarget(runtimePlatform, runtimeArch)) return { status: "unsupported" };
   if (!isSemver(options.currentVersion)) return { status: "unsupported" };
 
   const installDir = options.installDir ?? defaultInstallDir();

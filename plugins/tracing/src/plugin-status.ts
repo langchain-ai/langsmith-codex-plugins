@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { CODEX_PLUGIN_SELECTOR } from "./sea-constants.ts";
+import { CODEX_PLUGIN_SELECTOR } from "./binary-constants.ts";
 
 const PLUGIN_TABLE = /^\[\s*plugins\s*\.\s*(.+?)\s*\]\s*(?:#.*)?$/;
 const ENABLED_KEY = /^enabled\s*=\s*(true|false)\s*(?:#.*)?$/;

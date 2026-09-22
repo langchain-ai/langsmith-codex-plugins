@@ -76,11 +76,11 @@ pnpm test --run    # Run the full Vitest suite once
 pnpm format        # Format files with oxfmt
 pnpm lint          # Check formatting, types, and the committed bundle
 pnpm build         # Rebuild plugins/tracing/dist/index.mjs
-pnpm build:sea     # Build the unsigned macOS binary for this machine
-pnpm sign:sea      # Sign and notarize it, with the Apple credentials set
+pnpm build:binary  # Build the unsigned macOS binary for this machine
+pnpm sign:binary   # Sign and notarize it, with the Apple credentials set
 ```
 
-`pnpm build:sea` writes a standalone binary with `bun build --compile`, so it needs Bun on the PATH. It runs the tracing hook on machines with no Node installed. Only macOS arm64 and x64 are published. Pass `--arch=x64` or `--arch=all` to cross compile. The binary for this machine lands at `plugins/tracing/bin/langsmith-codex-tracing`, where the tests and `pnpm sign:sea` look for it, and a cross compiled one lands in `plugins/tracing/bin/darwin-<arch>/` under the same name. Only the binary for this machine is version checked after the build, because the other one cannot be run here.
+`pnpm build:binary` writes a standalone binary with `bun build --compile`, so it needs Bun on the PATH. It runs the tracing hook on machines with no Node installed. Only macOS arm64 and x64 are published. Pass `--arch=x64` or `--arch=all` to cross compile. The binary for this machine lands at `plugins/tracing/bin/langsmith-codex-tracing`, where the tests and `pnpm sign:binary` look for it, and a cross compiled one lands in `plugins/tracing/bin/darwin-<arch>/` under the same name. Only the binary for this machine is version checked after the build, because the other one cannot be run here.
 
 Publishing is manual. Run the workflow from the Actions tab against a release tag and it attaches an arm64 binary and an x64 binary, each with a SHA-256 sidecar, to that tag's GitHub Release as a draft.
 
@@ -91,7 +91,7 @@ chmod +x <downloaded-binary>
 xattr -d com.apple.quarantine <downloaded-binary>
 ```
 
-`pnpm sign:sea` replaces that with a Developer ID signature and notarizes the result. It skips while any of `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` is unset. Store `CSC_LINK` and `APPLE_API_KEY` base64 encoded with `base64 -i <file>`. `macos-entitlements.plist` grants `allow-jit`, without which the binary aborts with `Failed to reserve virtual memory for CodeRange` under the hardened runtime. Apple staples no ticket to a bare executable, so a notarized binary still needs one online Gatekeeper check on first run.
+`pnpm sign:binary` replaces that with a Developer ID signature and notarizes the result. It skips while any of `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` is unset. Store `CSC_LINK` and `APPLE_API_KEY` base64 encoded with `base64 -i <file>`. `macos-entitlements.plist` grants `allow-jit`, without which the binary aborts with `Failed to reserve virtual memory for CodeRange` under the hardened runtime. Apple staples no ticket to a bare executable, so a notarized binary still needs one online Gatekeeper check on first run.
 
 ### Installing the binary
 
@@ -129,7 +129,7 @@ Keep `shared-config.ts` byte-identical to the canonical Claude helper (SHA-256 `
 - `.agents/plugins/marketplace.json` — local marketplace definition
 - `plugins/tracing/.codex-plugin/plugin.json` — plugin metadata and version
 - `plugins/tracing/hooks/hooks.json` — Codex lifecycle hook definition
-- `plugins/tracing/hooks/hooks.sea.json` — the same hooks pointed at the binary, compiled into it
+- `plugins/tracing/hooks/hooks.binary.json` — the same hooks pointed at the binary, compiled into it
 - `plugins/tracing/src/` — TypeScript source
 - `plugins/tracing/test/` — tests and transcript fixtures
 - `plugins/tracing/dist/index.mjs` — bundled hook executed by Codex

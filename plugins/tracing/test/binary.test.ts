@@ -5,7 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { outputPath } from "../../../scripts/build.sea.ts";
+import { outputPath } from "../../../scripts/build.bun.ts";
 
 const binaryPath = outputPath(process.arch);
 const binaryExists = existsSync(binaryPath);
@@ -13,13 +13,13 @@ const ciShouldHaveBuiltBinary = Boolean(process.env.CI) && os.platform() === "da
 
 if (!binaryExists && ciShouldHaveBuiltBinary) {
   throw new Error(
-    `Expected the SEA binary at ${binaryPath}. CI must run \`pnpm build:sea\` before this suite.`,
+    `Expected the binary at ${binaryPath}. CI must run \`pnpm build:binary\` before this suite.`,
   );
 }
 
 let codexHome: string;
 beforeEach(async () => {
-  codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-sea-"));
+  codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-binary-"));
 });
 afterEach(async () => {
   await fs.rm(codexHome, { recursive: true, force: true });

@@ -1,8 +1,8 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { INSTALL_DIR_NAME, SEA_EXECUTABLE_NAME } from "./sea-constants.ts";
-import type { Release, SignatureVerifier } from "./sea-models.ts";
+import { BINARY_NAME, INSTALL_DIR_NAME } from "./binary-constants.ts";
+import type { Release, SignatureVerifier } from "./binary-models.ts";
 import { downloadAndVerifyAsset } from "./updater-download.ts";
 import { releaseAssetName } from "./updater-utils.ts";
 
@@ -11,7 +11,7 @@ export function defaultInstallDir(home = os.homedir()): string {
 }
 
 export function installedExecutablePath(installDir: string): string {
-  return path.join(installDir, SEA_EXECUTABLE_NAME);
+  return path.join(installDir, BINARY_NAME);
 }
 
 export async function installReleaseAsset(
@@ -31,7 +31,7 @@ export async function installReleaseAsset(
 
   await fs.mkdir(installDir, { recursive: true, mode: 0o700 });
   const target = installedExecutablePath(installDir);
-  const partial = path.join(installDir, `.${SEA_EXECUTABLE_NAME}.${uniqueSuffix}.tmp`);
+  const partial = path.join(installDir, `.${BINARY_NAME}.${uniqueSuffix}.tmp`);
 
   try {
     await downloadAndVerifyAsset(asset, sidecar, partial, fetchImpl, releaseApi, currentVersion);

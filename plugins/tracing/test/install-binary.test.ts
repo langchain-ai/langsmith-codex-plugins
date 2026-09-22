@@ -6,10 +6,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { outputPath } from "../../../scripts/build.sea.ts";
+import { outputPath } from "../../../scripts/build.bun.ts";
 import { flagValue, installBinary, renderHooksFile } from "../src/install.js";
-import { PUBLISHED_ARCHES, RELEASES_PER_PAGE } from "../src/sea-constants.js";
-import type { InstallBinaryOptions } from "../src/sea-models.js";
+import { PUBLISHED_ARCHES, RELEASES_PER_PAGE } from "../src/binary-constants.js";
+import type { InstallBinaryOptions } from "../src/binary-models.js";
 import { fetchReleases } from "../src/updater-releases.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => ({
@@ -471,7 +471,8 @@ describe("listing releases", () => {
 });
 
 describe("the publish version gate", () => {
-  const workflow = () => readFileSync(new URL(".github/workflows/build-sea.yml", repoRoot), "utf8");
+  const workflow = () =>
+    readFileSync(new URL(".github/workflows/build-binary.yml", repoRoot), "utf8");
 
   function stepScript(name: string): string {
     const lines = workflow().split("\n");
@@ -529,7 +530,7 @@ describe("the publish version gate", () => {
 
     expect(yaml).toContain("publishing: ${{ steps.release-gate.outputs.publishing }}");
     expect(yaml).toContain("if: ${{ steps.release-gate.outputs.publishing == 'true' }}");
-    expect(yaml).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
+    expect(yaml).toContain("if: ${{ needs.build-binary.outputs.publishing == 'true' }}");
     expect(yaml.match(/refs\/tags\//g)).toHaveLength(1);
   });
 });
