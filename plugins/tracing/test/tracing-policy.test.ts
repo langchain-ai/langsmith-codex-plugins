@@ -260,7 +260,7 @@ it("serializes independent hook processes and retains preferences after restart"
 
 it("normal submissions never materialize a default preference; existing threads follow config", async () => {
   expect(savedTurnMode(file, "thread", "missing")).toBe("metadata");
-  await expect(fs.stat(file)).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(fs.readFile(file, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   await submitPreference(file, "thread", "full", true, undefined, false);
   await submitPreference(file, "thread", "muted", true, undefined, true);
   await submitPreference(file, "new-muted", "first", true, undefined, true);

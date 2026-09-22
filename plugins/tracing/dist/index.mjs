@@ -1,6 +1,6 @@
 import { isSea } from "node:sea";
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync, statSync } from "node:fs";
+import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -16987,8 +16987,9 @@ function parseCommonConfig(value) {
 }
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
+	let fd;
 	try {
-		if (!statSync(path).isFile()) return invalid();
+		fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
 	} catch (error) {
 		if (error.code === "ENOENT") try {
 			lstatSync(path);
@@ -17002,7 +17003,12 @@ function readCommonConfigFile(path) {
 		return invalid();
 	}
 	try {
-		return parseCommonConfig(JSON.parse(readFileSync(path, "utf8")));
+		try {
+			if (!fstatSync(fd).isFile()) return invalid();
+			return parseCommonConfig(JSON.parse(readFileSync(fd, "utf8")));
+		} finally {
+			closeSync(fd);
+		}
 	} catch {
 		return invalid();
 	}

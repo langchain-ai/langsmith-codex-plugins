@@ -290,10 +290,32 @@ describe("filesystem fixtures", () => {
     expect(readCommonConfigFile(dir)).toMatchObject({ status: "invalid", common: restrictive });
   });
 
-  it.skipIf(process.platform === "win32")("rejects FIFO without opening/blocking", () => {
+  it.skipIf(process.platform === "win32")("rejects FIFO without reading/blocking", () => {
     const path = setup();
     execFileSync("mkfifo", [path]);
+    const close = vi.spyOn(fs, "closeSync").mockClear();
+    const read = vi.spyOn(fs, "readFileSync").mockClear();
     expect(readCommonConfigFile(path)).toMatchObject({ status: "invalid", common: restrictive });
+    expect(read).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("reads the checked descriptor even if the path is replaced after fstat", () => {
+    const path = setup();
+    fs.writeFileSync(path, '{"enabled":false}');
+    const fstat = fs.fstatSync;
+    vi.spyOn(fs, "fstatSync").mockImplementationOnce((fd) => {
+      const stat = fstat(fd);
+      fs.renameSync(path, join(dir, "original"));
+      fs.writeFileSync(path, '{"enabled":true}');
+      return stat;
+    });
+    const close = vi.spyOn(fs, "closeSync").mockClear();
+    expect(readCommonConfigFile(path)).toMatchObject({
+      status: "valid",
+      common: { enabled: false },
+    });
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it.each(["", "{SECRET", "null", "[]", '"SECRET"'])(
@@ -320,15 +342,15 @@ describe("filesystem fixtures", () => {
     },
   );
 
-  it.each(["EACCES", "EPERM", "EIO", "ENOTDIR"])("restricts stat failure %s", (code) => {
+  it.each(["EACCES", "EPERM", "EIO", "ENOTDIR"])("restricts open failure %s", (code) => {
     const path = setup();
-    vi.spyOn(fs, "statSync").mockImplementation(() => {
+    vi.spyOn(fs, "openSync").mockImplementation(() => {
       throw Object.assign(new Error("SECRET"), { code });
     });
     expect(readCommonConfigFile(path)).toMatchObject({ status: "invalid", common: restrictive });
   });
 
-  it("stat ENOENT plus inaccessible lstat is not absence", () => {
+  it("open ENOENT plus inaccessible lstat is not absence", () => {
     const path = setup();
     vi.spyOn(fs, "lstatSync").mockImplementation(() => {
       throw Object.assign(new Error("SECRET"), { code: "EACCES" });
