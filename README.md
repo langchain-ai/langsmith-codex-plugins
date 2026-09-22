@@ -39,11 +39,6 @@ The same integration as the plugin, delivered as one file. It carries its own No
 
 The plugin stops tracing while the binary is installed and registered as a hook.
 
-Two things are not live yet, so the command below fails today:
-
-- No release carries the binary. Build it with `pnpm build:sea` and run that binary with `--install`.
-- The short link is not registered. It redirects to the LangChain homepage, so piping it to bash runs HTML. Use `https://raw.githubusercontent.com/langchain-ai/langsmith-codex-plugins/main/install.sh` instead.
-
 1. Run the installer:
 
    ```bash
