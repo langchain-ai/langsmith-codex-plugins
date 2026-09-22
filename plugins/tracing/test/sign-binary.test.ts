@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -11,18 +11,20 @@ import {
   missingAppleCredentials,
   sign,
 } from "../../../scripts/sign.binary.ts";
-import { PUBLISHED_ARCHES, BINARY_NAME } from "../src/binary-constants.ts";
+import { BINARY_NAME, PUBLISHED_ARCHES } from "../src/binary-constants.ts";
 import { releaseAssetName } from "../src/updater-utils.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workflow = readFileSync(join(root, ".github/workflows/build-binary.yml"), "utf8");
 const entitlements = readFileSync(join(root, "macos-entitlements.plist"), "utf8");
+const watchedPaths = /paths:\n((?:\s+- \S+\n)+)/.exec(workflow)?.[1] ?? "";
 const credentials: string[] = [...APPLE_CREDENTIALS];
 const allSet = Object.fromEntries(credentials.map((name) => [name, "set"]));
 const missing = (env: Record<string, string>): string[] => [...missingAppleCredentials(env)].sort();
 
 function job(name: string): string {
   const start = workflow.indexOf(`\n  ${name}:\n`);
+  expect(start, `the workflow declares no ${name} job`).toBeGreaterThan(-1);
   const rest = workflow.slice(start + 1);
   const end = /\n {2}[a-z][\w-]*:\n/.exec(rest)?.index;
   return end === undefined ? rest : rest.slice(0, end);
@@ -139,15 +141,21 @@ describe("the macOS entitlements", () => {
 
 describe("the build workflow", () => {
   it("rebuilds the binary when any signing input changes", () => {
-    const paths = /paths:\n((?:\s+- \S+\n)+)/.exec(workflow)?.[1] ?? "";
     for (const path of [
       "macos-entitlements.plist",
       "scripts/build.bun.ts",
       "scripts/sign.binary.ts",
       "plugins/tracing/test/sign-binary.test.ts",
     ]) {
-      expect(paths).toContain(`- ${path}\n`);
+      expect(watchedPaths).toContain(`- ${path}\n`);
     }
+  });
+
+  it("watches only files that exist, so a rename cannot silence it", () => {
+    const listed = [...watchedPaths.matchAll(/- (\S+)/g)].map((match) => match[1]);
+
+    expect(listed.length).toBeGreaterThan(0);
+    for (const path of listed) expect(existsSync(join(root, path)), path).toBe(true);
   });
 
   it("always signs, so a release can never go out unsigned", () => {

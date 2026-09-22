@@ -91,7 +91,7 @@ chmod +x <downloaded-binary>
 xattr -d com.apple.quarantine <downloaded-binary>
 ```
 
-`pnpm sign:binary` replaces that with a Developer ID signature and notarizes the result. It skips while any of `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` is unset. Store `CSC_LINK` and `APPLE_API_KEY` base64 encoded with `base64 -i <file>`. `macos-entitlements.plist` grants `allow-jit`, without which the binary aborts with `Failed to reserve virtual memory for CodeRange` under the hardened runtime. Apple staples no ticket to a bare executable, so a notarized binary still needs one online Gatekeeper check on first run.
+`pnpm sign:binary` replaces that with a Developer ID signature and notarizes the result. It fails while any of `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` is unset, so a release cannot go out unsigned. Store `CSC_LINK` and `APPLE_API_KEY` base64 encoded with `base64 -i <file>`. `macos-entitlements.plist` grants `allow-jit`, without which the binary aborts with `Failed to reserve virtual memory for CodeRange` under the hardened runtime. Apple staples no ticket to a bare executable, so a notarized binary still needs one online Gatekeeper check on first run.
 
 ### Installing the binary
 

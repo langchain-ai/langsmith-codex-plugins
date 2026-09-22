@@ -8,7 +8,7 @@ import {
   outputPath,
   requestedArches,
 } from "../../../scripts/build.bun.ts";
-import { PUBLISHED_ARCHES, BINARY_NAME } from "../src/binary-constants.ts";
+import { BINARY_NAME, PUBLISHED_ARCHES } from "../src/binary-constants.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const binDirectory = join(root, "plugins", "tracing", "bin");
