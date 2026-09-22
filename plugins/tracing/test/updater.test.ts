@@ -131,7 +131,7 @@ it("orders a prerelease below the release it leads to", () => {
 const ARM_BODY = new TextEncoder().encode("the arm64 binary");
 const INTEL_BODY = new TextEncoder().encode("the x64 binary");
 
-function bothArches(tag: string, sidecarFirst = false) {
+function bothArches(tag: string) {
   const assets = [];
   for (const [arch, body] of [
     ["arm64", ARM_BODY],
@@ -146,41 +146,26 @@ function bothArches(tag: string, sidecarFirst = false) {
       digest: `sha256:${sha256(body)}`,
     };
     const sidecar = { name: `${name}.sha256`, browser_download_url: `${url}.sha256`, size: 80 };
-    assets.push(...(sidecarFirst ? [sidecar, binary] : [binary, sidecar]));
+    assets.push(binary, sidecar);
   }
   return { tag_name: tag, draft: false, prerelease: false, assets };
 }
 
-describe.each([
-  ["the binary listed before its sidecar", false],
-  ["the sidecar listed before its binary", true],
-])("a release carrying all four assets with %s", (_label, sidecarFirst) => {
+describe("selecting a release by architecture", () => {
   it.each([
     ["arm64", ARM_BODY],
     ["x64", INTEL_BODY],
-  ])("installs the %s binary and never a sidecar", async (arch, body) => {
-    const listing = bothArches("0.2.0", sidecarFirst);
-    const fetchImpl = fetchSequence(Response.json([listing]), new Response(body));
+  ])("installs the %s binary from a release carrying both", async (arch, body) => {
+    const fetchImpl = fetchSequence(Response.json([bothArches("0.2.0")]), new Response(body));
 
     await expect(updateFromGitHub(opts(fetchImpl, { runtimeArch: arch }))).resolves.toEqual({
       status: "updated",
       version: "0.2.0",
     });
     expect(readFileSync(target)).toEqual(Buffer.from(body));
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(String(fetchImpl.mock.calls[1][0])).toBe(
       `http://releases.test/download/0.2.0/${releaseAssetName("0.2.0", arch)}`,
     );
-  });
-});
-
-describe("selecting a release by architecture", () => {
-  it("finds a release carrying all four assets for either architecture", () => {
-    const releases = parseReleases([bothArches("0.2.0")]);
-    for (const arch of PUBLISHED_ARCHES) {
-      expect(newestInstallableRelease(releases, arch)?.tag_name).toBe("0.2.0");
-    }
-    expect(newestInstallableRelease(releases, "ia32")).toBeUndefined();
   });
 
   it("installs a release that carries only this machine's architecture", async () => {

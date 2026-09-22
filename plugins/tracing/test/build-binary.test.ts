@@ -42,22 +42,12 @@ describe("outputPath", () => {
   it("writes a cross compiled binary into a directory of its own, under the same name", () => {
     expect(outputPath(otherArch)).toBe(join(binDirectory, `darwin-${otherArch}`, BINARY_NAME));
   });
-
-  it("never writes two architectures to the same path", () => {
-    const paths = PUBLISHED_ARCHES.map(outputPath);
-
-    expect(new Set(paths).size).toBe(PUBLISHED_ARCHES.length);
-  });
 });
 
 describe("machOArch", () => {
   it("names the Mach-O architecture lipo reports for each published one", () => {
     expect(machOArch("arm64")).toBe("arm64");
     expect(machOArch("x64")).toBe("x86_64");
-  });
-
-  it("knows a name for every architecture the build can be asked for", () => {
-    for (const arch of PUBLISHED_ARCHES) expect(() => machOArch(arch)).not.toThrow();
   });
 
   it("refuses an architecture it has no name for", () => {

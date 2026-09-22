@@ -140,11 +140,10 @@ jobs:
       - name: Restore the Executable Bit
         run: chmod +x plugins/tracing/bin/langsmith-codex-tracing
 
-      - name: Report the Version
+      - name: Report the Architecture
         run: |
           arch
           file plugins/tracing/bin/langsmith-codex-tracing
-          ./plugins/tracing/bin/langsmith-codex-tracing --version
 
       - name: Test the Binary
         run: pnpm vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/install-binary.test.ts

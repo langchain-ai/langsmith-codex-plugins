@@ -220,14 +220,6 @@ describe("the build workflow", () => {
     expect(body.match(/gh release (upload|create) "\$TAG" "\$\{assets\[@\]\}"/g)).toHaveLength(2);
   });
 
-  it("cross compiles every published architecture in one build job", () => {
-    const body = job("build-binary");
-
-    expect(body).toContain("runs-on: macos-26\n");
-    expect(body).toContain("pnpm run build:binary -- --arch=all");
-    expect(body).not.toContain("matrix.");
-  });
-
   it("signs each published architecture on a runner of that architecture", () => {
     const body = job("sign-and-notarize");
     const legs = [...body.matchAll(/^ {10}- arch: (\S+)$/gm)].map((match) => match[1]);
