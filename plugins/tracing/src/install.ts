@@ -1,230 +1,63 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import seaHooks from "../hooks/hooks.sea.json" with { type: "json" };
+import binaryHooks from "../hooks/hooks.binary.json" with { type: "json" };
+import { binary } from "./binary.ts";
+import type { InstallBinaryOptions, InstalledPlugin } from "./binary-models.ts";
+import { UNKNOWN_VERSION } from "./binary-constants.ts";
+import { unsupportedHost } from "./messages.ts";
 import { printStandDownNotice } from "./plugin-status.ts";
-import { DEFAULT_RELEASE_API, SEA_EXECUTABLE_NAME } from "./sea-constants.ts";
-import type {
-  HookEvents,
-  HookGroup,
-  InstallBinaryOptions,
-  SignatureVerifier,
-} from "./sea-models.ts";
-import { verifyAdHocSignature } from "./updater-download.ts";
-import {
-  defaultInstallDir,
-  installReleaseAsset,
-  installedExecutablePath,
-} from "./updater-install.ts";
-import { fetchReleases, newestInstallableRelease } from "./updater-releases.ts";
-import { isPublishedSeaTarget, releaseAssetName, versionFromTag } from "./updater-utils.ts";
+import { hookCount, readHooksFile, renderHooksFile } from "./utils/hooks.ts";
+import { codexFile, underHome } from "./utils/paths.ts";
+import { writeFileAtomic } from "./utils/writeFileAtomic.ts";
 
-export function quoteForShell(value: string): string {
-  return `'${value.split("'").join(`'\\''`)}'`;
-}
-
-function underHome(target: string, home = os.homedir()): string {
-  if (target === home) return "~";
-  return target.startsWith(`${home}${path.sep}`)
-    ? `~${path.sep}${target.slice(home.length + 1)}`
-    : target;
-}
-
-function hookCount(events: HookEvents): number {
-  return Object.values(events).reduce(
-    (total, groups) =>
-      total + groups.reduce((inGroups, group) => inGroups + (group.hooks ?? []).length, 0),
-    0,
-  );
-}
-
-export function defaultHooksFile(projectScoped: boolean, cwd = process.cwd()): string {
-  if (projectScoped) return path.join(cwd, ".codex", "hooks.json");
-  return path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"), "hooks.json");
-}
-
-function pointedAtBinary(events: HookEvents, binary: string): HookEvents {
-  const command = quoteForShell(binary);
-  return Object.fromEntries(
-    Object.entries(events).map(([event, groups]) => [
-      event,
-      groups.map((group) => ({
-        ...group,
-        hooks: (group.hooks ?? []).map((hook) =>
-          hook.type === "command" ? { ...hook, command } : hook,
-        ),
-      })),
-    ]),
-  );
-}
-
-function withoutOurHooks(groups: HookGroup[]): HookGroup[] {
-  return groups
-    .map((group) => ({
-      ...group,
-      hooks: (group.hooks ?? []).filter(
-        (hook) => typeof hook?.command !== "string" || !hook.command.includes(SEA_EXECUTABLE_NAME),
-      ),
-    }))
-    .filter((group) => group.hooks.length > 0);
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-export function renderHooksFile(existing: unknown, binary: string): Record<string, unknown> {
-  const file = asRecord(existing);
-  const existingEvents = asRecord(file.hooks) as HookEvents;
-  const hooks: HookEvents = { ...existingEvents };
-  for (const [event, groups] of Object.entries(pointedAtBinary(seaHooks.hooks, binary))) {
-    const kept = Array.isArray(existingEvents[event]) ? withoutOurHooks(existingEvents[event]) : [];
-    hooks[event] = [...kept, ...groups];
-  }
-  return { ...file, hooks };
-}
-
-async function readHooksFile(hooksFile: string): Promise<unknown> {
-  try {
-    return JSON.parse(await fs.readFile(hooksFile, "utf-8"));
-  } catch {
-    return {};
-  }
-}
-
-async function existingMode(target: string): Promise<number | undefined> {
-  try {
-    return (await fs.stat(target)).mode & 0o777;
-  } catch {
-    return undefined;
-  }
-}
-
-async function writeFileAtomic(target: string, contents: string): Promise<void> {
-  const directory = path.dirname(target);
-  const partial = path.join(directory, `.${path.basename(target)}.${process.pid}.tmp`);
-  const mode = await existingMode(target);
-  try {
-    await fs.writeFile(partial, contents);
-    if (mode !== undefined) await fs.chmod(partial, mode);
-    await fs.rename(partial, target);
-  } catch (error) {
-    await fs.unlink(partial).catch(() => undefined);
-    throw error;
-  }
-}
-
-async function copyExecutable(
-  source: string,
-  target: string,
-  verifySignature: SignatureVerifier,
-): Promise<void> {
-  const partial = `${target}.${process.pid}.tmp`;
-  try {
-    await fs.copyFile(source, partial);
-    await fs.chmod(partial, 0o755);
-    await verifySignature(partial);
-    await fs.rename(partial, target);
-  } catch (error) {
-    await fs.unlink(partial).catch(() => undefined);
-    throw error;
-  }
-}
-
-async function downloadExecutable(
-  options: InstallBinaryOptions,
-  installDir: string,
-  verifySignature: SignatureVerifier,
-): Promise<string> {
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const releaseApi =
-    options.releaseApi ?? process.env.LANGSMITH_CODEX_RELEASE_API ?? DEFAULT_RELEASE_API;
-  const currentVersion = options.currentVersion ?? "0.0.0";
-  const releases = await fetchReleases(fetchImpl, releaseApi, currentVersion);
-  const release = options.tag
-    ? releases.find((candidate) => candidate.tag_name === options.tag)
-    : newestInstallableRelease(releases);
-  if (!release) {
-    throw new Error(
-      options.tag
-        ? `no published release is tagged ${options.tag}`
-        : `no published release carries a ${releaseAssetName("<tag>")} asset`,
-    );
-  }
-  const version = versionFromTag(release.tag_name);
-  await installReleaseAsset(
-    release,
-    installDir,
-    fetchImpl,
-    releaseApi,
-    version,
-    verifySignature,
-    `${process.pid}.${Date.now()}`,
-  );
-  return version;
-}
-
-export async function installBinary(
-  options: InstallBinaryOptions,
-): Promise<{ binary: string; hooks: string; version: string }> {
+export async function installBinary(options: InstallBinaryOptions): Promise<InstalledPlugin> {
   const runtimePlatform = options.runtimePlatform ?? os.platform();
   const runtimeArch = options.runtimeArch ?? os.arch();
-  if (!isPublishedSeaTarget(runtimePlatform, runtimeArch)) {
-    throw new Error(
-      `The standalone binary only runs on macOS arm64, not ${runtimePlatform}-${runtimeArch}. Use the Codex plugin instead.`,
-    );
+  if (!binary.supportsHost(runtimePlatform, runtimeArch)) {
+    throw new Error(unsupportedHost(runtimePlatform, runtimeArch));
   }
 
-  const installDir = options.installDir ?? defaultInstallDir();
-  const target = installedExecutablePath(installDir);
-  const hooksFile = options.hooksFile ?? defaultHooksFile(false);
-  const verifySignature = options.verifySignature ?? verifyAdHocSignature;
+  const hooksFile = options.hooksFile ?? codexFile("hooks.json", false);
+  const host = { ...options, runtimePlatform, runtimeArch };
   const copyable = options.tag === undefined ? options.source : undefined;
+  const installed =
+    copyable === undefined
+      ? await binary.install(host)
+      : await binary.installLocalCopy(copyable, options.currentVersion ?? UNKNOWN_VERSION, host);
 
-  await fs.mkdir(installDir, { recursive: true, mode: 0o700 });
-  let version = options.currentVersion ?? "0.0.0";
-  if (copyable !== undefined) await copyExecutable(copyable, target, verifySignature);
-  else version = await downloadExecutable(options, installDir, verifySignature);
-
-  const rendered = renderHooksFile(await readHooksFile(hooksFile), target);
+  const rendered = renderHooksFile(await readHooksFile(hooksFile), installed.path);
   await fs.mkdir(path.dirname(hooksFile), { recursive: true });
   await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
 
-  return { binary: target, hooks: hooksFile, version };
-}
-
-export function flagValue(argv: string[], flag: string): string | undefined {
-  const index = argv.indexOf(flag);
-  const value = index < 0 ? undefined : argv[index + 1];
-  return value === undefined || value.startsWith("-") ? undefined : value;
+  return { binary: installed.path, hooks: hooksFile, version: installed.version };
 }
 
 export async function runInstall(options: {
   source?: string;
   currentVersion?: string;
-  argv: string[];
+  projectScoped?: boolean;
+  print?: boolean;
+  tag?: string;
 }): Promise<void> {
-  const hooksFile = defaultHooksFile(options.argv.includes("--project"));
+  const hooksFile = codexFile("hooks.json", options.projectScoped ?? false);
   try {
-    if (options.argv.includes("--print")) {
-      const target = installedExecutablePath(defaultInstallDir());
+    if (options.print) {
+      const target = binary.installedBinaryPath();
       console.log(JSON.stringify(renderHooksFile(await readHooksFile(hooksFile), target), null, 2));
       return;
     }
 
-    const tag = flagValue(options.argv, "--tag");
     const installed = await installBinary({
       source: options.source,
       currentVersion: options.currentVersion,
-      tag,
+      tag: options.tag,
       hooksFile,
     });
     const configFile = path.join(path.dirname(installed.hooks), "langsmith.json");
     for (const line of [
-      `Installed ${SEA_EXECUTABLE_NAME} ${installed.version} to ${underHome(path.dirname(installed.binary))}`,
-      `Registered ${hookCount(seaHooks.hooks)} hooks in ${underHome(installed.hooks)}`,
+      `Installed ${binary.target.executableName} ${installed.version} to ${underHome(path.dirname(installed.binary))}`,
+      `Registered ${hookCount(binaryHooks.hooks)} hooks in ${underHome(installed.hooks)}`,
       "",
       "Next:",
       `  1. Create ${underHome(configFile)} (if it doesn't exist already):`,

@@ -1,0 +1,36 @@
+{
+  "executableName": "langsmith-codex-tracing",
+  "repository": "langchain-ai/langsmith-codex-plugins",
+  "installer": {
+    "productName": "OpenAI Codex",
+    "shortUrl": "https://langch.in/codex-tracing",
+    "environmentPrefix": "LANGSMITH_CODEX",
+    "output": "install.sh",
+    "helpFooter": [
+      "Only macOS arm64 and x64 are published. Leave the tracing Codex plugin enabled.",
+      "It stops tracing once the binary's hooks are registered. Restart Codex when the",
+      "install finishes. Trust the new hooks when it prompts."
+    ],
+    "unsupportedPlatformHelp": [
+      "The plugin does the same tracing and works on Windows and Linux.",
+      "",
+      "  codex plugin marketplace add langchain-ai/langsmith-codex-plugins",
+      "",
+      "Then enable it in ~/.codex/config.toml:",
+      "",
+      "  [plugins.\"tracing@langsmith-codex-plugins\"]",
+      "  enabled = true",
+      "",
+      "Restart Codex, then run /hooks to trust the plugin's hooks."
+    ]
+  },
+  "build": {
+    "entryPoint": "plugins/tracing/src/index.ts",
+    "outputDirectory": "plugins/tracing/bin",
+    "versionFile": "plugins/tracing/.codex-plugin/plugin.json",
+    "minify": true
+  },
+  "sign": {
+    "entitlements": "macos-entitlements.plist"
+  }
+}

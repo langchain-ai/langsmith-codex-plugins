@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -8,10 +8,12 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { pluginShouldStandDown } from "../src/stand-down.js";
 import { DRAIN_TIMEOUT_MS } from "../src/utils/stdin.js";
 
-const EXECUTABLE = "langsmith-codex-tracing";
+const EXECUTABLE = JSON.parse(
+  readFileSync(new URL("../../../binary.config.json", import.meta.url), "utf8"),
+).executableName;
 const BUNDLE = fileURLToPath(new URL("../dist/index.mjs", import.meta.url));
 const STDIN_SOURCE = new URL("../src/utils/stdin.ts", import.meta.url).href;
-const SEA_HOOKS = new URL("../hooks/hooks.sea.json", import.meta.url);
+const BINARY_HOOKS = new URL("../hooks/hooks.binary.json", import.meta.url);
 const DEVELOPER_TRACING_VARS = /^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/;
 const ROOT_CAN_READ_ANYTHING = process.getuid?.() === 0;
 
@@ -275,7 +277,7 @@ it("reads nothing at all when stdin is a terminal", async () => {
 });
 
 it("bounds the drain below every hook timeout Codex enforces", async () => {
-  const groups = Object.values(JSON.parse(await fs.readFile(SEA_HOOKS, "utf-8")).hooks);
+  const groups = Object.values(JSON.parse(await fs.readFile(BINARY_HOOKS, "utf-8")).hooks);
   const timeouts = groups
     .flatMap((event) => event as { hooks: { timeout?: number }[] }[])
     .flatMap((group) => group.hooks)

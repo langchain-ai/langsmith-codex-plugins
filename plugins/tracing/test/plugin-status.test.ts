@@ -1,27 +1,49 @@
+import { readFileSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CODEX_PLUGIN_SELECTOR } from "../src/constants.js";
 import { runInstall } from "../src/install.js";
 import {
   codexPluginEnabled,
-  defaultConfigFile,
   pluginEnabledInToml,
   printStandDownNotice,
   standDownNotice,
 } from "../src/plugin-status.js";
+import { codexFile } from "../src/utils/paths.js";
 
-vi.mock("../src/updater-download.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../src/updater-download.js")>()),
-  verifyAdHocSignature: () => Promise.resolve(),
-}));
+vi.mock("@langchain/langsmith-plugin-binary", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@langchain/langsmith-plugin-binary")>();
+  return {
+    ...actual,
+    defineBinaryTarget: (options: Parameters<typeof actual.defineBinaryTarget>[0]) => {
+      const target = actual.defineBinaryTarget(options);
+      return {
+        ...target,
+        installLocalCopy: (
+          executable: string,
+          version: string,
+          options: Parameters<typeof target.installLocalCopy>[2] = {},
+        ) =>
+          target.installLocalCopy(executable, version, {
+            verifySignature: () => Promise.resolve(),
+            ...options,
+          }),
+      };
+    },
+  };
+});
 
 vi.mock("node:os", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:os")>();
   return { ...actual, default: actual, platform: () => "darwin", arch: () => "arm64" };
 });
 
-const SELECTOR = "tracing@langsmith-codex-plugins";
+const EXECUTABLE = JSON.parse(
+  readFileSync(new URL("../../../binary.config.json", import.meta.url), "utf8"),
+).executableName;
+const SELECTOR = CODEX_PLUGIN_SELECTOR;
 const REMOVE = `  codex plugin remove ${SELECTOR}`;
 const ENABLED_TOML = `[plugins."${SELECTOR}"]\nenabled = true\n`;
 const DISABLED_TOML = `[plugins."${SELECTOR}"]\nenabled = false\n`;
@@ -176,7 +198,7 @@ describe("choosing which config.toml answers", () => {
     await fs.writeFile(path.join(elsewhere, "config.toml"), ENABLED_TOML);
     process.env.CODEX_HOME = elsewhere;
 
-    expect(defaultConfigFile(false)).toBe(path.join(elsewhere, "config.toml"));
+    expect(codexFile("config.toml", false)).toBe(path.join(elsewhere, "config.toml"));
     expect(await codexPluginEnabled()).toBe(true);
   });
 
@@ -184,7 +206,7 @@ describe("choosing which config.toml answers", () => {
     delete process.env.CODEX_HOME;
     await writeUserConfig(ENABLED_TOML);
 
-    expect(defaultConfigFile(false)).toBe(path.join(codexHome, "config.toml"));
+    expect(codexFile("config.toml", false)).toBe(path.join(codexHome, "config.toml"));
     expect(await codexPluginEnabled()).toBe(true);
   });
 });
@@ -242,8 +264,8 @@ describe("what --install prints", () => {
   let logged: string[];
 
   beforeEach(async () => {
-    source = path.join(home, "langsmith-codex-tracing");
-    await fs.writeFile(source, "#!/bin/sh\n", { mode: 0o755 });
+    source = path.join(home, EXECUTABLE);
+    await fs.writeFile(source, "#!/bin/sh\necho 0.1.0\n", { mode: 0o755 });
     logged = [];
     vi.spyOn(console, "log").mockImplementation((line: string) => {
       logged.push(line);
@@ -251,7 +273,7 @@ describe("what --install prints", () => {
   });
 
   async function install() {
-    await runInstall({ source, currentVersion: "0.1.0", argv: ["--install"] });
+    await runInstall({ source, currentVersion: "0.1.0" });
     return logged.join("\n");
   }
 
@@ -262,7 +284,7 @@ describe("what --install prints", () => {
 
     expect(process.exitCode).not.toBe(1);
     expect(output.split("\n").slice(0, 7)).toEqual([
-      "Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith",
+      `Installed ${EXECUTABLE} 0.1.0 to ~/.langsmith`,
       "Registered 2 hooks in ~/.codex/hooks.json",
       "",
       "Next:",
@@ -283,7 +305,7 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
+    expect(output).toContain(`Installed ${EXECUTABLE} 0.1.0 to ~/.langsmith`);
     expect(output).not.toContain("installed twice");
     expect(output).not.toContain("codex plugin remove");
     expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
@@ -293,7 +315,7 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
+    expect(output).toContain(`Installed ${EXECUTABLE} 0.1.0 to ~/.langsmith`);
     expect(output).not.toContain("installed twice");
     expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
   });
@@ -305,7 +327,7 @@ describe("what --install prints", () => {
     const output = await install();
 
     expect(process.exitCode).not.toBe(1);
-    expect(output).toContain("Installed langsmith-codex-tracing 0.1.0 to ~/.langsmith");
+    expect(output).toContain(`Installed ${EXECUTABLE} 0.1.0 to ~/.langsmith`);
     expect(output).toContain("  1. Create ~/.codex/langsmith.json (if it doesn't exist already):");
   });
 });
