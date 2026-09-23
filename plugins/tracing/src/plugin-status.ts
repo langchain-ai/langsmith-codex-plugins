@@ -1,16 +1,7 @@
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
-import { CODEX_PLUGIN_SELECTOR } from "./sea-constants.ts";
-
-const PLUGIN_TABLE = /^\[\s*plugins\s*\.\s*(.+?)\s*\]\s*(?:#.*)?$/;
-const ENABLED_KEY = /^enabled\s*=\s*(true|false)\s*(?:#.*)?$/;
-
-function unquoted(key: string): string {
-  const quote = key[0];
-  const quoted = (quote === '"' || quote === "'") && key.length > 1 && key.endsWith(quote);
-  return quoted ? key.slice(1, -1) : key;
-}
+import { CODEX_PLUGIN_SELECTOR, ENABLED_KEY, PLUGIN_TABLE } from "./constants.ts";
+import { codexFile } from "./utils/paths.ts";
+import { unquoted } from "./utils/unquoted.ts";
 
 export function pluginEnabledInToml(toml: string): boolean | undefined {
   let inOurTable = false;
@@ -28,11 +19,6 @@ export function pluginEnabledInToml(toml: string): boolean | undefined {
   return undefined;
 }
 
-export function defaultConfigFile(projectScoped: boolean): string {
-  if (projectScoped) return path.join(process.cwd(), ".codex", "config.toml");
-  return path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"), "config.toml");
-}
-
 async function pluginEnabledIn(configFile: string): Promise<boolean | undefined> {
   try {
     return pluginEnabledInToml(await fs.readFile(configFile, "utf-8"));
@@ -42,8 +28,8 @@ async function pluginEnabledIn(configFile: string): Promise<boolean | undefined>
 }
 
 export async function codexPluginEnabled(): Promise<boolean> {
-  const projectConfig = defaultConfigFile(true);
-  const userConfig = defaultConfigFile(false);
+  const projectConfig = codexFile("config.toml", true);
+  const userConfig = codexFile("config.toml", false);
   for (const configFile of [projectConfig, userConfig]) {
     const enabled = await pluginEnabledIn(configFile);
     if (enabled !== undefined) return enabled;

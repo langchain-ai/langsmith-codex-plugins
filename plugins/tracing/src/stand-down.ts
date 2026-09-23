@@ -1,12 +1,13 @@
 import * as fs from "node:fs/promises";
-import { isSea } from "node:sea";
-import { defaultHooksFile, quoteForShell } from "./install.ts";
-import type { HookEntry, HookGroup } from "./sea-models.ts";
-import { defaultInstallDir, installedExecutablePath } from "./updater-install.ts";
+import { binary } from "./binary.ts";
+import type { HookEntry, HookGroup } from "./binary-models.ts";
+import { codexFile } from "./utils/paths.ts";
+import { quoteForShell } from "./utils/quoteForShell.ts";
+import { runningCompiledBinary } from "./utils/runningCompiledBinary.ts";
 
-async function binaryExists(binary: string): Promise<boolean> {
+async function binaryExists(executable: string): Promise<boolean> {
   try {
-    await fs.stat(binary);
+    await fs.stat(executable);
     return true;
   } catch {
     return false;
@@ -23,8 +24,8 @@ function registeredCommands(parsed: unknown): string[] {
     .filter((command): command is string => typeof command === "string");
 }
 
-async function hooksFileRunsBinary(hooksFile: string, binary: string): Promise<boolean> {
-  const written = new Set([binary, quoteForShell(binary)]);
+async function hooksFileRunsBinary(hooksFile: string, executable: string): Promise<boolean> {
+  const written = new Set([executable, quoteForShell(executable)]);
   try {
     const parsed = JSON.parse(await fs.readFile(hooksFile, "utf-8"));
     return registeredCommands(parsed).some((command) => written.has(command.trim()));
@@ -35,13 +36,13 @@ async function hooksFileRunsBinary(hooksFile: string, binary: string): Promise<b
 
 export async function pluginShouldStandDown(): Promise<boolean> {
   try {
-    if (isSea()) return false;
-    const binary = installedExecutablePath(defaultInstallDir());
-    if (!(await binaryExists(binary))) return false;
-    const projectHooks = defaultHooksFile(true);
-    const userHooks = defaultHooksFile(false);
+    if (runningCompiledBinary()) return false;
+    const installed = binary.installedBinaryPath();
+    if (!(await binaryExists(installed))) return false;
+    const projectHooks = codexFile("hooks.json", true);
+    const userHooks = codexFile("hooks.json", false);
     for (const hooksFile of [projectHooks, userHooks]) {
-      if (await hooksFileRunsBinary(hooksFile, binary)) return true;
+      if (await hooksFileRunsBinary(hooksFile, installed)) return true;
     }
     return false;
   } catch {

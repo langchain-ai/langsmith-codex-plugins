@@ -144,4 +144,4 @@ vite.config.ts.timestamp-*
 *.langsmith
 
 plugins/tracing/bin/
-plugins/tracing/bundle/
+*.bun-build

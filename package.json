@@ -29,14 +29,19 @@
   },
   "scripts": {
     "build": "tsdown --config plugins/tracing/tsdown.config.ts",
-    "build:sea": "node tsdown.sea.config.ts",
-    "sign:sea": "node scripts/sign.sea.ts",
+    "build:binary": "langsmith-plugin-binary build",
+    "sign:binary": "langsmith-plugin-binary sign",
+    "installer": "langsmith-plugin-binary installer",
     "test": "vitest",
+    "test:binary": "vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/build-binary.test.ts plugins/tracing/test/install-binary.test.ts",
+    "test:install": "bash node_modules/@langchain/langsmith-plugin-binary/test/install/cases.sh",
+    "test:install:mutations": "bash node_modules/@langchain/langsmith-plugin-binary/test/install/variants.sh",
     "format": "oxfmt",
-    "lint:dist": "pnpm run build && git diff --exit-code -- plugins/tracing/dist/index.mjs",
+    "lint": "pnpm run lint:oxfmt && pnpm run lint:tsc && pnpm run lint:installer && pnpm run lint:dist",
     "lint:oxfmt": "oxfmt --check",
     "lint:tsc": "tsc --noEmit",
-    "lint": "pnpm run lint:oxfmt && pnpm run lint:tsc && pnpm run lint:dist"
+    "lint:installer": "langsmith-plugin-binary installer --check",
+    "lint:dist": "pnpm run build && git diff --exit-code -- plugins/tracing/dist/index.mjs"
   },
   "dependencies": {
     "langsmith": "^0.9.0",
@@ -44,6 +49,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@langchain/langsmith-plugin-binary": "github:langchain-ai/langsmith-plugin-binary#v0.1.0",
     "@types/node": "^26.4.0",
     "memfs": "^4.68.2",
     "oxfmt": "^0.65.0",

@@ -18,6 +18,9 @@ importers:
         specifier: ^4.5.4
         version: 4.5.4
     devDependencies:
+      '@langchain/langsmith-plugin-binary':
+        specifier: github:langchain-ai/langsmith-plugin-binary#v0.1.0
+        version: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/12889bb099ff1115cb538a3f4b71709efb6858e1
       '@types/node':
         specifier: ^26.4.0
         version: 26.4.0
@@ -170,6 +173,12 @@ packages:
     engines: {node: '>=10.0'}
     peerDependencies:
       tslib: '2'
+
+  '@langchain/langsmith-plugin-binary@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/12889bb099ff1115cb538a3f4b71709efb6858e1':
+    resolution: {tarball: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/12889bb099ff1115cb538a3f4b71709efb6858e1}
+    version: 0.1.0
+    engines: {node: '>=22'}
+    hasBin: true
 
   '@napi-rs/wasm-runtime@1.2.3':
     resolution: {integrity: sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q==}
@@ -1505,6 +1514,8 @@ snapshots:
       '@jsonjoy.com/buffers': 17.67.0(tslib@2.8.1)
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
+
+  '@langchain/langsmith-plugin-binary@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/12889bb099ff1115cb538a3f4b71709efb6858e1': {}
 
   '@napi-rs/wasm-runtime@1.2.3(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:

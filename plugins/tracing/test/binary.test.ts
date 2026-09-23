@@ -7,20 +7,23 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const repoRoot = new URL("../../../", import.meta.url);
-const seaSettings = JSON.parse(readFileSync(new URL("sea-config.json", repoRoot), "utf8"));
-const binaryPath = fileURLToPath(new URL(seaSettings.output, repoRoot));
+const settings = JSON.parse(readFileSync(new URL("binary.config.json", repoRoot), "utf8"));
+const binaryPath = fileURLToPath(
+  new URL(`${settings.build.outputDirectory}/${settings.executableName}`, repoRoot),
+);
+const entitlements = readFileSync(new URL(settings.sign.entitlements, repoRoot), "utf8");
 const binaryExists = existsSync(binaryPath);
 const ciShouldHaveBuiltBinary = Boolean(process.env.CI) && os.platform() === "darwin";
 
 if (!binaryExists && ciShouldHaveBuiltBinary) {
   throw new Error(
-    `Expected the SEA binary at ${binaryPath}. CI must run \`pnpm build:sea\` before this suite.`,
+    `Expected the binary at ${binaryPath}. CI must run \`pnpm build:binary\` before this suite.`,
   );
 }
 
 let codexHome: string;
 beforeEach(async () => {
-  codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-sea-"));
+  codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "codex-binary-"));
 });
 afterEach(async () => {
   await fs.rm(codexHome, { recursive: true, force: true });
@@ -64,6 +67,18 @@ function runHook(event: string, prompt: string, tracingEnabled = false) {
   });
 }
 
+describe("the macOS entitlements", () => {
+  it("grants allow-jit and nothing wider", () => {
+    expect(entitlements.match(/<key>([^<]+)<\/key>/g)).toEqual([
+      "<key>com.apple.security.cs.allow-jit</key>",
+    ]);
+  });
+
+  it("carries no entitlement that Apple refuses to notarize", () => {
+    expect(entitlements).not.toContain("com.apple.security.get-task-allow");
+  });
+});
+
 describe.runIf(binaryExists)("the standalone binary", () => {
   it("blocks the turn and saves the policy when the prompt is a mute command", async () => {
     const result = await runHook("UserPromptSubmit", "langsmith-tracing:mute");
@@ -88,7 +103,7 @@ describe.runIf(binaryExists)("the standalone binary", () => {
   });
 
   it("never stands down for its own registered hooks", async () => {
-    const installed = path.join(codexHome, ".langsmith", "langsmith-codex-tracing");
+    const installed = path.join(codexHome, ".langsmith", settings.executableName);
     await fs.mkdir(path.dirname(installed), { recursive: true });
     await fs.writeFile(installed, "#!/bin/sh\n", { mode: 0o755 });
     await fs.mkdir(path.join(codexHome, ".codex"), { recursive: true });

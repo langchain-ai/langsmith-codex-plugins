@@ -1,0 +1,14 @@
+name: Build Binary
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  binary:
+    permissions:
+      contents: write
+    uses: langchain-ai/langsmith-plugin-binary/.github/workflows/build-binary.yml@12889bb099ff1115cb538a3f4b71709efb6858e1 # v0.1.0
+    secrets: inherit

@@ -6,25 +6,29 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { flagValue, installBinary, renderHooksFile } from "../src/install.js";
-import { RELEASES_PER_PAGE } from "../src/sea-constants.js";
-import type { InstallBinaryOptions } from "../src/sea-models.js";
-import { fetchReleases } from "../src/updater-releases.js";
+import type { InstallBinaryOptions } from "../src/binary-models.js";
+import { installBinary } from "../src/install.js";
+import { flagValue } from "../src/utils/argv.js";
+import { renderHooksFile } from "../src/utils/hooks.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:fs/promises")>()),
 }));
 
 const repoRoot = new URL("../../../", import.meta.url);
-const seaSettings = JSON.parse(readFileSync(new URL("sea-config.json", repoRoot), "utf8"));
+const settings = JSON.parse(readFileSync(new URL("binary.config.json", repoRoot), "utf8"));
 const PLUGIN_VERSION = JSON.parse(
-  readFileSync(new URL("plugins/tracing/.codex-plugin/plugin.json", repoRoot), "utf8"),
+  readFileSync(new URL(settings.build.versionFile, repoRoot), "utf8"),
 ).version;
-const builtBinary = fileURLToPath(new URL(seaSettings.output, repoRoot));
+const EXECUTABLE = settings.executableName;
+const builtBinary = fileURLToPath(
+  new URL(`${settings.build.outputDirectory}/${EXECUTABLE}`, repoRoot),
+);
 const binaryExists = existsSync(builtBinary);
-const EXECUTABLE = "langsmith-codex-tracing";
-const RELEASE_API = "http://releases.test/releases";
-const BODY = new TextEncoder().encode("the released binary");
+const RELEASES_API = "http://releases.test/releases";
+const RUNNING_VERSION = "0.4.0";
+const OLDER_VERSION = "0.1.0";
+const RUNS_THE_REAL_BINARY_MS = 60_000;
 const DEVELOPER_TRACING_VARS = /^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/;
 
 let home: string;
@@ -67,12 +71,21 @@ function hooksFile() {
   return JSON.parse(readFileSync(hooksPath, "utf8"));
 }
 
+function reportsVersion(version: string): string {
+  return `#!/bin/sh\necho ${version}\n`;
+}
+
+function writeSource(version = RUNNING_VERSION) {
+  return fs.writeFile(path.join(home, "downloaded"), reportsVersion(version), { mode: 0o644 });
+}
+
 function install(overrides: Partial<InstallBinaryOptions> = {}) {
   return installBinary({
     source: path.join(home, "downloaded"),
+    currentVersion: RUNNING_VERSION,
     installDir,
     hooksFile: hooksPath,
-    releaseApi: RELEASE_API,
+    releasesApi: RELEASES_API,
     runtimePlatform: "darwin",
     runtimeArch: "arm64",
     verifySignature: () => Promise.resolve(),
@@ -80,25 +93,42 @@ function install(overrides: Partial<InstallBinaryOptions> = {}) {
   });
 }
 
-function releaseFetch(tags: string[], prereleases: string[] = []) {
-  const digest = `sha256:${createHash("sha256").update(BODY).digest("hex")}`;
-  const releases = tags.map((tag) => ({
-    tag_name: tag,
+function published(version: string, prerelease: boolean) {
+  const body = new TextEncoder().encode(reportsVersion(version));
+  return {
+    tag_name: version,
     draft: false,
-    prerelease: prereleases.includes(tag),
+    prerelease,
     assets: [
       {
-        name: `${EXECUTABLE}-darwin-arm64-${tag}`,
-        browser_download_url: `http://releases.test/download/${tag}`,
-        size: BODY.byteLength,
-        digest,
+        name: `${EXECUTABLE}-darwin-arm64-${version}`,
+        browser_download_url: `http://releases.test/download/${version}`,
+        size: body.byteLength,
+        digest: `sha256:${createHash("sha256").update(body).digest("hex")}`,
       },
     ],
-  }));
-  return vi
-    .fn<typeof fetch>()
-    .mockResolvedValueOnce(Response.json(releases))
-    .mockResolvedValueOnce(new Response(BODY));
+  };
+}
+
+function releaseFetch(versions: string[], prereleases: string[] = []) {
+  const releases = versions.map((version) => published(version, prereleases.includes(version)));
+  const downloads = new Map(
+    releases.map((release) => [
+      release.assets[0].browser_download_url,
+      new TextEncoder().encode(reportsVersion(release.tag_name)),
+    ]),
+  );
+  return vi.fn<typeof fetch>().mockImplementation((input) => {
+    const url = String(input);
+    const tagged = /\/releases\/tags\/(.+)$/.exec(url);
+    if (tagged) {
+      const found = releases.find((release) => release.tag_name === decodeURIComponent(tagged[1]));
+      return Promise.resolve(found ? Response.json(found) : new Response("", { status: 404 }));
+    }
+    if (url.startsWith(`${RELEASES_API}?`)) return Promise.resolve(Response.json(releases));
+    const body = downloads.get(url);
+    return Promise.resolve(body ? new Response(body) : new Response("", { status: 404 }));
+  });
 }
 
 function commandFor(file: Record<string, any>, event: string): string {
@@ -154,51 +184,66 @@ it("points our events at the installed path and keeps every other hook", () => {
 
 it("copies the running binary into place as an executable, without the network", async () => {
   const fetchImpl = vi.fn<typeof fetch>();
-  await fs.writeFile(path.join(home, "downloaded"), "the downloaded asset", { mode: 0o644 });
+  await writeSource();
 
-  expect(await install({ fetchImpl, currentVersion: "0.4.0" })).toEqual({
+  expect(await install({ fetchImpl })).toEqual({
     binary: installed,
     hooks: hooksPath,
-    version: "0.4.0",
+    version: RUNNING_VERSION,
   });
   expect(fetchImpl).not.toHaveBeenCalled();
-  expect(await fs.readFile(installed, "utf8")).toBe("the downloaded asset");
+  expect(await fs.readFile(installed, "utf8")).toBe(reportsVersion(RUNNING_VERSION));
   expect((await fs.stat(installed)).mode & 0o777).toBe(0o755);
   expect((await fs.stat(installDir)).mode & 0o777).toBe(0o700);
   expect(await fs.readdir(installDir)).toEqual([EXECUTABLE]);
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
 });
 
+it("refuses a local copy that reports a different version", async () => {
+  await writeSource("9.9.9");
+
+  await expect(install({ fetchImpl: vi.fn<typeof fetch>() })).rejects.toThrow(
+    `reports version 9.9.9, expected ${RUNNING_VERSION}`,
+  );
+  expect(existsSync(installed)).toBe(false);
+  expect(existsSync(hooksPath)).toBe(false);
+});
+
 it.each([
-  ["an older tag is asked for", "v0.2.0", "v0.2.0"],
-  ["it is not running from a built binary", undefined, "v0.3.0"],
+  ["an older tag is asked for", "0.2.0", "0.2.0"],
+  ["it is not running from a built binary", undefined, "0.3.0"],
 ])("downloads the release when %s", async (_label, tag, wanted) => {
-  const fetchImpl = releaseFetch(["v0.2.0", "v0.3.0"]);
+  const fetchImpl = releaseFetch(["0.2.0", "0.3.0"]);
 
   const result = await install({
     tag,
     source: tag ? path.join(home, "downloaded") : undefined,
+    currentVersion: OLDER_VERSION,
     fetchImpl,
   });
 
-  expect(result.version).toBe(wanted.replace(/^v/, ""));
-  expect(fetchImpl.mock.calls[0][0]).toBe(`${RELEASE_API}?per_page=100`);
-  expect(fetchImpl.mock.calls[1][0]).toEqual(new URL(`http://releases.test/download/${wanted}`));
-  expect(await fs.readFile(installed)).toEqual(Buffer.from(BODY));
+  expect(result.version).toBe(wanted);
+  expect(await fs.readFile(installed, "utf8")).toBe(reportsVersion(wanted));
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
 });
 
 it("installs a prerelease only when --tag names it", async () => {
-  const tags = ["0.4.0", "0.5.0-beta.1"];
-  const named = releaseFetch(tags, ["0.5.0-beta.1"]);
+  const versions = ["0.4.0", "0.5.0-beta.1"];
+  const named = releaseFetch(versions, ["0.5.0-beta.1"]);
 
-  await install({ tag: "0.5.0-beta.1", fetchImpl: named });
+  const pinned = await install({
+    tag: "0.5.0-beta.1",
+    currentVersion: OLDER_VERSION,
+    fetchImpl: named,
+  });
+  expect(pinned.version).toBe("0.5.0-beta.1");
 
-  expect(named.mock.calls[1][0]).toEqual(new URL("http://releases.test/download/0.5.0-beta.1"));
-
-  const unpinned = releaseFetch(tags, ["0.5.0-beta.1"]);
-  await install({ source: undefined, fetchImpl: unpinned });
-  expect(unpinned.mock.calls[1][0]).toEqual(new URL("http://releases.test/download/0.4.0"));
+  const unpinned = await install({
+    source: undefined,
+    currentVersion: OLDER_VERSION,
+    fetchImpl: releaseFetch(versions, ["0.5.0-beta.1"]),
+  });
+  expect(unpinned.version).toBe("0.4.0");
 });
 
 describe("writing the hooks file", () => {
@@ -212,7 +257,7 @@ describe("writing the hooks file", () => {
     await fs.mkdir(codexHome, { recursive: true });
     await fs.writeFile(hooksPath, original);
     await fs.chmod(hooksPath, mode);
-    await fs.writeFile(path.join(home, "downloaded"), "the downloaded asset");
+    await writeSource();
     return original;
   }
 
@@ -264,7 +309,7 @@ describe("writing the hooks file", () => {
 });
 
 it("takes the value after --tag, and nothing else", () => {
-  expect(flagValue(["binary", "--install", "--tag", "v0.2.0"], "--tag")).toBe("v0.2.0");
+  expect(flagValue(["binary", "--install", "--tag", "0.2.0"], "--tag")).toBe("0.2.0");
   expect(flagValue(["binary", "--tag", "--print"], "--tag")).toBeUndefined();
   expect(flagValue(["binary", "--tag"], "--tag")).toBeUndefined();
   expect(flagValue(["binary", "--install"], "--tag")).toBeUndefined();
@@ -274,7 +319,7 @@ it.each<[string, Partial<InstallBinaryOptions>, string]>([
   [
     "the platform has no published binary",
     { runtimePlatform: "win32", runtimeArch: "x64" },
-    "only runs on macOS arm64",
+    "only runs on macOS arm64 and x64",
   ],
   [
     "the copy fails its signature check",
@@ -283,8 +328,11 @@ it.each<[string, Partial<InstallBinaryOptions>, string]>([
   ],
   [
     "no release carries this tag",
-    { tag: "v9.9.9", fetchImpl: () => Promise.resolve(Response.json([])) },
-    "no published release is tagged v9.9.9",
+    {
+      tag: "9.9.9",
+      fetchImpl: () => Promise.resolve(Response.json({ tag_name: "9.9.9", assets: [] })),
+    },
+    "no published release tagged 9.9.9",
   ],
   [
     "no release carries this asset",
@@ -292,7 +340,7 @@ it.each<[string, Partial<InstallBinaryOptions>, string]>([
     "no published release carries a",
   ],
 ])("installs nothing when %s", async (_label, overrides, message) => {
-  await fs.writeFile(path.join(home, "downloaded"), "the downloaded asset");
+  await writeSource();
   await fs.mkdir(installDir, { recursive: true });
 
   await expect(install(overrides)).rejects.toThrow(message);
@@ -358,123 +406,49 @@ describe("the command line", () => {
 });
 
 describe.runIf(binaryExists)("installing the binary", () => {
-  it("copies itself into place, then the installed hook handles events", async () => {
-    const printed = await run(builtBinary, ["--print"], {});
-    expect(JSON.parse(printed.stdout).hooks.Stop[0].hooks[0].command).toBe(`'${installed}'`);
-    expect(existsSync(installed)).toBe(false);
+  it(
+    "copies itself into place, then the installed hook handles events",
+    async () => {
+      const printed = await run(builtBinary, ["--print"], {});
+      expect(JSON.parse(printed.stdout).hooks.Stop[0].hooks[0].command).toBe(`'${installed}'`);
+      expect(existsSync(installed)).toBe(false);
 
-    const result = await run(builtBinary, ["--install"], {});
-    expect(result.stderr).toBe("");
-    expect(result.code).toBe(0);
-    expect(result.stdout).toBe(
-      [
-        `Installed ${EXECUTABLE} ${PLUGIN_VERSION} to ~/.langsmith`,
-        "Registered 2 hooks in ~/.codex/hooks.json",
-        "",
-        "Next:",
-        "  1. Create ~/.codex/langsmith.json (if it doesn't exist already):",
-        `       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
-        '  2. Restart Codex, then choose "Trust all and continue" when it asks',
-        "",
-      ].join("\n"),
-    );
-    expect(statSync(installed).size).toBe(statSync(builtBinary).size);
-    expect(statSync(installed).mode & 0o777).toBe(0o755);
-    expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
-    expect(commandFor(hooksFile(), "UserPromptSubmit")).toBe(`'${installed}'`);
-    expect((await run(installed, ["--version"], {})).stdout.trim()).toBe(PLUGIN_VERSION);
+      const result = await run(builtBinary, ["--install"], {});
+      expect(result.stderr).toBe("");
+      expect(result.code).toBe(0);
+      expect(result.stdout).toBe(
+        [
+          `Installed ${EXECUTABLE} ${PLUGIN_VERSION} to ~/.langsmith`,
+          "Registered 2 hooks in ~/.codex/hooks.json",
+          "",
+          "Next:",
+          "  1. Create ~/.codex/langsmith.json (if it doesn't exist already):",
+          `       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
+          '  2. Restart Codex, then choose "Trust all and continue" when it asks',
+          "",
+        ].join("\n"),
+      );
+      expect(statSync(installed).size).toBe(statSync(builtBinary).size);
+      expect(statSync(installed).mode & 0o777).toBe(0o755);
+      expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
+      expect(commandFor(hooksFile(), "UserPromptSubmit")).toBe(`'${installed}'`);
+      expect((await run(installed, ["--version"], {})).stdout.trim()).toBe(PLUGIN_VERSION);
 
-    const submit = await fireHook("UserPromptSubmit", "langsmith-tracing:mute");
-    expect(submit.stderr).toBe("");
-    expect(JSON.parse(submit.stdout)).toEqual({
-      decision: "block",
-      reason: expect.stringContaining("Thread tracing muted (metadata-only)."),
-    });
-    const policy = JSON.parse(
-      readFileSync(path.join(codexHome, "langsmith-state.privacy.json"), "utf8"),
-    );
-    expect(policy.threads.thread.turns).toEqual({ control: "off" });
+      const submit = await fireHook("UserPromptSubmit", "langsmith-tracing:mute");
+      expect(submit.stderr).toBe("");
+      expect(JSON.parse(submit.stdout)).toEqual({
+        decision: "block",
+        reason: expect.stringContaining("Thread tracing muted (metadata-only)."),
+      });
+      const policy = JSON.parse(
+        readFileSync(path.join(codexHome, "langsmith-state.privacy.json"), "utf8"),
+      );
+      expect(policy.threads.thread.turns).toEqual({ control: "off" });
 
-    const stop = await fireHook("Stop", "work");
-    expect(stop.stderr).toBe("");
-    expect(stop.stdout).toBe("");
-  });
-});
-
-describe("listing releases", () => {
-  it("asks GitHub for the same page size install.sh uses", async () => {
-    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(Response.json([]));
-
-    await fetchReleases(fetchImpl, RELEASE_API, "0.1.0");
-
-    expect(RELEASES_PER_PAGE).toBe(100);
-    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${RELEASE_API}?per_page=100`);
-    expect(readFileSync(new URL("install.sh", repoRoot), "utf8")).toContain(
-      `RELEASE_PAGE_SIZE=${RELEASES_PER_PAGE}`,
-    );
-  });
-});
-
-describe("the publish version gate", () => {
-  const workflow = () => readFileSync(new URL(".github/workflows/build-sea.yml", repoRoot), "utf8");
-
-  function stepScript(name: string): string {
-    const lines = workflow().split("\n");
-    const step = lines.findIndex((line) => line.trim() === `- name: ${name}`);
-    expect(step).toBeGreaterThan(-1);
-    const start = lines.findIndex((line, index) => index > step && line.trim() === "run: |");
-    expect(start).toBeGreaterThan(step);
-    const indent = lines[start].search(/\S/) + 2;
-    const body: string[] = [];
-    for (let index = start + 1; index < lines.length; index += 1) {
-      if (lines[index].trim() !== "" && lines[index].search(/\S/) < indent) break;
-      body.push(lines[index].slice(indent));
-    }
-    return body.join("\n");
-  }
-
-  async function runGate(version: string, tag: string) {
-    const manifest = path.join(home, "plugins", "tracing", ".codex-plugin");
-    await fs.mkdir(manifest, { recursive: true });
-    await fs.writeFile(path.join(manifest, "plugin.json"), JSON.stringify({ version }));
-    return run("bash", ["-c", stepScript("Check the Version Matches the Tag")], { TAG: tag });
-  }
-
-  it("passes when the manifest version equals the tag", async () => {
-    const result = await runGate("0.4.0", "0.4.0");
-
-    expect(result.code).toBe(0);
-    expect(result.stdout).toContain("matches tag 0.4.0");
-  });
-
-  it.each([
-    ["the tag is ahead", "0.1.0", "9.9.9"],
-    ["the tag is behind", "0.4.0", "0.3.1"],
-    ["the tag carries a v prefix", "0.1.0", "v0.1.0"],
-    ["the tag is a prerelease of the same version", "0.1.0", "0.1.0-beta.1"],
-    ["the manifest was never bumped", "0.1.0", "0.2.0"],
-  ])("fails when %s", async (_label, version, tag) => {
-    const result = await runGate(version, tag);
-
-    expect(result.code).toBe(1);
-    expect(result.stderr).toContain(`plugin.json version ${version} does not match tag ${tag}`);
-  });
-
-  it("reads the manifest this repository actually ships", async () => {
-    const shipped = JSON.parse(
-      readFileSync(new URL("plugins/tracing/.codex-plugin/plugin.json", repoRoot), "utf8"),
-    );
-
-    expect(typeof shipped.version).toBe("string");
-    expect((await runGate(shipped.version, shipped.version)).code).toBe(0);
-  });
-
-  it("gates the check and the publish job on one ref test", () => {
-    const yaml = workflow();
-
-    expect(yaml).toContain("publishing: ${{ steps.release-gate.outputs.publishing }}");
-    expect(yaml).toContain("if: ${{ steps.release-gate.outputs.publishing == 'true' }}");
-    expect(yaml).toContain("if: ${{ needs.build-sea.outputs.publishing == 'true' }}");
-    expect(yaml.match(/refs\/tags\//g)).toHaveLength(1);
-  });
+      const stop = await fireHook("Stop", "work");
+      expect(stop.stderr).toBe("");
+      expect(stop.stdout).toBe("");
+    },
+    RUNS_THE_REAL_BINARY_MS,
+  );
 });

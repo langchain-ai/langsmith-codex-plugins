@@ -12,6 +12,31 @@ export const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 
+/** Names this plugin's entry in the Codex plugin marketplace. */
+export const CODEX_PLUGIN_SELECTOR = "tracing@langsmith-codex-plugins";
+
+// How a published platform key is spelled in messages to the user.
+export const PLATFORM_NAMES: Record<string, string> = {
+  darwin: "macOS",
+  linux: "Linux",
+  win32: "Windows",
+};
+
+export const KNOWN_FLAGS = new Set([
+  "--help",
+  "-h",
+  "--version",
+  "-v",
+  "--install",
+  "--print",
+  "--project",
+  "--tag",
+  "--update",
+]);
+
+export const PLUGIN_TABLE = /^\[\s*plugins\s*\.\s*(.+?)\s*\]\s*(?:#.*)?$/;
+export const ENABLED_KEY = /^enabled\s*=\s*(true|false)\s*(?:#.*)?$/;
+
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.
 declare const __LS_INTEGRATION_VERSION__: string;

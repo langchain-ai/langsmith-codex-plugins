@@ -10,7 +10,7 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Installation
 
-Every option below installs the same tracing integration. Only the delivery differs. The plugin runs on the Node on your PATH and the marketplace manages it. The standalone binary carries its own Node and you manage it. You are picking an install method, not a different product.
+Every option below installs the same tracing integration and only the delivery differs, so you are picking an install method rather than a different product. The plugin runs on the Node on your PATH and the marketplace manages it, while the standalone binary carries its own JavaScript runtime and you manage it.
 
 ### As a Codex plugin
 
@@ -33,9 +33,9 @@ Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompt
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
-### As a standalone binary (beta, macOS arm64)
+### As a standalone binary (beta, macOS arm64 and x64)
 
-The same integration as the plugin, delivered as one file. It carries its own Node runtime so it needs no Node on your PATH. You install and update it yourself. The plugin is the supported path. This binary is the beta we are trialling and macOS arm64 is the only build.
+The same integration as the plugin, delivered as one file that carries its own JavaScript runtime so it needs no Node on your PATH. The plugin is still the supported path and this binary is the beta we are trialling, so you install and update it yourself. Only macOS arm64 and x64 are built and the installer picks whichever matches your Mac.
 
 The plugin stops tracing while the binary is installed and registered as a hook.
 
@@ -45,7 +45,7 @@ The plugin stops tracing while the binary is installed and registered as a hook.
    curl -LsSf https://langch.in/codex-tracing | bash -s -- --beta
    ```
 
-   `--beta` takes the newest prerelease. Drop it once a stable release carries the binary. The plain command takes the newest stable release and never a prerelease, so it fails while a prerelease is the only published build.
+   Adding `--beta` takes the newest prerelease and you can drop it once a stable release carries the binary. Without it the installer takes the newest stable release and never a prerelease, so it fails while a prerelease is the only published build.
 
    The installer checks the download against the SHA-256 the release publishes. It puts the binary at `~/.langsmith/langsmith-codex-tracing` and adds the tracing hooks to `~/.codex/hooks.json`. Run it with `--help` for version pinning and the other options.
 
@@ -57,9 +57,9 @@ The plugin stops tracing while the binary is installed and registered as a hook.
 
 3. Restart Codex, then trust the hooks when prompted.
 
-The binary never updates itself. Run `~/.langsmith/langsmith-codex-tracing --update` for a newer release.
+The binary never updates itself, so run `~/.langsmith/langsmith-codex-tracing --update` when you want a newer release.
 
-To download a release asset by hand instead: `chmod +x` it, then run it with `--install`. The binary is signed and notarized, so macOS clears it after one online Gatekeeper check.
+To download a release asset by hand instead, take the `-arm64-` or `-x64-` asset matching your Mac and `chmod +x` it, then run it with `--install`. Released binaries are signed and notarized so macOS clears one after a single online Gatekeeper check.
 
 ### Setting environment variables
 
@@ -194,7 +194,7 @@ In metadata-only mode, root, model, and tool inputs/outputs are replaced by role
 
 ## Secret redaction
 
-By default, the plugin strips common secrets — provider API keys, JWTs, PEM blocks, and structural `NAME=value`, `Authorization`, and URL-credential shapes — from run inputs, outputs, and metadata **before they are uploaded** to LangSmith.
+By default, the plugin strips common secrets from run inputs, outputs, and metadata **before they are uploaded** to LangSmith. It catches provider API keys, JWTs, PEM blocks, and structural `NAME=value`, `Authorization`, and URL-credential shapes.
 
 - Set `LANGSMITH_CODEX_REDACT` to a falsy value (`false`, `0`, `no`, or `off`) to turn redaction off.
 - Set `LANGSMITH_CODEX_REDACT_EXTRA` to a JSON array of `{ "pattern": "...", "replace": "..." }` rules to redact additional custom patterns. `pattern` is a regular-expression string; `replace` (optional) is the replacement text.
@@ -207,14 +207,14 @@ Tracing is disabled by default; the master-switch precedence above determines en
 | ------------------------------------------------------------ | -------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
 | `TRACE_TO_LANGSMITH`                                         | No       | `false`                           | Overrides file `enabled`; trimmed, case-insensitive `true`/`1`/`yes`/`on` enable             |
 | `LANGSMITH_CODEX_DEFAULT_MUTED`, `LANGSMITH_DEFAULT_MUTED`   | No       | `false`                           | Default metadata-only mode without a thread override; environment-first; invalid values mute |
-| `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | Yes\*    | —                                 | LangSmith API key. \*Required unless `LANGSMITH_CODEX_RUNS_ENDPOINTS` is set                 |
+| `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | Yes\*    | None                              | LangSmith API key. \*Required unless `LANGSMITH_CODEX_RUNS_ENDPOINTS` is set                 |
 | `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | No       | `"codex"`                         | LangSmith project name                                                                       |
 | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | No       | `https://api.smith.langchain.com` | LangSmith API base URL                                                                       |
-| `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | No       | —                                 | JSON object of custom metadata to attach to all runs                                         |
-| `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | No       | —                                 | JSON array of replica destinations for multi-project tracing                                 |
-| `LANGSMITH_CODEX_PARENT_HEADERS`                             | No       | —                                 | JSON object containing LangSmith distributed-tracing parent headers                          |
+| `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | No       | None                              | JSON object of custom metadata to attach to all runs                                         |
+| `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | No       | None                              | JSON array of replica destinations for multi-project tracing                                 |
+| `LANGSMITH_CODEX_PARENT_HEADERS`                             | No       | None                              | JSON object containing LangSmith distributed-tracing parent headers                          |
 | `LANGSMITH_CODEX_REDACT`                                     | No       | `"true"`                          | Set to a falsy value (`false`/`0`/`no`/`off`) to disable secret redaction                    |
-| `LANGSMITH_CODEX_REDACT_EXTRA`                               | No       | —                                 | JSON array of `{ pattern, replace }` custom redaction rules                                  |
+| `LANGSMITH_CODEX_REDACT_EXTRA`                               | No       | None                              | JSON array of `{ pattern, replace }` custom redaction rules                                  |
 
 ## JSON config reference
 
