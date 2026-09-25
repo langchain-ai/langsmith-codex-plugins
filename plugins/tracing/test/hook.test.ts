@@ -69,12 +69,13 @@ it("the installed hook definition is synchronous and preserves Stop timing", asy
   );
   const submit = definition.hooks.UserPromptSubmit[0].hooks[0];
   expect(submit.type).toBe("command");
-  expect(submit.command).toBe(`node "$PLUGIN_ROOT/dist/index.mjs"`);
+  expect(submit.command).toBe(`"$PLUGIN_ROOT/binary/langsmith-tracing"`);
   expect(submit.timeout).toBe(10);
   expect(submit.async).toBeUndefined();
   expect(definition.hooks.Stop[0].hooks[0]).toEqual({
     type: "command",
     command: submit.command,
+    commandWindows: submit.commandWindows,
     timeout: 30,
     statusMessage: "Uploading Codex trace to LangSmith",
   });

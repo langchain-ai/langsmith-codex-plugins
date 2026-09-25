@@ -62,6 +62,35 @@ jobs:
       - name: Test
         run: pnpm run test
 
+  hooks:
+    name: Hook Command on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-26]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24.x
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test the hook command on this platform
+        run: pnpm run test:hooks
+
   shellcheck:
     name: Shellcheck
     runs-on: ubuntu-latest
@@ -71,7 +100,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Shellcheck
-        run: shellcheck install.sh
+        run: shellcheck install.sh plugins/tracing/binary/langsmith-tracing
 
   installer:
     name: Installer Shell Tests

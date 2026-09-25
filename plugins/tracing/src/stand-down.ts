@@ -3,7 +3,15 @@ import { binary } from "./binary.ts";
 import type { HookEntry, HookGroup } from "./binary-models.ts";
 import { codexFile } from "./utils/paths.ts";
 import { quoteForShell } from "./utils/quoteForShell.ts";
-import { runningCompiledBinary } from "./utils/runningCompiledBinary.ts";
+
+async function samePath(one: string, other: string): Promise<boolean> {
+  if (one === other) return true;
+  try {
+    return (await fs.realpath(one)) === (await fs.realpath(other));
+  } catch {
+    return false;
+  }
+}
 
 async function binaryExists(executable: string): Promise<boolean> {
   try {
@@ -34,18 +42,18 @@ async function hooksFileRunsBinary(hooksFile: string, executable: string): Promi
   }
 }
 
-export async function pluginShouldStandDown(): Promise<boolean> {
+export async function standaloneBinaryRegistered(): Promise<string | undefined> {
   try {
-    if (runningCompiledBinary()) return false;
     const installed = binary.installedBinaryPath();
-    if (!(await binaryExists(installed))) return false;
+    if (await samePath(process.execPath, installed)) return undefined;
+    if (!(await binaryExists(installed))) return undefined;
     const projectHooks = codexFile("hooks.json", true);
     const userHooks = codexFile("hooks.json", false);
     for (const hooksFile of [projectHooks, userHooks]) {
-      if (await hooksFileRunsBinary(hooksFile, installed)) return true;
+      if (await hooksFileRunsBinary(hooksFile, installed)) return installed;
     }
-    return false;
+    return undefined;
   } catch {
-    return false;
+    return undefined;
   }
 }
