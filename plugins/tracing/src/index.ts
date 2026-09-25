@@ -6,20 +6,16 @@ import { runInstall } from "./install.js";
 import { binary } from "./binary.js";
 import { UNKNOWN_VERSION } from "./binary-constants.js";
 import { usage } from "./messages.js";
-import { pluginShouldStandDown } from "./stand-down.js";
+import { standaloneBinaryRegistered } from "./stand-down.js";
+import { warnOnceAboutStandaloneBinary } from "./standalone-warning.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { flagValue, unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { runningCompiledBinary } from "./utils/runningCompiledBinary.js";
-import { drainStdin, readStdin } from "./utils/stdin.js";
+import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
-  if (await pluginShouldStandDown()) {
-    await drainStdin();
-    return;
-  }
-
   const content = await readStdin<{
     session_id: string;
     turn_id: string;
@@ -29,11 +25,16 @@ async function runHook() {
     prompt: string;
   }>();
 
+  const registered = await standaloneBinaryRegistered();
+
   if (content.hook_event_name === "UserPromptSubmit") {
-    const result = await handlePromptSubmit(content);
-    if (result) console.log(JSON.stringify(result));
+    const result = registered ? undefined : await handlePromptSubmit(content);
+    const systemMessage = await warnOnceAboutStandaloneBinary(registered);
+    const output = systemMessage ? { ...result, systemMessage } : result;
+    if (output) console.log(JSON.stringify(output));
     return;
   }
+  if (registered) return;
   if (content.hook_event_name !== "Stop") return;
   const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
 
