@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+FAILED_TO_START_CODES="126 127 137"
+
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+root=${PLUGIN_ROOT:-$(dirname -- "$here")}
+
+arm64="$here/langsmith-codex-tracing-darwin-arm64"
+x64="$here/langsmith-codex-tracing-darwin-x64"
+event=""
+
+started() {
+  case " $FAILED_TO_START_CODES " in
+    *" $1 "*) return 1 ;;
+  esac
+  return 0
+}
+
+if [ "$(uname -s)" = "Darwin" ]; then
+  case $(uname -m) in
+    arm64) preferred="$arm64"; alternate="$x64" ;;
+    x86_64) preferred="$x64"; alternate="" ;;
+    *) preferred=""; alternate="" ;;
+  esac
+  for build in "$preferred" "$alternate"; do
+    if [ -n "$build" ] && [ -x "$build" ]; then
+      if [ -z "$event" ]; then
+        event=$(mktemp "${TMPDIR:-/tmp}/langsmith-tracing.XXXXXX") || break
+        trap 'rm -f "$event"' EXIT
+        cat >"$event"
+      fi
+      code=0
+      "$build" "$@" <"$event" || code=$?
+      if started "$code"; then
+        exit "$code"
+      fi
+    fi
+  done
+  if [ -n "$event" ]; then
+    code=0
+    node "$root/dist/index.mjs" "$@" <"$event" || code=$?
+    exit "$code"
+  fi
+fi
+
+exec node "$root/dist/index.mjs" "$@"
