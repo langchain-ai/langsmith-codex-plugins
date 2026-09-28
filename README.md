@@ -4,13 +4,15 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Prerequisites
 
-- Node.js >= 22.x, or none for the standalone binary
+- Node.js >= 22.x, or none for the standalone binary or a plugin release that carries the macOS builds
 - Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
 - A LangSmith account and API key
 
 ## Installation
 
-Every option below installs the same tracing integration and only the delivery differs, so you are picking an install method rather than a different product. The plugin runs on the Node on your PATH and the marketplace manages it, while the standalone binary carries its own JavaScript runtime and you manage it.
+Every option below installs the same tracing integration and only the delivery differs, so you are picking an install method rather than a different product. The plugin is managed by the marketplace and the standalone binary is managed by you.
+
+The plugin ships the compiled macOS builds inside itself, so on a Mac it runs its own copy and needs no Node on your PATH. A small picker at `plugins/tracing/binary/langsmith-tracing` runs whichever build matches your machine, Apple silicon natively and Intel under Rosetta, and falls back to the Node bundle everywhere else. No release carries the builds yet, so today every install takes the Node path and Node >= 22 is still required.
 
 ### As a Codex plugin
 
@@ -29,7 +31,11 @@ enabled = true
 
 Plugin hooks follow plugin enablement, so there is no separate flag to set. `[features] plugin_hooks` was removed in [openai/codex#22552](https://github.com/openai/codex/pull/22552) and is ignored if present; `[features] hooks` is stable and on by default.
 
-Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Restart Codex after installation or hook changes. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
+Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Nothing traces until you do, and Codex only asks in the interactive TUI, so a session started with `codex exec` runs with the hooks silently skipped until you have trusted them once in the TUI. Restart Codex after installation or hook changes.
+
+Codex remembers your answer as a hash of each hook’s wording, so any release that changes a hook command asks everyone to trust it again. This release changes both commands.
+
+If you installed the standalone binary before, remove it once you switch to the plugin. Until you do, the binary keeps doing the tracing and the plugin stands aside, and the plugin says so once on your next prompt. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
@@ -37,7 +43,7 @@ Current support is based on the released [Codex 0.153.4 UserPromptSubmit impleme
 
 The same integration as the plugin, delivered as one file that carries its own JavaScript runtime so it needs no Node on your PATH. The plugin is still the supported path and this binary is the beta we are trialling, so you install and update it yourself. Only macOS arm64 and x64 are built and the installer picks whichever matches your Mac.
 
-The plugin stops tracing while the binary is installed and registered as a hook.
+The plugin stops tracing while the binary is installed and registered as a hook, and says so once on your next prompt so you know which copy is doing the work.
 
 1. Run the installer:
 

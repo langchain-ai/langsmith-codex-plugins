@@ -5,15 +5,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { pluginShouldStandDown } from "../src/stand-down.js";
-import { DRAIN_TIMEOUT_MS } from "../src/utils/stdin.js";
+import { standaloneBinaryRegistered } from "../src/stand-down.js";
+
+const pluginShouldStandDown = async () => (await standaloneBinaryRegistered()) !== undefined;
 
 const EXECUTABLE = JSON.parse(
   readFileSync(new URL("../../../binary.config.json", import.meta.url), "utf8"),
 ).executableName;
 const BUNDLE = fileURLToPath(new URL("../dist/index.mjs", import.meta.url));
-const STDIN_SOURCE = new URL("../src/utils/stdin.ts", import.meta.url).href;
-const BINARY_HOOKS = new URL("../hooks/hooks.binary.json", import.meta.url);
 const DEVELOPER_TRACING_VARS = /^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/;
 const ROOT_CAN_READ_ANYTHING = process.getuid?.() === 0;
 
@@ -226,62 +225,66 @@ it("stands down when only the project hooks file runs the binary", async () => {
   await installBinary();
   await writeHooks(projectHooks, hooksRunning(`'${installed}'`));
   const result = await runBundle("langsmith-tracing:mute", project);
-  expect(result).toMatchObject({ code: 0, stdout: "", stderr: "" });
+  expect(result.code).toBe(0);
+  expect(JSON.parse(result.stdout).decision).toBeUndefined();
   expect(existsSync(path.join(home, ".codex/langsmith-state.privacy.json"))).toBe(false);
 });
 
 it("the production bundle answers a control prompt while no binary is registered", async () => {
-  await writeHooks(userHooks, hooksRunning('node "$PLUGIN_ROOT/dist/index.mjs"'));
+  await writeHooks(userHooks, hooksRunning('"$PLUGIN_ROOT/binary/langsmith-tracing"'));
   const result = await runBundle("langsmith-tracing:mute");
   expect(result.code).toBe(0);
   expect(JSON.parse(result.stdout).decision).toBe("block");
 });
 
-it("the production bundle answers nothing at all while the binary is registered", async () => {
+it("the production bundle answers no control at all while the binary is registered", async () => {
   await installBinary();
   await writeHooks(userHooks, hooksRunning(`'${installed}'`));
   const result = await runBundle("langsmith-tracing:mute");
-  expect(result).toMatchObject({ code: 0, stdout: "", stderr: "" });
+  expect(result.code).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(JSON.parse(result.stdout).decision).toBeUndefined();
   expect(existsSync(path.join(home, ".codex/langsmith-state.privacy.json"))).toBe(false);
 });
 
-it("the production bundle drains a prompt too big for the pipe buffer", async () => {
+it("the production bundle reads a prompt too big for the pipe buffer", async () => {
   await installBinary();
   await writeHooks(userHooks, hooksRunning(`'${installed}'`));
   const result = await runBundle("x".repeat(200_000));
-  expect(result).toMatchObject({ code: 0, stdout: "", stderr: "", stdinError: undefined });
+  expect(result).toMatchObject({ code: 0, stderr: "", stdinError: undefined });
 });
 
-function drainInChild(setup: string, timeoutMs: number) {
-  const script = `${setup};import(${JSON.stringify(STDIN_SOURCE)}).then((m) => m.drainStdin(${timeoutMs}))`;
-  return new Promise<number | null | "hung">((resolve, reject) => {
-    const child = spawn(process.execPath, ["-e", script], { stdio: ["pipe", "ignore", "inherit"] });
-    const watchdog = setTimeout(() => {
-      child.kill("SIGKILL");
-      resolve("hung");
-    }, 2_500);
-    child.on("error", reject);
-    child.on("close", (code) => {
-      clearTimeout(watchdog);
-      resolve(code);
-    });
-  });
-}
-
-it("gives up on a pipe the parent never closes", async () => {
-  expect(await drainInChild("", 50)).toBe(0);
+it("keeps tracing when the registered binary is this process", async () => {
+  await fs.mkdir(path.dirname(installed), { recursive: true });
+  await fs.symlink(process.execPath, installed);
+  await writeHooks(userHooks, hooksRunning(`'${installed}'`));
+  expect(await pluginShouldStandDown()).toBe(false);
 });
 
-it("reads nothing at all when stdin is a terminal", async () => {
-  expect(await drainInChild("process.stdin.isTTY=true", 60_000)).toBe(0);
+it("says it once, then leaves the person alone on every later prompt", async () => {
+  await installBinary();
+  await writeHooks(userHooks, hooksRunning(`'${installed}'`));
+  const first = await runBundle("work");
+  expect(first.code).toBe(0);
+  const warning = JSON.parse(first.stdout).systemMessage;
+  expect(warning).toContain(installed);
+  expect(warning).toContain("standing aside");
+  expect(existsSync(`${installed}.warned`)).toBe(true);
+  expect(await runBundle("more work")).toMatchObject({ code: 0, stdout: "", stderr: "" });
 });
 
-it("bounds the drain below every hook timeout Codex enforces", async () => {
-  const groups = Object.values(JSON.parse(await fs.readFile(BINARY_HOOKS, "utf-8")).hooks);
-  const timeouts = groups
-    .flatMap((event) => event as { hooks: { timeout?: number }[] }[])
-    .flatMap((group) => group.hooks)
-    .map((hook) => hook.timeout ?? 0);
-  expect(timeouts.length).toBeGreaterThan(0);
-  expect(DRAIN_TIMEOUT_MS).toBeLessThan(Math.min(...timeouts) * 1000);
+it("speaks again for someone who removes the standalone binary and later puts it back", async () => {
+  await installBinary();
+  await writeHooks(userHooks, hooksRunning(`'${installed}'`));
+  expect(JSON.parse((await runBundle("work")).stdout).systemMessage).toContain(installed);
+  await fs.rm(installed);
+  expect(await runBundle("work")).toMatchObject({ stdout: "" });
+  await installBinary();
+  expect(JSON.parse((await runBundle("work")).stdout).systemMessage).toContain(installed);
+});
+
+it("says nothing while no standalone binary is registered", async () => {
+  await writeHooks(userHooks, hooksRunning('"$PLUGIN_ROOT/binary/langsmith-tracing"'));
+  const result = await runBundle("work");
+  expect(result).toMatchObject({ code: 0, stdout: "", stderr: "" });
 });
