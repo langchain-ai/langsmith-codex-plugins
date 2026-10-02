@@ -6,8 +6,6 @@ import { runInstall } from "./install.js";
 import { binary } from "./binary.js";
 import { UNKNOWN_VERSION } from "./binary-constants.js";
 import { usage } from "./messages.js";
-import { standaloneBinaryRegistered } from "./stand-down.js";
-import { warnOnceAboutStandaloneBinary } from "./standalone-warning.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
@@ -25,16 +23,11 @@ async function runHook() {
     prompt: string;
   }>();
 
-  const registered = await standaloneBinaryRegistered();
-
   if (content.hook_event_name === "UserPromptSubmit") {
-    const result = registered ? undefined : await handlePromptSubmit(content);
-    const systemMessage = await warnOnceAboutStandaloneBinary(registered);
-    const output = systemMessage ? { ...result, systemMessage } : result;
-    if (output) console.log(JSON.stringify(output));
+    const result = await handlePromptSubmit(content);
+    if (result) console.log(JSON.stringify(result));
     return;
   }
-  if (registered) return;
   if (content.hook_event_name !== "Stop") return;
   const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
 

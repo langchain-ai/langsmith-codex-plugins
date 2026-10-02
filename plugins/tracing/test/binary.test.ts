@@ -37,10 +37,10 @@ function envWithoutDeveloperTracingVars() {
   );
 }
 
-function runHook(event: string, prompt: string, tracingEnabled = false, executable = binaryPath) {
+function runHook(event: string, prompt: string, tracingEnabled = false) {
   const envWithoutTracing = envWithoutDeveloperTracingVars();
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(executable, [], {
+    const child = spawn(binaryPath, [], {
       env: { ...envWithoutTracing, HOME: codexHome, TRACE_TO_LANGSMITH: String(tracingEnabled) },
       cwd: codexHome,
     });
@@ -100,37 +100,6 @@ describe.runIf(binaryExists)("the standalone binary", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
     expect(existsSync(path.join(codexHome, ".codex/langsmith-state.privacy.json"))).toBe(false);
-  });
-
-  async function registerTheInstalledBinary(): Promise<string> {
-    const installed = path.join(codexHome, ".langsmith", settings.executableName);
-    await fs.mkdir(path.dirname(installed), { recursive: true });
-    await fs.copyFile(binaryPath, installed);
-    await fs.chmod(installed, 0o755);
-    await fs.mkdir(path.join(codexHome, ".codex"), { recursive: true });
-    await fs.writeFile(
-      path.join(codexHome, ".codex", "hooks.json"),
-      JSON.stringify({
-        hooks: {
-          UserPromptSubmit: [{ hooks: [{ type: "command", command: `'${installed}'` }] }],
-        },
-      }),
-    );
-    return installed;
-  }
-
-  it("never stands down for its own registered hooks", async () => {
-    const installed = await registerTheInstalledBinary();
-    const result = await runHook("UserPromptSubmit", "langsmith-tracing:mute", false, installed);
-    expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout).decision).toBe("block");
-  });
-
-  it("stands down when the registered hooks run a different copy", async () => {
-    await registerTheInstalledBinary();
-    const result = await runHook("UserPromptSubmit", "langsmith-tracing:mute");
-    expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout).decision).toBeUndefined();
   });
 
   it("does nothing on a hook event it does not handle", async () => {
