@@ -17887,49 +17887,6 @@ async function runInstall(options) {
 	}
 }
 //#endregion
-//#region src/utils/runningCompiledBinary.ts
-const BUNFS_PREFIX = "/$bunfs/";
-function runningCompiledBinary() {
-	const main = globalThis.Bun?.main;
-	return typeof main === "string" && main.startsWith(BUNFS_PREFIX);
-}
-//#endregion
-//#region src/stand-down.ts
-async function binaryExists(executable) {
-	try {
-		await nodeFsPromises.stat(executable);
-		return true;
-	} catch {
-		return false;
-	}
-}
-function registeredCommands(parsed) {
-	const events = parsed?.hooks;
-	if (!events || typeof events !== "object") return [];
-	return Object.values(events).flatMap((groups) => Array.isArray(groups) ? groups : []).flatMap((group) => Array.isArray(group?.hooks) ? group.hooks : []).map((hook) => hook?.command).filter((command) => typeof command === "string");
-}
-async function hooksFileRunsBinary(hooksFile, executable) {
-	const written = /* @__PURE__ */ new Set([executable, quoteForShell(executable)]);
-	try {
-		return registeredCommands(JSON.parse(await nodeFsPromises.readFile(hooksFile, "utf-8"))).some((command) => written.has(command.trim()));
-	} catch {
-		return false;
-	}
-}
-async function pluginShouldStandDown() {
-	try {
-		if (runningCompiledBinary()) return false;
-		const installed = binary.installedBinaryPath();
-		if (!await binaryExists(installed)) return false;
-		const projectHooks = codexFile("hooks.json", true);
-		const userHooks = codexFile("hooks.json", false);
-		for (const hooksFile of [projectHooks, userHooks]) if (await hooksFileRunsBinary(hooksFile, installed)) return true;
-		return false;
-	} catch {
-		return false;
-	}
-}
-//#endregion
 //#region src/utils/findLast.ts
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
@@ -19142,23 +19099,14 @@ function unknownFlags(argv) {
 	return argv.filter((arg) => arg.startsWith("-") && !KNOWN_FLAGS.has(arg));
 }
 //#endregion
-//#region src/utils/stdin.ts
-const DRAIN_TIMEOUT_MS = 2e3;
-function drainStdin(timeoutMs = DRAIN_TIMEOUT_MS) {
-	return new Promise((resolve) => {
-		if (process.stdin.isTTY) return resolve();
-		let timer;
-		const finish = () => {
-			clearTimeout(timer);
-			process.stdin.pause();
-			resolve();
-		};
-		timer = setTimeout(finish, timeoutMs);
-		process.stdin.once("end", finish);
-		process.stdin.once("error", finish);
-		process.stdin.resume();
-	});
+//#region src/utils/runningCompiledBinary.ts
+const BUNFS_PREFIX = "/$bunfs/";
+function runningCompiledBinary() {
+	const main = globalThis.Bun?.main;
+	return typeof main === "string" && main.startsWith(BUNFS_PREFIX);
 }
+//#endregion
+//#region src/utils/stdin.ts
 function readStdin() {
 	let buffer = "";
 	return new Promise((resolve, reject) => {
@@ -19178,10 +19126,6 @@ function readStdin() {
 //#endregion
 //#region src/index.ts
 async function runHook() {
-	if (await pluginShouldStandDown()) {
-		await drainStdin();
-		return;
-	}
 	const content = await readStdin();
 	if (content.hook_event_name === "UserPromptSubmit") {
 		const result = await handlePromptSubmit(content);
