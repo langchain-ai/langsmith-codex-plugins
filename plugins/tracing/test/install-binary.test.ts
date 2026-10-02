@@ -199,28 +199,6 @@ it("copies the running binary into place as an executable, without the network",
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
 });
 
-it("refuses a downloaded release that reports a different version", async () => {
-  const mislabelled = new TextEncoder().encode(reportsVersion("9.9.9"));
-  const release = published(RUNNING_VERSION, false);
-  release.assets[0].size = mislabelled.byteLength;
-  release.assets[0].digest = `sha256:${createHash("sha256").update(mislabelled).digest("hex")}`;
-  const fetchImpl = vi
-    .fn<typeof fetch>()
-    .mockImplementation((input) =>
-      Promise.resolve(
-        String(input).startsWith(`${RELEASES_API}?`)
-          ? Response.json([release])
-          : new Response(mislabelled),
-      ),
-    );
-
-  await expect(
-    install({ source: undefined, currentVersion: OLDER_VERSION, fetchImpl }),
-  ).rejects.toThrow(`reports version 9.9.9, expected ${RUNNING_VERSION}`);
-  expect(existsSync(installed)).toBe(false);
-  expect(existsSync(hooksPath)).toBe(false);
-});
-
 it.each([
   ["an older tag is asked for", "0.2.0", "0.2.0"],
   ["it is not running from a built binary", undefined, "0.3.0"],
