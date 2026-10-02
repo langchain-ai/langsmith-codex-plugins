@@ -35,7 +35,7 @@ Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompt
 
 Codex remembers your answer as a hash of each hook’s wording, so any release that changes a hook command asks everyone to trust it again. This release changes both commands.
 
-If you installed the standalone binary before, remove it once you switch to the plugin. Until you do, the binary keeps doing the tracing and the plugin stands aside, and the plugin says so once on your next prompt. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
+If you installed the standalone binary before, remove it once you switch to the plugin, or both copies trace the same session. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
 
@@ -43,7 +43,7 @@ Current support is based on the released [Codex 0.153.4 UserPromptSubmit impleme
 
 The same integration as the plugin, delivered as one file that carries its own JavaScript runtime so it needs no Node on your PATH. The plugin is still the supported path and this binary is the beta we are trialling, so you install and update it yourself. Only macOS arm64 and x64 are built and the installer picks whichever matches your Mac.
 
-The plugin stops tracing while the binary is installed and registered as a hook, and says so once on your next prompt so you know which copy is doing the work.
+Run only one of the two. The plugin and the binary both trace, so a session with both registered is traced twice.
 
 1. Run the installer:
 

@@ -17674,7 +17674,6 @@ const binary = defineBinaryTarget({
 	userAgent: "langsmith-codex",
 	releasesApiOverrideEnvVar: "LANGSMITH_CODEX_RELEASE_API"
 });
-const STANDALONE_BINARY_WARNING_MARKER_SUFFIX = ".warned";
 //#endregion
 //#region src/messages.ts
 function publishedHosts() {
@@ -17682,9 +17681,6 @@ function publishedHosts() {
 }
 function unsupportedHost(platform, arch) {
 	return `The standalone binary only runs on ${publishedHosts()}, not ${platform}-${arch}. Use the Codex plugin instead.`;
-}
-function standaloneBinaryWarning(installedPath) {
-	return `LangSmith tracing: the standalone binary at ${installedPath} is still registered in your Codex hooks, so it is doing the tracing and the plugin is standing aside. Delete that binary and drop its hook entries to let the plugin take over. You only see this once.`;
 }
 function usage(executableName) {
 	return `Usage:
@@ -17889,52 +17885,6 @@ async function runInstall(options) {
 		console.error(`install failed: ${error}`);
 		process.exitCode = 1;
 	}
-}
-//#endregion
-//#region src/stand-down.ts
-async function binaryExists(executable) {
-	try {
-		await nodeFsPromises.stat(executable);
-		return true;
-	} catch {
-		return false;
-	}
-}
-function registeredCommands(parsed) {
-	const events = parsed?.hooks;
-	if (!events || typeof events !== "object") return [];
-	return Object.values(events).flatMap((groups) => Array.isArray(groups) ? groups : []).flatMap((group) => Array.isArray(group?.hooks) ? group.hooks : []).map((hook) => hook?.command).filter((command) => typeof command === "string");
-}
-async function hooksFileRunsBinary(hooksFile, executable) {
-	const written = /* @__PURE__ */ new Set([executable, quoteForShell(executable)]);
-	try {
-		return registeredCommands(JSON.parse(await nodeFsPromises.readFile(hooksFile, "utf-8"))).some((command) => written.has(command.trim()));
-	} catch {
-		return false;
-	}
-}
-async function standaloneBinaryRegistered() {
-	try {
-		const installed = binary.installedBinaryPath();
-		if (await binary.isInstalledBinary(process.execPath)) return void 0;
-		if (!await binaryExists(installed)) return void 0;
-		const projectHooks = codexFile("hooks.json", true);
-		const userHooks = codexFile("hooks.json", false);
-		for (const hooksFile of [projectHooks, userHooks]) if (await hooksFileRunsBinary(hooksFile, installed)) return installed;
-		return;
-	} catch {
-		return;
-	}
-}
-//#endregion
-//#region src/standalone-warning.ts
-async function warnOnceAboutStandaloneBinary(registered) {
-	const marker = `${binary.installedBinaryPath()}${STANDALONE_BINARY_WARNING_MARKER_SUFFIX}`;
-	if (registered === void 0) {
-		await nodeFsPromises.rm(marker, { force: true }).catch(() => void 0);
-		return;
-	}
-	return await nodeFsPromises.writeFile(marker, "", { flag: "wx" }).then(() => true, () => false) ? standaloneBinaryWarning(registered) : void 0;
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -19177,18 +19127,11 @@ function readStdin() {
 //#region src/index.ts
 async function runHook() {
 	const content = await readStdin();
-	const registered = await standaloneBinaryRegistered();
 	if (content.hook_event_name === "UserPromptSubmit") {
-		const result = registered ? void 0 : await handlePromptSubmit(content);
-		const systemMessage = await warnOnceAboutStandaloneBinary(registered);
-		const output = systemMessage ? {
-			...result,
-			systemMessage
-		} : result;
-		if (output) console.log(JSON.stringify(output));
+		const result = await handlePromptSubmit(content);
+		if (result) console.log(JSON.stringify(result));
 		return;
 	}
-	if (registered) return;
 	if (content.hook_event_name !== "Stop") return;
 	const config = await getConfig({
 		home: process.env.HOME,

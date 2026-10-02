@@ -11,10 +11,6 @@ export function unsupportedHost(platform: string, arch: string): string {
   return `The standalone binary only runs on ${publishedHosts()}, not ${platform}-${arch}. Use the Codex plugin instead.`;
 }
 
-export function standaloneBinaryWarning(installedPath: string): string {
-  return `LangSmith tracing: the standalone binary at ${installedPath} is still registered in your Codex hooks, so it is doing the tracing and the plugin is standing aside. Delete that binary and drop its hook entries to let the plugin take over. You only see this once.`;
-}
-
 export function usage(executableName: string): string {
   return `Usage:
   ${executableName} --install [--project] [--tag VERSION]
