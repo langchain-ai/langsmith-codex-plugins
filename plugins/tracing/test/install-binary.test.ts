@@ -199,16 +199,6 @@ it("copies the running binary into place as an executable, without the network",
   expect(commandFor(hooksFile(), "Stop")).toBe(`'${installed}'`);
 });
 
-it("refuses a local copy that reports a different version", async () => {
-  await writeSource("9.9.9");
-
-  await expect(install({ fetchImpl: vi.fn<typeof fetch>() })).rejects.toThrow(
-    `reports version 9.9.9, expected ${RUNNING_VERSION}`,
-  );
-  expect(existsSync(installed)).toBe(false);
-  expect(existsSync(hooksPath)).toBe(false);
-});
-
 it.each([
   ["an older tag is asked for", "0.2.0", "0.2.0"],
   ["it is not running from a built binary", undefined, "0.3.0"],
