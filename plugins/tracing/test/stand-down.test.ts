@@ -113,7 +113,7 @@ it("keeps tracing when the hooks file runs a binary that is not installed", asyn
 
 it("keeps tracing when the binary is installed but no hooks file runs it", async () => {
   await installBinary();
-  await writeHooks(userHooks, hooksRunning('node "$PLUGIN_ROOT/dist/index.mjs"'));
+  await writeHooks(userHooks, hooksRunning('node "${PLUGIN_ROOT}/dist/index.mjs"'));
   expect(await pluginShouldStandDown()).toBe(false);
 });
 
@@ -231,7 +231,7 @@ it("stands down when only the project hooks file runs the binary", async () => {
 });
 
 it("the production bundle answers a control prompt while no binary is registered", async () => {
-  await writeHooks(userHooks, hooksRunning('node "$PLUGIN_ROOT/dist/index.mjs"'));
+  await writeHooks(userHooks, hooksRunning('node "${PLUGIN_ROOT}/dist/index.mjs"'));
   const result = await runBundle("langsmith-tracing:mute");
   expect(result.code).toBe(0);
   expect(JSON.parse(result.stdout).decision).toBe("block");
