@@ -1,1 +1,0 @@
-export const UNKNOWN_VERSION = "0.0.0";

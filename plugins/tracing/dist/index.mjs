@@ -3,13 +3,13 @@ import { lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
-import { basename, dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
-import { arch, homedir, platform } from "node:os";
+import { arch, platform } from "node:os";
 import { execFile } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
 import { promisify } from "node:util";
+import { randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 //#region \0rolldown/runtime.js
@@ -1789,7 +1789,7 @@ const safeJSON = (text) => {
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/version.js
-const VERSION$1 = "0.0.1";
+const VERSION = "0.0.1";
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
 /**
@@ -1805,7 +1805,7 @@ const getPlatformProperties = () => {
 	const detectedPlatform = getDetectedPlatform();
 	if (detectedPlatform === "deno") return {
 		"X-Stainless-Lang": "js",
-		"X-Stainless-Package-Version": VERSION$1,
+		"X-Stainless-Package-Version": VERSION,
 		"X-Stainless-OS": normalizePlatform(Deno.build.os),
 		"X-Stainless-Arch": normalizeArch(Deno.build.arch),
 		"X-Stainless-Runtime": "deno",
@@ -1813,7 +1813,7 @@ const getPlatformProperties = () => {
 	};
 	if (typeof EdgeRuntime !== "undefined") return {
 		"X-Stainless-Lang": "js",
-		"X-Stainless-Package-Version": VERSION$1,
+		"X-Stainless-Package-Version": VERSION,
 		"X-Stainless-OS": "Unknown",
 		"X-Stainless-Arch": `other:${EdgeRuntime}`,
 		"X-Stainless-Runtime": "edge",
@@ -1821,7 +1821,7 @@ const getPlatformProperties = () => {
 	};
 	if (detectedPlatform === "node") return {
 		"X-Stainless-Lang": "js",
-		"X-Stainless-Package-Version": VERSION$1,
+		"X-Stainless-Package-Version": VERSION,
 		"X-Stainless-OS": normalizePlatform(globalThis.process.platform ?? "unknown"),
 		"X-Stainless-Arch": normalizeArch(globalThis.process.arch ?? "unknown"),
 		"X-Stainless-Runtime": "node",
@@ -1830,7 +1830,7 @@ const getPlatformProperties = () => {
 	const browserInfo = getBrowserInfo();
 	if (browserInfo) return {
 		"X-Stainless-Lang": "js",
-		"X-Stainless-Package-Version": VERSION$1,
+		"X-Stainless-Package-Version": VERSION,
 		"X-Stainless-OS": "Unknown",
 		"X-Stainless-Arch": "unknown",
 		"X-Stainless-Runtime": `browser:${browserInfo.browser}`,
@@ -1838,7 +1838,7 @@ const getPlatformProperties = () => {
 	};
 	return {
 		"X-Stainless-Lang": "js",
-		"X-Stainless-Package-Version": VERSION$1,
+		"X-Stainless-Package-Version": VERSION,
 		"X-Stainless-OS": "Unknown",
 		"X-Stainless-Arch": "unknown",
 		"X-Stainless-Runtime": "unknown",
@@ -4041,7 +4041,7 @@ var Langsmith = class {
 		return stringifyQuery(query);
 	}
 	getUserAgent() {
-		return `${this.constructor.name}/JS ${VERSION$1}`;
+		return `${this.constructor.name}/JS ${VERSION}`;
 	}
 	defaultIdempotencyKey() {
 		return `stainless-node-retry-${uuid4()}`;
@@ -5038,7 +5038,7 @@ const path = nodePath;
 async function mkdir$1(dir) {
 	await nodeFsPromises.mkdir(dir, { recursive: true });
 }
-async function writeFileAtomic$1(filePath, content) {
+async function writeFileAtomic(filePath, content) {
 	const tempPath = `${filePath}.tmp`;
 	await nodeFsPromises.writeFile(tempPath, content, {
 		encoding: "utf8",
@@ -5452,7 +5452,7 @@ async function acquireOAuthRefreshLock(configPath, deadline) {
 			continue;
 		}
 		try {
-			await writeFileAtomic$1(path.join(lockDir, LOCK_METADATA_FILE), `${(/* @__PURE__ */ new Date()).toISOString()}\n${owner}\n`);
+			await writeFileAtomic(path.join(lockDir, LOCK_METADATA_FILE), `${(/* @__PURE__ */ new Date()).toISOString()}\n${owner}\n`);
 		} catch (err) {
 			await rmRecursive(lockDir);
 			throw err;
@@ -5741,7 +5741,7 @@ var ProfileAuth = class {
 			applyTokenResponse(this.state.profile, token);
 			this.state.config.profiles ??= {};
 			this.state.config.profiles[this.state.profileName] = this.state.profile;
-			await writeFileAtomic$1(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
+			await writeFileAtomic(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
 		} catch {
 			return;
 		} finally {
@@ -7514,7 +7514,7 @@ var Client = class Client {
 					return;
 				}
 			} catch {}
-			await writeFileAtomic$1(filepath, envelope);
+			await writeFileAtomic(filepath, envelope);
 			console.warn(`LangSmith trace upload failed; data saved to ${filepath} for later replay.`);
 		} catch (writeErr) {
 			console.error(`LangSmith tracing error: could not write trace to fallback dir ${directory}:`, writeErr);
@@ -17215,26 +17215,12 @@ const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-/** Names this plugin's entry in the Codex plugin marketplace. */
-const CODEX_PLUGIN_SELECTOR = "tracing@langsmith-codex-plugins";
-const PLATFORM_NAMES = {
-	darwin: "macOS",
-	linux: "Linux",
-	win32: "Windows"
-};
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
 	"--version",
-	"-v",
-	"--install",
-	"--print",
-	"--project",
-	"--tag",
-	"--update"
+	"-v"
 ]);
-const PLUGIN_TABLE = /^\[\s*plugins\s*\.\s*(.+?)\s*\]\s*(?:#.*)?$/;
-const ENABLED_KEY = /^enabled\s*=\s*(true|false)\s*(?:#.*)?$/;
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.1.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
@@ -17252,56 +17238,10 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 //#endregion
-//#region hooks/hooks.binary.json
-var hooks = {
-	"Stop": [{ "hooks": [{
-		"type": "command",
-		"command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
-		"timeout": 30,
-		"statusMessage": "Uploading Codex trace to LangSmith"
-	}] }],
-	"UserPromptSubmit": [{ "hooks": [{
-		"type": "command",
-		"command": "\"$HOME/.langsmith/langsmith-codex-tracing\"",
-		"timeout": 10
-	}] }]
-};
-new URL("../installer/install.sh.template", import.meta.url);
+//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_314320fd659ed0832308a978d46b360c/node_modules/@langchain/langsmith-plugin-binary/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
-const LIST_TIMEOUT_MS = 15e3;
-const DOWNLOAD_TIMEOUT_MS = 3e5;
-const CODESIGN_TIMEOUT_MS = 12e4;
-const VERSION_CHECK_TIMEOUT_MS = 3e4;
-const LOCK_FILE_NAME = ".update.lock";
-const LOOPBACK_HOSTS = /* @__PURE__ */ new Set([
-	"127.0.0.1",
-	"[::1]",
-	"localhost"
-]);
-const VERSION = /^(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)(?:\.(\d+))?)?$/;
-const OLDER_THAN_ANY_RELEASE = "0.0.0";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/http.js
-function pointsAtThisMachine(override) {
-	try {
-		return LOOPBACK_HOSTS.has(new URL(override).hostname);
-	} catch {
-		return false;
-	}
-}
-function taggedReleaseUrl(releasesApi, tag) {
-	const url = new URL(releasesApi);
-	url.search = "";
-	url.pathname = `${url.pathname.replace(/\/+$/, "")}/tags/${encodeURIComponent(tag)}`;
-	return url.href;
-}
-function listedReleasesUrl(releasesApi) {
-	const url = new URL(releasesApi);
-	url.searchParams.set("per_page", String(100));
-	return url.href;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_314320fd659ed0832308a978d46b360c/node_modules/@langchain/langsmith-plugin-binary/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17313,7 +17253,6 @@ function resolveTarget(options) {
 		repository: options.repository,
 		userAgent: options.userAgent,
 		releasesApiOverrideEnvVar: options.releasesApiOverrideEnvVar,
-		installDirectoryName: options.installDirectoryName ?? ".langsmith",
 		publishedTargets: options.publishedTargets ?? DEFAULT_PUBLISHED_TARGETS
 	};
 }
@@ -17323,347 +17262,14 @@ function isPublishedTarget(target, platform, arch) {
 function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
-function defaultReleasesApi(target) {
-	return `https://api.github.com/repos/${target.repository}/releases`;
-}
-function releaseDownloadPrefix(target) {
-	return `https://github.com/${target.repository}/releases/download/`;
-}
-function githubRequestHeaders(target, currentVersion) {
-	return {
-		Accept: "application/vnd.github+json",
-		"User-Agent": `${target.userAgent}/${currentVersion}`,
-		"X-GitHub-Api-Version": "2022-11-28"
-	};
-}
-function configuredReleasesApi(target, environment = process.env) {
-	const override = environment[target.releasesApiOverrideEnvVar];
-	if (override && pointsAtThisMachine(override)) return override;
-	return defaultReleasesApi(target);
-}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/checksum.js
-function sha256FromDigestField(digest) {
-	return /^sha256:([a-f0-9]{64})$/i.exec(digest ?? "")?.[1].toLowerCase();
-}
-function sha256FromChecksumFile(text, assetName) {
-	const match = /^([a-f0-9]{64})\s+[* ]?(\S+)\s*$/im.exec(text);
-	if (!match || basename(match[2]) !== assetName) throw new Error(`release asset ${assetName} has an invalid SHA-256 checksum file`);
-	return match[1].toLowerCase();
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/fs.js
-async function writeFully(handle, chunk) {
-	let offset = 0;
-	while (offset < chunk.byteLength) {
-		const { bytesWritten } = await handle.write(chunk, offset);
-		if (bytesWritten === 0) throw new Error("could not write the release asset");
-		offset += bytesWritten;
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/download.js
-function trustedDownloadUrl(asset, target, releasesApi) {
-	const url = new URL(asset.browser_download_url);
-	if (!(releasesApi === defaultReleasesApi(target) ? url.href.startsWith(releaseDownloadPrefix(target)) : url.origin === new URL(releasesApi).origin)) throw new Error(`release asset ${asset.name} has an unexpected download URL`);
-	return url;
-}
-async function expectedSha256(release, query) {
-	const fromField = sha256FromDigestField(release.asset.digest);
-	if (fromField) return fromField;
-	const checksum = release.checksum;
-	if (!checksum) throw new Error(`release asset ${release.asset.name} has no SHA-256 digest or checksum file`);
-	if (checksum.size <= 0 || checksum.size > 1024) throw new Error(`release checksum size ${checksum.size} is outside the allowed range`);
-	const response = await query.fetchImpl(trustedDownloadUrl(checksum, query.target, query.releasesApi), {
-		headers: githubRequestHeaders(query.target, query.currentVersion),
-		signal: AbortSignal.timeout(LIST_TIMEOUT_MS)
-	});
-	if (!response.ok) throw new Error(`failed to download the release checksum: HTTP ${response.status}`);
-	return sha256FromChecksumFile(await response.text(), release.asset.name);
-}
-async function downloadAsset(release, destination, query) {
-	const { asset } = release;
-	if (asset.size <= 0 || asset.size > 262144e3) throw new Error(`release asset size ${asset.size} is outside the allowed range`);
-	const url = trustedDownloadUrl(asset, query.target, query.releasesApi);
-	const expected = await expectedSha256(release, query);
-	const response = await query.fetchImpl(url, {
-		headers: githubRequestHeaders(query.target, query.currentVersion),
-		signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)
-	});
-	if (!response.ok || !response.body) throw new Error(`failed to download the release asset: HTTP ${response.status}`);
-	const handle = await nodeFsPromises.open(destination, "wx", 448);
-	const hash = createHash("sha256");
-	let written = 0;
-	try {
-		for await (const rawChunk of response.body) {
-			const chunk = Buffer.from(rawChunk);
-			written += chunk.byteLength;
-			if (written > asset.size) throw new Error("the release asset exceeds its declared size");
-			hash.update(chunk);
-			await writeFully(handle, chunk);
-		}
-		await handle.sync();
-	} finally {
-		await handle.close();
-	}
-	if (written !== asset.size) throw new Error(`release asset size mismatch: expected ${asset.size}, got ${written}`);
-	if (hash.digest("hex") !== expected) throw new Error("release asset SHA-256 mismatch");
-}
-const verifyAdHocSignature = (binary) => new Promise((resolve, reject) => {
-	execFile("/usr/bin/codesign", [
-		"--verify",
-		"--strict",
-		binary
-	], { timeout: CODESIGN_TIMEOUT_MS }, (error) => error ? reject(error) : resolve());
-});
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/process.js
-function reportedVersion(executable) {
-	return new Promise((resolve, reject) => {
-		execFile(executable, ["--version"], {
-			encoding: "utf-8",
-			timeout: VERSION_CHECK_TIMEOUT_MS
-		}, (error, stdout) => error ? reject(error) : resolve(stdout.trim()));
-	});
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/install-binary.js
-function installDirectory(target, home = homedir()) {
-	return join(home, target.installDirectoryName);
-}
-function installedBinaryPath(target, installDir) {
-	return join(installDir, target.executableName);
-}
-async function runningAsInstalledBinary(executablePath, installedPath) {
-	const [running, installed] = await Promise.all([nodeFsPromises.realpath(executablePath).catch(() => void 0), nodeFsPromises.realpath(installedPath).catch(() => void 0)]);
-	return running !== void 0 && running === installed;
-}
-async function stage(target, installDir, version, options, fill) {
-	const now = (options.now ?? Date.now)();
-	const verifySignature = options.verifySignature ?? verifyAdHocSignature;
-	await nodeFsPromises.mkdir(installDir, {
-		recursive: true,
-		mode: 448
-	});
-	const temporary = join(installDir, `.${target.executableName}.${process.pid}.${now}.tmp`);
-	const installed = installedBinaryPath(target, installDir);
-	try {
-		await fill(temporary);
-		await nodeFsPromises.chmod(temporary, 493);
-		await verifySignature(temporary);
-		const reported = await reportedVersion(temporary);
-		if (reported !== version) throw new Error(`the downloaded binary reports version ${reported}, expected ${version}`);
-		await nodeFsPromises.rename(temporary, installed);
-		return installed;
-	} catch (error) {
-		await nodeFsPromises.unlink(temporary).catch(() => void 0);
-		throw error;
-	}
-}
-function installRelease(release, installDir, query, options = {}) {
-	return stage(query.target, installDir, release.version, options, (temporary) => downloadAsset(release, temporary, query));
-}
-function installRunningBinary(target, executablePath, installDir, version, options = {}) {
-	return stage(target, installDir, version, options, (temporary) => nodeFsPromises.copyFile(executablePath, temporary));
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/version.js
-function parseVersion(version) {
-	const match = VERSION.exec(version.trim());
-	if (!match) return void 0;
-	return {
-		numbers: [
-			Number(match[1]),
-			Number(match[2]),
-			Number(match[3])
-		],
-		final: match[4] === void 0 ? 1 : 0,
-		label: match[4] ?? "",
-		iteration: match[5] === void 0 ? 0 : Number(match[5])
-	};
-}
-function isVersion(version) {
-	return parseVersion(version) !== void 0;
-}
-function compare(next, installed) {
-	for (let index = 0; index < next.numbers.length; index += 1) {
-		const difference = next.numbers[index] - installed.numbers[index];
-		if (difference !== 0) return difference;
-	}
-	if (next.final !== installed.final) return next.final - installed.final;
-	if (next.label !== installed.label) return next.label < installed.label ? -1 : 1;
-	return next.iteration - installed.iteration;
-}
-function isVersionNewer(candidate, current) {
-	const next = parseVersion(candidate);
-	const installed = parseVersion(current);
-	if (!next || !installed) return false;
-	return compare(next, installed) > 0;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/releases.js
-function asAsset(value) {
-	if (!value || typeof value !== "object") return void 0;
-	const asset = value;
-	if (typeof asset.name !== "string") return void 0;
-	if (typeof asset.browser_download_url !== "string") return void 0;
-	if (typeof asset.size !== "number") return void 0;
-	if (asset.digest != null && typeof asset.digest !== "string") return void 0;
-	return {
-		name: asset.name,
-		browser_download_url: asset.browser_download_url,
-		size: asset.size,
-		digest: typeof asset.digest === "string" ? asset.digest : null
-	};
-}
-function asInstallableRelease(value, target, platform, arch, allowPrerelease) {
-	if (!value || typeof value !== "object") return void 0;
-	const release = value;
-	if (release.draft === true) return void 0;
-	if (release.prerelease === true && !allowPrerelease) return void 0;
-	if (typeof release.tag_name !== "string" || !Array.isArray(release.assets)) return void 0;
-	const version = release.tag_name.trim();
-	if (!isVersion(version)) return void 0;
-	const wanted = releaseAssetName(target, platform, arch, version);
-	const assets = release.assets.map(asAsset).filter((asset) => asset !== void 0);
-	const asset = assets.find((candidate) => candidate.name === wanted);
-	if (!asset) return void 0;
-	return {
-		version,
-		asset,
-		checksum: assets.find((candidate) => candidate.name === `${wanted}.sha256`)
-	};
-}
-function parseReleases(value, target, platform, arch, allowPrerelease = false) {
-	if (!Array.isArray(value)) throw new Error("GitHub returned no list of releases");
-	return value.map((entry) => asInstallableRelease(entry, target, platform, arch, allowPrerelease)).filter((release) => release !== void 0);
-}
-function newestRelease(releases, currentVersion) {
-	let newest;
-	for (const release of releases) {
-		if (!isVersionNewer(release.version, currentVersion)) continue;
-		if (!newest || isVersionNewer(release.version, newest.version)) newest = release;
-	}
-	return newest;
-}
-async function readJson(query, url, wanted) {
-	const response = await query.fetchImpl(url, {
-		headers: githubRequestHeaders(query.target, query.currentVersion),
-		signal: AbortSignal.timeout(LIST_TIMEOUT_MS)
-	});
-	if (!response.ok) throw new Error(`failed to read ${wanted}: HTTP ${response.status}`);
-	return response.json();
-}
-async function fetchReleases(query) {
-	return parseReleases(await readJson(query, listedReleasesUrl(query.releasesApi), "the GitHub releases"), query.target, query.platform, query.arch);
-}
-async function fetchTaggedRelease(query, tag) {
-	return parseReleases([await readJson(query, taggedReleaseUrl(query.releasesApi, tag), `the GitHub release tagged ${tag}`)], query.target, query.platform, query.arch, true)[0];
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/utils/lock.js
-async function acquireLock(lockFile, now) {
-	try {
-		return await nodeFsPromises.open(lockFile, "wx", 384);
-	} catch (error) {
-		if (error.code !== "EEXIST") throw error;
-	}
-	if (!await nodeFsPromises.stat(lockFile).then((stats) => now - stats.mtimeMs > 6e5, () => false)) return void 0;
-	try {
-		await nodeFsPromises.unlink(lockFile);
-		return await nodeFsPromises.open(lockFile, "wx", 384);
-	} catch {
-		return;
-	}
-}
-async function releaseLock(lockFile, lock) {
-	await lock.close().catch(() => void 0);
-	await nodeFsPromises.unlink(lockFile).catch(() => void 0);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/update.js
-function releaseQuery(target, currentVersion, options) {
-	return {
-		target,
-		platform: options.runtimePlatform ?? platform(),
-		arch: options.runtimeArch ?? arch(),
-		currentVersion,
-		releasesApi: options.releasesApi ?? configuredReleasesApi(target, options.environment),
-		fetchImpl: options.fetchImpl ?? fetch
-	};
-}
-function stagingOptions(options) {
-	return {
-		verifySignature: options.verifySignature,
-		now: options.now
-	};
-}
-function resolveInstallDir(target, options) {
-	return options.installDir ?? installDirectory(target, options.home);
-}
-function requirePublishedTarget(target, platform, arch) {
-	if (!isPublishedTarget(target, platform, arch)) throw new Error(`the binary does not run on ${platform}-${arch}`);
-}
-async function updateFromGitHub(target, options) {
-	const query = releaseQuery(target, options.currentVersion, options);
-	if (!isPublishedTarget(target, query.platform, query.arch)) return { status: "unsupported" };
-	if (!isVersion(options.currentVersion)) return { status: "unsupported" };
-	const installDir = resolveInstallDir(target, options);
-	const lockFile = join(installDir, LOCK_FILE_NAME);
-	const now = (options.now ?? Date.now)();
-	await mkdir(installDir, {
-		recursive: true,
-		mode: 448
-	});
-	const lock = await acquireLock(lockFile, now);
-	if (!lock) return { status: "busy" };
-	try {
-		const release = newestRelease(await fetchReleases(query), options.currentVersion);
-		if (!release) return { status: "current" };
-		await installRelease(release, installDir, query, stagingOptions(options));
-		return {
-			status: "updated",
-			version: release.version
-		};
-	} finally {
-		await releaseLock(lockFile, lock);
-	}
-}
-async function chooseRelease(query, tag) {
-	const release = tag ? await fetchTaggedRelease(query, tag) : newestRelease(await fetchReleases(query), OLDER_THAN_ANY_RELEASE);
-	if (!release) throw new Error(tag ? `no published release tagged ${tag} carries a ${query.platform}-${query.arch} binary` : `no published release carries a ${query.platform}-${query.arch} binary`);
-	return release;
-}
-async function installFromReleases(target, options = {}) {
-	const query = releaseQuery(target, options.currentVersion ?? "0.0.0", options);
-	requirePublishedTarget(target, query.platform, query.arch);
-	const release = await chooseRelease(query, options.tag);
-	return {
-		path: await installRelease(release, resolveInstallDir(target, options), query, stagingOptions(options)),
-		version: release.version
-	};
-}
-async function installLocalCopy(target, executablePath, version, options = {}) {
-	requirePublishedTarget(target, options.runtimePlatform ?? platform(), options.runtimeArch ?? arch());
-	return {
-		path: await installRunningBinary(target, executablePath, resolveInstallDir(target, options), version, stagingOptions(options)),
-		version
-	};
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_c8de650590e3d51aecb55426b47f0e53/node_modules/@langchain/langsmith-plugin-binary/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+langsmith-plugin-binary@https+++codeload.github.com+langchain-ai+langsmith-p_314320fd659ed0832308a978d46b360c/node_modules/@langchain/langsmith-plugin-binary/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
 		target,
 		supportsHost: (platform$1 = platform(), arch$1 = arch()) => isPublishedTarget(target, platform$1, arch$1),
-		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version),
-		installDirectory: (home) => installDirectory(target, home),
-		installedBinaryPath: (home) => installedBinaryPath(target, installDirectory(target, home)),
-		isInstalledBinary: (executablePath, home) => runningAsInstalledBinary(executablePath, installedBinaryPath(target, installDirectory(target, home))),
-		install: (installOptions = {}) => installFromReleases(target, installOptions),
-		installLocalCopy: (executablePath, version, hostOptions = {}) => installLocalCopy(target, executablePath, version, hostOptions),
-		update: (updateOptions) => updateFromGitHub(target, updateOptions)
+		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version)
 	};
 }
 //#endregion
@@ -17676,218 +17282,16 @@ const binary = defineBinaryTarget({
 });
 //#endregion
 //#region src/messages.ts
-function publishedHosts() {
-	return Object.entries(binary.target.publishedTargets).map(([platform, arches]) => `${PLATFORM_NAMES[platform] ?? platform} ${arches.join(" and ")}`).join(", ");
-}
-function unsupportedHost(platform, arch) {
-	return `The standalone binary only runs on ${publishedHosts()}, not ${platform}-${arch}. Use the Codex plugin instead.`;
-}
 function tracingFailed(error) {
 	return `LangSmith tracing failed for this turn: ${error}`;
 }
 function usage(executableName) {
 	return `Usage:
-  ${executableName} --install [--project] [--tag VERSION]
-  ${executableName} --print [--project]
-  ${executableName} --update
   ${executableName} --version
 
 Options:
   --help, -h     Show this help and exit
-  --version, -v  Print the installed version and exit
-  --install      Install this binary and register the Codex hooks
-  --print        Print the hooks file --install would write, and change nothing
-  --project      Use .codex/hooks.json in the current directory
-  --tag VERSION  Install a published release instead of this binary
-  --update       Replace the installed binary with the newest release`;
-}
-//#endregion
-//#region src/utils/paths.ts
-function underHome(target, home = os.homedir()) {
-	if (target === home) return "~";
-	return target.startsWith(`${home}${nodePath.sep}`) ? `~${nodePath.sep}${target.slice(home.length + 1)}` : target;
-}
-function codexFile(filename, projectScoped) {
-	if (projectScoped) return nodePath.join(process.cwd(), ".codex", filename);
-	return nodePath.join(process.env.CODEX_HOME ?? nodePath.join(os.homedir(), ".codex"), filename);
-}
-//#endregion
-//#region src/utils/unquoted.ts
-function unquoted(key) {
-	const quote = key[0];
-	return (quote === "\"" || quote === "'") && key.length > 1 && key.endsWith(quote) ? key.slice(1, -1) : key;
-}
-//#endregion
-//#region src/plugin-status.ts
-function pluginEnabledInToml(toml) {
-	let inOurTable = false;
-	for (const raw of toml.split("\n")) {
-		const line = raw.trim();
-		if (line.startsWith("[")) {
-			const table = PLUGIN_TABLE.exec(line);
-			inOurTable = table !== null && unquoted(table[1]) === "tracing@langsmith-codex-plugins";
-			continue;
-		}
-		if (!inOurTable) continue;
-		const enabled = ENABLED_KEY.exec(line);
-		if (enabled) return enabled[1] === "true";
-	}
-}
-async function pluginEnabledIn(configFile) {
-	try {
-		return pluginEnabledInToml(await nodeFsPromises.readFile(configFile, "utf-8"));
-	} catch {
-		return;
-	}
-}
-async function codexPluginEnabled() {
-	const projectConfig = codexFile("config.toml", true);
-	const userConfig = codexFile("config.toml", false);
-	for (const configFile of [projectConfig, userConfig]) {
-		const enabled = await pluginEnabledIn(configFile);
-		if (enabled !== void 0) return enabled;
-	}
-	return false;
-}
-async function standDownNotice() {
-	if (!await codexPluginEnabled()) return [];
-	return [
-		"",
-		"LangSmith tracing is now installed twice, once as a Codex plugin and once as",
-		"this binary. Only the binary traces. The plugin still starts on every hook,",
-		"so remove it with:",
-		`  codex plugin remove ${CODEX_PLUGIN_SELECTOR}`
-	];
-}
-async function printStandDownNotice(log = console.log) {
-	try {
-		for (const line of await standDownNotice()) log(line);
-	} catch {
-		return;
-	}
-}
-//#endregion
-//#region src/utils/objects.ts
-function asRecord(value) {
-	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-//#endregion
-//#region src/utils/quoteForShell.ts
-function quoteForShell(value) {
-	return `'${value.split("'").join(`'\\''`)}'`;
-}
-//#endregion
-//#region src/utils/hooks.ts
-function hookCount(events) {
-	return Object.values(events).reduce((total, groups) => total + groups.reduce((inGroups, group) => inGroups + (group.hooks ?? []).length, 0), 0);
-}
-function pointedAtBinary(events, executable) {
-	const command = quoteForShell(executable);
-	return Object.fromEntries(Object.entries(events).map(([event, groups]) => [event, groups.map((group) => ({
-		...group,
-		hooks: (group.hooks ?? []).map((hook) => hook.type === "command" ? {
-			...hook,
-			command
-		} : hook)
-	}))]));
-}
-function withoutOurHooks(groups) {
-	return groups.map((group) => ({
-		...group,
-		hooks: (group.hooks ?? []).filter((hook) => typeof hook?.command !== "string" || !hook.command.includes(binary.target.executableName))
-	})).filter((group) => group.hooks.length > 0);
-}
-function renderHooksFile(existing, executable) {
-	const file = asRecord(existing);
-	const existingEvents = asRecord(file.hooks);
-	const hooks$1 = { ...existingEvents };
-	for (const [event, groups] of Object.entries(pointedAtBinary(hooks, executable))) hooks$1[event] = [...Array.isArray(existingEvents[event]) ? withoutOurHooks(existingEvents[event]) : [], ...groups];
-	return {
-		...file,
-		hooks: hooks$1
-	};
-}
-async function readHooksFile(hooksFile) {
-	try {
-		return JSON.parse(await nodeFsPromises.readFile(hooksFile, "utf-8"));
-	} catch {
-		return {};
-	}
-}
-//#endregion
-//#region src/utils/writeFileAtomic.ts
-async function existingMode(target) {
-	try {
-		return (await nodeFsPromises.stat(target)).mode & 511;
-	} catch {
-		return;
-	}
-}
-async function writeFileAtomic(target, contents) {
-	const directory = nodePath.dirname(target);
-	const partial = nodePath.join(directory, `.${nodePath.basename(target)}.${process.pid}.tmp`);
-	const mode = await existingMode(target);
-	try {
-		await nodeFsPromises.writeFile(partial, contents);
-		if (mode !== void 0) await nodeFsPromises.chmod(partial, mode);
-		await nodeFsPromises.rename(partial, target);
-	} catch (error) {
-		await nodeFsPromises.unlink(partial).catch(() => void 0);
-		throw error;
-	}
-}
-//#endregion
-//#region src/install.ts
-async function installBinary(options) {
-	const runtimePlatform = options.runtimePlatform ?? os.platform();
-	const runtimeArch = options.runtimeArch ?? os.arch();
-	if (!binary.supportsHost(runtimePlatform, runtimeArch)) throw new Error(unsupportedHost(runtimePlatform, runtimeArch));
-	const hooksFile = options.hooksFile ?? codexFile("hooks.json", false);
-	const host = {
-		...options,
-		runtimePlatform,
-		runtimeArch
-	};
-	const copyable = options.tag === void 0 ? options.source : void 0;
-	const installed = copyable === void 0 ? await binary.install(host) : await binary.installLocalCopy(copyable, options.currentVersion ?? "0.0.0", host);
-	const rendered = renderHooksFile(await readHooksFile(hooksFile), installed.path);
-	await nodeFsPromises.mkdir(nodePath.dirname(hooksFile), { recursive: true });
-	await writeFileAtomic(hooksFile, `${JSON.stringify(rendered, null, 2)}\n`);
-	return {
-		binary: installed.path,
-		hooks: hooksFile,
-		version: installed.version
-	};
-}
-async function runInstall(options) {
-	const hooksFile = codexFile("hooks.json", options.projectScoped ?? false);
-	try {
-		if (options.print) {
-			const target = binary.installedBinaryPath();
-			console.log(JSON.stringify(renderHooksFile(await readHooksFile(hooksFile), target), null, 2));
-			return;
-		}
-		const installed = await installBinary({
-			source: options.source,
-			currentVersion: options.currentVersion,
-			tag: options.tag,
-			hooksFile
-		});
-		const configFile = nodePath.join(nodePath.dirname(installed.hooks), "langsmith.json");
-		for (const line of [
-			`Installed ${binary.target.executableName} ${installed.version} to ${underHome(nodePath.dirname(installed.binary))}`,
-			`Registered ${hookCount(hooks)} hooks in ${underHome(installed.hooks)}`,
-			"",
-			"Next:",
-			`  1. Create ${underHome(configFile)} (if it doesn't exist already):`,
-			`       {"enabled": true, "api_key": "<your-api-key>", "project": "my-project"}`,
-			`  2. Restart Codex, then choose "Trust all and continue" when it asks`
-		]) console.log(line);
-		await printStandDownNotice();
-	} catch (error) {
-		console.error(`install failed: ${error}`);
-		process.exitCode = 1;
-	}
+  --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -19090,23 +18494,11 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 }
 //#endregion
 //#region src/utils/argv.ts
-function flagValue(argv, flag) {
-	const index = argv.indexOf(flag);
-	const value = index < 0 ? void 0 : argv[index + 1];
-	return value === void 0 || value.startsWith("-") ? void 0 : value;
-}
 function wasInvokedWith(argv, flag) {
 	return argv.includes(flag);
 }
 function unknownFlags(argv) {
 	return argv.filter((arg) => arg.startsWith("-") && !KNOWN_FLAGS.has(arg));
-}
-//#endregion
-//#region src/utils/runningCompiledBinary.ts
-const BUNFS_PREFIX = "/$bunfs/";
-function runningCompiledBinary() {
-	const main = globalThis.Bun?.main;
-	return typeof main === "string" && main.startsWith(BUNFS_PREFIX);
 }
 //#endregion
 //#region src/utils/stdin.ts
@@ -19164,15 +18556,6 @@ async function runHook() {
 const invocationArguments = process.argv.slice(1);
 const invoked = (flag) => wasInvokedWith(invocationArguments, flag);
 const USAGE = usage(binary.target.executableName);
-async function runUpdate() {
-	try {
-		const result = await binary.update({ currentVersion: "0.1.0" });
-		console.log(result.status === "updated" ? `updated to ${result.version}` : result.status);
-	} catch (error) {
-		console.error(`update failed: ${error}`);
-		process.exitCode = 1;
-	}
-}
 const unrecognised = unknownFlags(invocationArguments);
 if (invoked("--help") || invoked("-h")) console.log(USAGE);
 else if (invoked("--version") || invoked("-v")) console.log("0.1.0");
@@ -19180,15 +18563,7 @@ else if (unrecognised.length > 0) {
 	console.error(`unknown option: ${unrecognised[0]}`);
 	console.error(USAGE);
 	process.exitCode = 1;
-} else if (invoked("--install") || invoked("--print")) runInstall({
-	source: runningCompiledBinary() ? process.execPath : void 0,
-	currentVersion: LS_INTEGRATION_VERSION,
-	projectScoped: invoked("--project"),
-	print: invoked("--print"),
-	tag: flagValue(invocationArguments, "--tag")
-});
-else if (invoked("--update")) runUpdate();
-else runHook().catch((error) => {
+} else runHook().catch((error) => {
 	console.error(tracingFailed(error));
 });
 //#endregion

@@ -1,77 +1,38 @@
 # LangSmith Tracing Plugin for OpenAI Codex
 
-A Codex plugin that traces agent turns, tool calls, model metadata, and subagent threads to [LangSmith](https://smith.langchain.com).
+Sends your Codex turns, tool calls and subagent threads to [LangSmith](https://smith.langchain.com) so you can see what the agent actually did.
 
-## Prerequisites
+## What you need
 
-- Node.js >= 22.x, or none for the standalone binary or a plugin release that carries the macOS builds
-- Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
-- A LangSmith account and API key
+- **On a Mac, nothing.** The plugin carries its own build and runs it directly.
+- **Everywhere else, including Windows,** Node.js 22 or newer.
+- Codex 0.153.4 or newer.
+- A LangSmith account and API key.
 
-## Installation
+If the carried Mac build cannot start, the plugin hands the turn to Node instead of losing it, so Node is still worth having.
 
-Every option below installs the same tracing integration and only the delivery differs, so you are picking an install method rather than a different product. The plugin is managed by the marketplace and the standalone binary is managed by you.
+## Install
 
-The plugin ships the compiled macOS builds inside itself, so on a Mac it runs its own copy and needs no Node on your PATH. A small picker at `plugins/tracing/binary/langsmith-tracing` runs whichever build matches your machine, Apple silicon natively and Intel under Rosetta, and falls back to the Node bundle everywhere else. No release carries the builds yet, so today every install takes the Node path and Node >= 22 is still required.
-
-### As a Codex plugin
-
-Add the marketplace via Codex CLI:
+Codex installs and updates the plugin for you, so there is nothing to download.
 
 ```bash
 codex plugin marketplace add langchain-ai/langsmith-codex-plugins
 ```
 
-Then enable the Tracing plugin globally in `~/.codex/config.toml` or only for a specific project in `.codex/config.toml`:
+Then turn it on, either globally in `~/.codex/config.toml` or for one project in `.codex/config.toml`:
 
 ```toml
 [plugins."tracing@langsmith-codex-plugins"]
 enabled = true
 ```
 
-Plugin hooks follow plugin enablement, so there is no separate flag to set. `[features] plugin_hooks` was removed in [openai/codex#22552](https://github.com/openai/codex/pull/22552) and is ignored if present; `[features] hooks` is stable and on by default.
+**Enabling the plugin is not enough on its own.** You also have to trust its hooks with `/hooks`, or in Codex's plugin UI when it asks, and nothing traces until you do. Codex only asks in the interactive interface, so a session started with `codex exec` quietly skips the hooks until you have trusted them once. Restart Codex afterwards.
 
-Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompted; enabling the plugin alone is not sufficient. Nothing traces until you do, and Codex only asks in the interactive TUI, so a session started with `codex exec` runs with the hooks silently skipped until you have trusted them once in the TUI. Restart Codex after installation or hook changes.
+Codex remembers your answer against the exact wording of each hook, so any release that changes a hook asks everyone to trust it again.
 
-Codex remembers your answer as a hash of each hook’s wording, so any release that changes a hook command asks everyone to trust it again. This release changes both commands.
+## Turn on tracing
 
-If you installed the standalone binary before, remove it once you switch to the plugin, or both copies trace the same session. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
-
-Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
-
-### As a standalone binary (beta, macOS arm64 and x64)
-
-The same integration as the plugin, delivered as one file that carries its own JavaScript runtime so it needs no Node on your PATH. The plugin is still the supported path and this binary is the beta we are trialling, so you install and update it yourself. Only macOS arm64 and x64 are built and the installer picks whichever matches your Mac.
-
-Run only one of the two. The plugin and the binary both trace, so a session with both registered is traced twice.
-
-1. Run the installer:
-
-   ```bash
-   curl -LsSf https://langch.in/codex-tracing | bash -s -- --beta
-   ```
-
-   Adding `--beta` takes the newest prerelease and you can drop it once a stable release carries the binary. Without it the installer takes the newest stable release and never a prerelease, so it fails while a prerelease is the only published build.
-
-   The installer checks the download against the SHA-256 the release publishes. It puts the binary at `~/.langsmith/langsmith-codex-tracing` and adds the tracing hooks to `~/.codex/hooks.json`. Run it with `--help` for version pinning and the other options.
-
-2. Set `enabled`, `api_key` and `project` in `~/.codex/langsmith.json`. `enabled` is false by default, so without this the hooks run and trace nothing:
-
-   ```json
-   { "enabled": true, "api_key": "lsv2_pt_...", "project": "codex" }
-   ```
-
-3. Restart Codex, then trust the hooks when prompted.
-
-The binary never updates itself, so run `~/.langsmith/langsmith-codex-tracing --update` when you want a newer release.
-
-To download a release asset by hand instead, take the `-arm64-` or `-x64-` asset matching your Mac and `chmod +x` it, then run it with `--install`. Released binaries are signed and notarized so macOS clears one after a single online Gatekeeper check.
-
-### Setting environment variables
-
-**Option 1: Shell environment (recommended)**
-
-Add to your `~/.zshrc`, `~/.bashrc`, or `~/.bash_profile`:
+Tracing is off until you give it a key and switch it on. Either set these in your shell:
 
 ```bash
 export LANGSMITH_CODEX_API_KEY="lsv2_pt_..."
@@ -79,58 +40,21 @@ export LANGSMITH_CODEX_PROJECT="codex"
 export TRACE_TO_LANGSMITH="true"
 ```
 
-**Option 2: JSON config file**
-
-Create `~/.langsmith-plugins.json` (shared home baseline), `~/.codex/langsmith.json` (Codex user config), `<project>/langsmith-plugins.json` (shared plugin project config), or `<project>/.codex/langsmith.json` (Codex-specific project config):
+or write them to `~/.codex/langsmith.json`:
 
 ```json
-{
-  "enabled": true,
-  "api_key": "lsv2_pt_...",
-  "project": "codex"
-}
+{ "enabled": true, "api_key": "lsv2_pt_...", "project": "codex" }
 ```
 
-The shared project-root file is named `langsmith-plugins.json` to distinguish plugin configuration from application tracing configuration. A root `langsmith.json` is ignored, even if malformed; it is not a legacy alias. The Codex-specific project and user `.codex/langsmith.json` filenames are unchanged. The home baseline is read only from `~/.langsmith-plugins.json`; there is no fallback to the old nonhidden `~/langsmith-plugins.json`. This is a lookup rule, not a file blacklist: when the hook `cwd` is the home directory, `~/langsmith-plugins.json` is still the legitimate project-root config, above the hidden home baseline.
+Get a key from [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**. Complete a turn, then look for it in the `codex` project.
 
-**All shared settings use the same precedence, resolved independently per field:**
+Settings can also live in a project, at `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`, or across every harness at `~/.langsmith-plugins.json`. A setting from your shell beats a project file, which beats a user file, which beats the shared one.
 
-1. Environment (including `TRACE_TO_LANGSMITH` for `enabled`).
-2. `<hook cwd>/.codex/langsmith.json`.
-3. `<hook cwd>/langsmith-plugins.json`.
-4. User `~/.codex/langsmith.json`.
-5. Home `~/.langsmith-plugins.json`.
-6. Defaults (`enabled: false`, `defaultMuted: false`, `redact: true`, project `"codex"`).
+> **Check a repository's tracing settings before you trust it.** A project file can switch tracing on, point uploads at someone else's server, supply its own credentials and turn secret redaction off, and a full trace can carry your conversation, file contents and tool results. Review these files in an unfamiliar repository, along with `.codex/config.toml` and `.codex/hooks.json`.
 
-All four files use the same common contract below; the home-root file supports the entire configuration, not just privacy switches. Missing fields fall through. Only JSON booleans are valid in files; an invalid present `enabled` restricts that file's value to false. Malformed/non-object JSON, invalid recognized ordinary common fields, or unreadable/non-regular files (including dangling symlinks, directories, devices, and FIFOs) discard that file’s ordinary common values and restrict its switches: enabled false and default muted. Readable symlinks to regular files are accepted; only a genuinely missing file is absent. Higher-priority sources, including environment values, override restricted switches independently.
+## Hide one thread
 
-The master environment switch `TRACE_TO_LANGSMITH` retains its historical parser: whitespace is trimmed and values are case-insensitive; `true`, `1`, `yes`, and `on` enable tracing, while `false`, `0`, `no`, and `off` disable it. Any other present value, including empty, means off. An unset variable falls through to files, then off. This differs from the strict default-mute environment parser below. `TRACE_TO_LANGSMITH=true` therefore overrides a project `{"enabled": false}`, and `TRACE_TO_LANGSMITH=false` overrides a project `{"enabled": true}`.
-
-Arrays replace lower-priority arrays. Metadata is the exception to whole-value precedence: it shallow-merges per key in **defaults → home root → user `.codex` → project root → project `.codex` → environment** order. Higher-priority nested values replace rather than deep-merge, and `{}` does not clear inherited metadata. `LANGSMITH_CODEX_*` variables take precedence over matching `LANGSMITH_*` variables.
-
-### Shared file contract and Codex extensions
-
-> **Security: trust repository tracing configuration before using this plugin.** Project `langsmith-plugins.json` and `.codex/langsmith.json` can enable tracing, choose upload endpoints and replicas, supply credentials, and disable secret redaction. Full trace uploads may contain conversation messages, file contents, and tool arguments/results; a malicious configuration can send this content to a third party. Review these files before using the plugin in an unfamiliar repository. Also review project-native `.codex/config.toml` and `.codex/hooks.json`, which can configure environment settings and commands. Secret redaction is not a guarantee that uploaded content is safe to share. To prevent this plugin from uploading, disable it.
-
-Common keys are `enabled`, `defaultMuted`, `api_key`, `api_url`, `project`, `replicas`, `metadata`, `redact`, and `redact_extra_rules`. Strings are preserved verbatim (including empty strings); metadata and replica `updates` must be non-null JSON objects, not arrays. `redact` must be a JSON boolean and defaults to true. Redaction rules are an array of `{ "pattern": "regex", "replace": "optional replacement" }` with valid regular expressions, compiled globally. Invalid `enabled`/`defaultMuted` restrict only that individual field; an invalid recognized ordinary common field discards **all common fields in that file** and restricts both switches. Ordinary settings can still fall back to lower files, and higher-priority files or environment values can independently override restricted switches.
-
-Unknown fields and other harness extensions cannot change common validity. Codex’s `parent_headers` is a **separate extension**, validated independently from the raw file object: it requires string `langsmith-trace` and optional string `baggage`. Invalid parent headers are omitted, not a reason to disable common tracing. Parent headers replace as a whole with environment > project `.codex` > project root > user `.codex` > home root precedence.
-
-Environment discovery retains Codex’s existing convention: `LANGSMITH_CODEX_<SUFFIX>` wins over `LANGSMITH_<SUFFIX>` (including `METADATA`, `PARENT_HEADERS`, `REDACT`, and `REDACT_EXTRA`); `enabled` uses only `TRACE_TO_LANGSMITH`. Ordinary JSON env values keep the legacy parser: malformed/empty JSON is ignored; decoded values that fail the existing schema discard the ordinary environment layer, not independently parsed privacy switches. Redaction env booleans accept trimmed, case-insensitive `true/false`, `1/0`, `yes/no`, and `on/off`. Valid environment metadata merges **per key**, rather than erasing unrelated file metadata. Full-mode custom metadata still follows existing structural builder precedence; muted mode drops arbitrary custom fields and collisions even with `redact: false`.
-
-### Getting your LangSmith API key
-
-1. Go to [smith.langchain.com](https://smith.langchain.com)
-2. Sign in or create an account
-3. Navigate to **Settings** → **API Keys**
-4. Click **Create API Key**
-5. Copy the key (starts with `lsv2_pt_...`)
-
-Complete a Codex turn, then look for runs in the `codex` project in LangSmith.
-
-## Per-thread privacy controls
-
-Submit exactly one of these as an ordinary chat message, **without a leading slash**, whitespace, arguments, or extra prose:
+Send either of these as an ordinary message, with no leading slash and nothing else on the line:
 
 ```text
 langsmith-tracing:mute
@@ -140,176 +64,76 @@ langsmith-tracing:mute
 langsmith-tracing:unmute
 ```
 
-The synchronous `UserPromptSubmit` hook consumes the control locally, does not invoke the model, and displays: **“Preference saved for the next turn; the current turn is unchanged.”** Additional feedback identifies the saved mode and any master-off or filesystem warning. No model skill is required. Codex’s TUI rejects unknown slash commands before they reach this hook, so `/langsmith-tracing:mute` is not supported.
+Muting keeps tracing the shape of the thread while leaving the content out, and it applies from the next turn rather than the one in flight. The turn you are in already has its mode locked, and so does anything it started. Wait for the confirmation before sending anything sensitive, and if none appears do not assume it worked.
 
-- **Mute** saves metadata-only tracing for subsequent turns in this native thread; **unmute** saves full tracing. Threads without an explicit override use the configured default (full when unset) when master tracing is enabled.
-- Each submitted turn receives an immutable launch snapshot. Controls do not change active or already-snapshotted queued turns, or subagents they launched. All descendants inherit their launch mode, including direct child Stop hooks that arrive before the parent Stop.
-- Controls also work while master tracing is off; neither command enables it or supplies credentials. Off launch snapshots remain off if tracing is later enabled.
-- Wait for the local confirmation before submitting sensitive work. If no confirmation appears, do not assume mute worked: check version, hook enablement/trust, and installation cache.
-- Mute affects LangSmith uploads, **not** what Codex/the model can read or retain locally. It does not delete earlier uploads or remove context. After unmute, future full turns can include earlier sensitive material if Codex repeats it or includes it in their context.
+Muting changes only what reaches LangSmith. Codex still reads and remembers everything locally, and earlier uploads are not deleted.
 
-### Default mute configuration
-
-To default to metadata-only tracing without muting each thread individually:
-
-```bash
-export LANGSMITH_CODEX_DEFAULT_MUTED="true"
-# "false" restores the unmuted default.
-```
-
-Or set JSON booleans in project `.codex/langsmith.json`, project-root `langsmith-plugins.json`, user `~/.codex/langsmith.json`, or home `~/.langsmith-plugins.json`:
-
-```json
-{
-  "enabled": true,
-  "defaultMuted": true
-}
-```
-
-Precedence is **`LANGSMITH_CODEX_DEFAULT_MUTED` > `LANGSMITH_DEFAULT_MUTED` > project `.codex` `defaultMuted` > project-root `defaultMuted` > user `.codex` `defaultMuted` > home-root `defaultMuted` > unmuted**. The standard alias follows this harness's existing `LANGSMITH_CODEX_*`/`LANGSMITH_*` convention; prefer the Codex-specific variable to avoid affecting other harnesses. A present Codex-specific value, even empty or invalid, wins over the alias.
-
-Set `defaultMuted` to JSON `false` for full content. An `enabled`-only file does not hide a lower-priority `defaultMuted`; a `defaultMuted`-only file does not disable environment-enabled tracing. Both project paths use the hook payload's `cwd` (or the configured `cwd` when calling the config reader), not the plugin installation directory. There is no ancestor or Git-root search: a hook running in a nested directory only checks that directory's project files. Invalid present mute values (including strings/null), malformed or unreadable files conservatively restrict that file’s mute default unless a higher-priority source sets it. Default-mute environment values `true`/`false` are case-insensitive with **no trimming**; any other present value, including an empty string, means muted. When both variables are unset, resolution falls through to files, then unmuted. Credentials and master enablement remain separate.
-
-Only threads **without an explicit saved mute/unmute override** follow the current configuration on each new submission, including existing threads. Saved unmute wins over default mute; saved mute wins over default unmute. Normal prompts save immutable turn evidence, not a default preference. Config reads do not write privacy state. Controls only set explicit thread overrides, never a global default, and still work with master tracing disabled.
-
-Current/queued turn and descendant launch snapshots remain unchanged across config changes. Children inherit the parent's launch snapshot, not today's default. Stop/recovery paths without launch evidence stay metadata-only even when the current default or override is full; there is no unmute backfill.
-
-### Persistence and replay
-
-Preferences and immutable per-turn/descendant evidence live in `~/.codex/langsmith-state.privacy.json` (using the hook process’s `HOME`), shared across hook processes and projects, keyed by native thread ID. Resuming the same thread after restart keeps its preference. This file is separate from each rollout’s `.langsmith` upload-dedup sidecar and is not pruned with it.
-
-The strict privacy schema is `{ "version": 1, "threads": { "thread-id": { "turns": { "turn-id": "metadata" } } } }`. Each thread requires `turns` (values `"off"`, `"full"`, or `"metadata"`), and may have an explicit `preference` (`"full"` or `"metadata"`) and an `inherited` launch snapshot (`"off"`, `"full"`, or `"metadata"`). No other top-level or thread fields are allowed. A missing file means no overrides or evidence. **Configuration alone owns the default**; no persisted global default or migration/compatibility format is supported. Invalid state fails closed and writers refuse to overwrite it.
-
-Stop replays the whole rollout. Historical muted/off snapshots are never upgraded by unmute, even after dedup sidecar deletion. Missing native launch evidence, missing/ambiguous child ancestry, and corrupt/unreadable privacy state fall back to metadata-only uploads rather than today’s full preference. Ordinary prompts are blocked if their launch evidence cannot be saved; corrupt files are not silently overwritten.
-
-Writes use a private `0700` directory lock, a two-second acquisition deadline with 10–30 ms retry jitter, and a `0600` temporary file followed by fsync/atomic rename and directory fsync. A post-rename durability/cleanup failure reports that the preference was saved with a warning. A crashed writer’s lock is never stolen: remove `~/.codex/langsmith-state.privacy.json.lock` only after confirming no preference writer is running. Repair corrupt state/permissions and retry; do not delete the privacy file as a routine reset. Deletion loses sticky preferences and new submissions use the configured default, although historical turns without evidence remain metadata-only. The evidence file currently grows with thread/turn count; there is no automatic retention policy.
+To mute by default instead of thread by thread, set `LANGSMITH_CODEX_DEFAULT_MUTED=true` or put `"defaultMuted": true` in one of the LangSmith config files listed above. A thread you muted or unmuted by hand keeps that choice regardless.
 
 ## What gets traced
 
-In full mode, each LLM run includes:
+Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. A turn you cancel still uploads.
 
-- **Inputs**: accumulated conversation messages
-- **Outputs**: assistant response content
-- **Metadata**: model provider, model name, stop reason, token usage
-
-Subagent threads are resolved and uploaded as nested child runs under the parent turn. Tool calls (function calls, shell calls, computer calls, file reads, web searches) are included with inputs and outputs.
-
-Interrupted turns (where the user cancels mid-response) are still uploaded upon session completion.
-
-In metadata-only mode, root, model, and tool inputs/outputs are replaced by role-bearing placeholder messages containing `[LangSmith system notice: content omitted because tracing is muted.]`. Runs retain topology, parent IDs, trace ordering, timestamps, status, native IDs, model/tool identity, numeric token usage, and safe coding-agent schema fields. Metadata includes `ls_tracing_mode: "metadata"`. Message content, tool arguments/results, raw errors, attachments, arbitrary custom metadata (including allowlist-key collisions), paths/repository/user identity, SDK runtime/environment enrichment, and replica update overrides are excluded. Destination/auth configuration remains in use. Secret redaction still applies to retained values; turning redaction off does not disable the metadata-only projection.
+When muted, the structure, timing, identifiers and token counts remain while messages, tool arguments and results are replaced with a placeholder.
 
 ## Secret redaction
 
-By default, the plugin strips common secrets from run inputs, outputs, and metadata **before they are uploaded** to LangSmith. It catches provider API keys, JWTs, PEM blocks, and structural `NAME=value`, `Authorization`, and URL-credential shapes.
+Secrets are stripped before anything is uploaded, covering API keys, JWTs, PEM blocks and common `NAME=value`, `Authorization` and URL-credential shapes. Set `LANGSMITH_CODEX_REDACT` to `false` to turn that off, or `LANGSMITH_CODEX_REDACT_EXTRA` to a JSON array of `{ "pattern": "...", "replace": "..." }` rules to catch more.
 
-- Set `LANGSMITH_CODEX_REDACT` to a falsy value (`false`, `0`, `no`, or `off`) to turn redaction off.
-- Set `LANGSMITH_CODEX_REDACT_EXTRA` to a JSON array of `{ "pattern": "...", "replace": "..." }` rules to redact additional custom patterns. `pattern` is a regular-expression string; `replace` (optional) is the replacement text.
+Redaction is not a guarantee that what you upload is safe to share.
 
-## Environment variables
+## Settings
 
-Tracing is disabled by default; the master-switch precedence above determines enablement independently of per-thread privacy preferences.
+Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one.
 
-| Variable                                                     | Required | Default                           | Description                                                                                  |
-| ------------------------------------------------------------ | -------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
-| `TRACE_TO_LANGSMITH`                                         | No       | `false`                           | Overrides file `enabled`; trimmed, case-insensitive `true`/`1`/`yes`/`on` enable             |
-| `LANGSMITH_CODEX_DEFAULT_MUTED`, `LANGSMITH_DEFAULT_MUTED`   | No       | `false`                           | Default metadata-only mode without a thread override; environment-first; invalid values mute |
-| `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | Yes\*    | None                              | LangSmith API key. \*Required unless `LANGSMITH_CODEX_RUNS_ENDPOINTS` is set                 |
-| `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | No       | `"codex"`                         | LangSmith project name                                                                       |
-| `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | No       | `https://api.smith.langchain.com` | LangSmith API base URL                                                                       |
-| `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | No       | None                              | JSON object of custom metadata to attach to all runs                                         |
-| `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | No       | None                              | JSON array of replica destinations for multi-project tracing                                 |
-| `LANGSMITH_CODEX_PARENT_HEADERS`                             | No       | None                              | JSON object containing LangSmith distributed-tracing parent headers                          |
-| `LANGSMITH_CODEX_REDACT`                                     | No       | `"true"`                          | Set to a falsy value (`false`/`0`/`no`/`off`) to disable secret redaction                    |
-| `LANGSMITH_CODEX_REDACT_EXTRA`                               | No       | None                              | JSON array of `{ pattern, replace }` custom redaction rules                                  |
+| Config key           | Environment variable             | Default                           | What it does                            |
+| -------------------- | -------------------------------- | --------------------------------- | --------------------------------------- |
+| `enabled`            | `TRACE_TO_LANGSMITH`             | `false`                           | Whether to trace at all                 |
+| `api_key`            | `LANGSMITH_CODEX_API_KEY`        | none                              | Your LangSmith key                      |
+| `project`            | `LANGSMITH_CODEX_PROJECT`        | `codex`                           | Where runs land                         |
+| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`       | `https://api.smith.langchain.com` | Which server to send to                 |
+| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`  | `false`                           | Leave content out unless told otherwise |
+| `redact`             | `LANGSMITH_CODEX_REDACT`         | `true`                            | Strip secrets before upload             |
+| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`   | none                              | Extra patterns to strip                 |
+| `metadata`           | `LANGSMITH_CODEX_METADATA`       | none                              | Custom fields on every run              |
+| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS` | none                              | Send the same trace somewhere else too  |
 
-## JSON config reference
+## Send a trace to more than one place
 
-| Config key           | Environment variable                                         | Default           | Description                                       |
-| -------------------- | ------------------------------------------------------------ | ----------------- | ------------------------------------------------- |
-| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`, `LANGSMITH_DEFAULT_MUTED`   | `false`           | Default metadata-only tracing without an override |
-| `enabled`            | `TRACE_TO_LANGSMITH`                                         | `false`           | Enable tracing                                    |
-| `api_key`            | `LANGSMITH_CODEX_API_KEY`, `LANGSMITH_API_KEY`               | unset             | LangSmith API key                                 |
-| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`, `LANGSMITH_ENDPOINT`             | LangSmith default | API endpoint                                      |
-| `project`            | `LANGSMITH_CODEX_PROJECT`, `LANGSMITH_PROJECT`               | `"codex"`         | Project name                                      |
-| `metadata`           | `LANGSMITH_CODEX_METADATA`, `LANGSMITH_METADATA`             | unset             | Custom metadata object                            |
-| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`, `LANGSMITH_RUNS_ENDPOINTS` | unset             | Replica destinations                              |
-| `parent_headers`     | `LANGSMITH_CODEX_PARENT_HEADERS`                             | unset             | Distributed-tracing parent headers                |
-| `redact`             | `LANGSMITH_CODEX_REDACT`                                     | `true`            | Redact secrets before upload                      |
-| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`                               | unset             | Extra `{ pattern, replace }` redaction rules      |
-
-## Tracing to multiple destinations (Replicas)
-
-You can trace to multiple LangSmith projects or workspaces simultaneously using `LANGSMITH_CODEX_RUNS_ENDPOINTS`. This is useful for:
-
-- Sending traces to both a production and staging project
-- Tracing to multiple workspaces with different API keys
-- Attaching extra metadata to specific replica destinations
-
-Set `LANGSMITH_CODEX_RUNS_ENDPOINTS` to a JSON array of replica configurations. When nonempty, this selects the replica destinations instead of an additional primary upload; omitted destination fields inherit the client/project defaults.
-
-**Option 1: JSON config file (recommended)**
-
-In `~/.langsmith-plugins.json`, `~/.codex/langsmith.json`, `<project>/langsmith-plugins.json`, or `<project>/.codex/langsmith.json`:
+Useful for keeping a staging copy, or sending to two workspaces with different keys. List the destinations under `replicas`, and anything you leave out is inherited:
 
 ```json
 {
   "enabled": true,
   "replicas": [
-    {
-      "api_url": "https://api.smith.langchain.com",
-      "api_key": "lsv2_pt_workspace_a",
-      "project": "project-prod"
-    },
-    {
-      "api_url": "https://api.smith.langchain.com",
-      "api_key": "lsv2_pt_workspace_b",
-      "project": "project-staging",
-      "updates": { "extra": { "metadata": { "environment": "staging" } } }
-    }
+    { "project": "project-prod" },
+    { "api_key": "lsv2_pt_other_workspace", "project": "project-staging" }
   ]
 }
 ```
 
-**Option 2: Shell environment variable**
+Setting this replaces the normal destination rather than adding to it, and an empty list turns replicas off.
 
-```bash
-export LANGSMITH_CODEX_RUNS_ENDPOINTS='[{"api_url":"https://api.smith.langchain.com","api_key":"lsv2_pt_workspace_a","project":"project-prod"},{"api_url":"https://api.smith.langchain.com","api_key":"lsv2_pt_workspace_b","project":"project-staging","updates":{"extra":{"metadata":{"environment":"staging"}}}}]'
-```
+## When nothing shows up
 
-> **Tip:** To generate the escaped JSON string, use: `echo '[{"api_url":"...","api_key":"...","project":"..."}]' | jq -c .`
+- **No runs at all.** Check the plugin is enabled, its hooks are trusted with `/hooks`, and tracing is switched on. A `TRACE_TO_LANGSMITH` in your shell overrides whatever the files say.
+- **Rejected key.** Check `LANGSMITH_CODEX_API_KEY` is set and still valid.
+- **Runs in the wrong place.** Set `LANGSMITH_CODEX_PROJECT`, or the `project` key.
 
-### Replica format
+## What leaves your machine
 
-| Field     | Required | Description                                                                   |
-| --------- | -------- | ----------------------------------------------------------------------------- |
-| `api_url` | No       | Destination API URL; inherits the client URL when omitted                     |
-| `api_key` | No       | Destination API key; inherits the client key when omitted                     |
-| `project` | No       | Destination project; inherits the configured project when omitted             |
-| `updates` | No       | JSON object of run-field overrides on replica updates (removed in muted mode) |
-
-File replicas accept SDK-style `apiUrl`, `apiKey`, and `projectName` aliases, but canonical own keys win even when empty; an invalid canonical value cannot fall back to an alias. Unknown replica fields are ignored. File tuples are not accepted. The adapter stores canonical keys and converts to SDK camelCase only at the upload boundary. Replica arrays replace, not concatenate; an explicit `[]` disables inherited replicas and SDK-only environment discovery while still uploading to the primary client destination. An explicit plugin-supported environment replica array retains ordinary env-first precedence. `{}` entries inherit client/project defaults. `redact_extra_rules: []` similarly clears inherited extra rules.
-
-## Troubleshooting
-
-- **No runs appear**: confirm the plugin is enabled, its hooks are trusted (`/hooks`), and the master-switch precedence permits tracing. `[features] hooks` is on by default, so set it only to undo a local override. A present `TRACE_TO_LANGSMITH` overrides file enablement; when unset, check all four config files.
-- **Authentication fails**: check that `LANGSMITH_CODEX_API_KEY` or `LANGSMITH_API_KEY` is set and valid.
-- **Runs appear in the wrong project**: set `LANGSMITH_CODEX_PROJECT` or the `project` config key.
-- **Custom endpoint not used**: set `LANGSMITH_CODEX_ENDPOINT` or the `api_url` config key.
-
-## Data sent to LangSmith
-
-When master tracing is enabled, full launch snapshots upload transcript messages, tool inputs/outputs, metadata, usage, and subagent structure. Metadata-only snapshots upload the safe structure and placeholders described above; off snapshots upload nothing. Metadata-only still sends structural identifiers and usage to LangSmith. Keep master tracing off if none of that data may leave your machine.
+With tracing on, a full turn uploads your messages, tool inputs and outputs, metadata, token usage and subagent structure. A muted turn uploads the structure and placeholders instead. Keep tracing off if none of that may leave your machine.
 
 ## Development
 
 ```bash
 pnpm install
-pnpm test        # Run tests
-pnpm lint        # Run linter
-pnpm build       # Production build
+pnpm test
+pnpm lint
+pnpm build
 ```
 
-After making changes, run `pnpm build` and complete a new Codex turn to pick up the updated hooks.
+Run `pnpm build` and start a new turn to pick up your changes.
 
 ## License
 
