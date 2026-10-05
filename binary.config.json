@@ -5,7 +5,8 @@
     "entryPoint": "plugins/tracing/src/index.ts",
     "outputDirectory": "plugins/tracing/bin",
     "versionFile": "plugins/tracing/.codex-plugin/plugin.json",
-    "minify": true
+    "minify": true,
+    "stampedVersionFiles": ["plugins/tracing/dist/index.mjs"]
   },
   "sign": {
     "entitlements": "macos-entitlements.plist"
