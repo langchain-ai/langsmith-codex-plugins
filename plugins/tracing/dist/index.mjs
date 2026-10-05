@@ -17222,7 +17222,7 @@ const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"-v"
 ]);
 /** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.1.0";
+const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -18558,7 +18558,7 @@ const invoked = (flag) => wasInvokedWith(invocationArguments, flag);
 const USAGE = usage(binary.target.executableName);
 const unrecognised = unknownFlags(invocationArguments);
 if (invoked("--help") || invoked("-h")) console.log(USAGE);
-else if (invoked("--version") || invoked("-v")) console.log("0.1.0");
+else if (invoked("--version") || invoked("-v")) console.log("0.2.0");
 else if (unrecognised.length > 0) {
 	console.error(`unknown option: ${unrecognised[0]}`);
 	console.error(USAGE);
