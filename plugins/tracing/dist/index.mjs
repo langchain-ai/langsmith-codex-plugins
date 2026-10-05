@@ -17682,6 +17682,9 @@ function publishedHosts() {
 function unsupportedHost(platform, arch) {
 	return `The standalone binary only runs on ${publishedHosts()}, not ${platform}-${arch}. Use the Codex plugin instead.`;
 }
+function tracingFailed(error) {
+	return `LangSmith tracing failed for this turn: ${error}`;
+}
 function usage(executableName) {
 	return `Usage:
   ${executableName} --install [--project] [--tag VERSION]
@@ -19185,6 +19188,8 @@ else if (unrecognised.length > 0) {
 	tag: flagValue(invocationArguments, "--tag")
 });
 else if (invoked("--update")) runUpdate();
-else runHook();
+else runHook().catch((error) => {
+	console.error(tracingFailed(error));
+});
 //#endregion
 export {};

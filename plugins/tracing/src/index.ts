@@ -5,7 +5,7 @@ import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { runInstall } from "./install.js";
 import { binary } from "./binary.js";
 import { UNKNOWN_VERSION } from "./binary-constants.js";
-import { usage } from "./messages.js";
+import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
@@ -104,5 +104,7 @@ if (invoked("--help") || invoked("-h")) {
 } else if (invoked("--update")) {
   runUpdate();
 } else {
-  runHook();
+  runHook().catch((error: unknown) => {
+    console.error(tracingFailed(error));
+  });
 }
