@@ -147,11 +147,35 @@ it("tries the Intel build when the Apple silicon one cannot start", async () => 
   expect(await pick("arm64")).toBe("x64 build");
 });
 
-it("keeps a build's own failure instead of running the session twice", async () => {
+it("falls back to Node when a build exits a code our own binary never returns", async () => {
   await refusingBuild(ARM64, "arm64 refused");
   const result = await attempt("arm64");
-  expect(result.stdout.trim()).toBe("arm64 refused");
-  expect(result.status).toBe(3);
+  expect(result.stdout.trim().split("\n").at(-1)).toBe("node fallback");
+  expect(result.status).toBe(0);
+});
+
+it("lets a build that exits zero finish the turn, and never starts Node as well", async () => {
+  await build(ARM64, "arm64 build");
+  const result = await attempt("arm64");
+  expect(result.stdout.trim()).toBe("arm64 build");
+  expect(result.status).toBe(0);
+  expect(result.stderr).toBe("");
+});
+
+it("never runs the Apple silicon build on an Intel Mac", async () => {
+  await build(ARM64, "arm64 build");
+  expect(await pick("x86_64")).toBe("node fallback");
+});
+
+it("says once that a build could not run, and says nothing when none is carried", async () => {
+  await unstartableBuild(ARM64);
+  await unstartableBuild(X64);
+  const broken = await attempt("arm64");
+  const said = broken.stderr.split("could not run, falling back to Node").length - 1;
+  expect(said).toBe(1);
+  await fs.rm(path.join(binaries, ARM64));
+  await fs.rm(path.join(binaries, X64));
+  expect((await attempt("arm64")).stderr).toBe("");
 });
 
 it("hands Node an event far larger than a pipe buffer when no build starts", async () => {
