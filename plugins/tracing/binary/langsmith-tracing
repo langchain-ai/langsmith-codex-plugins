@@ -28,7 +28,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
       if [ -z "$event" ]; then
         event=$(mktemp "${TMPDIR:-/tmp}/langsmith-tracing.XXXXXX") || break
         trap 'rm -f "$event"' EXIT
-        cat >"$event"
+        cat >"$event" || :
       fi
       code=0
       "$build" "$@" <"$event" || code=$?
@@ -38,7 +38,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
     fi
   done
   if [ -n "$event" ]; then
-    echo "langsmith-tracing: the carried macOS build could not run, falling back to Node" >&2
+    (echo "langsmith-tracing: the carried macOS build could not run, falling back to Node" >&2) || :
     code=0
     node "$root/dist/index.mjs" "$@" <"$event" || code=$?
     exit "$code"

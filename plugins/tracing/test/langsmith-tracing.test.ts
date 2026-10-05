@@ -45,7 +45,7 @@ async function build(name: string, says: string) {
 
 async function unstartableBuild(name: string) {
   const file = path.join(binaries, name);
-  await fs.writeFile(file, `${String.fromCharCode(0, 1)}not a program at all`, { mode: 0o755 });
+  await fs.writeFile(file, "#!/langsmith/no-such-interpreter\n", { mode: 0o755 });
 }
 
 async function killedBuild(name: string) {
@@ -276,6 +276,92 @@ it("survives a Windows clone runnable, where Git rewrites line endings", async (
   await fs.writeFile(path.join(root, relative), converted);
   await fs.chmod(path.join(root, relative), 0o755);
   expect(await pick("arm64")).toBe("arm64 build");
+});
+
+it("runs the carried build when the event cannot be read at all", async () => {
+  await build(ARM64, "arm64 build");
+  const fakeUname = path.join(root, "uname");
+  await fs.writeFile(fakeUname, '#!/bin/sh\n[ "$1" = "-m" ] && echo arm64 || echo Darwin\n', {
+    mode: 0o755,
+  });
+  const closed = spawnSync("/bin/sh", ["-c", `"${path.join(root, relative)}" 0<&-`], {
+    encoding: "utf8",
+    env: { ...process.env, PATH: `${root}:${process.env.PATH}`, PLUGIN_ROOT: root },
+  });
+  expect(closed.stdout.trim()).toBe("arm64 build");
+  expect(closed.status).toBe(0);
+  const folder = spawnSync("/bin/sh", ["-c", `"${path.join(root, relative)}" <"${root}"`], {
+    encoding: "utf8",
+    env: { ...process.env, PATH: `${root}:${process.env.PATH}`, PLUGIN_ROOT: root },
+  });
+  expect(folder.stdout.trim()).toBe("arm64 build");
+  expect(folder.status).toBe(0);
+});
+
+it("falls back to Node when the line about falling back cannot be written", async () => {
+  await unstartableBuild(ARM64);
+  await unstartableBuild(X64);
+  const fakeUname = path.join(root, "uname");
+  await fs.writeFile(fakeUname, '#!/bin/sh\n[ "$1" = "-m" ] && echo arm64 || echo Darwin\n', {
+    mode: 0o755,
+  });
+  const launcher = path.join(root, relative);
+  const env = { ...process.env, PATH: `${root}:${process.env.PATH}`, PLUGIN_ROOT: root };
+  const shut = spawnSync("/bin/sh", ["-c", `"${launcher}" </dev/null 2>&-`], {
+    encoding: "utf8",
+    env,
+  });
+  expect(shut.stdout.trim()).toBe("node fallback");
+  expect(shut.status).toBe(0);
+  const dead = spawnSync(
+    "/bin/sh",
+    ["-c", `exec 3>&1; { "${launcher}" </dev/null 2>&1 1>&3; echo "code $?" >&3; } | true`],
+    { encoding: "utf8", env },
+  );
+  expect(dead.stdout.trim().split("\n")).toEqual(["node fallback", "code 0"]);
+});
+
+it("falls back to Node when there is nowhere to put the copy of the event", async () => {
+  await build(ARM64, "arm64 build");
+  const fakeUname = path.join(root, "uname");
+  await fs.writeFile(fakeUname, '#!/bin/sh\n[ "$1" = "-m" ] && echo arm64 || echo Darwin\n', {
+    mode: 0o755,
+  });
+  const result = spawnSync(path.join(root, relative), [], {
+    encoding: "utf8",
+    input: "the event",
+    env: {
+      ...process.env,
+      PATH: `${root}:${process.env.PATH}`,
+      PLUGIN_ROOT: root,
+      TMPDIR: path.join(root, "no-such-spool"),
+    },
+  });
+  expect(result.stdout.trim()).toBe("node fallback");
+  expect(result.status).toBe(0);
+});
+
+it("starts Node from the plugin root rather than the folder holding the launcher", async () => {
+  const elsewhere = await fs.mkdtemp(path.join(os.tmpdir(), "codex-root-"));
+  try {
+    await fs.mkdir(path.join(elsewhere, "dist"), { recursive: true });
+    await fs.writeFile(
+      path.join(elsewhere, "dist", "index.mjs"),
+      'console.log("node from the plugin root");\n',
+    );
+    const fakeUname = path.join(root, "uname");
+    await fs.writeFile(fakeUname, '#!/bin/sh\n[ "$1" = "-m" ] && echo arm64 || echo Darwin\n', {
+      mode: 0o755,
+    });
+    const result = spawnSync(path.join(root, relative), [], {
+      encoding: "utf8",
+      input: "",
+      env: { ...process.env, PATH: `${root}:${process.env.PATH}`, PLUGIN_ROOT: elsewhere },
+    });
+    expect(result.stdout.trim()).toBe("node from the plugin root");
+  } finally {
+    await fs.rm(elsewhere, { recursive: true, force: true });
+  }
 });
 
 it("the hook command points at a committed script the clone can execute", async () => {
