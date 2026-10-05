@@ -5,21 +5,15 @@ import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { runInstall } from "./install.js";
 import { binary } from "./binary.js";
 import { UNKNOWN_VERSION } from "./binary-constants.js";
-import { usage } from "./messages.js";
-import { pluginShouldStandDown } from "./stand-down.js";
+import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { flagValue, unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { runningCompiledBinary } from "./utils/runningCompiledBinary.js";
-import { drainStdin, readStdin } from "./utils/stdin.js";
+import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
-  if (await pluginShouldStandDown()) {
-    await drainStdin();
-    return;
-  }
-
   const content = await readStdin<{
     session_id: string;
     turn_id: string;
@@ -110,5 +104,7 @@ if (invoked("--help") || invoked("-h")) {
 } else if (invoked("--update")) {
   runUpdate();
 } else {
-  runHook();
+  runHook().catch((error: unknown) => {
+    console.error(tracingFailed(error));
+  });
 }

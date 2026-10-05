@@ -11,6 +11,10 @@ export function unsupportedHost(platform: string, arch: string): string {
   return `The standalone binary only runs on ${publishedHosts()}, not ${platform}-${arch}. Use the Codex plugin instead.`;
 }
 
+export function tracingFailed(error: unknown): string {
+  return `LangSmith tracing failed for this turn: ${error}`;
+}
+
 export function usage(executableName: string): string {
   return `Usage:
   ${executableName} --install [--project] [--tag VERSION]

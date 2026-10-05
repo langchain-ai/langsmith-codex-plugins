@@ -34,6 +34,7 @@
     "installer": "langsmith-plugin-binary installer",
     "test": "vitest",
     "test:binary": "vitest run plugins/tracing/test/binary.test.ts plugins/tracing/test/build-binary.test.ts plugins/tracing/test/install-binary.test.ts",
+    "test:hooks": "vitest run plugins/tracing/test/hook-command.test.ts",
     "test:install": "bash node_modules/@langchain/langsmith-plugin-binary/test/install/cases.sh",
     "test:install:mutations": "bash node_modules/@langchain/langsmith-plugin-binary/test/install/variants.sh",
     "format": "oxfmt",

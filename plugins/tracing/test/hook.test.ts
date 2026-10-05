@@ -63,18 +63,80 @@ async function hook(
     );
   });
 }
+function raw(input: string) {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) => !/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key),
+    ),
+  );
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      [fileURLToPath(new URL("../dist/index.mjs", import.meta.url))],
+      { env: { ...env, HOME: home, TRACE_TO_LANGSMITH: "true" }, cwd: home },
+    );
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, stdout, stderr }));
+    child.stdin.end(input);
+  });
+}
+
+it("leaves the turn alone when the transcript it was handed cannot be read", async () => {
+  const result = await raw(
+    JSON.stringify({
+      hook_event_name: "Stop",
+      session_id: "thread",
+      turn_id: "turn",
+      cwd: home,
+      transcript_path: path.join(home, "absent.jsonl"),
+    }),
+  );
+  expect(result.code).toBe(0);
+  expect(result.stdout).toBe("");
+  expect(result.stderr.trim().split("\n")).toHaveLength(1);
+  expect(result.stderr).toContain("LangSmith tracing failed for this turn");
+});
+
+it("leaves the turn alone when the event it was handed is not JSON", async () => {
+  const result = await raw("not json");
+  expect(result.code).toBe(0);
+  expect(result.stderr).toContain("LangSmith tracing failed for this turn");
+});
+
+it("still refuses a command line it does not recognise", async () => {
+  const result = await new Promise<number | null>((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      [fileURLToPath(new URL("../dist/index.mjs", import.meta.url)), "--nope"],
+      { env: { ...process.env, HOME: home }, cwd: home },
+    );
+    child.on("error", reject);
+    child.on("close", resolve);
+  });
+  expect(result).toBe(1);
+});
+
 it("the installed hook definition is synchronous and preserves Stop timing", async () => {
   const definition = JSON.parse(
     await fs.readFile(new URL("../hooks/hooks.json", import.meta.url), "utf8"),
   );
   const submit = definition.hooks.UserPromptSubmit[0].hooks[0];
   expect(submit.type).toBe("command");
-  expect(submit.command).toBe(`node "$PLUGIN_ROOT/dist/index.mjs"`);
+  expect(submit.command).toBe(`"$PLUGIN_ROOT/binary/langsmith-tracing"`);
   expect(submit.timeout).toBe(10);
   expect(submit.async).toBeUndefined();
   expect(definition.hooks.Stop[0].hooks[0]).toEqual({
     type: "command",
     command: submit.command,
+    commandWindows: submit.commandWindows,
     timeout: 30,
     statusMessage: "Uploading Codex trace to LangSmith",
   });
