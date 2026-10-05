@@ -60,7 +60,7 @@ sessions never reload rebuilt hooks.
 pnpm build       # rebuild plugins/tracing/dist/index.mjs
 pnpm test --run  # the full Vitest suite once
 pnpm format      # oxfmt
-pnpm lint        # formatting, types, install.sh and the committed bundle
+pnpm lint        # formatting, types and the committed bundle
 ```
 
 Run all three before you open a pull request. The tests read real configuration, so run them from
@@ -68,12 +68,11 @@ a shell where `LANGSMITH_*`, `LANGSMITH_CODEX_*` and `TRACE_TO_LANGSMITH` are un
 your values up. Nothing automated covers a live Codex hook-trust check, so do not claim that
 validation unless you performed it.
 
-## Standalone binary
+## Carried macOS builds
 
-The build, the signing, the installer and the updater all come from
+The build and the signing both come from
 [langsmith-plugin-binary](https://github.com/langchain-ai/langsmith-plugin-binary) driven by
-`binary.config.json`, so go to that repository for how any of it works, and change those settings
-and rerun `pnpm installer` rather than editing `install.sh` by hand. Building needs
+`binary.config.json`, so go to that repository for how either of them works. Building needs
 [Bun](https://bun.com). The Build Binary workflow pins that package by commit SHA while
 `devDependencies` pins it by tag, so move both in one change or `build-binary.test.ts` fails.
 

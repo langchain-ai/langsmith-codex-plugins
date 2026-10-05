@@ -4,17 +4,15 @@ A Codex plugin that traces agent turns, tool calls, model metadata, and subagent
 
 ## Prerequisites
 
-- Node.js >= 22.x, or none for the standalone binary or a plugin release that carries the macOS builds
+- Node.js >= 22.x on Windows and Linux, and none on a Mac
 - Codex >= 0.153.4 with synchronous `UserPromptSubmit` plugin hooks enabled and trusted (see below)
 - A LangSmith account and API key
 
 ## Installation
 
-Every option below installs the same tracing integration and only the delivery differs, so you are picking an install method rather than a different product. The plugin is managed by the marketplace and the standalone binary is managed by you.
+Codex installs and updates the plugin for you, and there is nothing else to download.
 
-The plugin ships the compiled macOS builds inside itself, so on a Mac it runs its own copy and needs no Node on your PATH. A small picker at `plugins/tracing/binary/langsmith-tracing` runs whichever build matches your machine, Apple silicon natively and Intel under Rosetta, and falls back to the Node bundle everywhere else. No release carries the builds yet, so today every install takes the Node path and Node >= 22 is still required.
-
-### As a Codex plugin
+The plugin carries the compiled macOS builds inside itself, so on a Mac it runs its own copy and needs no Node on your PATH. A small picker at `plugins/tracing/binary/langsmith-tracing` runs whichever build matches your machine, Apple silicon natively and Intel under Rosetta, and falls back to the Node bundle everywhere else.
 
 Add the marketplace via Codex CLI:
 
@@ -35,37 +33,9 @@ Trust this plugin’s hooks with `/hooks`, or in Codex’s plugin UI when prompt
 
 Codex remembers your answer as a hash of each hook’s wording, so any release that changes a hook command asks everyone to trust it again. This release changes both commands.
 
-If you installed the standalone binary before, remove it once you switch to the plugin, or both copies trace the same session. The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
+The controls require hooks that can apply synchronous blocking decisions. An untrusted, disabled, asynchronous, or unsupported hook is **not** a privacy control.
 
 Current support is based on the released [Codex 0.153.4 UserPromptSubmit implementation](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/hooks/src/events/user_prompt_submit.rs): native `session_id`, `turn_id`, `cwd`, and `prompt`, with synchronous stdout `{ "decision": "block", "reason": "..." }`. Older versions that only support Stop tracing are not sufficient. This is source/automated-test compatibility, not a live Codex smoke-test claim.
-
-### As a standalone binary (beta, macOS arm64 and x64)
-
-The same integration as the plugin, delivered as one file that carries its own JavaScript runtime so it needs no Node on your PATH. The plugin is still the supported path and this binary is the beta we are trialling, so you install and update it yourself. Only macOS arm64 and x64 are built and the installer picks whichever matches your Mac.
-
-Run only one of the two. The plugin and the binary both trace, so a session with both registered is traced twice.
-
-1. Run the installer:
-
-   ```bash
-   curl -LsSf https://langch.in/codex-tracing | bash -s -- --beta
-   ```
-
-   Adding `--beta` takes the newest prerelease and you can drop it once a stable release carries the binary. Without it the installer takes the newest stable release and never a prerelease, so it fails while a prerelease is the only published build.
-
-   The installer checks the download against the SHA-256 the release publishes. It puts the binary at `~/.langsmith/langsmith-codex-tracing` and adds the tracing hooks to `~/.codex/hooks.json`. Run it with `--help` for version pinning and the other options.
-
-2. Set `enabled`, `api_key` and `project` in `~/.codex/langsmith.json`. `enabled` is false by default, so without this the hooks run and trace nothing:
-
-   ```json
-   { "enabled": true, "api_key": "lsv2_pt_...", "project": "codex" }
-   ```
-
-3. Restart Codex, then trust the hooks when prompted.
-
-The binary never updates itself, so run `~/.langsmith/langsmith-codex-tracing --update` when you want a newer release.
-
-To download a release asset by hand instead, take the `-arm64-` or `-x64-` asset matching your Mac and `chmod +x` it, then run it with `--install`. Released binaries are signed and notarized so macOS clears one after a single online Gatekeeper check.
 
 ### Setting environment variables
 

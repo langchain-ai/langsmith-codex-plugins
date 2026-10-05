@@ -2,15 +2,12 @@ import { Client, RunTree } from "langsmith";
 import { createSecretAnonymizer } from "langsmith/anonymizer";
 import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
-import { runInstall } from "./install.js";
 import { binary } from "./binary.js";
-import { UNKNOWN_VERSION } from "./binary-constants.js";
 import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "./shared-config.js";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
-import { flagValue, unknownFlags, wasInvokedWith } from "./utils/argv.js";
-import { runningCompiledBinary } from "./utils/runningCompiledBinary.js";
+import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
@@ -71,18 +68,6 @@ const invoked = (flag: string) => wasInvokedWith(invocationArguments, flag);
 
 const USAGE = usage(binary.target.executableName);
 
-async function runUpdate(): Promise<void> {
-  try {
-    const result = await binary.update({
-      currentVersion: LS_INTEGRATION_VERSION ?? UNKNOWN_VERSION,
-    });
-    console.log(result.status === "updated" ? `updated to ${result.version}` : result.status);
-  } catch (error) {
-    console.error(`update failed: ${error}`);
-    process.exitCode = 1;
-  }
-}
-
 const unrecognised = unknownFlags(invocationArguments);
 
 if (invoked("--help") || invoked("-h")) {
@@ -93,16 +78,6 @@ if (invoked("--help") || invoked("-h")) {
   console.error(`unknown option: ${unrecognised[0]}`);
   console.error(USAGE);
   process.exitCode = 1;
-} else if (invoked("--install") || invoked("--print")) {
-  runInstall({
-    source: runningCompiledBinary() ? process.execPath : undefined,
-    currentVersion: LS_INTEGRATION_VERSION,
-    projectScoped: invoked("--project"),
-    print: invoked("--print"),
-    tag: flagValue(invocationArguments, "--tag"),
-  });
-} else if (invoked("--update")) {
-  runUpdate();
 } else {
   runHook().catch((error: unknown) => {
     console.error(tracingFailed(error));
