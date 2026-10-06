@@ -1,7 +1,7 @@
 {
   "name": "tracing",
-  "version": "0.1.0",
-  "description": "Trace OpenAI Codex rollout transcripts to LangSmith.",
+  "version": "0.2.0",
+  "description": "Traces Codex conversations to LangSmith, including subagent and tool executions",
   "author": {
     "name": "LangChain",
     "email": "support@langchain.com",
@@ -14,8 +14,8 @@
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Tracing",
-    "shortDescription": "Trace Codex turns to LangSmith",
-    "longDescription": "Uploads completed OpenAI Codex rollout transcripts to LangSmith so teams can inspect Codex sessions as run trees.",
+    "shortDescription": "Trace Codex sessions to LangSmith",
+    "longDescription": "Traces Codex sessions to LangSmith with full observability: model calls, tool and shell executions, and subagent threads",
     "developerName": "LangChain",
     "category": "Coding",
     "capabilities": ["Read"],
