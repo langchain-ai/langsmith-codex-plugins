@@ -384,7 +384,9 @@ it("keeps privacy output and unrelated root metadata through a final patch", asy
     throw new Error("Incremental delivery checkpoint was not written");
   const checkpointPath = path.join(temporaryDirectory, checkpointFile);
   const checkpoint = await fs.readFile(checkpointPath, "utf8");
-  expect(checkpoint).not.toContain("metadata");
+  expect(JSON.parse(checkpoint).recovery.metadata).toEqual({
+    ls_tracing_mode: "metadata",
+  });
   expect(checkpoint).not.toContain("outputs");
   expect(checkpoint).not.toContain("must not reach the wire");
   expect((await fs.stat(checkpointPath)).mode & 0o777).toBe(0o600);

@@ -1,5 +1,7 @@
 import type { Client, Run } from "langsmith";
 
+export type IncrementalRunUpdate = Parameters<Client["updateRun"]>[1];
+
 export type IncrementalRunCreate = Parameters<Client["createRun"]>[0];
 export type IncrementalCreateOptions = Parameters<Client["createRun"]>[1];
 
@@ -33,6 +35,8 @@ export interface IncrementalDeliveryCheckpoint extends IncrementalDeliveryIdenti
   topology: IncrementalRunTopology;
   createAttempted: true;
   deliveredDigest?: string;
+  finalized?: true;
+  recovery?: IncrementalRecovery;
 }
 
 export interface IncrementalDeliveryStoreHandle {
@@ -43,4 +47,11 @@ export interface IncrementalDeliveryStoreHandle {
 export interface VerifiedIncrementalRun {
   existing: Run;
   projectId: string;
+}
+
+export interface IncrementalRecovery {
+  redactionPolicy?: string;
+  turnKey: string;
+  metadata: Record<string, unknown>;
+  endTime?: number | string;
 }

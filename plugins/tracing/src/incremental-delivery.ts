@@ -1,3 +1,4 @@
+import { REPOSITORY_METADATA_KEYS } from "./metadata-constants.js";
 import { normalizedTime } from "./utils/time.js";
 import { errorStatus } from "./utils/http.js";
 import { copyExtraThroughJson, digestFor, containsExpected } from "./utils/serialization.js";
@@ -5,6 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { Client, Run } from "langsmith";
 import { TRACE_UPLOAD_CONFLICT_STATUS } from "./constants.js";
 import {
+  INCREMENTAL_RECOVERY_METADATA_KEYS,
   INCREMENTAL_DELIVERY_READ_DELAYS,
   INCREMENTAL_DELIVERY_PATCH_FIELDS,
   INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS,
@@ -13,6 +15,7 @@ import type {
   IncrementalCreateOptions,
   IncrementalDeliveryCheckpoint,
   IncrementalRunCreate,
+  IncrementalRunUpdate,
   VerifiedIncrementalRun,
 } from "./models/incremental-delivery.js";
 import { withIncrementalDeliveryCheckpoint } from "./incremental-delivery-store.js";
@@ -40,7 +43,7 @@ async function readIndexedRun(client: Client, runId: string): Promise<Run> {
   return client.readRun(runId);
 }
 
-async function readAndValidate(
+export async function readAndValidate(
   client: Client,
   options: IncrementalCreateOptions | undefined,
   endpoint: string,
@@ -72,9 +75,9 @@ function updatePayloadFromCreate(
   };
 }
 
-async function patchAndVerify(
+export async function patchAndVerify(
   client: Client,
-  update: ReturnType<typeof updatePayloadFromCreate>,
+  update: IncrementalRunUpdate,
   options: IncrementalCreateOptions | undefined,
   endpoint: string,
   checkpoint: IncrementalDeliveryCheckpoint,
@@ -126,7 +129,11 @@ async function postWithConflictRecovery(
       await patchAndVerify(client, update, options, endpoint, checkpoint);
     }
   }
-  await save({ ...checkpoint, deliveredDigest: digest });
+  await save({
+    ...checkpoint,
+    deliveredDigest: digest,
+    ...(finalize ? { finalized: true as const } : {}),
+  });
 }
 
 async function deliverCreate(
@@ -137,8 +144,31 @@ async function deliverCreate(
   rolloutFile: string,
   turnKey: string,
   finalize: boolean,
+  redact?: <T>(value: T) => T,
+  redactionPolicy?: string,
 ) {
   const cleanRun = copyExtraThroughJson(run);
+  const originalMetadata = asRecord(asRecord(cleanRun.extra).metadata);
+  const recoveryMetadata = Object.fromEntries(
+    [...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].flatMap((key) =>
+      typeof originalMetadata[key] !== "string" ||
+      (originalMetadata.ls_tracing_mode === "metadata" &&
+        key !== "thread_id" &&
+        key !== "turn_id" &&
+        key !== "ls_tracing_mode")
+        ? []
+        : [[key, originalMetadata[key]]],
+    ),
+  );
+  const recovery = {
+    turnKey,
+    ...(redactionPolicy === undefined ? {} : { redactionPolicy }),
+    metadata: {
+      ...(redact ? redact(recoveryMetadata) : recoveryMetadata),
+      ls_tracing_mode: originalMetadata.ls_tracing_mode === "metadata" ? "metadata" : "full",
+    },
+    ...(cleanRun.end_time === undefined ? {} : { endTime: cleanRun.end_time }),
+  };
   if (!finalize) {
     cleanRun.end_time = undefined;
     const extra = asRecord(cleanRun.extra);
@@ -170,6 +200,7 @@ async function deliverCreate(
         ...identity,
         topology: topologyFor(cleanRun),
         createAttempted: true,
+        recovery,
       };
       await store.save(checkpoint);
       const digest = digestFor(canonicalCreate(cleanRun, checkpoint));
@@ -199,7 +230,11 @@ async function deliverCreate(
         }
         const update = updatePayloadFromCreate(canonical, verified.existing, checkpoint);
         await patchAndVerify(client, update, options, endpoint, checkpoint);
-        await store.save({ ...checkpoint, deliveredDigest: digest });
+        await store.save({
+          ...checkpoint,
+          deliveredDigest: digest,
+          ...(finalize ? { finalized: true as const } : {}),
+        });
         return;
       } catch (error) {
         if (errorStatus(error) !== 404) throw error;
@@ -220,7 +255,11 @@ async function deliverCreate(
     const verified = await readAndValidate(client, options, endpoint, checkpoint);
     const update = updatePayloadFromCreate(canonical, verified.existing, checkpoint);
     await patchAndVerify(client, update, options, endpoint, checkpoint);
-    await store.save({ ...checkpoint, deliveredDigest: digest });
+    await store.save({
+      ...checkpoint,
+      deliveredDigest: digest,
+      ...(finalize ? { finalized: true as const } : {}),
+    });
   });
 }
 
@@ -230,6 +269,8 @@ export function trackIncrementalDelivery(
   rolloutFile: string,
   turnKey: string,
   finalize = true,
+  redact?: <T>(value: T) => T,
+  redactionPolicy?: string,
 ): Client {
   const createRun = client.createRun.bind(client);
   return new Proxy(client, {
@@ -245,6 +286,8 @@ export function trackIncrementalDelivery(
               rolloutFile,
               turnKey,
               finalize,
+              redact,
+              redactionPolicy,
             );
           } catch (error) {
             errors.push(error);

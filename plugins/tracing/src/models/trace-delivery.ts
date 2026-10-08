@@ -25,6 +25,7 @@ export interface TraceConversionOptions {
   events?: LineSchema[];
   capturedTools?: CapturedTool[];
   redactCapture?: CaptureRedactor;
+  redactionPolicy?: string;
   hook?: TracingHookInput;
   parentRunTree?: RunTree;
   client?: Client;

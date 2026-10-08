@@ -72,7 +72,7 @@ To mute by default instead of thread by thread, set `LANGSMITH_CODEX_DEFAULT_MUT
 
 ## What gets traced
 
-Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. Stop uploads run in the background so prompts stay responsive, while mute and unmute controls finish before the prompt continues. Closing Codex can cancel a pending upload, which retries when the transcript is processed again; no background service keeps running after exit. Retries keep the original parent-child placement.
+Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. Supported tool results upload in the background during a turn. Their spans stay open until Stop fills Git metadata and finalizes their recorded completion times. Model calls, hosted tools and subagent traces upload at Stop. Mute and unmute controls finish before the prompt continues. Closing Codex can cancel a pending upload, which retries when the transcript is processed again; no background service keeps running after exit. Retries keep the original IDs and parent-child placement. Full tracing keeps a redacted local copy of the turn until delivery succeeds; the original Codex transcript is never deleted.
 
 When muted, the structure, timing, identifiers and token counts remain while messages, tool arguments and results are replaced with a placeholder.
 
@@ -124,7 +124,7 @@ Setting this replaces the normal destination rather than adding to it, and an em
 
 With tracing on, a full turn uploads your messages, tool inputs and outputs, metadata, token usage and subagent structure. A muted turn uploads the structure and placeholders instead. Keep tracing off if none of that may leave your machine.
 
-Full traces include Git repository and author details when a tool path can be resolved. Opaque code wrappers without structured paths have no per-tool Git attribution.
+Full traces include Git repository and author details when a tool path can be resolved. Calls without a resolved repository inherit the turn’s Git metadata, while calls in another repository keep their own attribution.
 
 ## Development
 

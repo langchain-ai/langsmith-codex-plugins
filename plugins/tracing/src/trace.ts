@@ -536,6 +536,8 @@ async function postTurn(
         rolloutFile,
         turnKey,
         !options?.partial,
+        options?.redactCapture,
+        options?.redactionPolicy,
       )
     : trackRunDelivery(sourceClient, deliveryErrors);
   const replicas = options?.replicas?.map((replica) => {
@@ -550,6 +552,8 @@ async function postTurn(
               rolloutFile,
               turnKey,
               !options?.partial,
+              options?.redactCapture,
+              options?.redactionPolicy,
             )
           : trackRunDelivery(replicaClient, deliveryErrors)
         : client,

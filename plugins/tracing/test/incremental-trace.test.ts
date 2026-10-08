@@ -251,3 +251,213 @@ it("uploads a tool early then patches the same root and tool runs with final rep
     "uploaded",
   );
 });
+
+it("keeps a pre-only tool pending at Stop and reconciles its late result exactly once", async () => {
+  const original = await installTranscript("full");
+  await recordToolHook(hookInput("PreToolUse"), "full");
+
+  const stop = hookInput("Stop");
+  await convertToRunTree(
+    { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+    optionsFor(stop),
+  );
+
+  const openRoot = runNamed("openai.codex");
+  const writesBeforePost = writeRequests().length;
+  expect(openRoot.end_time).toBeUndefined();
+  expect((await loadTurnStates(transcriptPath)).has(INCREMENTAL_TRACE_TEST.turnId)).toBe(false);
+
+  const post = hookInput("PostToolUse");
+  await convertToRunTree(
+    { transcript_path: post.transcript_path, turn_id: post.turn_id },
+    optionsFor(post),
+  );
+
+  const completedRoot = runNamed("openai.codex");
+  const tool = runNamed("exec_command");
+  expect(completedRoot.id).toBe(openRoot.id);
+  expect(tool.outputs).toMatchObject({
+    output: { stdout: INCREMENTAL_TRACE_TEST.toolOutputSecret },
+  });
+  expect(writeRequests().length).toBeGreaterThan(writesBeforePost);
+  expect((await loadTurnStates(transcriptPath)).get(INCREMENTAL_TRACE_TEST.turnId)).toBe(
+    "uploaded",
+  );
+  expect(await fs.readFile(transcriptPath, "utf8")).toBe(original);
+
+  const writesAfterCompletion = writeRequests();
+  await convertToRunTree(
+    { transcript_path: post.transcript_path, turn_id: post.turn_id },
+    optionsFor(post),
+  );
+  expect(writeRequests()).toEqual(writesAfterCompletion);
+});
+
+it("uses the saved full-mode snapshot when the host transcript disappears before Stop", async () => {
+  await installTranscript("full");
+  await recordToolHook(hookInput("PreToolUse"), "full");
+  const post = hookInput("PostToolUse");
+  await convertToRunTree(
+    { transcript_path: post.transcript_path, turn_id: post.turn_id },
+    optionsFor(post),
+  );
+
+  const captureDirectory = turnCaptureDirectory(transcriptPath, INCREMENTAL_TRACE_TEST.turnId);
+  const snapshotPath = `${captureDirectory}/${TURN_CAPTURE_TRANSCRIPT}`;
+  await expect(fs.stat(snapshotPath)).resolves.toBeDefined();
+  await fs.unlink(transcriptPath);
+
+  const stop = hookInput("Stop");
+  await convertToRunTree(
+    { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+    optionsFor(stop),
+  );
+
+  expect(runNamed("openai.codex").end_time).toBeDefined();
+  expect(runNamed("exec_command").outputs).toMatchObject({
+    output: { stdout: INCREMENTAL_TRACE_TEST.toolOutputSecret },
+  });
+  expect((await loadTurnStates(transcriptPath)).get(INCREMENTAL_TRACE_TEST.turnId)).toBe(
+    "uploaded",
+  );
+});
+
+it("keeps the reconciliation plan and capture after a failed patch then retries with the saved metadata", async () => {
+  await installTranscript("full");
+  await recordToolHook(hookInput("PreToolUse"), "full");
+  const post = hookInput("PostToolUse");
+  await convertToRunTree(
+    { transcript_path: post.transcript_path, turn_id: post.turn_id },
+    optionsFor(post),
+  );
+
+  const rootId = runNamed("openai.codex").id;
+  const captureDirectory = turnCaptureDirectory(transcriptPath, INCREMENTAL_TRACE_TEST.turnId);
+  local.failPatchRunIds.add(rootId);
+  const stop = hookInput("Stop");
+  await expect(
+    convertToRunTree(
+      { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+      optionsFor(stop),
+    ),
+  ).rejects.toThrow();
+
+  expect((await loadTurnStates(transcriptPath)).has(INCREMENTAL_TRACE_TEST.turnId)).toBe(false);
+  await expect(fs.stat(captureDirectory)).resolves.toBeDefined();
+  const planPath = `${captureDirectory}/${TURN_CAPTURE_PLAN}`;
+  const savedPlan = JSON.parse(await fs.readFile(planPath, "utf8")) as ReconciliationMetadata;
+  expect(savedPlan.root.repository_url).toBe(INCREMENTAL_TRACE_TEST.repoBUrl);
+  expect(savedPlan.tools[INCREMENTAL_TRACE_TEST.toolId]?.repository_url).toBe(
+    INCREMENTAL_TRACE_TEST.repoBUrl,
+  );
+
+  gitLookups.set(INCREMENTAL_TRACE_TEST.toolCwd, SYNTHETIC_REPOSITORY_A);
+  await convertToRunTree(
+    { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+    optionsFor(stop),
+  );
+
+  expect(runNamed("openai.codex").extra).toMatchObject({
+    metadata: { repository_url: INCREMENTAL_TRACE_TEST.repoBUrl },
+  });
+  expect(runNamed("exec_command").extra).toMatchObject({
+    metadata: { repository_url: INCREMENTAL_TRACE_TEST.repoBUrl },
+  });
+  expect((await loadTurnStates(transcriptPath)).get(INCREMENTAL_TRACE_TEST.turnId)).toBe(
+    "uploaded",
+  );
+  await expect(fs.stat(captureDirectory)).rejects.toMatchObject({ code: "ENOENT" });
+  const rootPatches = writeRequests().filter(
+    (request) => request.method === "PATCH" && request.pathname === `/runs/${rootId}`,
+  );
+  expect(rootPatches).toHaveLength(2);
+  const postedIds = writeRequests()
+    .filter((request) => request.method === "POST")
+    .map((request) => request.body?.id)
+    .filter((id): id is string => typeof id === "string");
+  expect(new Set(postedIds).size).toBe(postedIds.length);
+});
+
+it("reuses the saved final run after Stop loses its local acknowledgement", async () => {
+  await installTranscript("full");
+  const post = hookInput("PostToolUse");
+  await convertToRunTree(
+    { transcript_path: post.transcript_path, turn_id: post.turn_id },
+    optionsFor(post),
+  );
+
+  const stop = hookInput("Stop");
+  const acknowledge = vi
+    .spyOn(traceDeliveryStore, "markTurnHandled")
+    .mockRejectedValueOnce(new Error("synthetic local acknowledgement failure"));
+  try {
+    await expect(
+      convertToRunTree(
+        { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+        optionsFor(stop),
+      ),
+    ).rejects.toThrow("synthetic local acknowledgement failure");
+  } finally {
+    acknowledge.mockRestore();
+  }
+
+  const root = runNamed("openai.codex");
+  const firstPatch = local.requests.find(
+    (request) => request.method === "PATCH" && request.pathname === `/runs/${root.id}`,
+  );
+  expect(firstPatch?.body?.end_time).toBeDefined();
+  await convertToRunTree(
+    { transcript_path: stop.transcript_path, turn_id: stop.turn_id },
+    optionsFor(stop),
+  );
+
+  const rootPatches = local.requests.filter(
+    (request) => request.method === "PATCH" && request.pathname === `/runs/${root.id}`,
+  );
+  expect(rootPatches).toHaveLength(1);
+  expect(local.runs.get(root.id)?.end_time).toBe(firstPatch?.body?.end_time);
+  expect((await loadTurnStates(transcriptPath)).get(INCREMENTAL_TRACE_TEST.turnId)).toBe(
+    "uploaded",
+  );
+});
+
+it.each(["metadata", "off"] as const)(
+  "keeps %s-mode tool content out of captures and requests",
+  async (mode) => {
+    await installTranscript(mode);
+    await recordToolHook(hookInput("PreToolUse"), mode);
+    const post = hookInput("PostToolUse");
+    await convertToRunTree(
+      { transcript_path: post.transcript_path, turn_id: post.turn_id },
+      optionsFor(post),
+    );
+
+    const captureDirectory = turnCaptureDirectory(transcriptPath, INCREMENTAL_TRACE_TEST.turnId);
+    const captureFiles = await fs
+      .readdir(captureDirectory)
+      .catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return [];
+        throw error;
+      });
+    const ownedCapture = await Promise.all(
+      captureFiles.map(async (file) => [
+        file,
+        await fs.readFile(path.join(captureDirectory, file), "utf8"),
+      ]),
+    );
+    const payload = JSON.stringify({ requests: local.requests, capture: ownedCapture });
+    expect(payload).not.toContain(INCREMENTAL_TRACE_TEST.requestSecret);
+    expect(payload).not.toContain(INCREMENTAL_TRACE_TEST.toolInputSecret);
+    expect(payload).not.toContain(INCREMENTAL_TRACE_TEST.toolOutputSecret);
+
+    if (mode === "metadata") {
+      expect(local.runs.size).toBeGreaterThan(0);
+      expect(ownedCapture.length).toBeGreaterThan(0);
+      expect(JSON.stringify(ownedCapture)).not.toContain('"input":');
+      expect(JSON.stringify(ownedCapture)).not.toContain('"output":');
+    } else {
+      expect(local.runs.size).toBe(0);
+      expect(ownedCapture).toEqual([]);
+    }
+  },
+);

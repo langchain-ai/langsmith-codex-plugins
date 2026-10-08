@@ -11,6 +11,8 @@ export const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
   "topology",
   "createAttempted",
   "deliveredDigest",
+  "recovery",
+  "finalized",
 ] as const;
 export const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
   "parentRunId",
@@ -42,4 +44,18 @@ export const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
   "ls_integration",
   "ls_agent_type",
   "ls_tracing_mode",
+] as const;
+
+export const INCREMENTAL_RECOVERY_METADATA_KEYS = [
+  "thread_id",
+  "turn_id",
+  "cwd",
+  "ls_tracing_mode",
+] as const;
+
+export const INCREMENTAL_RECOVERY_KEYS = [
+  "turnKey",
+  "metadata",
+  "endTime",
+  "redactionPolicy",
 ] as const;

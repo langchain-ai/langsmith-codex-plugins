@@ -8,6 +8,8 @@ import {
   INCREMENTAL_DELIVERY_MAX_BYTES,
   INCREMENTAL_DELIVERY_STORE_SUFFIX,
   INCREMENTAL_DELIVERY_TOPOLOGY_KEYS,
+  INCREMENTAL_RECOVERY_METADATA_KEYS,
+  INCREMENTAL_RECOVERY_KEYS,
 } from "./constants/incremental-delivery.js";
 import type {
   IncrementalDeliveryCheckpoint,
@@ -15,6 +17,7 @@ import type {
   IncrementalDeliveryStoreHandle,
 } from "./models/incremental-delivery.js";
 import { withFileLock } from "./utils/fileLock.js";
+import { REPOSITORY_METADATA_KEYS } from "./metadata-constants.js";
 import { isRecord } from "./utils/objects.js";
 
 function checkpointPath(
@@ -30,7 +33,7 @@ function checkpointPath(
   return `${path.resolve(rolloutFile)}${INCREMENTAL_DELIVERY_STORE_SUFFIX}-${identityHash}.json`;
 }
 
-function validateCheckpoint(
+export function validateCheckpoint(
   value: unknown,
   identity: IncrementalDeliveryIdentity,
 ): IncrementalDeliveryCheckpoint {
@@ -52,6 +55,27 @@ function validateCheckpoint(
     typeof topology.startTime === "string" ||
     (typeof topology.startTime === "number" && Number.isFinite(topology.startTime));
   if (
+    typeof value.endpoint !== "string" ||
+    typeof value.projectName !== "string" ||
+    typeof value.runId !== "string" ||
+    (value.recovery !== undefined &&
+      (!isRecord(value.recovery) ||
+        typeof value.recovery.turnKey !== "string" ||
+        (value.recovery.redactionPolicy !== undefined &&
+          (typeof value.recovery.redactionPolicy !== "string" ||
+            !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.recovery.redactionPolicy))) ||
+        !isRecord(value.recovery.metadata) ||
+        Object.keys(value.recovery).some(
+          (key) => !INCREMENTAL_RECOVERY_KEYS.includes(key as never),
+        ) ||
+        Object.entries(value.recovery.metadata).some(
+          ([key, item]) =>
+            ![...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].includes(
+              key as never,
+            ) || typeof item !== "string",
+        ) ||
+        (value.recovery.endTime !== undefined &&
+          !Number.isFinite(new Date(value.recovery.endTime as string | number).getTime())))) ||
     value.endpoint !== identity.endpoint ||
     value.projectName !== identity.projectName ||
     value.runId !== identity.runId ||
@@ -61,6 +85,7 @@ function validateCheckpoint(
       (typeof value.credentialHash !== "string" ||
         !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash))) ||
     value.createAttempted !== true ||
+    (value.finalized !== undefined && value.finalized !== true) ||
     (value.deliveredDigest !== undefined &&
       (typeof value.deliveredDigest !== "string" ||
         !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest))) ||
@@ -88,6 +113,10 @@ function validateCheckpoint(
       runType: topology.runType,
     },
     createAttempted: true,
+    ...(value.finalized === true ? { finalized: true } : {}),
+    ...(value.recovery === undefined
+      ? {}
+      : { recovery: value.recovery as unknown as IncrementalDeliveryCheckpoint["recovery"] }),
     ...(value.deliveredDigest === undefined ? {} : { deliveredDigest: value.deliveredDigest }),
   };
 }

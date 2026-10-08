@@ -17309,6 +17309,219 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
+//#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
+//#endregion
+//#region src/utils/serialization.ts
+function copyExtraThroughJson(run) {
+	const copy = { ...run };
+	const extra = run.extra;
+	if (extra != null && typeof extra === "object") {
+		const serialized = JSON.stringify(extra);
+		if (serialized === void 0) delete copy.extra;
+		else copy.extra = JSON.parse(serialized);
+	}
+	return copy;
+}
+function sortedJson(value) {
+	if (value === null || typeof value !== "object") return JSON.stringify(value);
+	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
+	const record = value;
+	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
+}
+function digestFor(value) {
+	const json = JSON.stringify(value);
+	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
+	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
+}
+function containsExpected(actual, expected) {
+	if (expected === void 0) return true;
+	if (expected === null || typeof expected !== "object") return actual === expected;
+	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
+	const record = asRecord(actual);
+	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
+}
+//#endregion
+//#region src/tracing-policy.ts
+function isMode(value) {
+	return value === "full" || value === "metadata";
+}
+function isTurnMode(value) {
+	return isMode(value) || value === "off";
+}
+function validThread(value) {
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
+		"preference",
+		"turns",
+		"inherited"
+	].includes(key));
+}
+function isObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasCode(error, code) {
+	return isObject(error) && error.code === code;
+}
+/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
+function readPolicy(path) {
+	let raw;
+	try {
+		raw = readFileSync(path, "utf8");
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) try {
+			lstatSync(path);
+		} catch (statError) {
+			if (hasCode(statError, "ENOENT")) return {
+				version: 1,
+				threads: {}
+			};
+			throw statError;
+		}
+		throw error;
+	}
+	const value = JSON.parse(raw);
+	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+	return value;
+}
+function defaultPrivacyPath() {
+	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+}
+function threadPolicy(policy, id) {
+	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
+}
+/** No launch evidence means metadata-only, never today's sticky preference. */
+function savedTurnMode(file, sessionId, turnId) {
+	try {
+		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.inherited) return thread.inherited;
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+	} catch {
+		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
+	}
+}
+/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
+function parseTracingCommand(prompt) {
+	if (prompt === "langsmith-tracing:mute") return "mute";
+	if (prompt === "langsmith-tracing:unmute") return "unmute";
+}
+/**
+* Independent of tracing state and its pruning. Writers serialize through an
+* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
+* No age/PID-based stealing: even a slow live writer is safe.
+* A crashed writer's lock requires explicit removal after confirming it is idle.
+* Rename commits the effective preference. Later durability/cleanup failures are
+* returned as local warnings, not thrown as if the preference were unchanged.
+*/
+async function updatePolicy(path, update) {
+	const lockPath = `${path}.lock`;
+	await mkdir(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const deadline = performance$1.now() + 2e3;
+	let locked = false;
+	while (!locked) try {
+		await mkdir(lockPath, { mode: 448 });
+		locked = true;
+	} catch (error) {
+		if (!hasCode(error, "EEXIST")) throw error;
+		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
+		await setTimeout$1(10 + Math.random() * 20);
+	}
+	const warnings = [];
+	async function bestEffort(action, message) {
+		try {
+			await action();
+		} catch (error) {
+			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	let tempPath;
+	try {
+		let policy;
+		try {
+			policy = readPolicy(path);
+		} catch (error) {
+			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
+		}
+		update(policy);
+		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+		const temp = await open(tempPath, "wx", 384);
+		try {
+			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
+			await temp.sync();
+		} catch (error) {
+			await bestEffort(() => temp.close(), "Temporary file close failed");
+			throw error;
+		}
+		await temp.close();
+		await rename(tempPath, path);
+		tempPath = void 0;
+		await bestEffort(async () => {
+			const directory = await open(dirname(path), "r");
+			try {
+				await directory.sync();
+			} finally {
+				await bestEffort(() => directory.close(), "Directory close cleanup failed");
+			}
+		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
+	} finally {
+		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
+		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+function requireIds(sessionId, turnId) {
+	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
+}
+/** One atomic transaction preserves active/queued snapshots before changing preference. */
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+	requireIds(sessionId, turnId);
+	return updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
+			...thread.turns,
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+		};
+		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+}
+/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
+async function inheritThreadMode(file, sessionId, mode) {
+	let inherited = "metadata";
+	const result = await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.inherited ??= mode;
+		inherited = thread.inherited;
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	return inherited;
+}
+//#endregion
 //#region src/utils/files.ts
 async function writeCapture(file, value, firstWriteWins = false) {
 	const temporary = `${file}.${randomUUID()}.tmp`;
@@ -17503,17 +17716,6 @@ async function withFileLock(lockPath, action) {
 	}
 }
 //#endregion
-//#region src/utils/objects.ts
-function asRecord(value) {
-	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
-}
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
 //#region src/tool-capture-constants.ts
 const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
 const TURN_CAPTURE_LOCK_SUFFIX = ".langsmith-capture.lock";
@@ -17662,6 +17864,35 @@ async function reconciliationMetadata(transcript, turn, proposed) {
 	return proposed;
 }
 //#endregion
+//#region src/metadata-constants.ts
+const GIT_COMMAND_TIMEOUT_MS = 2e3;
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
+const GITHUB_HOSTS_FILE = "hosts.yml";
+const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
+const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
+const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_SUFFIX = /\.git$/;
+//#endregion
 //#region src/utils/time.ts
 function normalizedTime(value) {
 	if (typeof value === "number") return value;
@@ -17686,36 +17917,6 @@ function errorStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region src/utils/serialization.ts
-function copyExtraThroughJson(run) {
-	const copy = { ...run };
-	const extra = run.extra;
-	if (extra != null && typeof extra === "object") {
-		const serialized = JSON.stringify(extra);
-		if (serialized === void 0) delete copy.extra;
-		else copy.extra = JSON.parse(serialized);
-	}
-	return copy;
-}
-function sortedJson(value) {
-	if (value === null || typeof value !== "object") return JSON.stringify(value);
-	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
-	const record = value;
-	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
-}
-function digestFor(value) {
-	const json = JSON.stringify(value);
-	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
-	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
-}
-function containsExpected(actual, expected) {
-	if (expected === void 0) return true;
-	if (expected === null || typeof expected !== "object") return actual === expected;
-	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
-	const record = asRecord(actual);
-	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
-}
-//#endregion
 //#region src/constants/incremental-delivery.ts
 const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
 const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
@@ -17728,7 +17929,9 @@ const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
 	"credentialHash",
 	"topology",
 	"createAttempted",
-	"deliveredDigest"
+	"deliveredDigest",
+	"recovery",
+	"finalized"
 ];
 const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
 	"parentRunId",
@@ -17763,6 +17966,18 @@ const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
 	"ls_agent_type",
 	"ls_tracing_mode"
 ];
+const INCREMENTAL_RECOVERY_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"cwd",
+	"ls_tracing_mode"
+];
+const INCREMENTAL_RECOVERY_KEYS = [
+	"turnKey",
+	"metadata",
+	"endTime",
+	"redactionPolicy"
+];
 //#endregion
 //#region src/incremental-delivery-store.ts
 function checkpointPath(rolloutFile, turnKey, identity) {
@@ -17774,7 +17989,7 @@ function validateCheckpoint(value, identity) {
 	if (Object.keys(value).some((key) => !INCREMENTAL_DELIVERY_CHECKPOINT_KEYS.includes(key)) || Object.keys(value.topology).some((key) => !INCREMENTAL_DELIVERY_TOPOLOGY_KEYS.includes(key))) throw new Error("Incremental delivery checkpoint is invalid");
 	const topology = value.topology;
 	const validStartTime = typeof topology.startTime === "string" || typeof topology.startTime === "number" && Number.isFinite(topology.startTime);
-	if (value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
+	if (typeof value.endpoint !== "string" || typeof value.projectName !== "string" || typeof value.runId !== "string" || value.recovery !== void 0 && (!isRecord(value.recovery) || typeof value.recovery.turnKey !== "string" || value.recovery.redactionPolicy !== void 0 && (typeof value.recovery.redactionPolicy !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.recovery.redactionPolicy)) || !isRecord(value.recovery.metadata) || Object.keys(value.recovery).some((key) => !INCREMENTAL_RECOVERY_KEYS.includes(key)) || Object.entries(value.recovery.metadata).some(([key, item]) => ![...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].includes(key) || typeof item !== "string") || value.recovery.endTime !== void 0 && !Number.isFinite(new Date(value.recovery.endTime).getTime())) || value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.finalized !== void 0 && value.finalized !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
 	return {
 		endpoint: identity.endpoint,
 		projectName: identity.projectName,
@@ -17790,6 +18005,8 @@ function validateCheckpoint(value, identity) {
 			runType: topology.runType
 		},
 		createAttempted: true,
+		...value.finalized === true ? { finalized: true } : {},
+		...value.recovery === void 0 ? {} : { recovery: value.recovery },
 		...value.deliveredDigest === void 0 ? {} : { deliveredDigest: value.deliveredDigest }
 	};
 }
@@ -17843,35 +18060,6 @@ function withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, actio
 		});
 	});
 }
-//#endregion
-//#region src/metadata-constants.ts
-const GIT_COMMAND_TIMEOUT_MS = 2e3;
-const GIT_LOCATION_ENV_KEYS = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_COMMON_DIR",
-	"GIT_INDEX_FILE",
-	"GIT_CEILING_DIRECTORIES"
-];
-const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
-const TOOL_PATH_KEYS = [
-	"file_path",
-	"notebook_path",
-	"path"
-];
-const REPOSITORY_METADATA_KEYS = [
-	"repository_url",
-	"repository_provider",
-	"repository_name",
-	"git_branch",
-	"git_commit_sha",
-	"ls_attribution_identifier"
-];
-const GITHUB_HOSTS_FILE = "hosts.yml";
-const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
-const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
-const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
-const GIT_SUFFIX = /\.git$/;
 //#endregion
 //#region src/incremental-run.ts
 function runtimeClientConfig(client) {
@@ -18033,11 +18221,23 @@ async function postWithConflictRecovery(client, createRun, run, options, endpoin
 	}
 	await save({
 		...checkpoint,
-		deliveredDigest: digest
+		deliveredDigest: digest,
+		...finalize ? { finalized: true } : {}
 	});
 }
-async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize) {
+async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize, redact, redactionPolicy) {
 	const cleanRun = copyExtraThroughJson(run);
+	const originalMetadata = asRecord(asRecord(cleanRun.extra).metadata);
+	const recoveryMetadata = Object.fromEntries([...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].flatMap((key) => typeof originalMetadata[key] !== "string" || originalMetadata.ls_tracing_mode === "metadata" && key !== "thread_id" && key !== "turn_id" && key !== "ls_tracing_mode" ? [] : [[key, originalMetadata[key]]]));
+	const recovery = {
+		turnKey,
+		...redactionPolicy === void 0 ? {} : { redactionPolicy },
+		metadata: {
+			...redact ? redact(recoveryMetadata) : recoveryMetadata,
+			ls_tracing_mode: originalMetadata.ls_tracing_mode === "metadata" ? "metadata" : "full"
+		},
+		...cleanRun.end_time === void 0 ? {} : { endTime: cleanRun.end_time }
+	};
 	if (!finalize) {
 		cleanRun.end_time = void 0;
 		cleanRun.extra = {
@@ -18060,7 +18260,8 @@ async function deliverCreate(client, createRun, run, options, rolloutFile, turnK
 			checkpoint = {
 				...identity,
 				topology: topologyFor(cleanRun),
-				createAttempted: true
+				createAttempted: true,
+				recovery
 			};
 			await store.save(checkpoint);
 			const digest = digestFor(canonicalCreate(cleanRun, checkpoint));
@@ -18084,7 +18285,8 @@ async function deliverCreate(client, createRun, run, options, rolloutFile, turnK
 				await patchAndVerify(client, updatePayloadFromCreate(canonical, verified.existing, checkpoint), options, endpoint, checkpoint);
 				await store.save({
 					...checkpoint,
-					deliveredDigest: digest
+					deliveredDigest: digest,
+					...finalize ? { finalized: true } : {}
 				});
 				return;
 			} catch (error) {
@@ -18096,16 +18298,17 @@ async function deliverCreate(client, createRun, run, options, rolloutFile, turnK
 		await patchAndVerify(client, updatePayloadFromCreate(canonical, (await readAndValidate(client, options, endpoint, checkpoint)).existing, checkpoint), options, endpoint, checkpoint);
 		await store.save({
 			...checkpoint,
-			deliveredDigest: digest
+			deliveredDigest: digest,
+			...finalize ? { finalized: true } : {}
 		});
 	});
 }
-function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true) {
+function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true, redact, redactionPolicy) {
 	const createRun = client.createRun.bind(client);
 	return new Proxy(client, { get(target, property) {
 		if (property === "createRun") return async (...args) => {
 			try {
-				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize);
+				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize, redact, redactionPolicy);
 			} catch (error) {
 				errors.push(error);
 				throw error;
@@ -18713,178 +18916,6 @@ function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
-//#region src/tracing-policy.ts
-function isMode(value) {
-	return value === "full" || value === "metadata";
-}
-function isTurnMode(value) {
-	return isMode(value) || value === "off";
-}
-function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
-}
-function isObject(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasCode(error, code) {
-	return isObject(error) && error.code === code;
-}
-/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
-function readPolicy(path) {
-	let raw;
-	try {
-		raw = readFileSync(path, "utf8");
-	} catch (error) {
-		if (hasCode(error, "ENOENT")) try {
-			lstatSync(path);
-		} catch (statError) {
-			if (hasCode(statError, "ENOENT")) return {
-				version: 1,
-				threads: {}
-			};
-			throw statError;
-		}
-		throw error;
-	}
-	const value = JSON.parse(raw);
-	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
-	return value;
-}
-function defaultPrivacyPath() {
-	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
-}
-function threadPolicy(policy, id) {
-	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
-}
-/** No launch evidence means metadata-only, never today's sticky preference. */
-function savedTurnMode(file, sessionId, turnId) {
-	try {
-		const thread = threadPolicy(readPolicy(file), sessionId);
-		if (thread?.inherited) return thread.inherited;
-		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
-	} catch {
-		return "metadata";
-	}
-}
-function hasSavedTurnEvidence(file, sessionId, turnId) {
-	if (!turnId) return false;
-	try {
-		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
-	} catch {
-		return false;
-	}
-}
-/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
-function parseTracingCommand(prompt) {
-	if (prompt === "langsmith-tracing:mute") return "mute";
-	if (prompt === "langsmith-tracing:unmute") return "unmute";
-}
-/**
-* Independent of tracing state and its pruning. Writers serialize through an
-* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
-* No age/PID-based stealing: even a slow live writer is safe.
-* A crashed writer's lock requires explicit removal after confirming it is idle.
-* Rename commits the effective preference. Later durability/cleanup failures are
-* returned as local warnings, not thrown as if the preference were unchanged.
-*/
-async function updatePolicy(path, update) {
-	const lockPath = `${path}.lock`;
-	await mkdir(dirname(path), {
-		recursive: true,
-		mode: 448
-	});
-	const deadline = performance$1.now() + 2e3;
-	let locked = false;
-	while (!locked) try {
-		await mkdir(lockPath, { mode: 448 });
-		locked = true;
-	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
-		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
-		await setTimeout$1(10 + Math.random() * 20);
-	}
-	const warnings = [];
-	async function bestEffort(action, message) {
-		try {
-			await action();
-		} catch (error) {
-			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	let tempPath;
-	try {
-		let policy;
-		try {
-			policy = readPolicy(path);
-		} catch (error) {
-			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
-		}
-		update(policy);
-		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-		const temp = await open(tempPath, "wx", 384);
-		try {
-			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
-			await temp.sync();
-		} catch (error) {
-			await bestEffort(() => temp.close(), "Temporary file close failed");
-			throw error;
-		}
-		await temp.close();
-		await rename(tempPath, path);
-		tempPath = void 0;
-		await bestEffort(async () => {
-			const directory = await open(dirname(path), "r");
-			try {
-				await directory.sync();
-			} finally {
-				await bestEffort(() => directory.close(), "Directory close cleanup failed");
-			}
-		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
-	} finally {
-		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
-		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
-}
-function requireIds(sessionId, turnId) {
-	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
-}
-/** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
-	requireIds(sessionId, turnId);
-	return updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
-			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
-		};
-		if (command) thread.preference = command === "mute" ? "metadata" : "full";
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-}
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
-async function inheritThreadMode(file, sessionId, mode) {
-	let inherited = "metadata";
-	const result = await updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		thread.inherited ??= mode;
-		inherited = thread.inherited;
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
-	return inherited;
-}
-//#endregion
 //#region src/utils/enumerate.ts
 function* enumerate(arr) {
 	for (let i = 0; i < arr.length; i++) yield [
@@ -19273,12 +19304,12 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	if (mode === "off") return;
 	const deliveryErrors = [];
 	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
-	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(sourceClient, deliveryErrors);
+	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy) : trackRunDelivery(sourceClient, deliveryErrors);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
 		return {
 			...replica,
-			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(replicaClient, deliveryErrors) : client
+			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy) : trackRunDelivery(replicaClient, deliveryErrors) : client
 		};
 	});
 	const postPromises = [];
@@ -19835,7 +19866,11 @@ async function runHook() {
 		if (result) console.log(JSON.stringify(result));
 		return;
 	}
-	if (content.hook_event_name !== "Stop") return;
+	if (![
+		"PreToolUse",
+		"PostToolUse",
+		"Stop"
+	].includes(content.hook_event_name)) return;
 	const config = await getConfig({
 		home: process.env.HOME,
 		cwd: content.cwd,
@@ -19843,6 +19878,14 @@ async function runHook() {
 	});
 	if (!config.enabled) return;
 	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
+	if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+		const meta = (await readTranscript(content.transcript_path, content.turn_id)).find((event) => event.type === "session_meta");
+		if (meta?.type === "session_meta" && (meta.payload.id !== content.session_id || meta.payload.thread_source === "subagent" || isRecord(meta.payload.source) && meta.payload.source.subagent != null)) return;
+	}
+	if (content.hook_event_name === "PreToolUse") {
+		await recordToolHook(content, savedTurnMode(defaultPrivacyPath(), content.session_id, content.turn_id), anonymizer);
+		return;
+	}
 	const client = new Client({
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
@@ -19865,6 +19908,12 @@ async function runHook() {
 		project_name: config.project
 	}) : void 0;
 	await convertToRunTree(content, {
+		redactionPolicy: digestFor({
+			redact: config.redact,
+			rules: config.redact_extra_rules
+		}),
+		hook: content,
+		redactCapture: anonymizer,
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
