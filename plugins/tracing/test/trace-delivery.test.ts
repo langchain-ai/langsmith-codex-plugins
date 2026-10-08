@@ -4,8 +4,9 @@ import { Client } from "langsmith";
 import { vol } from "memfs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convertToRunTree } from "../src/trace.js";
-import { loadTurnStates } from "../src/sidecar.js";
+import { loadTurnStates } from "../src/trace-delivery-store.js";
 import { submitPreference } from "../src/tracing-policy.js";
+import type { RolloutEventsOptions, TraceRunExtra } from "./models/trace-delivery.js";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000002";
@@ -113,13 +114,7 @@ async function startDeliveryServer() {
   };
 }
 
-function rolloutEvents(options: {
-  started?: boolean;
-  turnId?: string;
-  threadId?: string;
-  parentThreadId?: string;
-  childThreadId?: string;
-}) {
+function rolloutEvents(options: RolloutEventsOptions) {
   const threadId = options.threadId ?? "thread-id";
   const turnId = options.turnId ?? "turn-id";
   const event = (timestamp: string, type: string, payload: Record<string, unknown>) => ({
@@ -183,7 +178,7 @@ function rolloutEvents(options: {
   return events;
 }
 
-async function writeRollout(file = ROLLOUT, options: Parameters<typeof rolloutEvents>[0] = {}) {
+async function writeRollout(file = ROLLOUT, options: RolloutEventsOptions = {}) {
   vol.fromJSON({ [file]: "" });
   const events = rolloutEvents(options);
   await fs.writeFile(file, `${events.map((event) => JSON.stringify(event)).join("\n")}\n`);
@@ -206,7 +201,7 @@ async function writeSubagentRollouts() {
 }
 
 function isSubagentRun(run: Record<string, unknown>, threadId: string) {
-  const metadata = (run.extra as { metadata?: Record<string, unknown> } | undefined)?.metadata;
+  const metadata = (run.extra as TraceRunExtra | undefined)?.metadata;
   return metadata?.ls_subagent_id === threadId;
 }
 

@@ -12,7 +12,7 @@ import {
   markTurnRunTopology,
   markTurnUploaded,
   withRolloutLock,
-} from "../src/sidecar.js";
+} from "../src/trace-delivery-store.js";
 
 vi.mock("node:fs/promises", async () => {
   const { fs } = await import("memfs");

@@ -13,10 +13,19 @@ export const LS_AGENT_RUNTIME = "Codex";
 export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 
 export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+export const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+export const TRACE_UPLOAD_DEFAULT_PROJECT = "default";
+export const TRACE_UPLOAD_CONFLICT_STATUS = 409;
+export const TRACE_UPLOAD_STATES = ["uploaded", "backlog", "off"] as const;
+export const TRACE_UPLOAD_STATE_SUFFIX = ".langsmith";
+export const TRACE_UPLOAD_LOCK_SUFFIX = ".langsmith.lock";
 export const TRACE_UPLOAD_TOPOLOGY_SUFFIX = ".langsmith-topology";
 export const TRACE_UPLOAD_TOPOLOGY_MAX_BYTES = 4096;
-export const TRACE_UPLOAD_LOCK_INITIALIZING_MS = 1000;
-export const TRACE_UPLOAD_LOCK_RETRY_MS = 25;
+export const TRACE_UPLOAD_RUN_ID_MAX_LENGTH = 64;
+export const TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH = 2048;
+export const FILE_LOCK_OWNER_FILENAME = "owner.json";
+export const FILE_LOCK_INITIALIZING_MS = 1000;
+export const FILE_LOCK_RETRY_MS = 25;
 
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 

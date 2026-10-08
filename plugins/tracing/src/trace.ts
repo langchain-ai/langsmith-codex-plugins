@@ -1,7 +1,6 @@
 import type { LineSchema, ResponseItem, SubagentSource } from "./types.js";
 import { Client } from "langsmith";
 import type { RunTreeConfig } from "langsmith";
-import { v5 as uuidv5 } from "uuid";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
@@ -13,10 +12,10 @@ import {
   markTurnHandled,
   markTurnRunTopology,
   withRolloutLock,
-} from "./sidecar.js";
+} from "./trace-delivery-store.js";
+import { stableRunId, trackRunDelivery } from "./trace-delivery.js";
 import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
 import { skillNamesFromToolCall } from "./skills.js";
-import { TRACE_RUN_ID_NAMESPACE } from "./constants.js";
 import type {
   PostTurnOptions,
   RolloutTurnMode,
@@ -486,66 +485,25 @@ function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknow
   };
 }
 
-function stableRunId(
-  sessionId: string | undefined,
-  rolloutFile: string,
-  turnKey: string,
-  runKey: string,
-) {
-  return uuidv5(
-    `langsmith-codex:${sessionId ?? path.resolve(rolloutFile)}:${turnKey}:${runKey}`,
-    TRACE_RUN_ID_NAMESPACE,
-  );
-}
+function getSystemMessage(
+  session: Session | undefined,
+  task: Task | undefined,
+): AggregateMessage<StandardMessage>[] {
+  if (session?.base_instructions == null || task?.turnId == null) {
+    return [];
+  }
 
-function trackRunDelivery(client: Client, errors: unknown[]) {
-  const createRun = client.createRun.bind(client);
-  return new Proxy(client, {
-    get(target, property) {
-      if (property === "createRun") {
-        return async (...args: Parameters<Client["createRun"]>) => {
-          const run = args[0];
-          const projectName =
-            "session_name" in run && typeof run.session_name === "string"
-              ? run.session_name
-              : typeof run.project_name === "string"
-                ? run.project_name
-                : "default";
-          try {
-            return await createRun(...args);
-          } catch (error) {
-            if (
-              typeof error === "object" &&
-              error !== null &&
-              "status" in error &&
-              error.status === 409
-            ) {
-              try {
-                if (typeof run.id !== "string") throw error;
-                const existing = await target.readRun(run.id);
-                const project = await target.readProject({ projectName });
-                if (
-                  existing.id === run.id &&
-                  existing.trace_id === run.trace_id &&
-                  (existing.parent_run_id ?? undefined) === (run.parent_run_id ?? undefined) &&
-                  existing.dotted_order === run.dotted_order &&
-                  existing.name === run.name &&
-                  existing.run_type === run.run_type &&
-                  existing.session_id === project.id
-                ) {
-                  return;
-                }
-              } catch {}
-            }
-            errors.push(error);
-            throw error;
-          }
-        };
-      }
-      const value = Reflect.get(target, property, target);
-      return typeof value === "function" ? value.bind(target) : value;
+  return [
+    {
+      message: {
+        role: "system",
+        content: [{ type: "text", text: session.base_instructions }],
+      },
+      timestamp: task.turnId.timestamp,
+      tokenCount: undefined,
+      subagentThreads: [],
     },
-  });
+  ];
 }
 
 async function postTurn(
@@ -578,32 +536,6 @@ async function postTurn(
     };
   });
   const postPromises: Promise<void>[] = [];
-
-  const getSystemMessage = (
-    session: Session | undefined,
-    task: Task | undefined,
-  ): {
-    message: StandardMessage;
-    timestamp: number;
-    tokenCount: TokenCount | undefined;
-    subagentThreads: string[];
-  }[] => {
-    if (session?.base_instructions == null || task?.turnId == null) {
-      return [];
-    }
-
-    return [
-      {
-        message: {
-          role: "system",
-          content: [{ type: "text", text: session.base_instructions }],
-        },
-        timestamp: task.turnId.timestamp,
-        tokenCount: undefined,
-        subagentThreads: [],
-      },
-    ];
-  };
 
   const messages = convertToStandardMessages(task.messages);
 

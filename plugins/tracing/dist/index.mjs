@@ -7,9 +7,9 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
-import { v5 } from "uuid";
 import { createHash, randomUUID } from "node:crypto";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { v5 } from "uuid";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { performance as performance$1 } from "node:perf_hooks";
@@ -17217,8 +17217,18 @@ const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+const TRACE_UPLOAD_DEFAULT_PROJECT = "default";
+const TRACE_UPLOAD_STATES = [
+	"uploaded",
+	"backlog",
+	"off"
+];
+const TRACE_UPLOAD_STATE_SUFFIX = ".langsmith";
+const TRACE_UPLOAD_LOCK_SUFFIX = ".langsmith.lock";
 const TRACE_UPLOAD_TOPOLOGY_SUFFIX = ".langsmith-topology";
-const TRACE_UPLOAD_LOCK_INITIALIZING_MS = 1e3;
+const FILE_LOCK_OWNER_FILENAME = "owner.json";
+const FILE_LOCK_INITIALIZING_MS = 1e3;
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -17303,7 +17313,7 @@ const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
 //#endregion
-//#region src/sidecar.ts
+//#region src/utils/fileLock.ts
 async function readOwner(file) {
 	let contents;
 	try {
@@ -17332,14 +17342,14 @@ function processIsAlive(pid) {
 async function lockIsOld(lockPath) {
 	try {
 		const stat = await nodeFsPromises.stat(lockPath);
-		return Date.now() - stat.mtimeMs >= TRACE_UPLOAD_LOCK_INITIALIZING_MS;
+		return Date.now() - stat.mtimeMs >= FILE_LOCK_INITIALIZING_MS;
 	} catch (error) {
 		if (error.code === "ENOENT") return false;
 		throw error;
 	}
 }
 async function recoverLock(lockPath, observedOwner) {
-	const ownerFile = nodePath.join(lockPath, "owner.json");
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
 	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
 	let recovery;
 	try {
@@ -17378,9 +17388,8 @@ async function recoverLock(lockPath, observedOwner) {
 		});
 	}
 }
-async function withRolloutLock(rolloutFile, action) {
-	const lockPath = `${rolloutFile}.langsmith.lock`;
-	const ownerFile = nodePath.join(lockPath, "owner.json");
+async function withFileLock(lockPath, action) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
 	const token = randomUUID();
 	while (true) try {
 		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
@@ -17419,18 +17428,19 @@ async function withRolloutLock(rolloutFile, action) {
 		}
 	}
 }
+//#endregion
+//#region src/trace-delivery-store.ts
+async function withRolloutLock(rolloutFile, action) {
+	return withFileLock(`${rolloutFile}${TRACE_UPLOAD_LOCK_SUFFIX}`, action);
+}
 async function loadTurnStates(rolloutFile) {
 	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
+		const data = await nodeFsPromises.readFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, "utf-8");
 		const states = /* @__PURE__ */ new Map();
 		for (const line of data.split("\n").filter(Boolean)) {
 			try {
 				const value = JSON.parse(line);
-				if (value != null && typeof value === "object" && typeof value.turnId === "string" && [
-					"uploaded",
-					"backlog",
-					"off"
-				].includes(value.state)) {
+				if (value != null && typeof value === "object" && typeof value.turnId === "string" && TRACE_UPLOAD_STATES.includes(value.state)) {
 					states.set(value.turnId, value.state);
 					continue;
 				}
@@ -17444,7 +17454,7 @@ async function loadTurnStates(rolloutFile) {
 	}
 }
 async function markTurnHandled(rolloutFile, turnId, state) {
-	await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${JSON.stringify({
+	await nodeFsPromises.appendFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, `${JSON.stringify({
 		turnId,
 		state
 	})}\n`, "utf-8");
@@ -17496,6 +17506,34 @@ async function markTurnRunTopology(rolloutFile, turnId, topology) {
 function topologyFilePath(rolloutFile, turnId) {
 	const turnKey = createHash("sha256").update(turnId).digest("hex");
 	return `${rolloutFile}${TRACE_UPLOAD_TOPOLOGY_SUFFIX}-${turnKey}.json`;
+}
+//#endregion
+//#region src/trace-delivery.ts
+function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
+	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
+}
+function trackRunDelivery(client, errors) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			const run = args[0];
+			const projectName = "session_name" in run && typeof run.session_name === "string" ? run.session_name : typeof run.project_name === "string" ? run.project_name : TRACE_UPLOAD_DEFAULT_PROJECT;
+			try {
+				return await createRun(...args);
+			} catch (error) {
+				if (typeof error === "object" && error !== null && "status" in error && error.status === 409) try {
+					if (typeof run.id !== "string") throw error;
+					const existing = await target.readRun(run.id);
+					const project = await target.readProject({ projectName });
+					if (existing.id === run.id && existing.trace_id === run.trace_id && (existing.parent_run_id ?? void 0) === (run.parent_run_id ?? void 0) && existing.dotted_order === run.dotted_order && existing.name === run.name && existing.run_type === run.run_type && existing.session_id === project.id) return;
+				} catch {}
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
 }
 //#endregion
 //#region src/metadata.ts
@@ -18296,31 +18334,20 @@ function getUsageMetadata(counts) {
 		}
 	};
 }
-function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
-	return v5(`langsmith-codex:${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
-}
-function trackRunDelivery(client, errors) {
-	const createRun = client.createRun.bind(client);
-	return new Proxy(client, { get(target, property) {
-		if (property === "createRun") return async (...args) => {
-			const run = args[0];
-			const projectName = "session_name" in run && typeof run.session_name === "string" ? run.session_name : typeof run.project_name === "string" ? run.project_name : "default";
-			try {
-				return await createRun(...args);
-			} catch (error) {
-				if (typeof error === "object" && error !== null && "status" in error && error.status === 409) try {
-					if (typeof run.id !== "string") throw error;
-					const existing = await target.readRun(run.id);
-					const project = await target.readProject({ projectName });
-					if (existing.id === run.id && existing.trace_id === run.trace_id && (existing.parent_run_id ?? void 0) === (run.parent_run_id ?? void 0) && existing.dotted_order === run.dotted_order && existing.name === run.name && existing.run_type === run.run_type && existing.session_id === project.id) return;
-				} catch {}
-				errors.push(error);
-				throw error;
-			}
-		};
-		const value = Reflect.get(target, property, target);
-		return typeof value === "function" ? value.bind(target) : value;
-	} });
+function getSystemMessage(session, task) {
+	if (session?.base_instructions == null || task?.turnId == null) return [];
+	return [{
+		message: {
+			role: "system",
+			content: [{
+				type: "text",
+				text: session.base_instructions
+			}]
+		},
+		timestamp: task.turnId.timestamp,
+		tokenCount: void 0,
+		subagentThreads: []
+	}];
 }
 async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options, mode, turnKey, fallbackTime }) {
 	if (sessionMeta?.session_id) options?.visitedThreads?.add(sessionMeta.session_id);
@@ -18339,21 +18366,6 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		};
 	});
 	const postPromises = [];
-	const getSystemMessage = (session, task) => {
-		if (session?.base_instructions == null || task?.turnId == null) return [];
-		return [{
-			message: {
-				role: "system",
-				content: [{
-					type: "text",
-					text: session.base_instructions
-				}]
-			},
-			timestamp: task.turnId.timestamp,
-			tokenCount: void 0,
-			subagentThreads: []
-		}];
-	};
 	const messages = convertToStandardMessages(task.messages);
 	const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : void 0;
 	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);

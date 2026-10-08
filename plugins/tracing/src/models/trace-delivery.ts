@@ -1,7 +1,8 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { TurnMode } from "../tracing-policy.js";
+import type { TRACE_UPLOAD_STATES } from "../constants.js";
 
-export type TurnDeliveryState = "uploaded" | "backlog" | "off";
+export type TurnDeliveryState = (typeof TRACE_UPLOAD_STATES)[number];
 
 export interface TurnRunTopology {
   parentRunId: string | null;
@@ -9,11 +10,6 @@ export interface TurnRunTopology {
   dottedOrder: string;
   executionOrder: number;
   childExecutionOrder: number;
-}
-
-export interface RolloutLockOwner {
-  pid: number;
-  token: string;
 }
 
 export interface RolloutTurnMode {
