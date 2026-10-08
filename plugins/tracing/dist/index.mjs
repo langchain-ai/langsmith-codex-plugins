@@ -17224,6 +17224,32 @@ const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
+const GITHUB_HOSTS_FILE = "hosts.yml";
+const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
+const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
+const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_SUFFIX = /\.git$/;
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
@@ -17299,6 +17325,11 @@ const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
 //#endregion
+//#region src/utils/objects.ts
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+//#endregion
 //#region src/sidecar.ts
 async function loadUploadedTurnIds(rolloutFile) {
 	try {
@@ -17318,6 +17349,25 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
+//#region src/utils/paths.ts
+async function nearestExistingDirectory(target) {
+	let current = nodePath.resolve(target);
+	for (;;) {
+		try {
+			if ((await nodeFsPromises.stat(current)).isDirectory()) return current;
+		} catch {}
+		const parent = nodePath.dirname(current);
+		if (parent === current) return void 0;
+		current = parent;
+	}
+}
+function absoluteTarget(value, base) {
+	if (typeof value !== "string" || value.length === 0) return void 0;
+	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
+	if (!base || !nodePath.isAbsolute(base)) return void 0;
+	return nodePath.resolve(base, value);
+}
+//#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
 function stripUndefined(value) {
@@ -17328,7 +17378,7 @@ function parseRepository(url) {
 	if (!normalized) return {};
 	let host;
 	let pathname;
-	const scp = /^[^/@]+@([^:/]+):(.+)$/.exec(normalized);
+	const scp = GIT_SCP_REMOTE.exec(normalized);
 	if (scp) {
 		host = scp[1];
 		pathname = scp[2];
@@ -17346,17 +17396,20 @@ function parseRepository(url) {
 		if (h.includes("bitbucket")) return "bitbucket";
 		return h || "other";
 	})();
-	const name = (pathname ?? "").replace(/^\/+/, "").replace(/\.git$/, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
+	const name = (pathname ?? "").replace(/^\/+/, "").replace(GIT_SUFFIX, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
 	return {
-		repository_url: normalized.replace(/\.git$/, ""),
+		repository_url: normalized.replace(GIT_SUFFIX, ""),
 		repository_provider: provider,
 		repository_name: name
 	};
 }
 async function runGit(cwd, args) {
 	try {
+		const env = { ...process.env };
+		for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
 		const { stdout } = await execFileAsync("git", args, {
 			cwd,
+			env,
 			timeout: 2e3
 		});
 		const out = stdout.trim();
@@ -17365,39 +17418,156 @@ async function runGit(cwd, args) {
 		return;
 	}
 }
-const gitInfoCache = /* @__PURE__ */ new Map();
-async function resolveGitInfo(cwd, sessionGit) {
-	if (sessionGit != null && (sessionGit.repository_url != null || sessionGit.commit_hash != null || sessionGit.branch != null)) return sessionGit;
-	if (!cwd) return void 0;
-	let pending = gitInfoCache.get(cwd);
-	if (pending == null) {
-		pending = (async () => {
-			const [repository_url, branch, commit_hash] = await Promise.all([
-				runGit(cwd, [
-					"remote",
-					"get-url",
-					"origin"
-				]),
-				runGit(cwd, [
-					"rev-parse",
-					"--abbrev-ref",
-					"HEAD"
-				]),
-				runGit(cwd, ["rev-parse", "HEAD"])
-			]);
-			if (repository_url == null && branch == null && commit_hash == null) return;
-			return {
-				repository_url,
-				branch,
-				commit_hash
-			};
-		})();
-		gitInfoCache.set(cwd, pending);
+async function githubLogin() {
+	const configDirectory = process.env["GH_CONFIG_DIR"] ?? nodePath.join(os.homedir(), ".config/gh");
+	let contents;
+	try {
+		contents = await nodeFsPromises.readFile(nodePath.join(configDirectory, GITHUB_HOSTS_FILE), "utf-8");
+	} catch {
+		return;
 	}
-	return pending;
+	let host;
+	let firstLogin;
+	let githubLoginName;
+	for (const line of contents.split(/\r?\n/)) {
+		const hostEntry = GITHUB_HOST_ENTRY.exec(line);
+		if (hostEntry) {
+			host = hostEntry[1];
+			continue;
+		}
+		const userEntry = GITHUB_USER_ENTRY.exec(line);
+		const login = userEntry?.[1] ?? userEntry?.[2] ?? userEntry?.[3];
+		if (!host || !login) continue;
+		firstLogin ??= login;
+		if (host === "github.com") githubLoginName = login;
+	}
+	return githubLoginName ?? firstLogin;
 }
-function codingAgentMetadata(ctx) {
-	const repo = parseRepository(ctx.git?.repository_url);
+async function resolveGitAttribution(cwd) {
+	if (!cwd) return void 0;
+	const directory = await nearestExistingDirectory(cwd);
+	if (!directory) return void 0;
+	const root = await runGit(directory, ["rev-parse", "--show-toplevel"]);
+	if (!root) return void 0;
+	const [repository_url, currentBranch, commit_hash, configuredName] = await Promise.all([
+		runGit(root, [
+			"remote",
+			"get-url",
+			"origin"
+		]),
+		runGit(root, [
+			"rev-parse",
+			"--abbrev-ref",
+			"HEAD"
+		]),
+		runGit(root, ["rev-parse", "HEAD"]),
+		runGit(root, ["config", "user.name"])
+	]);
+	return {
+		root,
+		git: stripUndefined({
+			repository_url,
+			branch: currentBranch === "HEAD" ? void 0 : currentBranch,
+			commit_hash
+		}),
+		identifier: configuredName ?? await githubLogin()
+	};
+}
+function sameRepository(left, right) {
+	const leftIdentity = repositoryIdentity(left);
+	const rightIdentity = repositoryIdentity(right);
+	if (leftIdentity && rightIdentity) return leftIdentity.host === rightIdentity.host && leftIdentity.path === rightIdentity.path;
+	const leftParsed = parseRepository(left);
+	const rightParsed = parseRepository(right);
+	return leftParsed.repository_url === rightParsed.repository_url;
+}
+function repositoryIdentity(url) {
+	const scp = GIT_SCP_REMOTE.exec(url.trim());
+	if (scp?.[1] && scp[2]) {
+		const repositoryPath = scp[2].split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
+		return repositoryPath ? {
+			host: scp[1].toLowerCase(),
+			path: repositoryPath
+		} : void 0;
+	}
+	try {
+		const parsed = new URL(url);
+		const repositoryPath = parsed.pathname.split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
+		return parsed.host && repositoryPath ? {
+			host: parsed.host.toLowerCase(),
+			path: repositoryPath
+		} : void 0;
+	} catch {
+		return;
+	}
+}
+function mergeGitInfo(liveGit, sessionGit) {
+	if (liveGit?.repository_url && sessionGit?.repository_url && !sameRepository(liveGit.repository_url, sessionGit.repository_url)) return sessionGit;
+	const merged = stripUndefined({
+		...liveGit,
+		...sessionGit
+	});
+	return Object.keys(merged).length > 0 ? merged : void 0;
+}
+function toolPathTargets(input, evidence, sessionCwd) {
+	const args = isRecord(input) ? input : void 0;
+	const executionDirectory = absoluteTarget(evidence?.executionCwd, sessionCwd);
+	if (args == null || typeof args.code === "string" || typeof args.script === "string") {
+		const paths = evidence?.changedPaths != null ? evidence.changedPaths.map((value) => absoluteTarget(value, executionDirectory ?? sessionCwd)) : executionDirectory != null ? [executionDirectory] : [];
+		return {
+			explicit: true,
+			paths: [...new Set(paths.filter((value) => value != null))]
+		};
+	}
+	const rawDirectories = TOOL_WORKING_DIRECTORY_KEYS.flatMap((key) => args && Object.hasOwn(args, key) && args[key] != null ? [args[key]] : []);
+	const rawPaths = TOOL_PATH_KEYS.flatMap((key) => args && Object.hasOwn(args, key) && args[key] != null ? [args[key]] : []);
+	const workingDirectories = rawDirectories.map((value) => absoluteTarget(value, sessionCwd));
+	const baseDirectory = executionDirectory ?? workingDirectories.find((value) => value != null) ?? sessionCwd;
+	const hasFileTargets = rawPaths.length > 0 || evidence?.changedPaths != null;
+	const fileTargets = [...rawPaths.map((value) => absoluteTarget(value, baseDirectory)), ...(evidence?.changedPaths ?? []).map((value) => absoluteTarget(value, baseDirectory))];
+	const paths = hasFileTargets ? fileTargets : executionDirectory != null ? [executionDirectory] : workingDirectories;
+	return {
+		explicit: rawDirectories.length > 0 || rawPaths.length > 0 || evidence?.executionCwd != null || evidence?.changedPaths != null,
+		paths: [...new Set(paths.filter((value) => value != null))]
+	};
+}
+async function resolveToolAttribution(input, evidence, sessionCwd, sessionGit) {
+	const targets = toolPathTargets(input, evidence, sessionCwd);
+	if (!targets.explicit) {
+		const resolved = await resolveGitAttribution(sessionCwd);
+		if (resolved) resolved.git = mergeGitInfo(resolved.git, sessionGit) ?? resolved.git;
+		return {
+			explicit: false,
+			resolved
+		};
+	}
+	if (targets.paths.length === 0) return { explicit: true };
+	const resolved = await Promise.all(targets.paths.map(resolveGitAttribution));
+	if (resolved.some((value) => value == null)) return { explicit: true };
+	const first = resolved[0];
+	if (resolved.some((value) => value.root !== first.root || value.git.branch !== first.git.branch || value.git.commit_hash !== first.git.commit_hash || value.git.repository_url !== first.git.repository_url)) return { explicit: true };
+	return {
+		explicit: true,
+		resolved: first
+	};
+}
+function toolRepositoryMetadata(attribution) {
+	const repo = parseRepository(attribution?.git.repository_url);
+	const metadata = {
+		repository_url: repo.repository_url,
+		repository_provider: repo.repository_provider,
+		repository_name: repo.repository_name,
+		git_branch: attribution?.git.branch,
+		git_commit_sha: attribution?.git.commit_hash,
+		ls_attribution_identifier: attribution?.identifier
+	};
+	return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
+}
+function codingAgentMetadata(ctx, existing = {}) {
+	const existingRepositoryUrl = typeof existing.repository_url === "string" && existing.repository_url.length > 0 ? existing.repository_url : void 0;
+	const repo = parseRepository(existingRepositoryUrl ?? ctx.git?.repository_url);
+	const inferredGitMatchesExisting = existingRepositoryUrl == null || ctx.git?.repository_url != null && sameRepository(existingRepositoryUrl, ctx.git.repository_url);
+	const existingValue = (key) => typeof existing[key] === "string" && existing[key].length > 0 ? existing[key] : void 0;
 	return stripUndefined({
 		ls_agent_purpose: LS_AGENT_PURPOSE,
 		ls_agent_type: ctx.agentType,
@@ -17409,11 +17579,12 @@ function codingAgentMetadata(ctx) {
 		ls_agent_runtime_version: ctx.cliVersion,
 		turn_id: ctx.turnId,
 		turn_number: ctx.turnNumber,
-		repository_url: repo.repository_url,
-		repository_provider: repo.repository_provider,
-		repository_name: repo.repository_name,
-		git_branch: ctx.git?.branch,
-		git_commit_sha: ctx.git?.commit_hash,
+		repository_url: existingRepositoryUrl ?? repo.repository_url,
+		repository_provider: existingValue("repository_provider") ?? repo.repository_provider,
+		repository_name: existingValue("repository_name") ?? repo.repository_name,
+		git_branch: existingValue("git_branch") ?? (inferredGitMatchesExisting ? ctx.git?.branch : void 0),
+		git_commit_sha: existingValue("git_commit_sha") ?? (inferredGitMatchesExisting ? ctx.git?.commit_hash : void 0),
+		ls_attribution_identifier: existingValue("ls_attribution_identifier") ?? ctx.attributionIdentifier,
 		cwd: ctx.cwd,
 		sandbox_type: ctx.sandboxType
 	});
@@ -17760,9 +17931,6 @@ function extractSpawnedAgentId(output) {
 		const id = obj.agent_id;
 		if (typeof id === "string") return id;
 	}
-}
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
 }
 function formatError(value) {
 	if (value == null) return void 0;
@@ -18132,7 +18300,32 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		if (typeof policy === "string") return policy;
 		if (policy != null) return JSON.stringify(policy);
 	})();
-	const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : void 0;
+	let rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : void 0;
+	const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0;
+	const sessionCwdChanged = sessionCwd != null && sessionCwd !== cwd;
+	const sessionAttribution = mode === "full" && sessionCwd != null ? sessionCwd === cwd ? rootAttribution : await resolveGitAttribution(sessionCwd) : void 0;
+	const sessionGitForCurrentRoot = () => {
+		if (sessionCwdChanged && rootAttribution != null && sessionAttribution?.root !== rootAttribution.root) return;
+		return sessionMeta?.git;
+	};
+	let fallbackIdentifier = rootAttribution?.identifier;
+	const toolAttributions = /* @__PURE__ */ new Map();
+	if (mode === "full") for (const { message } of messages) {
+		if (message.role !== "ai") continue;
+		for (const call of message.content) {
+			if (call.type !== "tool_call" || typeof call.id !== "string") continue;
+			const attribution = await resolveToolAttribution(call.args, task.toolCalls[call.id], cwd, sessionGitForCurrentRoot());
+			toolAttributions.set(call.id, attribution);
+			if (fallbackIdentifier == null && attribution.resolved?.identifier != null) fallbackIdentifier = attribution.resolved.identifier;
+			if (rootAttribution == null && attribution.explicit && attribution.resolved != null) rootAttribution = attribution.resolved;
+		}
+	}
+	const git = mode === "full" ? mergeGitInfo(rootAttribution?.git, sessionGitForCurrentRoot()) : void 0;
+	const existingRootMetadata = {
+		...options?.metadata,
+		...task.context
+	};
+	const attributionIdentifier = sessionMeta?.ls_attribution_identifier ?? (typeof existingRootMetadata.ls_attribution_identifier === "string" ? existingRootMetadata.ls_attribution_identifier : fallbackIdentifier);
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
@@ -18143,8 +18336,9 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		cliVersion: sessionMeta?.cli_version,
 		cwd,
 		git,
+		attributionIdentifier,
 		sandboxType
-	});
+	}, existingRootMetadata);
 	const parent = createRunTree({
 		name: "openai.codex",
 		client: options?.client,
@@ -18249,6 +18443,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+			const toolAttribution = toolAttributions.get(toolCallId);
+			const toolRepositoryFields = toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null) ? toolRepositoryMetadata(toolAttribution.resolved) : {};
 			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
@@ -18263,6 +18459,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 					...base,
 					...CHILD_SCOPE_RESET,
+					...toolRepositoryFields,
 					ls_model_type: "chat",
 					ls_provider: sessionMeta?.model_provider,
 					ls_model_name: task.context?.model,
@@ -18337,6 +18534,7 @@ async function convertToRunTree(input, options) {
 				cli_version: payload.cli_version,
 				cwd: payload.cwd,
 				git: payload.git,
+				ls_attribution_identifier: payload.ls_attribution_identifier,
 				is_subagent: isSubagent,
 				parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0,
 				agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
@@ -18382,6 +18580,8 @@ async function convertToRunTree(input, options) {
 					outputs: {}
 				};
 				task.toolCalls[payload.call_id].timings.push(eventTime);
+				if (payload.type === "exec_command_end" && typeof payload.cwd === "string") task.toolCalls[payload.call_id].executionCwd = payload.cwd;
+				if (payload.type === "patch_apply_end") task.toolCalls[payload.call_id].changedPaths = isRecord(payload.changes) ? Object.keys(payload.changes) : [];
 				if (payload.type.endsWith("_end")) {
 					if (payload.status === "failed" || payload.status === "declined") {
 						const stdout = (() => {

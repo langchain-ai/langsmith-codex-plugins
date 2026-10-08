@@ -4,12 +4,140 @@ import { convertToRunTree } from "../src/trace.js";
 import { vol } from "memfs";
 
 import * as path from "node:path";
+import * as os from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
 declare const __LS_INTEGRATION_VERSION__: string;
 const INTEGRATION_VERSION = __LS_INTEGRATION_VERSION__;
+const execFileAsync = promisify(execFile);
+const temporaryGitDirectories: string[] = [];
+
+async function createGitRepository(author: string | undefined, remote: string, parent?: string) {
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const root = parent
+    ? path.join(parent, "child")
+    : await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-git-"));
+  temporaryGitDirectories.push(root);
+  await fs.mkdir(root, { recursive: true });
+  await execFileAsync("git", ["init", "-q"], { cwd: root });
+  if (author) await execFileAsync("git", ["config", "user.name", author], { cwd: root });
+  await execFileAsync("git", ["remote", "add", "origin", remote], { cwd: root });
+  await fs.writeFile(path.join(root, "file.txt"), "test\n");
+  await execFileAsync("git", ["add", "file.txt"], { cwd: root });
+  await execFileAsync(
+    "git",
+    [
+      "-c",
+      "user.name=Commit Author",
+      "-c",
+      "user.email=codex-test@example.com",
+      "commit",
+      "-qm",
+      "test",
+    ],
+    { cwd: root },
+  );
+  const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: root });
+  vol.mkdirSync(root, { recursive: true });
+  return { root, commit: stdout.trim(), remote: remote.replace(/\.git$/, "") };
+}
+
+async function writeAttributionRollout(options: {
+  sessionCwd: string;
+  sessionMetaCwd?: string;
+  sessionGit?: Record<string, string>;
+  sessionIdentifier?: string;
+  calls: { id: string; name: string; args?: Record<string, unknown>; input?: string }[];
+  completionOrder?: string[];
+  evidence?: Record<string, Record<string, unknown>>;
+}) {
+  const sessionId = "attribution-thread";
+  const turnId = "attribution-turn";
+  const events: Record<string, unknown>[] = [];
+  let timestamp = Date.parse("2026-10-07T12:00:00.000Z");
+  const add = (type: string, payload: Record<string, unknown>) => {
+    events.push({ timestamp: new Date(timestamp++).toISOString(), type, payload });
+  };
+
+  add("session_meta", {
+    id: sessionId,
+    timestamp: new Date(timestamp++).toISOString(),
+    cwd: options.sessionMetaCwd ?? options.sessionCwd,
+    originator: "codex-test",
+    cli_version: "0.160.0",
+    source: "cli",
+    model_provider: "openai",
+    git: options.sessionGit,
+    ls_attribution_identifier: options.sessionIdentifier,
+  });
+  add("event_msg", { type: "task_started", turn_id: turnId });
+  add("turn_context", { cwd: options.sessionCwd, model: "gpt-test" });
+  add("response_item", {
+    type: "message",
+    role: "user",
+    content: [{ type: "input_text", text: "Inspect these repositories" }],
+  });
+  for (const call of options.calls) {
+    add(
+      "response_item",
+      call.input == null
+        ? {
+            type: "function_call",
+            name: call.name,
+            arguments: JSON.stringify(call.args ?? {}),
+            call_id: call.id,
+          }
+        : { type: "custom_tool_call", name: call.name, input: call.input, call_id: call.id },
+    );
+  }
+  for (const id of options.completionOrder ?? options.calls.map((call) => call.id)) {
+    const evidence = options.evidence?.[id];
+    if (typeof evidence?.cwd === "string") {
+      add("event_msg", {
+        type: "exec_command_end",
+        call_id: id,
+        turn_id: turnId,
+        command: ["/bin/zsh", "-lc", "pwd"],
+        cwd: evidence.cwd,
+        parsed_cmd: [],
+        stdout: "",
+        stderr: "",
+        exit_code: 0,
+        duration: { secs: 0, nanos: 0 },
+        formatted_output: "",
+        status: "completed",
+      });
+    }
+    if (evidence?.changes) {
+      add("event_msg", {
+        type: "patch_apply_end",
+        call_id: id,
+        turn_id: turnId,
+        changes: evidence.changes,
+        status: "completed",
+      });
+    }
+  }
+  for (const call of options.calls) {
+    add("response_item", { type: "function_call_output", call_id: call.id, output: "done" });
+  }
+  add("response_item", {
+    type: "message",
+    role: "assistant",
+    content: [{ type: "output_text", text: "Done" }],
+  });
+  add("event_msg", { type: "turn_complete", turn_id: turnId });
+
+  vol.fromJSON({
+    [EDITING_FILE]: events.map((event) => JSON.stringify(event)).join("\n") + "\n",
+  });
+  seedFullLaunchEvidence();
+  return { sessionId, turnId };
+}
 
 async function preloadTestFiles(options: {
   makeTurnIncomplete: boolean;
@@ -117,7 +245,16 @@ vi.mock("node:fs", async () => {
 });
 
 beforeEach(() => vol.reset());
-afterEach(() => vi.unstubAllEnvs());
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  if (temporaryGitDirectories.length === 0) return;
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  await Promise.all(
+    temporaryGitDirectories
+      .splice(0)
+      .map((directory) => fs.rm(directory, { recursive: true, force: true })),
+  );
+});
 
 it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
   "editing %s",
@@ -1134,4 +1271,379 @@ it("still traces a backlog turn once the rollout has a traced history", async ()
     .map((run) => run.extra?.metadata?.turn_id);
 
   expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
+});
+
+it("fills missing root Git fields and attributes structured tools to their repositories", async () => {
+  const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+  const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
+  const nestedRepo = await createGitRepository(
+    "Nested Author",
+    "https://github.com/example/nested-repo.git",
+    path.join(repoA.root, "workspace"),
+  );
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
+  temporaryGitDirectories.push(outsideRepo);
+  vol.mkdirSync(outsideRepo, { recursive: true });
+  const { client, callSpy } = mockClient();
+
+  const calls = [
+    {
+      id: "file-a",
+      name: "read_file",
+      args: { file_path: path.join(repoA.root, "file.txt"), marker: "file-a" },
+    },
+    { id: "shell-b", name: "exec", args: { cmd: "pwd", marker: "shell-b" } },
+    { id: "patch-a", name: "apply_patch", args: { patch: "patch", marker: "patch-a" } },
+    {
+      id: "ambiguous",
+      name: "read_file",
+      args: {
+        path: path.join(repoA.root, "file.txt"),
+        file_path: path.join(repoB.root, "file.txt"),
+        marker: "ambiguous",
+      },
+    },
+    {
+      id: "target-over-cwd",
+      name: "read_file",
+      args: {
+        cwd: repoA.root,
+        file_path: path.join(repoB.root, "file.txt"),
+        marker: "target-over-cwd",
+      },
+    },
+    {
+      id: "relative-workdir",
+      name: "read_file",
+      args: { workdir: "workspace", file_path: "child/file.txt", marker: "relative-workdir" },
+    },
+    {
+      id: "unresolved",
+      name: "read_file",
+      args: { file_path: path.join(outsideRepo, "file.txt"), marker: "unresolved" },
+    },
+    { id: "opaque", name: "code", args: { code: "readFile(...) ", marker: "opaque" } },
+    { id: "opaque-custom-exec", name: "exec", input: "const result = await runCommand()" },
+    { id: "custom-patch", name: "exec", input: "apply the patch" },
+    { id: "implicit", name: "unknown_tool", args: { marker: "implicit" } },
+  ];
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repoA.root,
+    sessionMetaCwd: path.join(repoA.root, "workspace"),
+    sessionGit: { branch: "captured-root-branch" },
+    sessionIdentifier: "provided-root-user",
+    calls,
+    evidence: {
+      "shell-b": { cwd: repoB.root },
+      "patch-a": {
+        cwd: repoB.root,
+        changes: { [path.join(repoA.root, "changed.txt")]: "added" },
+      },
+      "custom-patch": { changes: { [path.join(repoB.root, "changed.txt")]: "added" } },
+    },
+  });
+
+  await convertToRunTree(
+    { transcript_path: EDITING_FILE, turn_id: turnId },
+    {
+      client,
+      metadata: {
+        repository_url: repoA.remote,
+        repository_name: "configured/repo-a",
+        ls_attribution_identifier: "provided-root-user",
+      },
+    },
+  );
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const runs = Object.values(tree.data);
+  const rootRun = runs.find((run) => run.name === "openai.codex");
+  const metadataFor = (marker: string) => {
+    const run = runs.find(
+      (item) =>
+        item.run_type === "tool" &&
+        (item.inputs?.input as Record<string, unknown> | undefined)?.marker === marker,
+    );
+    expect(run).toBeDefined();
+    return run!.extra?.metadata as Record<string, unknown>;
+  };
+  const metadataForInput = (input: string) => {
+    const run = runs.find((item) => item.run_type === "tool" && item.inputs?.input === input);
+    expect(run).toBeDefined();
+    return run!.extra?.metadata as Record<string, unknown>;
+  };
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: repoA.remote,
+    repository_name: "configured/repo-a",
+    git_branch: "captured-root-branch",
+    git_commit_sha: repoA.commit,
+    ls_attribution_identifier: "provided-root-user",
+  });
+  expect(metadataFor("file-a")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
+  });
+  expect(metadataFor("shell-b")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("patch-a")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
+  });
+  expect(metadataFor("target-over-cwd")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("relative-workdir")).toMatchObject({
+    repository_url: nestedRepo.remote,
+    ls_attribution_identifier: "Nested Author",
+  });
+  for (const marker of ["ambiguous", "unresolved", "opaque"]) {
+    expect(metadataFor(marker)).not.toHaveProperty("repository_url");
+    expect(metadataFor(marker)).not.toHaveProperty("ls_attribution_identifier");
+  }
+  expect(metadataForInput("const result = await runCommand()")).not.toHaveProperty(
+    "repository_url",
+  );
+  expect(metadataForInput("const result = await runCommand()")).not.toHaveProperty(
+    "ls_attribution_identifier",
+  );
+  expect(metadataForInput("apply the patch")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("implicit")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
+  });
+});
+
+it("keeps the turn repository when the session directory moves elsewhere", async () => {
+  const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+  const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
+  await execFileAsync("git", ["remote", "remove", "origin"], { cwd: repoB.root });
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repoA.root,
+    sessionMetaCwd: repoB.root,
+    sessionGit: { branch: "captured-repo-b-branch", commit_hash: repoB.commit },
+    calls: [{ id: "implicit", name: "unknown_tool", args: { marker: "implicit" } }],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const attributedRuns = Object.values(tree.data).filter(
+    (run) => run.name === "openai.codex" || run.run_type === "tool",
+  );
+
+  expect(attributedRuns).toHaveLength(2);
+  for (const run of attributedRuns) {
+    expect(run.extra?.metadata).toMatchObject({
+      repository_url: repoA.remote,
+      git_commit_sha: repoA.commit,
+      ls_attribution_identifier: "Author A",
+    });
+    expect(run.extra?.metadata).not.toHaveProperty("git_branch", "captured-repo-b-branch");
+  }
+});
+
+it("uses the first unambiguous tool in call order when the turn directory is outside Git", async () => {
+  const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+  const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
+  temporaryGitDirectories.push(outsideRepo);
+  vol.mkdirSync(outsideRepo, { recursive: true });
+  const { client, callSpy } = mockClient();
+  const calls = [
+    { id: "first", name: "read_file", args: { file_path: path.join(repoA.root, "file.txt") } },
+    { id: "second", name: "read_file", args: { file_path: path.join(repoB.root, "file.txt") } },
+  ];
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: outsideRepo,
+    sessionGit: { branch: "captured-outside-branch" },
+    calls,
+    completionOrder: ["second", "first"],
+    evidence: { first: { cwd: repoA.root }, second: { cwd: repoB.root } },
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: repoA.remote,
+    repository_name: "example/repo-a",
+    git_branch: "captured-outside-branch",
+    ls_attribution_identifier: "Author A",
+  });
+});
+
+it("fills a missing root author from an attributed tool when the turn repo has no author", async () => {
+  const rootRepo = await createGitRepository(undefined, "https://github.com/example/root.git");
+  const toolRepo = await createGitRepository("Tool Author", "https://github.com/example/tool.git");
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: rootRepo.root,
+    calls: [
+      { id: "tool", name: "read_file", args: { file_path: path.join(toolRepo.root, "file.txt") } },
+    ],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: rootRepo.remote,
+    ls_attribution_identifier: "Tool Author",
+  });
+});
+
+it("keeps same-named repositories on separate GitHub hosts separate", async () => {
+  const repo = await createGitRepository(
+    "Host A Author",
+    "https://github.host-a.example/org/project.git",
+  );
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repo.root,
+    sessionGit: {
+      repository_url: "https://github.host-b.example/org/project.git",
+      branch: "host-b-branch",
+    },
+    calls: [],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: "https://github.host-b.example/org/project",
+    repository_name: "org/project",
+    git_branch: "host-b-branch",
+  });
+  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_commit_sha");
+});
+
+it("keeps the full GitLab namespace in repository identity", async () => {
+  const repo = await createGitRepository(
+    "GitLab Group A Author",
+    "https://gitlab.com/group-a/team/project.git",
+  );
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repo.root,
+    sessionGit: {
+      repository_url: "https://gitlab.com/group-b/team/project.git",
+      branch: "group-b-branch",
+    },
+    calls: [],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: "https://gitlab.com/group-b/team/project",
+    repository_name: "team/project",
+    git_branch: "group-b-branch",
+  });
+  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_commit_sha");
+});
+
+it("keeps repositories on separate ports in repository identity", async () => {
+  const repo = await createGitRepository(
+    "Port A Author",
+    "https://gitlab.example.com:8443/org/project.git",
+  );
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repo.root,
+    sessionGit: {
+      repository_url: "https://gitlab.example.com:9443/org/project.git",
+      branch: "port-b-branch",
+    },
+    calls: [],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: "https://gitlab.example.com:9443/org/project",
+    git_branch: "port-b-branch",
+  });
+  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_commit_sha");
+});
+
+it("preserves configured root repository metadata without mixing in another repository", async () => {
+  const configuredRepo = await createGitRepository(
+    "Configured Author",
+    "https://github.com/example/configured.git",
+  );
+  const currentRepo = await createGitRepository(
+    "Current Author",
+    "https://github.com/example/current.git",
+  );
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
+  temporaryGitDirectories.push(outsideRepo);
+  vol.mkdirSync(outsideRepo, { recursive: true });
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: outsideRepo,
+    calls: [
+      {
+        id: "current-repo-tool",
+        name: "read_file",
+        args: { file_path: path.join(currentRepo.root, "file.txt") },
+      },
+    ],
+  });
+
+  await convertToRunTree(
+    { transcript_path: EDITING_FILE, turn_id: turnId },
+    {
+      client,
+      metadata: {
+        repository_url: configuredRepo.remote,
+        repository_name: "provided/configured",
+      },
+    },
+  );
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: configuredRepo.remote,
+    repository_name: "provided/configured",
+    ls_attribution_identifier: "Current Author",
+  });
+  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_branch");
+  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_commit_sha");
+});
+
+it("uses the GitHub CLI login when a repository has no configured Git author", async () => {
+  const repo = await createGitRepository(undefined, "https://github.com/example/no-author.git");
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({ sessionCwd: repo.root, calls: [] });
+  const ghConfig = path.join(repo.root, "gh-config");
+  vol.mkdirSync(ghConfig, { recursive: true });
+  vol.writeFileSync(
+    path.join(ghConfig, "hosts.yml"),
+    "ghe.example.com:\n  user: enterprise-login\ngithub.com:\n  user: github-login\n",
+  );
+  vi.stubEnv("GH_CONFIG_DIR", ghConfig);
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({ ls_attribution_identifier: "github-login" });
 });
