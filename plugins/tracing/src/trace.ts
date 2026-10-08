@@ -1,3 +1,5 @@
+import type { TraceConversionInput, TraceConversionOptions } from "./models/trace-delivery.js";
+import { withRolloutLock } from "./trace-delivery-store.js";
 import type { LineSchema, ResponseItem, SubagentSource } from "./types.js";
 import { Client, RunTreeConfig, RunTree } from "langsmith";
 
@@ -6,7 +8,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { isRecord } from "./utils/objects.js";
-import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
+import { loadUploadedTurnIds, markTurnUploaded } from "./trace-delivery-store.js";
 import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
 import { resolveTurnAttribution } from "./attribution.js";
 import { skillNamesFromToolCall } from "./skills.js";
@@ -851,23 +853,9 @@ async function postTurn(
   }
 }
 
-export async function convertToRunTree(
-  input: { transcript_path: string; turn_id: string | null },
-  options?: {
-    parentRunTree?: RunTree;
-    client?: Client;
-    metadata?: Record<string, unknown>;
-    replicas?: RunTreeConfig["replicas"];
-    projectName?: string;
-    sessionsRoot?: string;
-    privacyPath?: string;
-    debugNow?: { now: number; startTime: number };
-    /**
-     * Post every turn the rollout holds, not just the one this hook fired for.
-     * Subagent rollouts are walked whole by design; the live Stop hook is not.
-     */
-    replayHistory?: boolean;
-  },
+async function convertToRunTreeWorker(
+  input: TraceConversionInput,
+  options?: TraceConversionOptions,
 ) {
   let sessionMeta: Session | undefined;
   let task: Task | undefined;
@@ -1122,4 +1110,11 @@ export async function convertToRunTree(
   }
 
   await Promise.all(PROMISE_QUEUE);
+}
+
+export async function convertToRunTree(
+  input: TraceConversionInput,
+  options?: TraceConversionOptions,
+) {
+  return withRolloutLock(input.transcript_path, () => convertToRunTreeWorker(input, options));
 }

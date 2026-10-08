@@ -1,5 +1,5 @@
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync, statSync } from "node:fs";
+import { constants, lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -7,11 +7,11 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -17215,6 +17215,16 @@ const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+const TRACE_UPLOAD_STATES = [
+	"uploaded",
+	"backlog",
+	"off"
+];
+const TRACE_UPLOAD_STATE_SUFFIX = ".langsmith";
+const TRACE_UPLOAD_LOCK_SUFFIX = ".langsmith.lock";
+const FILE_LOCK_OWNER_FILENAME = "owner.json";
+const FILE_LOCK_INITIALIZING_MS = 1e3;
+const FILE_LOCK_WAIT_TIMEOUT_MS = 5e3;
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -17294,6 +17304,210 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
+//#region src/utils/fileLock.ts
+async function readOwner(file) {
+	let stat;
+	try {
+		stat = await nodeFsPromises.lstat(file);
+	} catch (error) {
+		if (error.code === "ENOENT") return { status: "missing" };
+		throw error;
+	}
+	if (stat.isSymbolicLink() || !stat.isFile()) return { status: "unsafe" };
+	let handle;
+	try {
+		const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+		handle = await nodeFsPromises.open(file, flags);
+	} catch (error) {
+		const code = error.code;
+		if (code === "ENOENT") return { status: "missing" };
+		if (code === "ELOOP") return { status: "unsafe" };
+		throw error;
+	}
+	try {
+		if (!(await handle.stat()).isFile()) return { status: "unsafe" };
+		const contents = await handle.readFile("utf8");
+		let value;
+		try {
+			value = JSON.parse(contents);
+		} catch {
+			return { status: "malformed" };
+		}
+		if (value != null && typeof value === "object" && Number.isInteger(value.pid) && value.pid > 0 && typeof value.token === "string") return {
+			status: "valid",
+			owner: {
+				pid: value.pid,
+				token: value.token
+			}
+		};
+		return { status: "malformed" };
+	} finally {
+		await handle.close();
+	}
+}
+function processIsAlive(pid) {
+	if (pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+async function lockDirectoryIsUnsafe(lockPath) {
+	try {
+		const stat = await nodeFsPromises.lstat(lockPath);
+		return stat.isSymbolicLink() || !stat.isDirectory();
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+async function lockIsOld(lockPath) {
+	try {
+		const stat = await nodeFsPromises.lstat(lockPath);
+		if (stat.isSymbolicLink()) return false;
+		return Date.now() - stat.mtimeMs >= FILE_LOCK_INITIALIZING_MS;
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+async function recoverLock(lockPath, observedOwner) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
+	if (await lockDirectoryIsUnsafe(lockPath)) return false;
+	let recovery;
+	try {
+		recovery = await nodeFsPromises.open(recoveryPath, "wx", 384);
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		const recoveryOwner = await readOwner(recoveryPath);
+		if (recoveryOwner.status === "valid" && !processIsAlive(recoveryOwner.owner.pid) || (recoveryOwner.status === "missing" || recoveryOwner.status === "malformed") && await lockIsOld(recoveryPath)) await nodeFsPromises.unlink(recoveryPath).catch((unlinkError) => {
+			if (unlinkError.code !== "ENOENT") throw unlinkError;
+		});
+		return false;
+	}
+	try {
+		await recovery.writeFile(JSON.stringify({
+			pid: process.pid,
+			token: randomUUID()
+		}), "utf8");
+		if (await lockDirectoryIsUnsafe(lockPath)) return false;
+		const currentOwner = await readOwner(ownerFile);
+		if (currentOwner.status === "valid" && currentOwner.owner.pid === observedOwner.pid && currentOwner.owner.token === observedOwner.token && !processIsAlive(currentOwner.owner.pid)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			await nodeFsPromises.unlink(ownerFile);
+			await nodeFsPromises.rmdir(lockPath);
+			return true;
+		}
+		if ((currentOwner.status === "missing" || currentOwner.status === "malformed") && observedOwner.token === "invalid" && await lockIsOld(lockPath)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			if (currentOwner.status === "malformed") await nodeFsPromises.unlink(ownerFile);
+			try {
+				await nodeFsPromises.rmdir(lockPath);
+				return true;
+			} catch (error) {
+				const code = error.code;
+				if (code === "ENOTEMPTY" || code === "EEXIST" || code === "ENOTDIR") return false;
+				throw error;
+			}
+		}
+		return false;
+	} finally {
+		await recovery.close();
+		await nodeFsPromises.unlink(recoveryPath).catch((error) => {
+			if (error.code !== "ENOENT") throw error;
+		});
+	}
+}
+async function removeLockIfOwned(lockPath, token) {
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const owner = await readOwner(ownerFile);
+	if (owner.status !== "valid" || owner.owner.pid !== process.pid || owner.owner.token !== token) return;
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	await nodeFsPromises.unlink(ownerFile);
+	await nodeFsPromises.rmdir(lockPath);
+}
+async function withFileLock(lockPath, action) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const token = randomUUID();
+	const deadline = performance$1.now() + FILE_LOCK_WAIT_TIMEOUT_MS;
+	while (true) try {
+		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
+		try {
+			await nodeFsPromises.writeFile(ownerFile, JSON.stringify({
+				pid: process.pid,
+				token
+			}), {
+				encoding: "utf8",
+				flag: "wx",
+				mode: 384
+			});
+		} catch (error) {
+			await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
+			throw error;
+		}
+		break;
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		if (await lockDirectoryIsUnsafe(lockPath)) throw new Error("Unsafe file lock directory");
+		const ownerRead = await readOwner(ownerFile);
+		if (ownerRead.status === "unsafe") throw new Error("Unsafe file lock owner record");
+		if (ownerRead.status === "missing" || ownerRead.status === "malformed") {
+			if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
+				pid: 0,
+				token: "invalid"
+			});
+		} else if (!processIsAlive(ownerRead.owner.pid)) await recoverLock(lockPath, ownerRead.owner);
+		const remaining = deadline - performance$1.now();
+		if (remaining <= 0) throw new Error(`Timed out waiting for file lock ${lockPath}`);
+		await setTimeout$1(Math.min(25, remaining));
+	}
+	try {
+		return await action();
+	} finally {
+		await removeLockIfOwned(lockPath, token);
+	}
+}
+//#endregion
+//#region src/trace-delivery-store.ts
+async function withRolloutLock(rolloutFile, action) {
+	return withFileLock(`${rolloutFile}${TRACE_UPLOAD_LOCK_SUFFIX}`, action);
+}
+async function loadTurnStates(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, "utf-8");
+		const states = /* @__PURE__ */ new Map();
+		for (const line of data.split("\n").filter(Boolean)) {
+			try {
+				const value = JSON.parse(line);
+				if (value != null && typeof value === "object" && typeof value.turnId === "string" && TRACE_UPLOAD_STATES.includes(value.state)) {
+					states.set(value.turnId, value.state);
+					continue;
+				}
+			} catch {}
+			states.set(line, "uploaded");
+		}
+		return states;
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Map();
+		throw error;
+	}
+}
+async function loadUploadedTurnIds(rolloutFile) {
+	return new Set([...await loadTurnStates(rolloutFile)].filter(([, state]) => state === "uploaded").map(([turnId]) => turnId));
+}
+async function markTurnUploaded(rolloutFile, turnId) {
+	try {
+		await nodeFsPromises.appendFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, `${turnId}\n`, "utf-8");
+		return true;
+	} catch {
+		return false;
+	}
+}
+//#endregion
 //#region src/utils/findLast.ts
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
@@ -17305,25 +17519,6 @@ function isRecord(value) {
 }
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
-//#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch (error) {
-		return false;
-	}
 }
 //#endregion
 //#region src/metadata-constants.ts
@@ -18522,7 +18717,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
 }
-async function convertToRunTree(input, options) {
+async function convertToRunTreeWorker(input, options) {
 	let sessionMeta;
 	let task;
 	function createTask() {
@@ -18690,6 +18885,9 @@ async function convertToRunTree(input, options) {
 		}
 	}
 	await Promise.all(PROMISE_QUEUE);
+}
+async function convertToRunTree(input, options) {
+	return withRolloutLock(input.transcript_path, () => convertToRunTreeWorker(input, options));
 }
 //#endregion
 //#region src/user-prompt-submit.ts
