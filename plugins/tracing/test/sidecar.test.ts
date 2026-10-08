@@ -118,6 +118,44 @@ it("stores bounded topology without exposing the turn id in its file path", asyn
   );
   expect(JSON.parse(checkpoint)).toEqual({ topology });
   await expect(loadTurnRunTopology(rolloutFile, turnId)).resolves.toEqual(topology);
+
+  const file = await fs.open(path.join("/workspace/repo", files[0]), "r");
+  const read = file.read.bind(file);
+  const open = vi.spyOn(fs, "open").mockResolvedValueOnce(file);
+  const partialRead = vi
+    .spyOn(file, "read")
+    .mockImplementation(((buffer: Buffer, offset: number, length: number, position: number) =>
+      read(buffer, offset, Math.min(length, 7), position)) as typeof file.read);
+  try {
+    await expect(loadTurnRunTopology(rolloutFile, turnId)).resolves.toEqual(topology);
+    expect(partialRead.mock.calls.length).toBeGreaterThan(1);
+  } finally {
+    partialRead.mockRestore();
+    open.mockRestore();
+  }
+});
+
+it("bounds topology reads even when an earlier size check would be stale", async () => {
+  const rolloutFile = "/workspace/repo/rollout.jsonl";
+  await markTurnRunTopology(rolloutFile, "turn-id", {
+    parentRunId: null,
+    traceId: "trace",
+    dottedOrder: "order",
+    executionOrder: 1,
+    childExecutionOrder: 1,
+  });
+  const [name] = await fs.readdir("/workspace/repo");
+  const file = path.join("/workspace/repo", name);
+  const staleStat = await fs.stat(file);
+  await fs.writeFile(file, " ".repeat(TRACE_UPLOAD_TOPOLOGY_MAX_BYTES + 1));
+  const stat = vi.spyOn(fs, "stat").mockResolvedValue(staleStat);
+  try {
+    await expect(loadTurnRunTopology(rolloutFile, "turn-id")).rejects.toThrow(
+      "exceeds its size limit",
+    );
+  } finally {
+    stat.mockRestore();
+  }
 });
 
 it("rejects an oversized topology before writing it", async () => {

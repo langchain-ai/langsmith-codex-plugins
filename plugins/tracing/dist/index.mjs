@@ -17453,8 +17453,20 @@ async function loadTurnRunTopology(rolloutFile, turnId) {
 	const topologyFile = topologyFilePath(rolloutFile, turnId);
 	let contents;
 	try {
-		if ((await nodeFsPromises.stat(topologyFile)).size > 4096) throw new Error("Trace upload topology checkpoint exceeds its size limit");
-		contents = await nodeFsPromises.readFile(topologyFile, "utf-8");
+		const file = await nodeFsPromises.open(topologyFile, "r");
+		try {
+			const buffer = Buffer.alloc(4097);
+			let length = 0;
+			while (length < buffer.length) {
+				const { bytesRead } = await file.read(buffer, length, buffer.length - length, length);
+				if (bytesRead === 0) break;
+				length += bytesRead;
+			}
+			if (length > 4096) throw new Error("Trace upload topology checkpoint exceeds its size limit");
+			contents = buffer.toString("utf8", 0, length);
+		} finally {
+			await file.close();
+		}
 	} catch (error) {
 		if (error.code === "ENOENT") return void 0;
 		throw error;
