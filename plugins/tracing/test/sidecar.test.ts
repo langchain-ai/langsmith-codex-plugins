@@ -146,8 +146,8 @@ it("bounds topology reads even when an earlier size check would be stale", async
   });
   const [name] = await fs.readdir("/workspace/repo");
   const file = path.join("/workspace/repo", name);
-  const staleStat = await fs.stat(file);
   await fs.writeFile(file, " ".repeat(TRACE_UPLOAD_TOPOLOGY_MAX_BYTES + 1));
+  const staleStat = { ...(await fs.stat(file)), size: 1 };
   const stat = vi.spyOn(fs, "stat").mockResolvedValue(staleStat);
   try {
     await expect(loadTurnRunTopology(rolloutFile, "turn-id")).rejects.toThrow(
