@@ -5,8 +5,10 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
+import { isRecord } from "./utils/objects.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
+import { codingAgentMetadata, withTrustedMetadata } from "./metadata.js";
+import { mergeGitInfo, resolveGitAttribution } from "./git.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
@@ -18,6 +20,7 @@ import type {
 } from "./types.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
+import type { CodingAgentContext } from "./metadata-models.js";
 import {
   defaultPrivacyPath,
   savedTurnMode,
@@ -52,10 +55,6 @@ function extractSpawnedAgentId(output: unknown): string | undefined {
     if (typeof id === "string") return id;
   }
   return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatError(value: unknown): string | undefined {
@@ -564,7 +563,29 @@ async function postTurn(
     return undefined;
   })();
 
-  const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : undefined;
+  const existingRootMetadata = { ...options?.metadata, ...task.context };
+  const rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : undefined;
+  const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined;
+  const sessionAttribution =
+    mode === "full" && sessionCwd != null && sessionCwd !== cwd
+      ? await resolveGitAttribution(sessionCwd)
+      : rootAttribution;
+  const sessionGit =
+    sessionCwd != null &&
+    sessionCwd !== cwd &&
+    rootAttribution != null &&
+    sessionAttribution?.root !== rootAttribution.root
+      ? undefined
+      : mode === "full"
+        ? sessionMeta?.git
+        : undefined;
+  const git = rootAttribution ? mergeGitInfo(rootAttribution.git, sessionGit) : sessionGit;
+  const existingAttributionIdentifier = existingRootMetadata.ls_attribution_identifier;
+  const attributionIdentifier =
+    sessionMeta?.ls_attribution_identifier ??
+    (typeof existingAttributionIdentifier === "string"
+      ? existingAttributionIdentifier
+      : rootAttribution?.identifier);
 
   const isSubagent = sessionMeta?.is_subagent === true;
 
@@ -573,7 +594,7 @@ async function postTurn(
     (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
 
   // coding-agent-v1 base contract, stamped onto every run below.
-  const base = codingAgentMetadata({
+  const metadataContext = {
     agentType: isSubagent ? "subagent" : "root",
     threadId: conversationThreadId,
     turnId: task.turnId?.id,
@@ -581,8 +602,10 @@ async function postTurn(
     cliVersion: sessionMeta?.cli_version,
     cwd,
     git,
+    attributionIdentifier,
     sandboxType,
-  });
+  } satisfies CodingAgentContext;
+  const base = codingAgentMetadata(metadataContext, existingRootMetadata);
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
@@ -753,7 +776,6 @@ async function postTurn(
       const runName = nativeToolName ?? "openai.codex.tool";
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
-
       const toolRun = createRunTree(
         {
           name: runName,
@@ -914,6 +936,7 @@ export async function convertToRunTree(
         cli_version: payload.cli_version,
         cwd: payload.cwd,
         git: payload.git,
+        ls_attribution_identifier: payload.ls_attribution_identifier,
         is_subagent: isSubagent,
         parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined,
         agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
