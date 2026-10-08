@@ -8,8 +8,8 @@ import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
 import { createHash, randomUUID } from "node:crypto";
-import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { performance as performance$1 } from "node:perf_hooks";
+import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { v5 } from "uuid";
@@ -17309,119 +17309,6 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
-//#region src/utils/time.ts
-function normalizedTime(value) {
-	if (typeof value === "number") return value;
-	if (typeof value === "string") {
-		const parsed = Date.parse(value);
-		return Number.isNaN(parsed) ? value : parsed;
-	}
-}
-//#endregion
-//#region src/utils/http.ts
-function normalizedEndpoint(apiUrl) {
-	const url = new URL(apiUrl);
-	url.username = "";
-	url.password = "";
-	url.search = "";
-	url.hash = "";
-	return url.toString().replace(/\/+$/, "");
-}
-function errorStatus(error) {
-	if (error == null || typeof error !== "object" || !("status" in error)) return void 0;
-	const status = error.status;
-	return typeof status === "number" ? status : void 0;
-}
-//#endregion
-//#region src/utils/objects.ts
-function asRecord(value) {
-	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
-}
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
-//#region src/utils/serialization.ts
-function copyExtraThroughJson(run) {
-	const copy = { ...run };
-	const extra = run.extra;
-	if (extra != null && typeof extra === "object") {
-		const serialized = JSON.stringify(extra);
-		if (serialized === void 0) delete copy.extra;
-		else copy.extra = JSON.parse(serialized);
-	}
-	return copy;
-}
-function sortedJson(value) {
-	if (value === null || typeof value !== "object") return JSON.stringify(value);
-	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
-	const record = value;
-	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
-}
-function digestFor(value) {
-	const json = JSON.stringify(value);
-	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
-	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
-}
-function containsExpected(actual, expected) {
-	if (expected === void 0) return true;
-	if (expected === null || typeof expected !== "object") return actual === expected;
-	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
-	const record = asRecord(actual);
-	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
-}
-//#endregion
-//#region src/constants/incremental-delivery.ts
-const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
-const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
-const INCREMENTAL_DELIVERY_DIGEST_PATTERN = /^[a-f0-9]{64}$/;
-const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
-	"endpoint",
-	"projectName",
-	"runId",
-	"workspaceId",
-	"credentialHash",
-	"topology",
-	"createAttempted",
-	"deliveredDigest"
-];
-const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
-	"parentRunId",
-	"traceId",
-	"dottedOrder",
-	"startTime",
-	"name",
-	"runType"
-];
-const INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS = ["LANGSMITH_PROJECT", "LANGCHAIN_PROJECT"];
-const INCREMENTAL_DELIVERY_READ_DELAYS = [
-	100,
-	250,
-	500,
-	1e3,
-	2e3,
-	4e3
-];
-const INCREMENTAL_DELIVERY_PATCH_FIELDS = [
-	"inputs",
-	"outputs",
-	"error",
-	"extra",
-	"tags",
-	"events"
-];
-const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
-	"thread_id",
-	"turn_id",
-	"ls_trace_schema_version",
-	"ls_integration",
-	"ls_agent_type",
-	"ls_tracing_mode"
-];
-//#endregion
 //#region src/utils/fileLock.ts
 async function readOwner(file) {
 	let stat;
@@ -17589,6 +17476,147 @@ async function withFileLock(lockPath, action) {
 		await removeLockIfOwned(lockPath, token);
 	}
 }
+//#endregion
+//#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
+//#endregion
+//#region src/tool-capture-constants.ts
+const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
+const TURN_CAPTURE_TRANSCRIPT = "transcript.jsonl";
+//#endregion
+//#region src/tool-capture.ts
+function turnCaptureDirectory(transcript, turn) {
+	return `${transcript}${TURN_CAPTURE_SUFFIX}${createHash("sha256").update(turn).digest("hex")}`;
+}
+async function readTranscript(file, turn) {
+	let contents;
+	try {
+		contents = await nodeFsPromises.readFile(file, "utf8");
+	} catch (error) {
+		if (error.code !== "ENOENT" || !turn) throw error;
+		contents = await nodeFsPromises.readFile(nodePath.join(turnCaptureDirectory(file, turn), TURN_CAPTURE_TRANSCRIPT), "utf8");
+	}
+	const lines = contents.split("\n");
+	return lines.flatMap((line, index) => {
+		if (!line.trim()) return [];
+		try {
+			return [JSON.parse(line)];
+		} catch (error) {
+			if (index === lines.length - 1 && !contents.endsWith("\n")) return [];
+			throw error;
+		}
+	});
+}
+//#endregion
+//#region src/utils/time.ts
+function normalizedTime(value) {
+	if (typeof value === "number") return value;
+	if (typeof value === "string") {
+		const parsed = Date.parse(value);
+		return Number.isNaN(parsed) ? value : parsed;
+	}
+}
+//#endregion
+//#region src/utils/http.ts
+function normalizedEndpoint(apiUrl) {
+	const url = new URL(apiUrl);
+	url.username = "";
+	url.password = "";
+	url.search = "";
+	url.hash = "";
+	return url.toString().replace(/\/+$/, "");
+}
+function errorStatus(error) {
+	if (error == null || typeof error !== "object" || !("status" in error)) return void 0;
+	const status = error.status;
+	return typeof status === "number" ? status : void 0;
+}
+//#endregion
+//#region src/utils/serialization.ts
+function copyExtraThroughJson(run) {
+	const copy = { ...run };
+	const extra = run.extra;
+	if (extra != null && typeof extra === "object") {
+		const serialized = JSON.stringify(extra);
+		if (serialized === void 0) delete copy.extra;
+		else copy.extra = JSON.parse(serialized);
+	}
+	return copy;
+}
+function sortedJson(value) {
+	if (value === null || typeof value !== "object") return JSON.stringify(value);
+	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
+	const record = value;
+	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
+}
+function digestFor(value) {
+	const json = JSON.stringify(value);
+	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
+	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
+}
+function containsExpected(actual, expected) {
+	if (expected === void 0) return true;
+	if (expected === null || typeof expected !== "object") return actual === expected;
+	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
+	const record = asRecord(actual);
+	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
+}
+//#endregion
+//#region src/constants/incremental-delivery.ts
+const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
+const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
+const INCREMENTAL_DELIVERY_DIGEST_PATTERN = /^[a-f0-9]{64}$/;
+const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
+	"endpoint",
+	"projectName",
+	"runId",
+	"workspaceId",
+	"credentialHash",
+	"topology",
+	"createAttempted",
+	"deliveredDigest"
+];
+const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
+	"parentRunId",
+	"traceId",
+	"dottedOrder",
+	"startTime",
+	"name",
+	"runType"
+];
+const INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS = ["LANGSMITH_PROJECT", "LANGCHAIN_PROJECT"];
+const INCREMENTAL_DELIVERY_READ_DELAYS = [
+	100,
+	250,
+	500,
+	1e3,
+	2e3,
+	4e3
+];
+const INCREMENTAL_DELIVERY_PATCH_FIELDS = [
+	"inputs",
+	"outputs",
+	"error",
+	"extra",
+	"tags",
+	"events"
+];
+const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"ls_trace_schema_version",
+	"ls_integration",
+	"ls_agent_type",
+	"ls_tracing_mode"
+];
 //#endregion
 //#region src/incremental-delivery-store.ts
 function checkpointPath(rolloutFile, turnKey, identity) {
@@ -18665,9 +18693,6 @@ function* enumerate(arr) {
 }
 //#endregion
 //#region src/trace.ts
-async function loadSession(name) {
-	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
 function extractSpawnedAgentId(output) {
 	let obj = output;
 	if (typeof output === "string") try {
@@ -18772,7 +18797,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		hasEvidence: false
 	};
 	visited.add(sessionId);
-	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+	const meta = (await readTranscript(file)).find((event) => event.type === "session_meta");
 	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return {
 		mode: "metadata",
 		hasEvidence: false
@@ -18790,7 +18815,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		let nativeTurn;
 		const calls = /* @__PURE__ */ new Map();
 		const launches = /* @__PURE__ */ new Set();
-		for (const event of await loadSession(parentFile)) {
+		for (const event of await readTranscript(parentFile)) {
 			if (event.type === "event_msg") {
 				if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
 				const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -19177,7 +19202,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		options?.visitedThreads?.add(subagentThread);
 		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 		if (subagentFile == null) return;
-		const events = await loadSession(subagentFile);
+		const events = await readTranscript(subagentFile);
 		await convertToRunTree({
 			transcript_path: subagentFile,
 			turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
@@ -19313,7 +19338,7 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
 	const turnStates = await loadTurnStates(input.transcript_path);
-	const events = await loadSession(input.transcript_path);
+	const events = await readTranscript(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
 			const source = payload.source;
