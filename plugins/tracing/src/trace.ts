@@ -7,8 +7,8 @@ import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { isRecord } from "./utils/objects.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, withTrustedMetadata } from "./metadata.js";
-import { mergeGitInfo, resolveGitAttribution } from "./git.js";
+import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
+import { resolveTurnAttribution } from "./attribution.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
@@ -564,28 +564,20 @@ async function postTurn(
   })();
 
   const existingRootMetadata = { ...options?.metadata, ...task.context };
-  const rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : undefined;
-  const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined;
-  const sessionAttribution =
-    mode === "full" && sessionCwd != null && sessionCwd !== cwd
-      ? await resolveGitAttribution(sessionCwd)
-      : rootAttribution;
-  const sessionGit =
-    sessionCwd != null &&
-    sessionCwd !== cwd &&
-    rootAttribution != null &&
-    sessionAttribution?.root !== rootAttribution.root
-      ? undefined
-      : mode === "full"
-        ? sessionMeta?.git
-        : undefined;
-  const git = rootAttribution ? mergeGitInfo(rootAttribution.git, sessionGit) : sessionGit;
-  const existingAttributionIdentifier = existingRootMetadata.ls_attribution_identifier;
-  const attributionIdentifier =
-    sessionMeta?.ls_attribution_identifier ??
-    (typeof existingAttributionIdentifier === "string"
-      ? existingAttributionIdentifier
-      : rootAttribution?.identifier);
+  const attribution =
+    mode === "full"
+      ? await resolveTurnAttribution({
+          cwd,
+          sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined,
+          sessionGit: sessionMeta?.git,
+          sessionIdentifier: sessionMeta?.ls_attribution_identifier,
+          existingMetadata: existingRootMetadata,
+          messages,
+          toolCalls: task.toolCalls,
+        })
+      : undefined;
+  const git = attribution?.git;
+  const attributionIdentifier = attribution?.identifier;
 
   const isSubagent = sessionMeta?.is_subagent === true;
 
@@ -776,6 +768,12 @@ async function postTurn(
       const runName = nativeToolName ?? "openai.codex.tool";
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+      const toolAttribution = attribution?.tools.get(toolCallId);
+      const toolRepositoryFields =
+        toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null)
+          ? toolRepositoryMetadata(toolAttribution.resolved)
+          : {};
+
       const toolRun = createRunTree(
         {
           name: runName,
@@ -791,6 +789,7 @@ async function postTurn(
               {
                 ...base,
                 ...CHILD_SCOPE_RESET,
+                ...toolRepositoryFields,
                 ls_model_type: "chat",
                 ls_provider: sessionMeta?.model_provider,
                 ls_model_name: task.context?.model,
@@ -997,6 +996,15 @@ export async function convertToRunTree(
         task ??= createTask();
         task.toolCalls[payload.call_id] ??= { error: undefined, timings: [], outputs: {} };
         task.toolCalls[payload.call_id].timings.push(eventTime);
+
+        if (payload.type === "exec_command_end" && typeof payload.cwd === "string") {
+          task.toolCalls[payload.call_id].executionCwd = payload.cwd;
+        }
+        if (payload.type === "patch_apply_end") {
+          task.toolCalls[payload.call_id].changedPaths = isRecord(payload.changes)
+            ? Object.keys(payload.changes)
+            : [];
+        }
 
         if (payload.type.endsWith("_end")) {
           // attempt to find an error message

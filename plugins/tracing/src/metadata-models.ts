@@ -1,4 +1,4 @@
-import type { GitInfo } from "./types.js";
+import type { AggregateMessage, GitInfo, StandardMessage, ToolCallEvidence } from "./types.js";
 
 /** The role a run plays within a coding-agent trace. */
 export type LSAgentType = "root" | "subagent" | "middleware" | "compaction";
@@ -29,6 +29,16 @@ export type ResolvedGitAttribution = {
   identifier?: string;
 };
 
+export type ToolPathTargets = {
+  explicit: boolean;
+  paths: string[];
+};
+
+export type ToolAttribution = {
+  explicit: boolean;
+  resolved?: ResolvedGitAttribution;
+};
+
 export type RepositoryMetadata = {
   repository_url?: string;
   repository_provider?: string;
@@ -38,4 +48,20 @@ export type RepositoryMetadata = {
 export type RepositoryIdentity = {
   host: string;
   path: string;
+};
+
+export type TurnAttributionInput = {
+  cwd?: string;
+  sessionCwd?: string;
+  sessionGit?: GitInfo;
+  sessionIdentifier?: string;
+  existingMetadata: Record<string, unknown>;
+  messages: AggregateMessage<StandardMessage>[];
+  toolCalls: Record<string, ToolCallEvidence>;
+};
+
+export type TurnAttribution = {
+  git?: GitInfo;
+  identifier?: string;
+  tools: Map<string, ToolAttribution>;
 };

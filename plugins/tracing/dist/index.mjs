@@ -17335,6 +17335,20 @@ const GIT_LOCATION_ENV_KEYS = [
 	"GIT_INDEX_FILE",
 	"GIT_CEILING_DIRECTORIES"
 ];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
 const GITHUB_HOSTS_FILE = "hosts.yml";
 const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
 const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
@@ -17402,6 +17416,18 @@ function repositoryIdentity(url) {
 }
 //#endregion
 //#region src/metadata.ts
+function toolRepositoryMetadata(attribution) {
+	const repo = parseRepository(attribution?.git.repository_url);
+	const metadata = {
+		repository_url: repo.repository_url,
+		repository_provider: repo.repository_provider,
+		repository_name: repo.repository_name,
+		git_branch: attribution?.git.branch,
+		git_commit_sha: attribution?.git.commit_hash,
+		ls_attribution_identifier: attribution?.identifier
+	};
+	return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
+}
 function codingAgentMetadata(ctx, existing = {}) {
 	const existingRepositoryUrl = typeof existing.repository_url === "string" && existing.repository_url.length > 0 ? existing.repository_url : void 0;
 	const repo = parseRepository(existingRepositoryUrl ?? ctx.git?.repository_url);
@@ -17452,6 +17478,12 @@ async function nearestExistingDirectory(target) {
 		if (parent === current) return void 0;
 		current = parent;
 	}
+}
+function absoluteTarget(value, base) {
+	if (typeof value !== "string" || value.length === 0) return void 0;
+	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
+	if (!base || !nodePath.isAbsolute(base)) return void 0;
+	return nodePath.resolve(base, value);
 }
 //#endregion
 //#region src/git.ts
@@ -17533,6 +17565,80 @@ function mergeGitInfo(liveGit, sessionGit) {
 		...sessionGit
 	});
 	return Object.keys(merged).length > 0 ? merged : void 0;
+}
+//#endregion
+//#region src/tool-attribution.ts
+function toolPathTargets(input, evidence, sessionCwd) {
+	const args = isRecord(input) ? input : void 0;
+	const executionDirectory = absoluteTarget(evidence?.executionCwd, sessionCwd);
+	if (args == null || typeof args.code === "string" || typeof args.script === "string") {
+		const paths = evidence?.changedPaths != null ? evidence.changedPaths.map((value) => absoluteTarget(value, executionDirectory ?? sessionCwd)) : executionDirectory != null ? [executionDirectory] : [];
+		return {
+			explicit: true,
+			paths: [...new Set(paths.filter((value) => value != null))]
+		};
+	}
+	const rawDirectories = TOOL_WORKING_DIRECTORY_KEYS.flatMap((key) => args && Object.hasOwn(args, key) && args[key] != null ? [args[key]] : []);
+	const rawPaths = TOOL_PATH_KEYS.flatMap((key) => args && Object.hasOwn(args, key) && args[key] != null ? [args[key]] : []);
+	const workingDirectories = rawDirectories.map((value) => absoluteTarget(value, sessionCwd));
+	const baseDirectory = executionDirectory ?? workingDirectories.find((value) => value != null) ?? sessionCwd;
+	const hasFileTargets = rawPaths.length > 0 || evidence?.changedPaths != null;
+	const fileTargets = [...rawPaths.map((value) => absoluteTarget(value, baseDirectory)), ...(evidence?.changedPaths ?? []).map((value) => absoluteTarget(value, baseDirectory))];
+	const paths = hasFileTargets ? fileTargets : executionDirectory != null ? [executionDirectory] : workingDirectories;
+	return {
+		explicit: rawDirectories.length > 0 || rawPaths.length > 0 || evidence?.executionCwd != null || evidence?.changedPaths != null,
+		paths: [...new Set(paths.filter((value) => value != null))]
+	};
+}
+async function resolveToolAttribution(input, evidence, sessionCwd, sessionGit) {
+	const targets = toolPathTargets(input, evidence, sessionCwd);
+	if (!targets.explicit) {
+		const resolved = await resolveGitAttribution(sessionCwd);
+		if (resolved) resolved.git = mergeGitInfo(resolved.git, sessionGit) ?? resolved.git;
+		return {
+			explicit: false,
+			resolved
+		};
+	}
+	if (targets.paths.length === 0) return { explicit: true };
+	const resolved = await Promise.all(targets.paths.map(resolveGitAttribution));
+	if (resolved.some((value) => value == null)) return { explicit: true };
+	const first = resolved[0];
+	if (resolved.some((value) => value.root !== first.root || value.git.branch !== first.git.branch || value.git.commit_hash !== first.git.commit_hash || value.git.repository_url !== first.git.repository_url)) return { explicit: true };
+	return {
+		explicit: true,
+		resolved: first
+	};
+}
+//#endregion
+//#region src/attribution.ts
+async function resolveTurnAttribution(input) {
+	let rootAttribution = await resolveGitAttribution(input.cwd);
+	const sessionCwdChanged = input.sessionCwd != null && input.sessionCwd !== input.cwd;
+	const sessionAttribution = input.sessionCwd != null ? input.sessionCwd === input.cwd ? rootAttribution : await resolveGitAttribution(input.sessionCwd) : void 0;
+	const sessionGitForCurrentRoot = () => {
+		if (sessionCwdChanged && rootAttribution != null && sessionAttribution?.root !== rootAttribution.root) return;
+		return input.sessionGit;
+	};
+	let fallbackIdentifier = rootAttribution?.identifier;
+	const tools = /* @__PURE__ */ new Map();
+	for (const { message } of input.messages) {
+		if (message.role !== "ai") continue;
+		for (const call of message.content) {
+			if (call.type !== "tool_call" || typeof call.id !== "string") continue;
+			const toolAttribution = await resolveToolAttribution(call.args, input.toolCalls[call.id], input.cwd, sessionGitForCurrentRoot());
+			tools.set(call.id, toolAttribution);
+			if (fallbackIdentifier == null && toolAttribution.resolved?.identifier != null) fallbackIdentifier = toolAttribution.resolved.identifier;
+			if (rootAttribution == null && toolAttribution.explicit && toolAttribution.resolved != null) rootAttribution = toolAttribution.resolved;
+		}
+	}
+	const git = mergeGitInfo(rootAttribution?.git, sessionGitForCurrentRoot());
+	const existingIdentifier = input.existingMetadata.ls_attribution_identifier;
+	return {
+		git,
+		identifier: input.sessionIdentifier ?? (typeof existingIdentifier === "string" ? existingIdentifier : fallbackIdentifier),
+		tools
+	};
 }
 //#endregion
 //#region src/skills.ts
@@ -18237,13 +18343,17 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		...options?.metadata,
 		...task.context
 	};
-	const rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : void 0;
-	const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0;
-	const sessionAttribution = mode === "full" && sessionCwd != null && sessionCwd !== cwd ? await resolveGitAttribution(sessionCwd) : rootAttribution;
-	const sessionGit = sessionCwd != null && sessionCwd !== cwd && rootAttribution != null && sessionAttribution?.root !== rootAttribution.root ? void 0 : mode === "full" ? sessionMeta?.git : void 0;
-	const git = rootAttribution ? mergeGitInfo(rootAttribution.git, sessionGit) : sessionGit;
-	const existingAttributionIdentifier = existingRootMetadata.ls_attribution_identifier;
-	const attributionIdentifier = sessionMeta?.ls_attribution_identifier ?? (typeof existingAttributionIdentifier === "string" ? existingAttributionIdentifier : rootAttribution?.identifier);
+	const attribution = mode === "full" ? await resolveTurnAttribution({
+		cwd,
+		sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0,
+		sessionGit: sessionMeta?.git,
+		sessionIdentifier: sessionMeta?.ls_attribution_identifier,
+		existingMetadata: existingRootMetadata,
+		messages,
+		toolCalls: task.toolCalls
+	}) : void 0;
+	const git = attribution?.git;
+	const attributionIdentifier = attribution?.identifier;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
@@ -18361,6 +18471,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+			const toolAttribution = attribution?.tools.get(toolCallId);
+			const toolRepositoryFields = toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null) ? toolRepositoryMetadata(toolAttribution.resolved) : {};
 			const toolRun = createRunTree({
 				name: runName,
 				run_type: "tool",
@@ -18375,6 +18487,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
 					...base,
 					...CHILD_SCOPE_RESET,
+					...toolRepositoryFields,
 					ls_model_type: "chat",
 					ls_provider: sessionMeta?.model_provider,
 					ls_model_name: task.context?.model,
@@ -18495,6 +18608,8 @@ async function convertToRunTree(input, options) {
 					outputs: {}
 				};
 				task.toolCalls[payload.call_id].timings.push(eventTime);
+				if (payload.type === "exec_command_end" && typeof payload.cwd === "string") task.toolCalls[payload.call_id].executionCwd = payload.cwd;
+				if (payload.type === "patch_apply_end") task.toolCalls[payload.call_id].changedPaths = isRecord(payload.changes) ? Object.keys(payload.changes) : [];
 				if (payload.type.endsWith("_end")) {
 					if (payload.status === "failed" || payload.status === "declined") {
 						const stdout = (() => {

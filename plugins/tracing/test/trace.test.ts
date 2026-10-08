@@ -9,7 +9,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
-import type { RootAttributionRolloutOptions } from "./models/attribution.js";
+import type { AttributionRolloutOptions } from "./models/attribution.js";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
 declare const __LS_INTEGRATION_VERSION__: string;
@@ -55,7 +55,8 @@ async function createOutsideGitDirectory() {
   return directory;
 }
 
-async function writeRootAttributionRollout(options: RootAttributionRolloutOptions) {
+async function writeAttributionRollout(options: AttributionRolloutOptions) {
+  const sessionId = "attribution-thread";
   const turnId = "attribution-turn";
   const events: Record<string, unknown>[] = [];
   let timestamp = Date.parse("2026-10-07T12:00:00.000Z");
@@ -64,12 +65,13 @@ async function writeRootAttributionRollout(options: RootAttributionRolloutOption
   };
 
   add("session_meta", {
-    id: "attribution-thread",
+    id: sessionId,
     timestamp: new Date(timestamp++).toISOString(),
     cwd: options.sessionMetaCwd ?? options.sessionCwd,
     originator: "codex-test",
     cli_version: "0.160.0",
     source: "cli",
+    model_provider: "openai",
     git: options.sessionGit,
     ls_attribution_identifier: options.sessionIdentifier,
   });
@@ -78,7 +80,56 @@ async function writeRootAttributionRollout(options: RootAttributionRolloutOption
   add("response_item", {
     type: "message",
     role: "user",
-    content: [{ type: "input_text", text: "Inspect this repository" }],
+    content: [{ type: "input_text", text: "Inspect these repositories" }],
+  });
+  for (const call of options.calls) {
+    add(
+      "response_item",
+      call.input == null
+        ? {
+            type: "function_call",
+            name: call.name,
+            arguments: JSON.stringify(call.args ?? {}),
+            call_id: call.id,
+          }
+        : { type: "custom_tool_call", name: call.name, input: call.input, call_id: call.id },
+    );
+  }
+  for (const id of options.completionOrder ?? options.calls.map((call) => call.id)) {
+    const evidence = options.evidence?.[id];
+    if (typeof evidence?.cwd === "string") {
+      add("event_msg", {
+        type: "exec_command_end",
+        call_id: id,
+        turn_id: turnId,
+        command: ["/bin/zsh", "-lc", "pwd"],
+        cwd: evidence.cwd,
+        parsed_cmd: [],
+        stdout: "",
+        stderr: "",
+        exit_code: 0,
+        duration: { secs: 0, nanos: 0 },
+        formatted_output: "",
+        status: "completed",
+      });
+    }
+    if (evidence?.changes) {
+      add("event_msg", {
+        type: "patch_apply_end",
+        call_id: id,
+        turn_id: turnId,
+        changes: evidence.changes,
+        status: "completed",
+      });
+    }
+  }
+  for (const call of options.calls) {
+    add("response_item", { type: "function_call_output", call_id: call.id, output: "done" });
+  }
+  add("response_item", {
+    type: "message",
+    role: "assistant",
+    content: [{ type: "output_text", text: "Done" }],
   });
   add("event_msg", { type: "turn_complete", turn_id: turnId });
 
@@ -86,7 +137,7 @@ async function writeRootAttributionRollout(options: RootAttributionRolloutOption
     [EDITING_FILE]: events.map((event) => JSON.stringify(event)).join("\n") + "\n",
   });
   seedFullLaunchEvidence();
-  return { turnId };
+  return { sessionId, turnId };
 }
 
 async function preloadTestFiles(options: {
@@ -1223,13 +1274,72 @@ it("still traces a backlog turn once the rollout has a traced history", async ()
   expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
 });
 
-it("fills missing root Git fields without replacing configured metadata", async () => {
-  const repo = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+it("fills missing root Git fields and attributes structured tools to their repositories", async () => {
+  const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+  const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
+  const nestedRepo = await createGitRepository(
+    "Nested Author",
+    "https://github.com/example/nested-repo.git",
+    path.join(repoA.root, "workspace"),
+  );
+  const outsideRepo = await createOutsideGitDirectory();
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
-    sessionCwd: repo.root,
+
+  const calls = [
+    {
+      id: "file-a",
+      name: "read_file",
+      args: { file_path: path.join(repoA.root, "file.txt"), marker: "file-a" },
+    },
+    { id: "shell-b", name: "exec", args: { cmd: "pwd", marker: "shell-b" } },
+    { id: "patch-a", name: "apply_patch", args: { patch: "patch", marker: "patch-a" } },
+    {
+      id: "ambiguous",
+      name: "read_file",
+      args: {
+        path: path.join(repoA.root, "file.txt"),
+        file_path: path.join(repoB.root, "file.txt"),
+        marker: "ambiguous",
+      },
+    },
+    {
+      id: "target-over-cwd",
+      name: "read_file",
+      args: {
+        cwd: repoA.root,
+        file_path: path.join(repoB.root, "file.txt"),
+        marker: "target-over-cwd",
+      },
+    },
+    {
+      id: "relative-workdir",
+      name: "read_file",
+      args: { workdir: "workspace", file_path: "child/file.txt", marker: "relative-workdir" },
+    },
+    {
+      id: "unresolved",
+      name: "read_file",
+      args: { file_path: path.join(outsideRepo, "file.txt"), marker: "unresolved" },
+    },
+    { id: "opaque", name: "code", args: { code: "readFile(...) ", marker: "opaque" } },
+    { id: "opaque-custom-exec", name: "exec", input: "const result = await runCommand()" },
+    { id: "custom-patch", name: "exec", input: "apply the patch" },
+    { id: "implicit", name: "unknown_tool", args: { marker: "implicit" } },
+  ];
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: repoA.root,
+    sessionMetaCwd: path.join(repoA.root, "workspace"),
     sessionGit: { branch: "captured-root-branch" },
     sessionIdentifier: "provided-root-user",
+    calls,
+    evidence: {
+      "shell-b": { cwd: repoB.root },
+      "patch-a": {
+        cwd: repoB.root,
+        changes: { [path.join(repoA.root, "changed.txt")]: "added" },
+      },
+      "custom-patch": { changes: { [path.join(repoB.root, "changed.txt")]: "added" } },
+    },
   });
 
   await convertToRunTree(
@@ -1237,21 +1347,74 @@ it("fills missing root Git fields without replacing configured metadata", async 
     {
       client,
       metadata: {
-        repository_url: repo.remote,
+        repository_url: repoA.remote,
         repository_name: "configured/repo-a",
         ls_attribution_identifier: "provided-root-user",
       },
     },
   );
   const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
-  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+  const runs = Object.values(tree.data);
+  const rootRun = runs.find((run) => run.name === "openai.codex");
+  const metadataFor = (marker: string) => {
+    const run = runs.find(
+      (item) =>
+        item.run_type === "tool" &&
+        (item.inputs?.input as Record<string, unknown> | undefined)?.marker === marker,
+    );
+    expect(run).toBeDefined();
+    return run!.extra?.metadata as Record<string, unknown>;
+  };
+  const metadataForInput = (input: string) => {
+    const run = runs.find((item) => item.run_type === "tool" && item.inputs?.input === input);
+    expect(run).toBeDefined();
+    return run!.extra?.metadata as Record<string, unknown>;
+  };
 
   expect(rootRun?.extra?.metadata).toMatchObject({
-    repository_url: repo.remote,
+    repository_url: repoA.remote,
     repository_name: "configured/repo-a",
     git_branch: "captured-root-branch",
-    git_commit_sha: repo.commit,
+    git_commit_sha: repoA.commit,
     ls_attribution_identifier: "provided-root-user",
+  });
+  expect(metadataFor("file-a")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
+  });
+  expect(metadataFor("shell-b")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("patch-a")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
+  });
+  expect(metadataFor("target-over-cwd")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("relative-workdir")).toMatchObject({
+    repository_url: nestedRepo.remote,
+    ls_attribution_identifier: "Nested Author",
+  });
+  for (const marker of ["ambiguous", "unresolved", "opaque"]) {
+    expect(metadataFor(marker)).not.toHaveProperty("repository_url");
+    expect(metadataFor(marker)).not.toHaveProperty("ls_attribution_identifier");
+  }
+  expect(metadataForInput("const result = await runCommand()")).not.toHaveProperty(
+    "repository_url",
+  );
+  expect(metadataForInput("const result = await runCommand()")).not.toHaveProperty(
+    "ls_attribution_identifier",
+  );
+  expect(metadataForInput("apply the patch")).toMatchObject({
+    repository_url: repoB.remote,
+    ls_attribution_identifier: "Author B",
+  });
+  expect(metadataFor("implicit")).toMatchObject({
+    repository_url: repoA.remote,
+    ls_attribution_identifier: "Author A",
   });
 });
 
@@ -1260,10 +1423,45 @@ it("keeps the turn repository when the session directory moves elsewhere", async
   const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
   await execFileAsync("git", ["remote", "remove", "origin"], { cwd: repoB.root });
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
+  const { turnId } = await writeAttributionRollout({
     sessionCwd: repoA.root,
     sessionMetaCwd: repoB.root,
     sessionGit: { branch: "captured-repo-b-branch", commit_hash: repoB.commit },
+    calls: [{ id: "implicit", name: "unknown_tool", args: { marker: "implicit" } }],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const attributedRuns = Object.values(tree.data).filter(
+    (run) => run.name === "openai.codex" || run.run_type === "tool",
+  );
+
+  expect(attributedRuns).toHaveLength(2);
+  for (const run of attributedRuns) {
+    expect(run.extra?.metadata).toMatchObject({
+      repository_url: repoA.remote,
+      git_commit_sha: repoA.commit,
+      ls_attribution_identifier: "Author A",
+    });
+    expect(run.extra?.metadata).not.toHaveProperty("git_branch", "captured-repo-b-branch");
+  }
+});
+
+it("uses the first unambiguous tool in call order when the turn directory is outside Git", async () => {
+  const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
+  const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
+  const outsideRepo = await createOutsideGitDirectory();
+  const { client, callSpy } = mockClient();
+  const calls = [
+    { id: "first", name: "read_file", args: { file_path: path.join(repoA.root, "file.txt") } },
+    { id: "second", name: "read_file", args: { file_path: path.join(repoB.root, "file.txt") } },
+  ];
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: outsideRepo,
+    sessionGit: { branch: "captured-outside-branch" },
+    calls,
+    completionOrder: ["second", "first"],
+    evidence: { first: { cwd: repoA.root }, second: { cwd: repoB.root } },
   });
 
   await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
@@ -1272,10 +1470,31 @@ it("keeps the turn repository when the session directory moves elsewhere", async
 
   expect(rootRun?.extra?.metadata).toMatchObject({
     repository_url: repoA.remote,
-    git_commit_sha: repoA.commit,
+    repository_name: "example/repo-a",
+    git_branch: "captured-outside-branch",
     ls_attribution_identifier: "Author A",
   });
-  expect(rootRun?.extra?.metadata).not.toHaveProperty("git_branch", "captured-repo-b-branch");
+});
+
+it("fills a missing root author from an attributed tool when the turn repo has no author", async () => {
+  const rootRepo = await createGitRepository(undefined, "https://github.com/example/root.git");
+  const toolRepo = await createGitRepository("Tool Author", "https://github.com/example/tool.git");
+  const { client, callSpy } = mockClient();
+  const { turnId } = await writeAttributionRollout({
+    sessionCwd: rootRepo.root,
+    calls: [
+      { id: "tool", name: "read_file", args: { file_path: path.join(toolRepo.root, "file.txt") } },
+    ],
+  });
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const rootRun = Object.values(tree.data).find((run) => run.name === "openai.codex");
+
+  expect(rootRun?.extra?.metadata).toMatchObject({
+    repository_url: rootRepo.remote,
+    ls_attribution_identifier: "Tool Author",
+  });
 });
 
 it("keeps same-named repositories on separate GitHub hosts separate", async () => {
@@ -1284,12 +1503,13 @@ it("keeps same-named repositories on separate GitHub hosts separate", async () =
     "https://github.host-a.example/org/project.git",
   );
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
+  const { turnId } = await writeAttributionRollout({
     sessionCwd: repo.root,
     sessionGit: {
       repository_url: "https://github.host-b.example/org/project.git",
       branch: "host-b-branch",
     },
+    calls: [],
   });
 
   await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
@@ -1310,12 +1530,13 @@ it("keeps the full GitLab namespace in repository identity", async () => {
     "https://gitlab.com/group-a/team/project.git",
   );
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
+  const { turnId } = await writeAttributionRollout({
     sessionCwd: repo.root,
     sessionGit: {
       repository_url: "https://gitlab.com/group-b/team/project.git",
       branch: "group-b-branch",
     },
+    calls: [],
   });
 
   await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
@@ -1336,12 +1557,13 @@ it("keeps repositories on separate ports in repository identity", async () => {
     "https://gitlab.example.com:8443/org/project.git",
   );
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
+  const { turnId } = await writeAttributionRollout({
     sessionCwd: repo.root,
     sessionGit: {
       repository_url: "https://gitlab.example.com:9443/org/project.git",
       branch: "port-b-branch",
     },
+    calls: [],
   });
 
   await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: turnId }, { client });
@@ -1360,10 +1582,21 @@ it("preserves configured root repository metadata without mixing in another repo
     "Configured Author",
     "https://github.com/example/configured.git",
   );
+  const currentRepo = await createGitRepository(
+    "Current Author",
+    "https://github.com/example/current.git",
+  );
   const outsideRepo = await createOutsideGitDirectory();
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({
+  const { turnId } = await writeAttributionRollout({
     sessionCwd: outsideRepo,
+    calls: [
+      {
+        id: "current-repo-tool",
+        name: "read_file",
+        args: { file_path: path.join(currentRepo.root, "file.txt") },
+      },
+    ],
   });
 
   await convertToRunTree(
@@ -1382,6 +1615,7 @@ it("preserves configured root repository metadata without mixing in another repo
   expect(rootRun?.extra?.metadata).toMatchObject({
     repository_url: configuredRepo.remote,
     repository_name: "provided/configured",
+    ls_attribution_identifier: "Current Author",
   });
   expect(rootRun?.extra?.metadata).not.toHaveProperty("git_branch");
   expect(rootRun?.extra?.metadata).not.toHaveProperty("git_commit_sha");
@@ -1390,7 +1624,7 @@ it("preserves configured root repository metadata without mixing in another repo
 it("uses the GitHub CLI login when a repository has no configured Git author", async () => {
   const repo = await createGitRepository(undefined, "https://github.com/example/no-author.git");
   const { client, callSpy } = mockClient();
-  const { turnId } = await writeRootAttributionRollout({ sessionCwd: repo.root });
+  const { turnId } = await writeAttributionRollout({ sessionCwd: repo.root, calls: [] });
   const ghConfig = path.join(repo.root, "gh-config");
   vol.mkdirSync(ghConfig, { recursive: true });
   vol.writeFileSync(

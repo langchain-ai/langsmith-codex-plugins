@@ -1,7 +1,7 @@
 // Shared coding-agent-v1 trace-metadata contract for the Codex plugin.
 // Spec: Coding-Agent Trace Metadata Standard (coding-agent-v1) / LSEN-277.
 
-import type { CodingAgentContext } from "./metadata-models.js";
+import type { CodingAgentContext, ResolvedGitAttribution } from "./metadata-models.js";
 import {
   LS_AGENT_PURPOSE,
   LS_AGENT_RUNTIME,
@@ -9,8 +9,24 @@ import {
   LS_INTEGRATION_VERSION,
   LS_TRACE_SCHEMA_VERSION,
 } from "./constants.js";
+import { REPOSITORY_METADATA_KEYS } from "./metadata-constants.js";
 import { parseRepository, sameRepository } from "./repository.js";
 import { stripUndefined } from "./utils/objects.js";
+
+export function toolRepositoryMetadata(
+  attribution: ResolvedGitAttribution | undefined,
+): Record<string, unknown> {
+  const repo = parseRepository(attribution?.git.repository_url);
+  const metadata = {
+    repository_url: repo.repository_url,
+    repository_provider: repo.repository_provider,
+    repository_name: repo.repository_name,
+    git_branch: attribution?.git.branch,
+    git_commit_sha: attribution?.git.commit_hash,
+    ls_attribution_identifier: attribution?.identifier,
+  };
+  return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
+}
 
 // Base contract merged onto every run; run-type-scoped keys are added at call
 // sites. Unknown values are omitted.
