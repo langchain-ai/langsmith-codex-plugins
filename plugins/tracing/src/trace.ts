@@ -1,3 +1,4 @@
+import { trackIncrementalDelivery } from "./incremental-delivery.js";
 import {
   loadTurnRunTopology,
   loadTurnStates,
@@ -523,15 +524,31 @@ async function postTurn(
   }
   if (mode === "off") return;
   const deliveryErrors: unknown[] = [];
-  const client = trackRunDelivery(
-    options?.client ?? new Client({ autoBatchTracing: false }),
-    deliveryErrors,
-  );
+  const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+  const client = options?.incremental
+    ? trackIncrementalDelivery(
+        sourceClient,
+        deliveryErrors,
+        rolloutFile,
+        turnKey,
+        !options?.partial,
+      )
+    : trackRunDelivery(sourceClient, deliveryErrors);
   const replicas = options?.replicas?.map((replica) => {
     const replicaClient = "client" in replica ? replica.client : undefined;
     return {
       ...replica,
-      client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client,
+      client: replicaClient
+        ? options?.incremental
+          ? trackIncrementalDelivery(
+              replicaClient,
+              deliveryErrors,
+              rolloutFile,
+              turnKey,
+              !options?.partial,
+            )
+          : trackRunDelivery(replicaClient, deliveryErrors)
+        : client,
     };
   });
   const postPromises: Promise<void>[] = [];

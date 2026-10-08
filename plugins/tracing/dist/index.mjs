@@ -8,8 +8,8 @@ import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
 import { createHash, randomUUID } from "node:crypto";
-import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { performance as performance$1 } from "node:perf_hooks";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { v5 } from "uuid";
@@ -17309,6 +17309,119 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
+//#region src/utils/time.ts
+function normalizedTime(value) {
+	if (typeof value === "number") return value;
+	if (typeof value === "string") {
+		const parsed = Date.parse(value);
+		return Number.isNaN(parsed) ? value : parsed;
+	}
+}
+//#endregion
+//#region src/utils/http.ts
+function normalizedEndpoint(apiUrl) {
+	const url = new URL(apiUrl);
+	url.username = "";
+	url.password = "";
+	url.search = "";
+	url.hash = "";
+	return url.toString().replace(/\/+$/, "");
+}
+function errorStatus(error) {
+	if (error == null || typeof error !== "object" || !("status" in error)) return void 0;
+	const status = error.status;
+	return typeof status === "number" ? status : void 0;
+}
+//#endregion
+//#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
+//#endregion
+//#region src/utils/serialization.ts
+function copyExtraThroughJson(run) {
+	const copy = { ...run };
+	const extra = run.extra;
+	if (extra != null && typeof extra === "object") {
+		const serialized = JSON.stringify(extra);
+		if (serialized === void 0) delete copy.extra;
+		else copy.extra = JSON.parse(serialized);
+	}
+	return copy;
+}
+function sortedJson(value) {
+	if (value === null || typeof value !== "object") return JSON.stringify(value);
+	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
+	const record = value;
+	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
+}
+function digestFor(value) {
+	const json = JSON.stringify(value);
+	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
+	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
+}
+function containsExpected(actual, expected) {
+	if (expected === void 0) return true;
+	if (expected === null || typeof expected !== "object") return actual === expected;
+	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
+	const record = asRecord(actual);
+	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
+}
+//#endregion
+//#region src/constants/incremental-delivery.ts
+const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
+const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
+const INCREMENTAL_DELIVERY_DIGEST_PATTERN = /^[a-f0-9]{64}$/;
+const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
+	"endpoint",
+	"projectName",
+	"runId",
+	"workspaceId",
+	"credentialHash",
+	"topology",
+	"createAttempted",
+	"deliveredDigest"
+];
+const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
+	"parentRunId",
+	"traceId",
+	"dottedOrder",
+	"startTime",
+	"name",
+	"runType"
+];
+const INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS = ["LANGSMITH_PROJECT", "LANGCHAIN_PROJECT"];
+const INCREMENTAL_DELIVERY_READ_DELAYS = [
+	100,
+	250,
+	500,
+	1e3,
+	2e3,
+	4e3
+];
+const INCREMENTAL_DELIVERY_PATCH_FIELDS = [
+	"inputs",
+	"outputs",
+	"error",
+	"extra",
+	"tags",
+	"events"
+];
+const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"ls_trace_schema_version",
+	"ls_integration",
+	"ls_agent_type",
+	"ls_tracing_mode"
+];
+//#endregion
 //#region src/utils/fileLock.ts
 async function readOwner(file) {
 	let stat;
@@ -17477,6 +17590,358 @@ async function withFileLock(lockPath, action) {
 	}
 }
 //#endregion
+//#region src/incremental-delivery-store.ts
+function checkpointPath(rolloutFile, turnKey, identity) {
+	const identityHash = createHash("sha256").update(`${turnKey}\0${identity.endpoint}\0${identity.projectName}\0${identity.runId}\0workspace:${identity.workspaceId ?? ""}\0credential:${identity.credentialHash ?? ""}`).digest("hex");
+	return `${nodePath.resolve(rolloutFile)}${INCREMENTAL_DELIVERY_STORE_SUFFIX}-${identityHash}.json`;
+}
+function validateCheckpoint(value, identity) {
+	if (!isRecord(value) || !isRecord(value.topology)) throw new Error("Incremental delivery checkpoint is invalid");
+	if (Object.keys(value).some((key) => !INCREMENTAL_DELIVERY_CHECKPOINT_KEYS.includes(key)) || Object.keys(value.topology).some((key) => !INCREMENTAL_DELIVERY_TOPOLOGY_KEYS.includes(key))) throw new Error("Incremental delivery checkpoint is invalid");
+	const topology = value.topology;
+	const validStartTime = typeof topology.startTime === "string" || typeof topology.startTime === "number" && Number.isFinite(topology.startTime);
+	if (value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
+	return {
+		endpoint: identity.endpoint,
+		projectName: identity.projectName,
+		runId: identity.runId,
+		...identity.workspaceId === void 0 ? {} : { workspaceId: identity.workspaceId },
+		...identity.credentialHash === void 0 ? {} : { credentialHash: identity.credentialHash },
+		topology: {
+			parentRunId: topology.parentRunId,
+			...topology.traceId === void 0 ? {} : { traceId: topology.traceId },
+			...topology.dottedOrder === void 0 ? {} : { dottedOrder: topology.dottedOrder },
+			startTime: topology.startTime,
+			name: topology.name,
+			runType: topology.runType
+		},
+		createAttempted: true,
+		...value.deliveredDigest === void 0 ? {} : { deliveredDigest: value.deliveredDigest }
+	};
+}
+function withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, action) {
+	const file = checkpointPath(rolloutFile, turnKey, identity);
+	return withFileLock(`${file}${INCREMENTAL_DELIVERY_LOCK_SUFFIX}`, async () => {
+		return action({
+			async load() {
+				let contents;
+				try {
+					const handle = await nodeFsPromises.open(file, "r");
+					try {
+						const buffer = Buffer.alloc(4194305);
+						let length = 0;
+						while (length < buffer.length) {
+							const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+							if (bytesRead === 0) break;
+							length += bytesRead;
+						}
+						if (length > 4194304) throw new Error("Incremental delivery checkpoint exceeds its size limit");
+						contents = buffer.toString("utf8", 0, length);
+					} finally {
+						await handle.close();
+					}
+				} catch (error) {
+					if (error.code === "ENOENT") return void 0;
+					throw error;
+				}
+				let value;
+				try {
+					value = JSON.parse(contents);
+				} catch (error) {
+					throw new Error("Incremental delivery checkpoint is corrupt", { cause: error });
+				}
+				return validateCheckpoint(value, identity);
+			},
+			async save(checkpoint) {
+				const validated = validateCheckpoint(checkpoint, identity);
+				const contents = JSON.stringify(validated);
+				if (Buffer.byteLength(contents, "utf8") > 4194304) throw new Error("Incremental delivery checkpoint exceeds its size limit");
+				const temporaryFile = `${file}.${randomUUID()}.tmp`;
+				const handle = await nodeFsPromises.open(temporaryFile, "wx", 384);
+				try {
+					await handle.writeFile(contents, "utf8");
+					await handle.sync();
+				} finally {
+					await handle.close();
+				}
+				await nodeFsPromises.rename(temporaryFile, file);
+			}
+		});
+	});
+}
+//#endregion
+//#region src/metadata-constants.ts
+const GIT_COMMAND_TIMEOUT_MS = 2e3;
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
+const GITHUB_HOSTS_FILE = "hosts.yml";
+const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
+const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
+const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_SUFFIX = /\.git$/;
+//#endregion
+//#region src/incremental-run.ts
+function runtimeClientConfig(client) {
+	return client;
+}
+function endpointFor(client, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	return normalizedEndpoint(options?.apiUrl ?? configured);
+}
+function projectNameFor(run) {
+	const record = asRecord(run);
+	const explicit = record.project_name ?? record.session_name;
+	if (typeof explicit === "string" && explicit.length > 0) return explicit;
+	for (const key of INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS) {
+		const value = process.env[key];
+		if (value) return value;
+	}
+	return TRACE_UPLOAD_DEFAULT_PROJECT;
+}
+function identityFor(client, endpoint, projectName, runId, options) {
+	const runtime = runtimeClientConfig(client);
+	const workspaceId = options?.workspaceId ?? runtime.workspaceId;
+	if (typeof workspaceId === "string" && workspaceId.trim().length > 0) return {
+		endpoint,
+		projectName,
+		runId,
+		workspaceId
+	};
+	const apiKey = options?.apiKey ?? runtime.apiKey;
+	return {
+		endpoint,
+		projectName,
+		runId,
+		...typeof apiKey === "string" && apiKey.length > 0 ? { credentialHash: createHash("sha256").update(apiKey).digest("hex") } : {}
+	};
+}
+function topologyFor(run) {
+	return {
+		parentRunId: run.parent_run_id ?? null,
+		...typeof run.trace_id === "string" ? { traceId: run.trace_id } : {},
+		...typeof run.dotted_order === "string" ? { dottedOrder: run.dotted_order } : {},
+		startTime: run.start_time ?? Date.now(),
+		name: run.name,
+		runType: run.run_type
+	};
+}
+function canonicalCreate(run, checkpoint) {
+	const canonical = {
+		...run,
+		id: checkpoint.runId,
+		name: checkpoint.topology.name,
+		run_type: checkpoint.topology.runType,
+		start_time: checkpoint.topology.startTime
+	};
+	if (checkpoint.topology.parentRunId === null) delete canonical.parent_run_id;
+	else canonical.parent_run_id = checkpoint.topology.parentRunId;
+	if (checkpoint.topology.traceId === void 0) delete canonical.trace_id;
+	else canonical.trace_id = checkpoint.topology.traceId;
+	if (checkpoint.topology.dottedOrder === void 0) delete canonical.dotted_order;
+	else canonical.dotted_order = checkpoint.topology.dottedOrder;
+	return canonical;
+}
+function mergePatchExtra(existing, desired, root) {
+	const desiredExtra = asRecord(desired.extra);
+	const desiredMetadata = asRecord(desiredExtra.metadata);
+	if (desiredMetadata.ls_tracing_mode === "metadata") return {
+		...desiredExtra,
+		metadata: desiredMetadata
+	};
+	const existingExtra = asRecord(existing.extra);
+	const existingMetadata = asRecord(existingExtra.metadata);
+	const metadata = { ...existingMetadata };
+	for (const [key, value] of Object.entries(desiredMetadata)) if (value !== void 0) metadata[key] = value;
+	if (root) for (const key of REPOSITORY_METADATA_KEYS) {
+		const existingValue = existingMetadata[key];
+		if (typeof existingValue === "string" && existingValue.length > 0) metadata[key] = existingValue;
+	}
+	return {
+		...existingExtra,
+		...desiredExtra,
+		metadata: Object.keys(metadata).length > 0 ? metadata : void 0
+	};
+}
+function matchesCheckpoint(existing, checkpoint, projectId) {
+	const topology = checkpoint.topology;
+	return existing.id === checkpoint.runId && (existing.parent_run_id ?? null) === topology.parentRunId && (existing.trace_id ?? void 0) === topology.traceId && (existing.dotted_order ?? void 0) === topology.dottedOrder && normalizedTime(existing.start_time) === normalizedTime(topology.startTime) && existing.name === topology.name && existing.run_type === topology.runType && existing.session_id === projectId;
+}
+function readClientForEndpoint(client, endpoint, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	if (endpoint === normalizedEndpoint(configured) && options?.apiUrl === void 0 && options?.apiKey === void 0 && options?.workspaceId === void 0) return client;
+	const runtime = runtimeClientConfig(client);
+	return new Client({
+		apiUrl: options?.apiUrl ?? endpoint,
+		apiKey: options?.apiKey ?? runtime.apiKey,
+		workspaceId: options?.workspaceId ?? runtime.workspaceId,
+		headers: runtime.headers,
+		fetchOptions: runtime.fetchOptions,
+		fetchImplementation: runtime.fetchImplementation,
+		autoBatchTracing: false
+	});
+}
+//#endregion
+//#region src/incremental-delivery.ts
+async function readIndexedRun(client, runId) {
+	for (const wait of INCREMENTAL_DELIVERY_READ_DELAYS) try {
+		return await client.readRun(runId);
+	} catch (error) {
+		if (errorStatus(error) !== 404) throw error;
+		await setTimeout$1(wait);
+	}
+	return client.readRun(runId);
+}
+async function readAndValidate(client, options, endpoint, checkpoint) {
+	const reader = readClientForEndpoint(client, endpoint, options);
+	const [existing, project] = await Promise.all([readIndexedRun(reader, checkpoint.runId), reader.readProject({ projectName: checkpoint.projectName })]);
+	if (!matchesCheckpoint(existing, checkpoint, project.id)) throw new Error("Existing run does not match its incremental delivery checkpoint");
+	return {
+		existing,
+		projectId: project.id
+	};
+}
+function updatePayloadFromCreate(run, existing, checkpoint) {
+	const fields = canonicalCreate(run, checkpoint);
+	return {
+		end_time: fields.end_time,
+		inputs: fields.inputs,
+		outputs: fields.outputs,
+		error: fields.error,
+		extra: mergePatchExtra(existing, fields, checkpoint.topology.runType === "chain")
+	};
+}
+async function patchAndVerify(client, update, options, endpoint, checkpoint) {
+	try {
+		await client.updateRun(checkpoint.runId, update, options);
+	} catch (error) {
+		if (errorStatus(error) !== 409) throw error;
+	}
+	for (const wait of [...INCREMENTAL_DELIVERY_READ_DELAYS, 0]) {
+		const { existing } = await readAndValidate(client, options, endpoint, checkpoint);
+		if (normalizedTime(existing.end_time) === normalizedTime(update.end_time) && INCREMENTAL_DELIVERY_PATCH_FIELDS.every((key) => containsExpected(existing[key], asRecord(update)[key]))) return;
+		if (wait === 0) throw new Error("LangSmith has not applied the final run update");
+		await setTimeout$1(wait);
+	}
+}
+async function postWithConflictRecovery(client, createRun, run, options, endpoint, checkpoint, digest, finalize, save) {
+	try {
+		await createRun(run, options);
+	} catch (error) {
+		if (errorStatus(error) !== 409) throw error;
+		let verified;
+		try {
+			verified = await readAndValidate(client, options, endpoint, checkpoint);
+		} catch (verificationError) {
+			throw new Error("Could not verify the existing run after a create conflict", { cause: verificationError });
+		}
+		if (finalize) await patchAndVerify(client, updatePayloadFromCreate(run, verified.existing, checkpoint), options, endpoint, checkpoint);
+	}
+	await save({
+		...checkpoint,
+		deliveredDigest: digest
+	});
+}
+async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize) {
+	const cleanRun = copyExtraThroughJson(run);
+	if (!finalize) {
+		cleanRun.end_time = void 0;
+		cleanRun.extra = {
+			metadata: asRecord(asRecord(cleanRun.extra).metadata),
+			toJSON() {
+				return { metadata: Object.fromEntries(INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS.flatMap((key) => this.metadata[key] === void 0 ? [] : [[key, this.metadata[key]]])) };
+			}
+		};
+	}
+	if (typeof cleanRun.id !== "string" || cleanRun.id.length === 0) {
+		await createRun(cleanRun, options);
+		return;
+	}
+	const projectName = projectNameFor(cleanRun);
+	const endpoint = endpointFor(client, options);
+	const identity = identityFor(client, endpoint, projectName, cleanRun.id, options);
+	await withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, async (store) => {
+		let checkpoint = await store.load();
+		if (checkpoint === void 0) {
+			checkpoint = {
+				...identity,
+				topology: topologyFor(cleanRun),
+				createAttempted: true
+			};
+			await store.save(checkpoint);
+			const digest = digestFor(canonicalCreate(cleanRun, checkpoint));
+			await postWithConflictRecovery(client, createRun, canonicalCreate(cleanRun, checkpoint), options, endpoint, checkpoint, digest, finalize, store.save);
+			return;
+		}
+		if (!finalize && checkpoint.deliveredDigest !== void 0) return;
+		const canonical = canonicalCreate(cleanRun, checkpoint);
+		const digest = digestFor(canonical);
+		if (checkpoint.deliveredDigest === digest) return;
+		if (checkpoint.deliveredDigest === void 0) {
+			try {
+				const verified = await readAndValidate(client, options, endpoint, checkpoint);
+				if (!finalize) {
+					await store.save({
+						...checkpoint,
+						deliveredDigest: digest
+					});
+					return;
+				}
+				await patchAndVerify(client, updatePayloadFromCreate(canonical, verified.existing, checkpoint), options, endpoint, checkpoint);
+				await store.save({
+					...checkpoint,
+					deliveredDigest: digest
+				});
+				return;
+			} catch (error) {
+				if (errorStatus(error) !== 404) throw error;
+			}
+			await postWithConflictRecovery(client, createRun, canonical, options, endpoint, checkpoint, digest, finalize, store.save);
+			return;
+		}
+		await patchAndVerify(client, updatePayloadFromCreate(canonical, (await readAndValidate(client, options, endpoint, checkpoint)).existing, checkpoint), options, endpoint, checkpoint);
+		await store.save({
+			...checkpoint,
+			deliveredDigest: digest
+		});
+	});
+}
+function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			try {
+				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize);
+			} catch (error) {
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
+}
+//#endregion
 //#region src/trace-delivery-store.ts
 async function withRolloutLock(rolloutFile, action) {
 	return withFileLock(`${rolloutFile}${TRACE_UPLOAD_LOCK_SUFFIX}`, action);
@@ -17560,43 +18025,6 @@ function topologyFilePath(rolloutFile, turnId) {
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
-//#endregion
-//#region src/utils/objects.ts
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
-}
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
-//#region src/metadata-constants.ts
-const GIT_COMMAND_TIMEOUT_MS = 2e3;
-const GIT_LOCATION_ENV_KEYS = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_COMMON_DIR",
-	"GIT_INDEX_FILE",
-	"GIT_CEILING_DIRECTORIES"
-];
-const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
-const TOOL_PATH_KEYS = [
-	"file_path",
-	"notebook_path",
-	"path"
-];
-const REPOSITORY_METADATA_KEYS = [
-	"repository_url",
-	"repository_provider",
-	"repository_name",
-	"git_branch",
-	"git_commit_sha",
-	"ls_attribution_identifier"
-];
-const GITHUB_HOSTS_FILE = "hosts.yml";
-const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
-const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
-const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
-const GIT_SUFFIX = /\.git$/;
 //#endregion
 //#region src/repository.ts
 function parseRepository(url) {
@@ -18617,12 +19045,13 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	} catch {}
 	if (mode === "off") return;
 	const deliveryErrors = [];
-	const client = trackRunDelivery(options?.client ?? new Client({ autoBatchTracing: false }), deliveryErrors);
+	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(sourceClient, deliveryErrors);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
 		return {
 			...replica,
-			client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client
+			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(replicaClient, deliveryErrors) : client
 		};
 	});
 	const postPromises = [];
