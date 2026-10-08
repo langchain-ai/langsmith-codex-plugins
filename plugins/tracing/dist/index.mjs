@@ -1,5 +1,5 @@
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync, statSync } from "node:fs";
+import { constants, lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -8,8 +8,8 @@ import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
 import { createHash, randomUUID } from "node:crypto";
-import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { performance as performance$1 } from "node:perf_hooks";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { v5 } from "uuid";
@@ -17345,8 +17345,238 @@ async function writeCapture(file, value, firstWriteWins = false) {
 	}
 }
 //#endregion
+//#region src/utils/fileLock.ts
+async function readOwner(file) {
+	let stat;
+	try {
+		stat = await nodeFsPromises.lstat(file);
+	} catch (error) {
+		if (error.code === "ENOENT") return { status: "missing" };
+		throw error;
+	}
+	if (stat.isSymbolicLink() || !stat.isFile()) return { status: "unsafe" };
+	let handle;
+	try {
+		const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+		handle = await nodeFsPromises.open(file, flags);
+	} catch (error) {
+		const code = error.code;
+		if (code === "ENOENT") return { status: "missing" };
+		if (code === "ELOOP") return { status: "unsafe" };
+		throw error;
+	}
+	try {
+		if (!(await handle.stat()).isFile()) return { status: "unsafe" };
+		const contents = await handle.readFile("utf8");
+		let value;
+		try {
+			value = JSON.parse(contents);
+		} catch {
+			return { status: "malformed" };
+		}
+		if (value != null && typeof value === "object" && Number.isInteger(value.pid) && value.pid > 0 && typeof value.token === "string") return {
+			status: "valid",
+			owner: {
+				pid: value.pid,
+				token: value.token
+			}
+		};
+		return { status: "malformed" };
+	} finally {
+		await handle.close();
+	}
+}
+function processIsAlive(pid) {
+	if (pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+async function fileLockRecoveryOwnerState(recoveryFile) {
+	const owner = await readOwner(recoveryFile);
+	if (owner.status !== "valid") return "unknown";
+	return processIsAlive(owner.owner.pid) ? "live" : "dead";
+}
+async function fileLockOwnerIsLive(lockPath) {
+	try {
+		const lock = await nodeFsPromises.lstat(lockPath);
+		if (lock.isSymbolicLink() || !lock.isDirectory()) return true;
+		const owner = await readOwner(nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME));
+		if (owner.status === "valid") return processIsAlive(owner.owner.pid);
+		return owner.status !== "missing";
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		return true;
+	}
+}
+async function lockDirectoryIsUnsafe(lockPath) {
+	try {
+		const stat = await nodeFsPromises.lstat(lockPath);
+		return stat.isSymbolicLink() || !stat.isDirectory();
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+async function lockIsOld(lockPath) {
+	try {
+		const stat = await nodeFsPromises.lstat(lockPath);
+		if (stat.isSymbolicLink()) return false;
+		return Date.now() - stat.mtimeMs >= FILE_LOCK_INITIALIZING_MS;
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+async function recoverLock(lockPath, observedOwner) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
+	if (await lockDirectoryIsUnsafe(lockPath)) return false;
+	let recovery;
+	try {
+		recovery = await nodeFsPromises.open(recoveryPath, "wx", 384);
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		const recoveryOwner = await readOwner(recoveryPath);
+		if (recoveryOwner.status === "valid" && !processIsAlive(recoveryOwner.owner.pid) || (recoveryOwner.status === "missing" || recoveryOwner.status === "malformed") && await lockIsOld(recoveryPath)) await nodeFsPromises.unlink(recoveryPath).catch((unlinkError) => {
+			if (unlinkError.code !== "ENOENT") throw unlinkError;
+		});
+		return false;
+	}
+	try {
+		await recovery.writeFile(JSON.stringify({
+			pid: process.pid,
+			token: randomUUID()
+		}), "utf8");
+		if (await lockDirectoryIsUnsafe(lockPath)) return false;
+		const currentOwner = await readOwner(ownerFile);
+		if (currentOwner.status === "valid" && currentOwner.owner.pid === observedOwner.pid && currentOwner.owner.token === observedOwner.token && !processIsAlive(currentOwner.owner.pid)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			await nodeFsPromises.unlink(ownerFile);
+			await nodeFsPromises.rmdir(lockPath);
+			return true;
+		}
+		if ((currentOwner.status === "missing" || currentOwner.status === "malformed") && observedOwner.token === "invalid" && await lockIsOld(lockPath)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			if (currentOwner.status === "malformed") await nodeFsPromises.unlink(ownerFile);
+			try {
+				await nodeFsPromises.rmdir(lockPath);
+				return true;
+			} catch (error) {
+				const code = error.code;
+				if (code === "ENOTEMPTY" || code === "EEXIST" || code === "ENOTDIR") return false;
+				throw error;
+			}
+		}
+		return false;
+	} finally {
+		await recovery.close();
+		await nodeFsPromises.unlink(recoveryPath).catch((error) => {
+			if (error.code !== "ENOENT") throw error;
+		});
+	}
+}
+async function removeLockIfOwned(lockPath, token) {
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const owner = await readOwner(ownerFile);
+	if (owner.status !== "valid" || owner.owner.pid !== process.pid || owner.owner.token !== token) return;
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	await nodeFsPromises.unlink(ownerFile);
+	await nodeFsPromises.rmdir(lockPath);
+}
+async function withFileLock(lockPath, action) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const token = randomUUID();
+	while (true) try {
+		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
+		try {
+			await nodeFsPromises.writeFile(ownerFile, JSON.stringify({
+				pid: process.pid,
+				token
+			}), {
+				encoding: "utf8",
+				flag: "wx",
+				mode: 384
+			});
+		} catch (error) {
+			await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
+			throw error;
+		}
+		break;
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		if (await lockDirectoryIsUnsafe(lockPath)) throw new Error("Unsafe file lock directory");
+		const ownerRead = await readOwner(ownerFile);
+		if (ownerRead.status === "unsafe") throw new Error("Unsafe file lock owner record");
+		if (ownerRead.status === "missing" || ownerRead.status === "malformed") {
+			if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
+				pid: 0,
+				token: "invalid"
+			});
+		} else if (!processIsAlive(ownerRead.owner.pid)) await recoverLock(lockPath, ownerRead.owner);
+		await setTimeout$1(25);
+	}
+	try {
+		return await action();
+	} finally {
+		await removeLockIfOwned(lockPath, token);
+	}
+}
+async function tryWithFileLock(lockPath, action) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const token = randomUUID();
+	async function acquire() {
+		try {
+			await nodeFsPromises.mkdir(lockPath, { mode: 448 });
+			try {
+				await nodeFsPromises.writeFile(ownerFile, JSON.stringify({
+					pid: process.pid,
+					token
+				}), {
+					encoding: "utf8",
+					flag: "wx",
+					mode: 384
+				});
+			} catch (error) {
+				await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
+				throw error;
+			}
+			return true;
+		} catch (error) {
+			if (error.code === "EEXIST") return false;
+			throw error;
+		}
+	}
+	if (!await acquire()) {
+		if (await lockDirectoryIsUnsafe(lockPath)) return { acquired: false };
+		const ownerRead = await readOwner(ownerFile);
+		if (ownerRead.status === "unsafe") return { acquired: false };
+		if (ownerRead.status === "missing" || ownerRead.status === "malformed") {
+			if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
+				pid: 0,
+				token: "invalid"
+			});
+		} else if (!processIsAlive(ownerRead.owner.pid)) await recoverLock(lockPath, ownerRead.owner);
+		if (await lockDirectoryIsUnsafe(lockPath)) return { acquired: false };
+		if (!await acquire()) return { acquired: false };
+	}
+	try {
+		return {
+			acquired: true,
+			value: await action()
+		};
+	} finally {
+		await removeLockIfOwned(lockPath, token);
+	}
+}
+//#endregion
 //#region src/tool-capture-constants.ts
 const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
+const TURN_CAPTURE_LOCK_SUFFIX = ".langsmith-capture.lock";
 const TURN_CAPTURE_TRANSCRIPT = "transcript.jsonl";
 const TOOL_CAPTURE_START_SUFFIX = ".start.json";
 const TOOL_CAPTURE_END_SUFFIX = ".end.json";
@@ -17354,10 +17584,14 @@ const TOOL_CAPTURE_FILE_PATTERN = /^[a-f0-9]{64}\.(start|end)\.json$/;
 const TURN_CAPTURE_STOP = "stop.json";
 const TURN_CAPTURE_PLAN = "metadata.json";
 const TOOL_CAPTURE_TEMP_PATTERN = /^(?:[a-f0-9]{64}\.(?:start|end)\.json|transcript\.jsonl|stop\.json|metadata\.json)\.[a-f0-9-]{36}\.tmp$/;
+const SESSION_META_READ_MAX_BYTES = 262144;
 //#endregion
 //#region src/tool-capture.ts
 function turnCaptureDirectory(transcript, turn) {
 	return `${transcript}${TURN_CAPTURE_SUFFIX}${createHash("sha256").update(turn).digest("hex")}`;
+}
+function withTurnCaptureLock(transcript, action) {
+	return withFileLock(`${transcript}${TURN_CAPTURE_LOCK_SUFFIX}`, action);
 }
 async function recordToolHook(input, mode, redact) {
 	if (mode === "off" || !input.tool_use_id || !input.tool_name) return;
@@ -17383,7 +17617,7 @@ async function recordToolHook(input, mode, redact) {
 			output: record.output
 		})
 	} : record;
-	await writeCapture(file, JSON.stringify(content), true);
+	await withTurnCaptureLock(input.transcript_path, () => writeCapture(file, JSON.stringify(content), true));
 }
 async function readTranscript(file, turn) {
 	let contents;
@@ -17403,6 +17637,23 @@ async function readTranscript(file, turn) {
 			throw error;
 		}
 	});
+}
+async function transcriptSessionId(file) {
+	let handle;
+	try {
+		handle = await nodeFsPromises.open(file, constants.O_RDONLY | constants.O_NOFOLLOW | (constants.O_NONBLOCK ?? 0));
+		if (!(await handle.stat()).isFile()) return void 0;
+		const buffer = Buffer.alloc(SESSION_META_READ_MAX_BYTES);
+		const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+		const end = buffer.indexOf(10, 0);
+		if (end < 0 || end > bytesRead) return void 0;
+		const event = JSON.parse(buffer.toString("utf8", 0, end));
+		return isRecord(event) && event.type === "session_meta" && isRecord(event.payload) ? typeof event.payload.id === "string" ? event.payload.id : void 0 : void 0;
+	} catch {
+		return;
+	} finally {
+		await handle?.close().catch(() => void 0);
+	}
 }
 async function prepareTurnCapture(transcript, turn, mode, redact) {
 	const directory = turnCaptureDirectory(transcript, turn);
@@ -17489,6 +17740,47 @@ async function reconciliationMetadata(transcript, turn, proposed) {
 	return proposed;
 }
 //#endregion
+//#region src/constants/tracing-policy.ts
+const THREAD_POLICY_FIELDS = [
+	"preference",
+	"turns",
+	"inherited",
+	"lastActivityAt",
+	"historyPruned"
+];
+//#endregion
+//#region src/constants/stale-state-cleanup.ts
+const STALE_PLUGIN_TTL_MS = 864e5;
+const STALE_PLUGIN_TOPOLOGY_TEMP_PATTERN = /^(.+\.jsonl)\.langsmith-topology-[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.tmp$/;
+const STALE_PLUGIN_INCREMENTAL_TEMP_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.tmp$/;
+const STALE_PLUGIN_STATE_PATTERN = /^(.+\.jsonl)\.langsmith$/;
+const STALE_PLUGIN_TOPOLOGY_PATTERN = /^(.+\.jsonl)\.langsmith-topology-[a-f0-9]{64}\.json$/;
+const STALE_PLUGIN_INCREMENTAL_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json$/;
+const STALE_PLUGIN_INCREMENTAL_LOCK_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json\.lock$/;
+const STALE_PLUGIN_LOCK_RECOVERY_PATTERN = /^(.+\.jsonl)(\.langsmith\.lock|\.langsmith-capture\.lock|\.langsmith-incremental-[a-f0-9]{64}\.json\.lock)\.recover-[0-9]+$/;
+const STALE_PLUGIN_CAPTURE_PATTERN = /^(.+\.jsonl)\.langsmith-capture-[a-f0-9]{64}$/;
+const STALE_PLUGIN_UUID_PATTERN = /^rollout-.+-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.jsonl(?:\.zst)?$/;
+const STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN = /^rollout-.+\.jsonl(?:\.zst)?$/;
+const STALE_PLUGIN_NATIVE_LOCK_PATTERN = /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.lock$/;
+const STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN = /\.zst$/;
+const STALE_PRIVACY_TEMP_PATTERN = /^(\d+)\.[a-f0-9-]{36}\.tmp$/;
+const CODEX_SESSIONS_DIRECTORY = "sessions";
+const CODEX_WRITER_LOCKS_DIRECTORY = "thread-writer-locks";
+//#endregion
+//#region src/tracing-policy-cleanup.ts
+async function cleanupStalePrivacyTemps(file, cutoff) {
+	const directory = nodePath.dirname(file);
+	const prefix = `${nodePath.basename(file)}.`;
+	for (const name of await nodeFsPromises.readdir(directory)) {
+		if (!name.startsWith(prefix)) continue;
+		const match = STALE_PRIVACY_TEMP_PATTERN.exec(name.slice(prefix.length));
+		if (!match || processIsAlive(Number(match[1]))) continue;
+		const temporary = nodePath.join(directory, name);
+		const stat = await nodeFsPromises.lstat(temporary);
+		if (stat.isFile() && !stat.isSymbolicLink() && stat.mtimeMs <= cutoff) await nodeFsPromises.unlink(temporary);
+	}
+}
+//#endregion
 //#region src/tracing-policy.ts
 function isMode(value) {
 	return value === "full" || value === "metadata";
@@ -17497,11 +17789,7 @@ function isTurnMode(value) {
 	return isMode(value) || value === "off";
 }
 function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && (value.lastActivityAt === void 0 || typeof value.lastActivityAt === "number" && Number.isFinite(value.lastActivityAt)) && (value.historyPruned === void 0 || typeof value.historyPruned === "boolean") && Object.keys(value).every((key) => THREAD_POLICY_FIELDS.includes(key));
 }
 function isObject(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -17540,6 +17828,11 @@ function threadPolicy(policy, id) {
 function savedTurnMode(file, sessionId, turnId) {
 	try {
 		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.historyPruned) {
+			if (thread.inherited === "off") return "off";
+			if (turnId && thread && Object.hasOwn(thread.turns, turnId)) return thread.turns[turnId];
+			return "metadata";
+		}
 		if (thread?.inherited) return thread.inherited;
 		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
 	} catch {
@@ -17550,6 +17843,13 @@ function hasSavedTurnEvidence(file, sessionId, turnId) {
 	if (!turnId) return false;
 	try {
 		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
+	}
+}
+function hasPrunedSessionHistory(file, sessionId) {
+	try {
+		return threadPolicy(readPolicy(file), sessionId)?.historyPruned === true;
 	} catch {
 		return false;
 	}
@@ -17599,7 +17899,9 @@ async function updatePolicy(path, update) {
 		} catch (error) {
 			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
 		}
-		update(policy);
+		const original = JSON.stringify(policy);
+		await update(policy);
+		if (JSON.stringify(policy) === original) return {};
 		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
 		const temp = await open(tempPath, "wx", 384);
 		try {
@@ -17634,6 +17936,7 @@ async function submitPreference(file, sessionId, turnId, enabled, command, defau
 	requireIds(sessionId, turnId);
 	return updatePolicy(file, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.lastActivityAt = Date.now();
 		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
 			...thread.turns,
 			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
@@ -17645,13 +17948,12 @@ async function submitPreference(file, sessionId, turnId, enabled, command, defau
 		};
 	});
 }
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
 async function inheritThreadMode(file, sessionId, mode) {
 	let inherited = "metadata";
 	const result = await updatePolicy(file, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		thread.inherited ??= mode;
-		inherited = thread.inherited;
+		if (!thread.historyPruned) thread.inherited ??= mode;
+		inherited = thread.historyPruned ? thread.inherited === "off" ? "off" : "metadata" : thread.inherited;
 		policy.threads = {
 			...policy.threads,
 			[sessionId]: thread
@@ -17659,6 +17961,340 @@ async function inheritThreadMode(file, sessionId, mode) {
 	});
 	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
 	return inherited;
+}
+async function touchSessionActivity(file, sessionId) {
+	try {
+		lstatSync(file);
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) return;
+		throw error;
+	}
+	await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId);
+		if (thread) thread.lastActivityAt = Date.now();
+	});
+}
+async function pruneInactiveSessionEvidence(file, options) {
+	const activeSessionIds = /* @__PURE__ */ new Set([options.currentSessionId, ...options.protectedSessionIds]);
+	const inactiveSessionIds = new Set(options.inactiveSessionIds);
+	const excludedSessionIds = new Set(options.excludedSessionIds ?? []);
+	const targetSessionIds = options.targetSessionIds && new Set(options.targetSessionIds);
+	const prunedSessionIds = /* @__PURE__ */ new Set();
+	try {
+		if (lstatSync(file).isSymbolicLink()) throw new Error("Cannot prune symbolic-link privacy state");
+	} catch (error) {
+		if (!hasCode(error, "ENOENT")) throw error;
+	}
+	const result = await updatePolicy(file, async (policy) => {
+		for (const [sessionId, thread] of Object.entries(policy.threads)) {
+			if (activeSessionIds.has(sessionId) || excludedSessionIds.has(sessionId) || targetSessionIds != null && !targetSessionIds.has(sessionId)) continue;
+			const timestamped = typeof thread.lastActivityAt === "number";
+			if (timestamped && thread.lastActivityAt > options.inactiveBefore) {
+				activeSessionIds.add(sessionId);
+				continue;
+			}
+			if (!timestamped && !inactiveSessionIds.has(sessionId)) {
+				if (Object.keys(thread.turns).length || thread.inherited !== void 0) thread.lastActivityAt = Date.now();
+				activeSessionIds.add(sessionId);
+				continue;
+			}
+			if (Object.keys(thread.turns).length || thread.inherited !== void 0) {
+				thread.turns = {};
+				thread.historyPruned = true;
+			}
+			prunedSessionIds.add(sessionId);
+		}
+		if (!targetSessionIds) await cleanupStalePrivacyTemps(file, options.inactiveBefore);
+	});
+	if (result.warning) throw new Error(result.warning);
+	return {
+		activeSessionIds: [...activeSessionIds],
+		prunedSessionIds: [...prunedSessionIds]
+	};
+}
+//#endregion
+//#region src/utils/paths.ts
+async function nearestExistingDirectory(target) {
+	let current = nodePath.resolve(target);
+	for (;;) {
+		try {
+			if ((await nodeFsPromises.stat(current)).isDirectory()) return current;
+		} catch {}
+		const parent = nodePath.dirname(current);
+		if (parent === current) return void 0;
+		current = parent;
+	}
+}
+async function pathHasSymbolicLink(target) {
+	const parsed = nodePath.parse(nodePath.resolve(target));
+	let current = parsed.root;
+	for (const part of nodePath.resolve(target).slice(parsed.root.length).split(nodePath.sep).filter(Boolean)) {
+		current = nodePath.join(current, part);
+		try {
+			if ((await nodeFsPromises.lstat(current)).isSymbolicLink()) return true;
+		} catch {
+			return true;
+		}
+	}
+	return false;
+}
+function absoluteTarget(value, base) {
+	if (typeof value !== "string" || value.length === 0) return void 0;
+	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
+	if (!base || !nodePath.isAbsolute(base)) return void 0;
+	return nodePath.resolve(base, value);
+}
+//#endregion
+//#region src/stale-state-cleanup.ts
+function groupFor(scan, transcript) {
+	let group = scan.groups.get(transcript);
+	if (!group) {
+		group = {
+			transcript,
+			artifacts: [],
+			captureDirectories: [],
+			lockDirectories: [],
+			recoveryFiles: [],
+			recent: false,
+			live: false,
+			unsafe: false
+		};
+		scan.groups.set(transcript, group);
+	}
+	return group;
+}
+async function inspectDirectory(group, directory, cutoff, lock) {
+	const entries = await nodeFsPromises.readdir(directory, { withFileTypes: true });
+	for (const entry of entries) {
+		const file = nodePath.join(directory, entry.name);
+		const stat = await nodeFsPromises.lstat(file);
+		const recognized = lock ? entry.name === FILE_LOCK_OWNER_FILENAME : TOOL_CAPTURE_FILE_PATTERN.test(entry.name) || TOOL_CAPTURE_TEMP_PATTERN.test(entry.name) || [
+			"transcript.jsonl",
+			"stop.json",
+			"metadata.json"
+		].includes(entry.name);
+		if (!stat.isFile() || stat.isSymbolicLink() || !recognized) {
+			group.unsafe = true;
+			continue;
+		}
+		if (stat.mtimeMs > cutoff) group.recent = true;
+		if (!lock) group.artifacts.push(file);
+	}
+}
+async function scanDirectory(directory, scan, cutoff, ownLocks, recurse) {
+	let entries;
+	try {
+		entries = await nodeFsPromises.readdir(directory, { withFileTypes: true });
+	} catch {
+		scan.unreadable = true;
+		scan.failures++;
+		return;
+	}
+	for (const entry of entries) {
+		const file = nodePath.join(directory, entry.name);
+		const native = STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN.test(entry.name);
+		const capture = STALE_PLUGIN_CAPTURE_PATTERN.exec(entry.name);
+		const sidecar = STALE_PLUGIN_STATE_PATTERN.exec(entry.name) || STALE_PLUGIN_TOPOLOGY_PATTERN.exec(entry.name) || STALE_PLUGIN_INCREMENTAL_PATTERN.exec(entry.name) || STALE_PLUGIN_TOPOLOGY_TEMP_PATTERN.exec(entry.name) || STALE_PLUGIN_INCREMENTAL_TEMP_PATTERN.exec(entry.name);
+		const lock = STALE_PLUGIN_INCREMENTAL_LOCK_PATTERN.exec(entry.name);
+		const recovery = STALE_PLUGIN_LOCK_RECOVERY_PATTERN.exec(entry.name);
+		const rolloutLock = entry.name.endsWith(".langsmith.lock") ? entry.name.slice(0, -15) : entry.name.endsWith(".langsmith-capture.lock") ? entry.name.slice(0, -23) : void 0;
+		const transcriptName = native ? entry.name.replace(STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN, "") : capture?.[1] ?? sidecar?.[1] ?? lock?.[1] ?? recovery?.[1] ?? rolloutLock;
+		if (!transcriptName) {
+			if (recurse && entry.isDirectory() && !entry.isSymbolicLink()) await scanDirectory(file, scan, cutoff, ownLocks, true);
+			if (entry.isSymbolicLink()) scan.unreadable = true;
+			continue;
+		}
+		const group = groupFor(scan, nodePath.join(directory, transcriptName));
+		if (ownLocks.has(file)) continue;
+		try {
+			const stat = await nodeFsPromises.lstat(file);
+			if (stat.isSymbolicLink()) {
+				group.unsafe = true;
+				continue;
+			}
+			if (stat.mtimeMs > cutoff) group.recent = true;
+			if (recovery) {
+				group.lockDirectories.push(nodePath.join(directory, `${recovery[1]}${recovery[2]}`));
+				if (!stat.isFile()) group.unsafe = true;
+				else {
+					const ownerState = await fileLockRecoveryOwnerState(file);
+					if (ownerState === "live") group.live = true;
+					else if (ownerState === "unknown") group.unsafe = true;
+					else if (stat.mtimeMs <= cutoff) group.recoveryFiles.push(file);
+				}
+			} else if (native || sidecar) {
+				if (!stat.isFile()) group.unsafe = true;
+				else if (sidecar) group.artifacts.push(file);
+			} else if (capture || lock || rolloutLock) {
+				if (!stat.isDirectory()) group.unsafe = true;
+				else {
+					const isLock = !!(lock || rolloutLock);
+					(isLock ? group.lockDirectories : group.captureDirectories).push(file);
+					await inspectDirectory(group, file, cutoff, isLock);
+					if (isLock && await fileLockOwnerIsLive(file)) group.live = true;
+				}
+			}
+		} catch {
+			group.unsafe = true;
+			scan.unreadable = true;
+			scan.failures++;
+		}
+	}
+}
+function emptyScan() {
+	return {
+		groups: /* @__PURE__ */ new Map(),
+		failures: 0,
+		unreadable: false
+	};
+}
+async function sessionIdentity(group) {
+	const filenameId = STALE_PLUGIN_UUID_PATTERN.exec(nodePath.basename(group.transcript))?.[1];
+	const nativeId = await transcriptSessionId(group.transcript);
+	if (filenameId && nativeId && filenameId !== nativeId) return void 0;
+	if (nativeId) return nativeId;
+	if (filenameId) return filenameId;
+	for (const directory of group.captureDirectories) {
+		const id = await transcriptSessionId(nodePath.join(directory, TURN_CAPTURE_TRANSCRIPT));
+		if (id) return id;
+	}
+}
+async function sessionsRoot(transcript) {
+	let current = nodePath.dirname(nodePath.resolve(transcript));
+	for (;;) {
+		if (nodePath.basename(current) === "sessions") {
+			const canonicalParent = await nodeFsPromises.realpath(nodePath.dirname(current));
+			const root = nodePath.join(canonicalParent, CODEX_SESSIONS_DIRECTORY);
+			const stat = await nodeFsPromises.lstat(root);
+			return stat.isDirectory() && !stat.isSymbolicLink() ? root : void 0;
+		}
+		const parent = nodePath.dirname(current);
+		if (parent === current) return void 0;
+		current = parent;
+	}
+}
+async function nativeLocks(root) {
+	const directory = nodePath.join(nodePath.dirname(root), CODEX_WRITER_LOCKS_DIRECTORY);
+	try {
+		const stat = await nodeFsPromises.lstat(directory);
+		if (!stat.isDirectory() || stat.isSymbolicLink()) return void 0;
+		const entries = await nodeFsPromises.readdir(directory);
+		return new Set(entries.flatMap((name) => STALE_PLUGIN_NATIVE_LOCK_PATTERN.exec(name)?.[1] ?? []));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		return;
+	}
+}
+async function underLocks(locks, action, index = 0) {
+	if (index === locks.length) return action();
+	await tryWithFileLock(locks[index], () => underLocks(locks, action, index + 1));
+}
+function locksForSession(groups) {
+	return [...new Set(groups.flatMap((group) => [
+		`${group.transcript}${TURN_CAPTURE_LOCK_SUFFIX}`,
+		`${group.transcript}${TRACE_UPLOAD_LOCK_SUFFIX}`,
+		...group.lockDirectories
+	]))].sort();
+}
+async function refreshSessionGroups(groups, cutoff, ownLocks) {
+	const refreshed = emptyScan();
+	for (const directory of new Set(groups.map((group) => nodePath.dirname(group.transcript)))) await scanDirectory(directory, refreshed, cutoff, ownLocks, false);
+	for (const group of refreshed.groups.values()) {
+		group.sessionId = await sessionIdentity(group);
+		if (!group.sessionId) refreshed.unreadable = true;
+	}
+	return refreshed;
+}
+async function hasLinkedParent(groups) {
+	for (const group of groups) if (await pathHasSymbolicLink(nodePath.dirname(group.transcript))) return true;
+	return false;
+}
+async function cleanupStalePluginState(transcript, currentSessionId, options = {}) {
+	const root = await sessionsRoot(transcript);
+	if (!root) return;
+	const currentTranscript = nodePath.join(await nodeFsPromises.realpath(nodePath.dirname(transcript)), nodePath.basename(transcript));
+	const cutoff = (options.now ?? Date.now()) - STALE_PLUGIN_TTL_MS;
+	const scan = emptyScan();
+	await scanDirectory(root, scan, cutoff, /* @__PURE__ */ new Set(), true);
+	const lockedSessionIds = await nativeLocks(root);
+	if (!lockedSessionIds) return;
+	const discoveredSessionIds = /* @__PURE__ */ new Set();
+	const protectedSessionIds = /* @__PURE__ */ new Set([currentSessionId, ...lockedSessionIds]);
+	const groupsBySession = /* @__PURE__ */ new Map();
+	for (const group of scan.groups.values()) {
+		group.sessionId = await sessionIdentity(group);
+		if (!group.sessionId) {
+			scan.unreadable = true;
+			continue;
+		}
+		discoveredSessionIds.add(group.sessionId);
+		const groups = groupsBySession.get(group.sessionId) ?? [];
+		groups.push(group);
+		groupsBySession.set(group.sessionId, groups);
+		if (group.transcript === currentTranscript || group.recent || group.live || group.unsafe) protectedSessionIds.add(group.sessionId);
+	}
+	const privacyPath = options.privacyPath ?? defaultPrivacyPath();
+	for (const [sessionId, groups] of groupsBySession) {
+		if (protectedSessionIds.has(sessionId)) continue;
+		try {
+			if (await hasLinkedParent(groups)) continue;
+			const locks = locksForSession(groups);
+			await underLocks(locks, async () => {
+				if (await hasLinkedParent(groups)) return;
+				const locked = await nativeLocks(root);
+				if (!locked || locked.has(sessionId)) return;
+				const refreshed = await refreshSessionGroups(groups, cutoff, new Set(locks));
+				scan.failures += refreshed.failures;
+				scan.unreadable ||= refreshed.unreadable;
+				const currentGroups = [...refreshed.groups.values()].filter((group) => group.sessionId === sessionId);
+				const knownTranscripts = new Set(groups.map((group) => group.transcript));
+				const changedOriginal = groups.some((group) => {
+					const current = refreshed.groups.get(group.transcript);
+					return current != null && current.sessionId !== sessionId;
+				});
+				for (const group of refreshed.groups.values()) if (group.sessionId) discoveredSessionIds.add(group.sessionId);
+				if (refreshed.unreadable || changedOriginal || currentGroups.some((group) => !knownTranscripts.has(group.transcript) || group.transcript === currentTranscript || group.unsafe || group.recent || group.live)) {
+					protectedSessionIds.add(sessionId);
+					return;
+				}
+				if ((await pruneInactiveSessionEvidence(privacyPath, {
+					inactiveBefore: cutoff,
+					currentSessionId,
+					protectedSessionIds: [...protectedSessionIds],
+					inactiveSessionIds: [sessionId],
+					targetSessionIds: [sessionId]
+				})).activeSessionIds.includes(sessionId)) {
+					protectedSessionIds.add(sessionId);
+					return;
+				}
+				for (const group of currentGroups) {
+					for (const file of group.artifacts) await nodeFsPromises.unlink(file);
+					for (const file of group.recoveryFiles) await nodeFsPromises.unlink(file);
+					for (const directory of group.captureDirectories) await nodeFsPromises.rmdir(directory);
+				}
+			});
+		} catch {
+			scan.failures++;
+		}
+	}
+	if (!scan.unreadable) try {
+		const latestLocks = await nativeLocks(root);
+		if (!latestLocks) return;
+		await pruneInactiveSessionEvidence(privacyPath, {
+			inactiveBefore: cutoff,
+			currentSessionId,
+			protectedSessionIds: [...protectedSessionIds],
+			inactiveSessionIds: [],
+			excludedSessionIds: [
+				...discoveredSessionIds,
+				...lockedSessionIds,
+				...latestLocks
+			]
+		});
+	} catch {
+		scan.failures++;
+	}
+	if (scan.failures) console.error(`Tracing cleanup skipped ${scan.failures} unreadable or busy entries.`);
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -17805,25 +18441,6 @@ function withTrustedMetadata(untrusted, structural) {
 }
 function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
-}
-//#endregion
-//#region src/utils/paths.ts
-async function nearestExistingDirectory(target) {
-	let current = nodePath.resolve(target);
-	for (;;) {
-		try {
-			if ((await nodeFsPromises.stat(current)).isDirectory()) return current;
-		} catch {}
-		const parent = nodePath.dirname(current);
-		if (parent === current) return void 0;
-		current = parent;
-	}
-}
-function absoluteTarget(value, base) {
-	if (typeof value !== "string" || value.length === 0) return void 0;
-	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
-	if (!base || !nodePath.isAbsolute(base)) return void 0;
-	return nodePath.resolve(base, value);
 }
 //#endregion
 //#region src/git.ts
@@ -17979,122 +18596,6 @@ async function resolveTurnAttribution(input) {
 		identifier: input.sessionIdentifier ?? (typeof existingIdentifier === "string" ? existingIdentifier : fallbackIdentifier),
 		tools
 	};
-}
-//#endregion
-//#region src/utils/fileLock.ts
-async function readOwner(file) {
-	let contents;
-	try {
-		contents = await nodeFsPromises.readFile(file, "utf8");
-	} catch (error) {
-		if (error.code === "ENOENT") return void 0;
-		throw error;
-	}
-	try {
-		const value = JSON.parse(contents);
-		if (value != null && typeof value === "object" && Number.isInteger(value.pid) && value.pid > 0 && typeof value.token === "string") return {
-			pid: value.pid,
-			token: value.token
-		};
-	} catch {}
-}
-function processIsAlive(pid) {
-	if (pid <= 0) return false;
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch (error) {
-		return error.code === "EPERM";
-	}
-}
-async function lockIsOld(lockPath) {
-	try {
-		const stat = await nodeFsPromises.stat(lockPath);
-		return Date.now() - stat.mtimeMs >= FILE_LOCK_INITIALIZING_MS;
-	} catch (error) {
-		if (error.code === "ENOENT") return false;
-		throw error;
-	}
-}
-async function recoverLock(lockPath, observedOwner) {
-	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
-	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
-	let recovery;
-	try {
-		recovery = await nodeFsPromises.open(recoveryPath, "wx", 384);
-	} catch (error) {
-		if (error.code !== "EEXIST") throw error;
-		const recoveryOwner = await readOwner(recoveryPath);
-		if (recoveryOwner && !processIsAlive(recoveryOwner.pid) || recoveryOwner == null && await lockIsOld(recoveryPath)) await nodeFsPromises.unlink(recoveryPath).catch((unlinkError) => {
-			if (unlinkError.code !== "ENOENT") throw unlinkError;
-		});
-		return false;
-	}
-	try {
-		await recovery.writeFile(JSON.stringify({
-			pid: process.pid,
-			token: randomUUID()
-		}), "utf8");
-		const currentOwner = await readOwner(ownerFile);
-		if (currentOwner?.pid === observedOwner.pid && currentOwner?.token === observedOwner.token && !processIsAlive(currentOwner.pid)) {
-			await nodeFsPromises.unlink(ownerFile);
-			await nodeFsPromises.rmdir(lockPath);
-			return true;
-		}
-		if (currentOwner == null && observedOwner.token === "invalid" && await lockIsOld(lockPath)) {
-			await nodeFsPromises.unlink(ownerFile).catch((error) => {
-				if (error.code !== "ENOENT") throw error;
-			});
-			await nodeFsPromises.rmdir(lockPath);
-			return true;
-		}
-		return false;
-	} finally {
-		await recovery.close();
-		await nodeFsPromises.unlink(recoveryPath).catch((error) => {
-			if (error.code !== "ENOENT") throw error;
-		});
-	}
-}
-async function withFileLock(lockPath, action) {
-	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
-	const token = randomUUID();
-	while (true) try {
-		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
-		try {
-			await nodeFsPromises.writeFile(ownerFile, JSON.stringify({
-				pid: process.pid,
-				token
-			}), {
-				encoding: "utf8",
-				flag: "wx",
-				mode: 384
-			});
-		} catch (error) {
-			await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
-			throw error;
-		}
-		break;
-	} catch (error) {
-		if (error.code !== "EEXIST") throw error;
-		const owner = await readOwner(ownerFile);
-		if (owner == null) {
-			if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
-				pid: 0,
-				token: "invalid"
-			});
-		} else if (!processIsAlive(owner.pid)) await recoverLock(lockPath, owner);
-		await setTimeout$1(25);
-	}
-	try {
-		return await action();
-	} finally {
-		const owner = await readOwner(ownerFile);
-		if (owner?.pid === process.pid && owner.token === token) {
-			await nodeFsPromises.unlink(ownerFile);
-			await nodeFsPromises.rmdir(lockPath);
-		}
-	}
 }
 //#endregion
 //#region src/trace-delivery-store.ts
@@ -18951,6 +19452,10 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		mode: savedTurnMode(privacyPath, sessionId, turnId),
 		hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId)
 	};
+	if (hasPrunedSessionHistory(privacyPath, sessionId) && hasSavedTurnEvidence(privacyPath, sessionId, turnId)) return {
+		mode: savedTurnMode(privacyPath, sessionId, turnId),
+		hasEvidence: true
+	};
 	let mode = "metadata";
 	let hasEvidence = false;
 	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
@@ -19722,7 +20227,8 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 			cwd: input.cwd,
 			env: process.env
 		});
-		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const savePreference = () => submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const result = input.transcript_path ? await withTurnCaptureLock(input.transcript_path, savePreference) : await savePreference();
 		if (!command) {
 			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
 			return;
@@ -19781,51 +20287,65 @@ async function runHook() {
 		"PostToolUse",
 		"Stop"
 	].includes(content.hook_event_name)) return;
-	const config = await getConfig({
-		home: process.env.HOME,
-		cwd: content.cwd,
-		env: process.env
-	});
-	if (!config.enabled) return;
-	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
-	if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
-		const meta = (await readTranscript(content.transcript_path, content.turn_id)).find((event) => event.type === "session_meta");
-		if (meta?.type === "session_meta" && (meta.payload.id !== content.session_id || meta.payload.thread_source === "subagent" || isRecord(meta.payload.source) && meta.payload.source.subagent != null)) return;
-	}
-	if (content.hook_event_name === "PreToolUse") {
-		await recordToolHook(content, savedTurnMode(defaultPrivacyPath(), content.session_id, content.turn_id), anonymizer);
-		return;
-	}
-	const client = new Client({
-		apiKey: config.api_key,
-		apiUrl: config.api_url,
-		anonymizer,
-		hideMetadata: anonymizer,
-		autoBatchTracing: false
-	});
-	const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
-		...replica,
-		client: new Client({
-			apiKey: replica.apiKey ?? config.api_key,
-			apiUrl: replica.apiUrl ?? config.api_url,
+	const isStop = content.hook_event_name === "Stop";
+	try {
+		try {
+			await withTurnCaptureLock(content.transcript_path, () => touchSessionActivity(defaultPrivacyPath(), content.session_id));
+		} catch (error) {
+			console.error(`Tracing activity update failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+		const config = await getConfig({
+			home: process.env.HOME,
+			cwd: content.cwd,
+			env: process.env
+		});
+		if (!config.enabled) return;
+		const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
+		if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+			const meta = (await readTranscript(content.transcript_path, content.turn_id)).find((event) => event.type === "session_meta");
+			if (meta?.type === "session_meta" && (meta.payload.id !== content.session_id || meta.payload.thread_source === "subagent" || isRecord(meta.payload.source) && meta.payload.source.subagent != null)) return;
+		}
+		if (content.hook_event_name === "PreToolUse") {
+			await recordToolHook(content, savedTurnMode(defaultPrivacyPath(), content.session_id, content.turn_id), anonymizer);
+			return;
+		}
+		const client = new Client({
+			apiKey: config.api_key,
+			apiUrl: config.api_url,
 			anonymizer,
 			hideMetadata: anonymizer,
 			autoBatchTracing: false
-		})
-	}));
-	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
-		client,
-		project_name: config.project
-	}) : void 0;
-	await convertToRunTree(content, {
-		hook: content,
-		redactCapture: anonymizer,
-		client,
-		projectName: config.project,
-		metadata: config.metadata,
-		replicas,
-		parentRunTree
-	});
+		});
+		const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
+			...replica,
+			client: new Client({
+				apiKey: replica.apiKey ?? config.api_key,
+				apiUrl: replica.apiUrl ?? config.api_url,
+				anonymizer,
+				hideMetadata: anonymizer,
+				autoBatchTracing: false
+			})
+		}));
+		const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
+			client,
+			project_name: config.project
+		}) : void 0;
+		await convertToRunTree(content, {
+			hook: content,
+			redactCapture: anonymizer,
+			client,
+			projectName: config.project,
+			metadata: config.metadata,
+			replicas,
+			parentRunTree
+		});
+	} finally {
+		if (isStop) try {
+			await cleanupStalePluginState(content.transcript_path, content.session_id);
+		} catch (error) {
+			console.error(`Tracing stale-state cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 }
 const invocationArguments = process.argv.slice(1);
 const invoked = (flag) => wasInvokedWith(invocationArguments, flag);

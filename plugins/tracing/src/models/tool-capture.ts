@@ -36,3 +36,11 @@ export interface ReconciliationMetadata {
   root: Record<string, unknown>;
   tools: Record<string, Record<string, unknown>>;
 }
+
+export interface PromptSubmitInput {
+  session_id: string;
+  turn_id: string;
+  cwd: string;
+  prompt: string;
+  transcript_path?: string;
+}
