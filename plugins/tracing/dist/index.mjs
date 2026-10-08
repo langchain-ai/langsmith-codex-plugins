@@ -7,12 +7,12 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
+import { createHash, randomUUID } from "node:crypto";
+import { performance as performance$1 } from "node:perf_hooks";
+import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createHash, randomUUID } from "node:crypto";
-import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { v5 } from "uuid";
-import { performance as performance$1 } from "node:perf_hooks";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -17308,18 +17308,363 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
-//#region src/utils/findLast.ts
-const findLast = (array, predicate) => {
-	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
-};
-//#endregion
 //#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
 function isRecord(value) {
 	return value != null && typeof value === "object" && !Array.isArray(value);
 }
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
+//#endregion
+//#region src/utils/files.ts
+async function writeCapture(file, value, firstWriteWins = false) {
+	const temporary = `${file}.${randomUUID()}.tmp`;
+	await nodeFsPromises.mkdir(nodePath.dirname(file), {
+		recursive: true,
+		mode: 448
+	});
+	try {
+		await nodeFsPromises.writeFile(temporary, value, {
+			encoding: "utf8",
+			mode: 384,
+			flag: "wx"
+		});
+		if (firstWriteWins) try {
+			await nodeFsPromises.link(temporary, file);
+		} catch (error) {
+			if (error.code !== "EEXIST") throw error;
+		}
+		else await nodeFsPromises.rename(temporary, file);
+	} finally {
+		await nodeFsPromises.unlink(temporary).catch((error) => {
+			if (error.code !== "ENOENT") throw error;
+		});
+	}
+}
+//#endregion
+//#region src/tool-capture-constants.ts
+const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
+const TURN_CAPTURE_TRANSCRIPT = "transcript.jsonl";
+const TOOL_CAPTURE_START_SUFFIX = ".start.json";
+const TOOL_CAPTURE_END_SUFFIX = ".end.json";
+const TOOL_CAPTURE_FILE_PATTERN = /^[a-f0-9]{64}\.(start|end)\.json$/;
+const TURN_CAPTURE_STOP = "stop.json";
+const TURN_CAPTURE_PLAN = "metadata.json";
+const TOOL_CAPTURE_TEMP_PATTERN = /^(?:[a-f0-9]{64}\.(?:start|end)\.json|transcript\.jsonl|stop\.json|metadata\.json)\.[a-f0-9-]{36}\.tmp$/;
+//#endregion
+//#region src/tool-capture.ts
+function turnCaptureDirectory(transcript, turn) {
+	return `${transcript}${TURN_CAPTURE_SUFFIX}${createHash("sha256").update(turn).digest("hex")}`;
+}
+async function recordToolHook(input, mode, redact) {
+	if (mode === "off" || !input.tool_use_id || !input.tool_name) return;
+	const ended = input.hook_event_name === "PostToolUse";
+	const key = createHash("sha256").update(input.tool_use_id).digest("hex");
+	const directory = turnCaptureDirectory(input.transcript_path, input.turn_id);
+	const file = nodePath.join(directory, `${key}${ended ? TOOL_CAPTURE_END_SUFFIX : TOOL_CAPTURE_START_SUFFIX}`);
+	const record = {
+		id: input.tool_use_id,
+		name: input.tool_name,
+		startedAt: Date.now(),
+		...ended ? { endedAt: Date.now() } : {},
+		mode,
+		...mode === "full" && ended ? {
+			input: input.tool_input,
+			output: input.tool_response
+		} : {}
+	};
+	const content = redact && mode === "full" ? {
+		...record,
+		...redact({
+			input: record.input,
+			output: record.output
+		})
+	} : record;
+	await writeCapture(file, JSON.stringify(content), true);
+}
+async function readTranscript(file, turn) {
+	let contents;
+	try {
+		contents = await nodeFsPromises.readFile(file, "utf8");
+	} catch (error) {
+		if (error.code !== "ENOENT" || !turn) throw error;
+		contents = await nodeFsPromises.readFile(nodePath.join(turnCaptureDirectory(file, turn), TURN_CAPTURE_TRANSCRIPT), "utf8");
+	}
+	const lines = contents.split("\n");
+	return lines.flatMap((line, index) => {
+		if (!line.trim()) return [];
+		try {
+			return [JSON.parse(line)];
+		} catch (error) {
+			if (index === lines.length - 1 && !contents.endsWith("\n")) return [];
+			throw error;
+		}
+	});
+}
+async function prepareTurnCapture(transcript, turn, mode, redact) {
+	const directory = turnCaptureDirectory(transcript, turn);
+	const snapshot = nodePath.join(directory, TURN_CAPTURE_TRANSCRIPT);
+	const events = await readTranscript(transcript, turn);
+	if (mode === "full") {
+		let active = false;
+		const current = events.filter((event) => {
+			if (event.type === "session_meta") return true;
+			if (event.type === "event_msg" && event.payload.type === "task_started") active = event.payload.turn_id === turn;
+			return active;
+		});
+		await writeCapture(snapshot, (redact ? current.map((event) => redact(event)) : current).map((event) => JSON.stringify(event)).join("\n") + "\n");
+	}
+	let files;
+	try {
+		files = await nodeFsPromises.readdir(directory);
+	} catch (error) {
+		if (error.code === "ENOENT") return {
+			events,
+			tools: [],
+			stopped: false
+		};
+		throw error;
+	}
+	const records = /* @__PURE__ */ new Map();
+	for (const file of files.filter((name) => TOOL_CAPTURE_FILE_PATTERN.test(name)).sort()) {
+		const value = JSON.parse(await nodeFsPromises.readFile(nodePath.join(directory, file), "utf8"));
+		if (typeof value.id !== "string" || typeof value.name !== "string" || !Number.isFinite(value.startedAt)) throw new Error("Invalid captured tool");
+		const existing = records.get(value.id);
+		records.set(value.id, existing ? {
+			...existing,
+			...value,
+			startedAt: Math.min(existing.startedAt, value.startedAt),
+			endedAt: existing.endedAt ?? value.endedAt,
+			output: existing.output ?? value.output
+		} : value);
+	}
+	return {
+		events,
+		stopped: files.includes(TURN_CAPTURE_STOP),
+		tools: [...records.values()].sort((a, b) => a.startedAt - b.startedAt || a.id.localeCompare(b.id))
+	};
+}
+async function clearTurnCapture(transcript, turn) {
+	const directory = turnCaptureDirectory(transcript, turn);
+	let files;
+	try {
+		files = await nodeFsPromises.readdir(directory);
+	} catch (error) {
+		if (error.code === "ENOENT") return;
+		throw error;
+	}
+	for (const name of files) if ([
+		"transcript.jsonl",
+		"stop.json",
+		"metadata.json"
+	].includes(name) || TOOL_CAPTURE_FILE_PATTERN.test(name) || TOOL_CAPTURE_TEMP_PATTERN.test(name)) await nodeFsPromises.unlink(nodePath.join(directory, name));
+	await nodeFsPromises.rmdir(directory);
+}
+async function markTurnStopped(transcript, turn) {
+	await writeCapture(nodePath.join(turnCaptureDirectory(transcript, turn), TURN_CAPTURE_STOP), "true");
+}
+function pendingCapturedTools(tools, events, turn) {
+	let active = false;
+	const completed = /* @__PURE__ */ new Set();
+	for (const event of events) {
+		if (event.type === "event_msg" && event.payload.type === "task_started") active = event.payload.turn_id === turn;
+		if (!active) continue;
+		if (event.type === "response_item" && ["function_call_output", "custom_tool_call_output"].includes(event.payload.type) && "call_id" in event.payload && typeof event.payload.call_id === "string") completed.add(event.payload.call_id);
+	}
+	return tools.some((tool) => tool.endedAt == null && !completed.has(tool.id));
+}
+async function reconciliationMetadata(transcript, turn, proposed) {
+	const file = nodePath.join(turnCaptureDirectory(transcript, turn), TURN_CAPTURE_PLAN);
+	try {
+		const saved = JSON.parse(await nodeFsPromises.readFile(file, "utf8"));
+		if (saved?.root == null || saved?.tools == null || typeof saved.root !== "object" || typeof saved.tools !== "object") throw new Error("Invalid reconciliation metadata");
+		return saved;
+	} catch (error) {
+		if (error.code !== "ENOENT") throw error;
+	}
+	await writeCapture(file, JSON.stringify(proposed));
+	return proposed;
+}
+//#endregion
+//#region src/tracing-policy.ts
+function isMode(value) {
+	return value === "full" || value === "metadata";
+}
+function isTurnMode(value) {
+	return isMode(value) || value === "off";
+}
+function validThread(value) {
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
+		"preference",
+		"turns",
+		"inherited"
+	].includes(key));
+}
+function isObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasCode(error, code) {
+	return isObject(error) && error.code === code;
+}
+/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
+function readPolicy(path) {
+	let raw;
+	try {
+		raw = readFileSync(path, "utf8");
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) try {
+			lstatSync(path);
+		} catch (statError) {
+			if (hasCode(statError, "ENOENT")) return {
+				version: 1,
+				threads: {}
+			};
+			throw statError;
+		}
+		throw error;
+	}
+	const value = JSON.parse(raw);
+	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+	return value;
+}
+function defaultPrivacyPath() {
+	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+}
+function threadPolicy(policy, id) {
+	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
+}
+/** No launch evidence means metadata-only, never today's sticky preference. */
+function savedTurnMode(file, sessionId, turnId) {
+	try {
+		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.inherited) return thread.inherited;
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+	} catch {
+		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
+	}
+}
+/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
+function parseTracingCommand(prompt) {
+	if (prompt === "langsmith-tracing:mute") return "mute";
+	if (prompt === "langsmith-tracing:unmute") return "unmute";
+}
+/**
+* Independent of tracing state and its pruning. Writers serialize through an
+* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
+* No age/PID-based stealing: even a slow live writer is safe.
+* A crashed writer's lock requires explicit removal after confirming it is idle.
+* Rename commits the effective preference. Later durability/cleanup failures are
+* returned as local warnings, not thrown as if the preference were unchanged.
+*/
+async function updatePolicy(path, update) {
+	const lockPath = `${path}.lock`;
+	await mkdir(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const deadline = performance$1.now() + 2e3;
+	let locked = false;
+	while (!locked) try {
+		await mkdir(lockPath, { mode: 448 });
+		locked = true;
+	} catch (error) {
+		if (!hasCode(error, "EEXIST")) throw error;
+		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
+		await setTimeout$1(10 + Math.random() * 20);
+	}
+	const warnings = [];
+	async function bestEffort(action, message) {
+		try {
+			await action();
+		} catch (error) {
+			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	let tempPath;
+	try {
+		let policy;
+		try {
+			policy = readPolicy(path);
+		} catch (error) {
+			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
+		}
+		update(policy);
+		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+		const temp = await open(tempPath, "wx", 384);
+		try {
+			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
+			await temp.sync();
+		} catch (error) {
+			await bestEffort(() => temp.close(), "Temporary file close failed");
+			throw error;
+		}
+		await temp.close();
+		await rename(tempPath, path);
+		tempPath = void 0;
+		await bestEffort(async () => {
+			const directory = await open(dirname(path), "r");
+			try {
+				await directory.sync();
+			} finally {
+				await bestEffort(() => directory.close(), "Directory close cleanup failed");
+			}
+		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
+	} finally {
+		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
+		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+function requireIds(sessionId, turnId) {
+	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
+}
+/** One atomic transaction preserves active/queued snapshots before changing preference. */
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+	requireIds(sessionId, turnId);
+	return updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
+			...thread.turns,
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+		};
+		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+}
+/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
+async function inheritThreadMode(file, sessionId, mode) {
+	let inherited = "metadata";
+	const result = await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.inherited ??= mode;
+		inherited = thread.inherited;
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	return inherited;
+}
+//#endregion
+//#region src/utils/findLast.ts
+const findLast = (array, predicate) => {
+	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
+};
 //#endregion
 //#region src/metadata-constants.ts
 const GIT_COMMAND_TIMEOUT_MS = 2e3;
@@ -17831,6 +18176,429 @@ function topologyFilePath(rolloutFile, turnId) {
 	return `${rolloutFile}${TRACE_UPLOAD_TOPOLOGY_SUFFIX}-${turnKey}.json`;
 }
 //#endregion
+//#region src/utils/time.ts
+function normalizedTime(value) {
+	if (typeof value === "number") return value;
+	if (typeof value === "string") {
+		const parsed = Date.parse(value);
+		return Number.isNaN(parsed) ? value : parsed;
+	}
+}
+//#endregion
+//#region src/utils/http.ts
+function normalizedEndpoint(apiUrl) {
+	const url = new URL(apiUrl);
+	url.username = "";
+	url.password = "";
+	url.search = "";
+	url.hash = "";
+	return url.toString().replace(/\/+$/, "");
+}
+function errorStatus(error) {
+	if (error == null || typeof error !== "object" || !("status" in error)) return void 0;
+	const status = error.status;
+	return typeof status === "number" ? status : void 0;
+}
+//#endregion
+//#region src/utils/serialization.ts
+function copyExtraThroughJson(run) {
+	const copy = { ...run };
+	const extra = run.extra;
+	if (extra != null && typeof extra === "object") {
+		const serialized = JSON.stringify(extra);
+		if (serialized === void 0) delete copy.extra;
+		else copy.extra = JSON.parse(serialized);
+	}
+	return copy;
+}
+function sortedJson(value) {
+	if (value === null || typeof value !== "object") return JSON.stringify(value);
+	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
+	const record = value;
+	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
+}
+function digestFor(value) {
+	const json = JSON.stringify(value);
+	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
+	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
+}
+function containsExpected(actual, expected) {
+	if (expected === void 0) return true;
+	if (expected === null || typeof expected !== "object") return actual === expected;
+	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
+	const record = asRecord(actual);
+	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
+}
+//#endregion
+//#region src/constants/incremental-delivery.ts
+const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
+const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
+const INCREMENTAL_DELIVERY_DIGEST_PATTERN = /^[a-f0-9]{64}$/;
+const INCREMENTAL_DELIVERY_CHECKPOINT_KEYS = [
+	"endpoint",
+	"projectName",
+	"runId",
+	"workspaceId",
+	"credentialHash",
+	"topology",
+	"createAttempted",
+	"deliveredDigest"
+];
+const INCREMENTAL_DELIVERY_TOPOLOGY_KEYS = [
+	"parentRunId",
+	"traceId",
+	"dottedOrder",
+	"startTime",
+	"name",
+	"runType"
+];
+const INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS = ["LANGSMITH_PROJECT", "LANGCHAIN_PROJECT"];
+const INCREMENTAL_DELIVERY_READ_DELAYS = [
+	100,
+	250,
+	500,
+	1e3,
+	2e3,
+	4e3
+];
+const INCREMENTAL_DELIVERY_PATCH_FIELDS = [
+	"inputs",
+	"outputs",
+	"error",
+	"extra",
+	"tags",
+	"events"
+];
+const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"ls_trace_schema_version",
+	"ls_integration",
+	"ls_agent_type",
+	"ls_tracing_mode"
+];
+//#endregion
+//#region src/incremental-delivery-store.ts
+function checkpointPath(rolloutFile, turnKey, identity) {
+	const identityHash = createHash("sha256").update(`${turnKey}\0${identity.endpoint}\0${identity.projectName}\0${identity.runId}\0workspace:${identity.workspaceId ?? ""}\0credential:${identity.credentialHash ?? ""}`).digest("hex");
+	return `${nodePath.resolve(rolloutFile)}${INCREMENTAL_DELIVERY_STORE_SUFFIX}-${identityHash}.json`;
+}
+function validateCheckpoint(value, identity) {
+	if (!isRecord(value) || !isRecord(value.topology)) throw new Error("Incremental delivery checkpoint is invalid");
+	if (Object.keys(value).some((key) => !INCREMENTAL_DELIVERY_CHECKPOINT_KEYS.includes(key)) || Object.keys(value.topology).some((key) => !INCREMENTAL_DELIVERY_TOPOLOGY_KEYS.includes(key))) throw new Error("Incremental delivery checkpoint is invalid");
+	const topology = value.topology;
+	const validStartTime = typeof topology.startTime === "string" || typeof topology.startTime === "number" && Number.isFinite(topology.startTime);
+	if (value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
+	return {
+		endpoint: identity.endpoint,
+		projectName: identity.projectName,
+		runId: identity.runId,
+		...identity.workspaceId === void 0 ? {} : { workspaceId: identity.workspaceId },
+		...identity.credentialHash === void 0 ? {} : { credentialHash: identity.credentialHash },
+		topology: {
+			parentRunId: topology.parentRunId,
+			...topology.traceId === void 0 ? {} : { traceId: topology.traceId },
+			...topology.dottedOrder === void 0 ? {} : { dottedOrder: topology.dottedOrder },
+			startTime: topology.startTime,
+			name: topology.name,
+			runType: topology.runType
+		},
+		createAttempted: true,
+		...value.deliveredDigest === void 0 ? {} : { deliveredDigest: value.deliveredDigest }
+	};
+}
+function withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, action) {
+	const file = checkpointPath(rolloutFile, turnKey, identity);
+	return withFileLock(`${file}${INCREMENTAL_DELIVERY_LOCK_SUFFIX}`, async () => {
+		return action({
+			async load() {
+				let contents;
+				try {
+					const handle = await nodeFsPromises.open(file, "r");
+					try {
+						const buffer = Buffer.alloc(4194305);
+						let length = 0;
+						while (length < buffer.length) {
+							const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+							if (bytesRead === 0) break;
+							length += bytesRead;
+						}
+						if (length > 4194304) throw new Error("Incremental delivery checkpoint exceeds its size limit");
+						contents = buffer.toString("utf8", 0, length);
+					} finally {
+						await handle.close();
+					}
+				} catch (error) {
+					if (error.code === "ENOENT") return void 0;
+					throw error;
+				}
+				let value;
+				try {
+					value = JSON.parse(contents);
+				} catch (error) {
+					throw new Error("Incremental delivery checkpoint is corrupt", { cause: error });
+				}
+				return validateCheckpoint(value, identity);
+			},
+			async save(checkpoint) {
+				const validated = validateCheckpoint(checkpoint, identity);
+				const contents = JSON.stringify(validated);
+				if (Buffer.byteLength(contents, "utf8") > 4194304) throw new Error("Incremental delivery checkpoint exceeds its size limit");
+				const temporaryFile = `${file}.${randomUUID()}.tmp`;
+				const handle = await nodeFsPromises.open(temporaryFile, "wx", 384);
+				try {
+					await handle.writeFile(contents, "utf8");
+					await handle.sync();
+				} finally {
+					await handle.close();
+				}
+				await nodeFsPromises.rename(temporaryFile, file);
+			}
+		});
+	});
+}
+//#endregion
+//#region src/incremental-delivery.ts
+function runtimeClientConfig(client) {
+	return client;
+}
+function endpointFor(client, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	return normalizedEndpoint(options?.apiUrl ?? configured);
+}
+function projectNameFor(run) {
+	const record = asRecord(run);
+	const explicit = record.project_name ?? record.session_name;
+	if (typeof explicit === "string" && explicit.length > 0) return explicit;
+	for (const key of INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS) {
+		const value = process.env[key];
+		if (value) return value;
+	}
+	return TRACE_UPLOAD_DEFAULT_PROJECT;
+}
+function identityFor(client, endpoint, projectName, runId, options) {
+	const runtime = runtimeClientConfig(client);
+	const workspaceId = options?.workspaceId ?? runtime.workspaceId;
+	if (typeof workspaceId === "string" && workspaceId.trim().length > 0) return {
+		endpoint,
+		projectName,
+		runId,
+		workspaceId
+	};
+	const apiKey = options?.apiKey ?? runtime.apiKey;
+	return {
+		endpoint,
+		projectName,
+		runId,
+		...typeof apiKey === "string" && apiKey.length > 0 ? { credentialHash: createHash("sha256").update(apiKey).digest("hex") } : {}
+	};
+}
+function topologyFor(run) {
+	return {
+		parentRunId: run.parent_run_id ?? null,
+		...typeof run.trace_id === "string" ? { traceId: run.trace_id } : {},
+		...typeof run.dotted_order === "string" ? { dottedOrder: run.dotted_order } : {},
+		startTime: run.start_time ?? Date.now(),
+		name: run.name,
+		runType: run.run_type
+	};
+}
+function canonicalCreate(run, checkpoint) {
+	const canonical = {
+		...run,
+		id: checkpoint.runId,
+		name: checkpoint.topology.name,
+		run_type: checkpoint.topology.runType,
+		start_time: checkpoint.topology.startTime
+	};
+	if (checkpoint.topology.parentRunId === null) delete canonical.parent_run_id;
+	else canonical.parent_run_id = checkpoint.topology.parentRunId;
+	if (checkpoint.topology.traceId === void 0) delete canonical.trace_id;
+	else canonical.trace_id = checkpoint.topology.traceId;
+	if (checkpoint.topology.dottedOrder === void 0) delete canonical.dotted_order;
+	else canonical.dotted_order = checkpoint.topology.dottedOrder;
+	return canonical;
+}
+function mergePatchExtra(existing, desired, root) {
+	const desiredExtra = asRecord(desired.extra);
+	const desiredMetadata = asRecord(desiredExtra.metadata);
+	if (desiredMetadata.ls_tracing_mode === "metadata") return {
+		...desiredExtra,
+		metadata: desiredMetadata
+	};
+	const existingExtra = asRecord(existing.extra);
+	const existingMetadata = asRecord(existingExtra.metadata);
+	const metadata = { ...existingMetadata };
+	for (const [key, value] of Object.entries(desiredMetadata)) if (value !== void 0) metadata[key] = value;
+	if (root) for (const key of REPOSITORY_METADATA_KEYS) {
+		const existingValue = existingMetadata[key];
+		if (typeof existingValue === "string" && existingValue.length > 0) metadata[key] = existingValue;
+	}
+	return {
+		...existingExtra,
+		...desiredExtra,
+		metadata: Object.keys(metadata).length > 0 ? metadata : void 0
+	};
+}
+function matchesCheckpoint(existing, checkpoint, projectId) {
+	const topology = checkpoint.topology;
+	return existing.id === checkpoint.runId && (existing.parent_run_id ?? null) === topology.parentRunId && (existing.trace_id ?? void 0) === topology.traceId && (existing.dotted_order ?? void 0) === topology.dottedOrder && normalizedTime(existing.start_time) === normalizedTime(topology.startTime) && existing.name === topology.name && existing.run_type === topology.runType && existing.session_id === projectId;
+}
+function readClientForEndpoint(client, endpoint, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	if (endpoint === normalizedEndpoint(configured) && options?.apiUrl === void 0 && options?.apiKey === void 0 && options?.workspaceId === void 0) return client;
+	const runtime = runtimeClientConfig(client);
+	return new Client({
+		apiUrl: options?.apiUrl ?? endpoint,
+		apiKey: options?.apiKey ?? runtime.apiKey,
+		workspaceId: options?.workspaceId ?? runtime.workspaceId,
+		headers: runtime.headers,
+		fetchOptions: runtime.fetchOptions,
+		fetchImplementation: runtime.fetchImplementation,
+		autoBatchTracing: false
+	});
+}
+async function readIndexedRun(client, runId) {
+	for (const wait of INCREMENTAL_DELIVERY_READ_DELAYS) try {
+		return await client.readRun(runId);
+	} catch (error) {
+		if (errorStatus(error) !== 404) throw error;
+		await setTimeout$1(wait);
+	}
+	return client.readRun(runId);
+}
+async function readAndValidate(client, options, endpoint, checkpoint) {
+	const reader = readClientForEndpoint(client, endpoint, options);
+	const [existing, project] = await Promise.all([readIndexedRun(reader, checkpoint.runId), reader.readProject({ projectName: checkpoint.projectName })]);
+	if (!matchesCheckpoint(existing, checkpoint, project.id)) throw new Error("Existing run does not match its incremental delivery checkpoint");
+	return {
+		existing,
+		projectId: project.id
+	};
+}
+function updatePayloadFromCreate(run, existing, checkpoint) {
+	const fields = canonicalCreate(run, checkpoint);
+	return {
+		end_time: fields.end_time,
+		inputs: fields.inputs,
+		outputs: fields.outputs,
+		error: fields.error,
+		extra: mergePatchExtra(existing, fields, checkpoint.topology.runType === "chain")
+	};
+}
+async function patchAndVerify(client, update, options, endpoint, checkpoint) {
+	try {
+		await client.updateRun(checkpoint.runId, update, options);
+	} catch (error) {
+		if (errorStatus(error) !== 409) throw error;
+	}
+	for (const wait of [...INCREMENTAL_DELIVERY_READ_DELAYS, 0]) {
+		const { existing } = await readAndValidate(client, options, endpoint, checkpoint);
+		if (normalizedTime(existing.end_time) === normalizedTime(update.end_time) && INCREMENTAL_DELIVERY_PATCH_FIELDS.every((key) => containsExpected(existing[key], asRecord(update)[key]))) return;
+		if (wait === 0) throw new Error("LangSmith has not applied the final run update");
+		await setTimeout$1(wait);
+	}
+}
+async function postWithConflictRecovery(client, createRun, run, options, endpoint, checkpoint, digest, finalize, save) {
+	try {
+		await createRun(run, options);
+	} catch (error) {
+		if (errorStatus(error) !== 409) throw error;
+		let verified;
+		try {
+			verified = await readAndValidate(client, options, endpoint, checkpoint);
+		} catch (verificationError) {
+			throw new Error("Could not verify the existing run after a create conflict", { cause: verificationError });
+		}
+		if (finalize) await patchAndVerify(client, updatePayloadFromCreate(run, verified.existing, checkpoint), options, endpoint, checkpoint);
+	}
+	await save({
+		...checkpoint,
+		deliveredDigest: digest
+	});
+}
+async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize) {
+	const cleanRun = copyExtraThroughJson(run);
+	if (!finalize) {
+		cleanRun.end_time = void 0;
+		cleanRun.extra = {
+			metadata: asRecord(asRecord(cleanRun.extra).metadata),
+			toJSON() {
+				return { metadata: Object.fromEntries(INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS.flatMap((key) => this.metadata[key] === void 0 ? [] : [[key, this.metadata[key]]])) };
+			}
+		};
+	}
+	if (typeof cleanRun.id !== "string" || cleanRun.id.length === 0) {
+		await createRun(cleanRun, options);
+		return;
+	}
+	const projectName = projectNameFor(cleanRun);
+	const endpoint = endpointFor(client, options);
+	const identity = identityFor(client, endpoint, projectName, cleanRun.id, options);
+	await withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, async (store) => {
+		let checkpoint = await store.load();
+		if (checkpoint === void 0) {
+			checkpoint = {
+				...identity,
+				topology: topologyFor(cleanRun),
+				createAttempted: true
+			};
+			await store.save(checkpoint);
+			const digest = digestFor(canonicalCreate(cleanRun, checkpoint));
+			await postWithConflictRecovery(client, createRun, canonicalCreate(cleanRun, checkpoint), options, endpoint, checkpoint, digest, finalize, store.save);
+			return;
+		}
+		if (!finalize && checkpoint.deliveredDigest !== void 0) return;
+		const canonical = canonicalCreate(cleanRun, checkpoint);
+		const digest = digestFor(canonical);
+		if (checkpoint.deliveredDigest === digest) return;
+		if (checkpoint.deliveredDigest === void 0) {
+			try {
+				const verified = await readAndValidate(client, options, endpoint, checkpoint);
+				if (!finalize) {
+					await store.save({
+						...checkpoint,
+						deliveredDigest: digest
+					});
+					return;
+				}
+				await patchAndVerify(client, updatePayloadFromCreate(canonical, verified.existing, checkpoint), options, endpoint, checkpoint);
+				await store.save({
+					...checkpoint,
+					deliveredDigest: digest
+				});
+				return;
+			} catch (error) {
+				if (errorStatus(error) !== 404) throw error;
+			}
+			await postWithConflictRecovery(client, createRun, canonical, options, endpoint, checkpoint, digest, finalize, store.save);
+			return;
+		}
+		await patchAndVerify(client, updatePayloadFromCreate(canonical, (await readAndValidate(client, options, endpoint, checkpoint)).existing, checkpoint), options, endpoint, checkpoint);
+		await store.save({
+			...checkpoint,
+			deliveredDigest: digest
+		});
+	});
+}
+function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			try {
+				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize);
+			} catch (error) {
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
+}
+//#endregion
 //#region src/trace-delivery.ts
 function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
 	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
@@ -17857,40 +18625,6 @@ function trackRunDelivery(client, errors) {
 		const value = Reflect.get(target, property, target);
 		return typeof value === "function" ? value.bind(target) : value;
 	} });
-}
-//#endregion
-//#region src/skills.ts
-function skillDirectoryInPath(word) {
-	const parts = word.split(/[/\\]/);
-	const name = parts.at(-2);
-	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
-	return parts.slice(0, -2).includes("skills") ? name : void 0;
-}
-function shellCommands(args) {
-	if (typeof args !== "string") {
-		const cmd = args?.cmd;
-		return typeof cmd === "string" ? [cmd] : [];
-	}
-	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
-}
-function skillNamesFromToolCall(toolName, args) {
-	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
-	const segments = shellCommands(args).flatMap((command) => command.match(SHELL_SEGMENT) ?? []);
-	const names = /* @__PURE__ */ new Set();
-	for (const segment of segments) {
-		const unquoted = segment.replace(QUOTED_RUN, " ");
-		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
-		for (const word of segment.match(SHELL_WORD) ?? []) {
-			const name = skillDirectoryInPath(word);
-			if (name != null) names.add(name);
-		}
-	}
-	return [...names];
-}
-//#endregion
-//#region src/utils/isPrimitive.ts
-function isPrimitive(value) {
-	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
 //#region src/privacy.ts
@@ -18002,176 +18736,94 @@ function createRunTree(config, mode = "full", parent) {
 	return run;
 }
 //#endregion
-//#region src/tracing-policy.ts
-function isMode(value) {
-	return value === "full" || value === "metadata";
+//#region src/tool-trace.ts
+function capturedAttributionMessages(tools, messages) {
+	const existing = new Set(messages.flatMap(({ message }) => message.role === "ai" ? message.content.flatMap((part) => part.type === "tool_call" ? [part.id] : []) : []));
+	return tools.filter((tool) => !existing.has(tool.id)).map((tool) => ({
+		message: {
+			role: "ai",
+			content: [{
+				type: "tool_call",
+				id: tool.id,
+				name: tool.name,
+				args: tool.input
+			}]
+		},
+		timestamp: tool.startedAt,
+		tokenCount: void 0,
+		subagentThreads: []
+	}));
 }
-function isTurnMode(value) {
-	return isMode(value) || value === "off";
-}
-function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
-}
-function isObject(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasCode(error, code) {
-	return isObject(error) && error.code === code;
-}
-/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
-function readPolicy(path) {
-	let raw;
-	try {
-		raw = readFileSync(path, "utf8");
-	} catch (error) {
-		if (hasCode(error, "ENOENT")) try {
-			lstatSync(path);
-		} catch (statError) {
-			if (hasCode(statError, "ENOENT")) return {
-				version: 1,
-				threads: {}
-			};
-			throw statError;
-		}
-		throw error;
-	}
-	const value = JSON.parse(raw);
-	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
-	return value;
-}
-function defaultPrivacyPath() {
-	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
-}
-function threadPolicy(policy, id) {
-	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
-}
-/** No launch evidence means metadata-only, never today's sticky preference. */
-function savedTurnMode(file, sessionId, turnId) {
-	try {
-		const thread = threadPolicy(readPolicy(file), sessionId);
-		if (thread?.inherited) return thread.inherited;
-		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
-	} catch {
-		return "metadata";
+async function postCapturedTools(input) {
+	if (input.mode === "off") return;
+	for (const tool of input.tools) {
+		if (tool.endedAt == null || input.postedToolIds.has(tool.id)) continue;
+		const call = input.messages.flatMap(({ message }) => message.role === "ai" ? message.content : []).find((part) => part.type === "tool_call" && part.id === tool.id);
+		const args = call?.type === "tool_call" ? call.args : tool.input;
+		const metadata = input.reconciliation?.tools[tool.id];
+		await createRunTree({
+			id: stableRunId(input.sessionId, input.rolloutFile, input.turnKey, `tool:${tool.id}`),
+			name: call?.type === "tool_call" && typeof call.name === "string" ? call.name : tool.name,
+			run_type: "tool",
+			start_time: tool.startedAt,
+			end_time: tool.endedAt,
+			inputs: { input: args },
+			outputs: { output: tool.output },
+			extra: { metadata: withTrustedMetadata({}, {
+				...input.base,
+				...metadata ? repositoryFields(metadata) : {},
+				approval_policy: void 0,
+				ls_subagent_id: void 0,
+				ls_subagent_type: void 0
+			}) }
+		}, input.mode, input.parent).postRun();
 	}
 }
-function hasSavedTurnEvidence(file, sessionId, turnId) {
-	if (!turnId) return false;
-	try {
-		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
-	} catch {
-		return false;
-	}
+function repositoryFields(metadata) {
+	return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
 }
-/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
-function parseTracingCommand(prompt) {
-	if (prompt === "langsmith-tracing:mute") return "mute";
-	if (prompt === "langsmith-tracing:unmute") return "unmute";
+function proposedReconciliation(base, attribution) {
+	return {
+		root: repositoryFields(base),
+		tools: Object.fromEntries([...attribution?.tools ?? []].map(([id, tool]) => [id, tool.resolved ? {
+			...toolRepositoryMetadata(tool.resolved),
+			ls_attribution_identifier: tool.resolved.identifier ?? base.ls_attribution_identifier
+		} : repositoryFields(base)]))
+	};
 }
-/**
-* Independent of tracing state and its pruning. Writers serialize through an
-* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
-* No age/PID-based stealing: even a slow live writer is safe.
-* A crashed writer's lock requires explicit removal after confirming it is idle.
-* Rename commits the effective preference. Later durability/cleanup failures are
-* returned as local warnings, not thrown as if the preference were unchanged.
-*/
-async function updatePolicy(path, update) {
-	const lockPath = `${path}.lock`;
-	await mkdir(dirname(path), {
-		recursive: true,
-		mode: 448
-	});
-	const deadline = performance$1.now() + 2e3;
-	let locked = false;
-	while (!locked) try {
-		await mkdir(lockPath, { mode: 448 });
-		locked = true;
-	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
-		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
-		await setTimeout$1(10 + Math.random() * 20);
+//#endregion
+//#region src/skills.ts
+function skillDirectoryInPath(word) {
+	const parts = word.split(/[/\\]/);
+	const name = parts.at(-2);
+	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
+	return parts.slice(0, -2).includes("skills") ? name : void 0;
+}
+function shellCommands(args) {
+	if (typeof args !== "string") {
+		const cmd = args?.cmd;
+		return typeof cmd === "string" ? [cmd] : [];
 	}
-	const warnings = [];
-	async function bestEffort(action, message) {
-		try {
-			await action();
-		} catch (error) {
-			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+}
+function skillNamesFromToolCall(toolName, args) {
+	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
+	const segments = shellCommands(args).flatMap((command) => command.match(SHELL_SEGMENT) ?? []);
+	const names = /* @__PURE__ */ new Set();
+	for (const segment of segments) {
+		const unquoted = segment.replace(QUOTED_RUN, " ");
+		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
+		for (const word of segment.match(SHELL_WORD) ?? []) {
+			const name = skillDirectoryInPath(word);
+			if (name != null) names.add(name);
 		}
 	}
-	let tempPath;
-	try {
-		let policy;
-		try {
-			policy = readPolicy(path);
-		} catch (error) {
-			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
-		}
-		update(policy);
-		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-		const temp = await open(tempPath, "wx", 384);
-		try {
-			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
-			await temp.sync();
-		} catch (error) {
-			await bestEffort(() => temp.close(), "Temporary file close failed");
-			throw error;
-		}
-		await temp.close();
-		await rename(tempPath, path);
-		tempPath = void 0;
-		await bestEffort(async () => {
-			const directory = await open(dirname(path), "r");
-			try {
-				await directory.sync();
-			} finally {
-				await bestEffort(() => directory.close(), "Directory close cleanup failed");
-			}
-		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
-	} finally {
-		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
-		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
+	return [...names];
 }
-function requireIds(sessionId, turnId) {
-	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
-}
-/** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
-	requireIds(sessionId, turnId);
-	return updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
-			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
-		};
-		if (command) thread.preference = command === "mute" ? "metadata" : "full";
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-}
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
-async function inheritThreadMode(file, sessionId, mode) {
-	let inherited = "metadata";
-	const result = await updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		thread.inherited ??= mode;
-		inherited = thread.inherited;
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
-	return inherited;
+//#endregion
+//#region src/utils/isPrimitive.ts
+function isPrimitive(value) {
+	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
 //#region src/utils/enumerate.ts
@@ -18184,9 +18836,6 @@ function* enumerate(arr) {
 }
 //#endregion
 //#region src/trace.ts
-async function loadSession(name) {
-	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
 function extractSpawnedAgentId(output) {
 	let obj = output;
 	if (typeof output === "string") try {
@@ -18291,7 +18940,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		hasEvidence: false
 	};
 	visited.add(sessionId);
-	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+	const meta = (await readTranscript(file, turnId)).find((event) => event.type === "session_meta");
 	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return {
 		mode: "metadata",
 		hasEvidence: false
@@ -18309,7 +18958,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		let nativeTurn;
 		const calls = /* @__PURE__ */ new Map();
 		const launches = /* @__PURE__ */ new Set();
-		for (const event of await loadSession(parentFile)) {
+		for (const event of await readTranscript(parentFile)) {
 			if (event.type === "event_msg") {
 				if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
 				const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -18564,12 +19213,13 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	} catch {}
 	if (mode === "off") return;
 	const deliveryErrors = [];
-	const client = trackRunDelivery(options?.client ?? new Client({ autoBatchTracing: false }), deliveryErrors);
+	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(sourceClient, deliveryErrors);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
 		return {
 			...replica,
-			client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client
+			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial) : trackRunDelivery(replicaClient, deliveryErrors) : client
 		};
 	});
 	const postPromises = [];
@@ -18600,13 +19250,13 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		...options?.metadata,
 		...task.context
 	};
-	const attribution = mode === "full" ? await resolveTurnAttribution({
+	const attribution = mode === "full" && !options?.partial ? await resolveTurnAttribution({
 		cwd,
 		sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0,
 		sessionGit: sessionMeta?.git,
 		sessionIdentifier: sessionMeta?.ls_attribution_identifier,
 		existingMetadata: existingRootMetadata,
-		messages,
+		messages: [...messages, ...capturedAttributionMessages(options?.capturedTools ?? [], messages)].sort((a, b) => a.timestamp - b.timestamp),
 		toolCalls: task.toolCalls
 	}) : void 0;
 	const git = attribution?.git;
@@ -18624,6 +19274,9 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		attributionIdentifier,
 		sandboxType
 	}, existingRootMetadata);
+	const proposed = proposedReconciliation(base, attribution);
+	const reconciliation = options?.incremental && !options.partial && mode === "full" ? await reconciliationMetadata(rolloutFile, turnKey, options?.redactCapture ? options.redactCapture(proposed) : proposed) : void 0;
+	if (reconciliation) Object.assign(base, repositoryFields(reconciliation.root));
 	const parentConfig = {
 		id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, "root"),
 		name: "openai.codex",
@@ -18632,10 +19285,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		run_type: "chain",
 		replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
-		outputs: { messages: agent.map((i) => i.message) },
+		outputs: options?.partial ? void 0 : { messages: agent.map((i) => i.message) },
 		error: task.error,
 		start_time: parentStartTime,
-		end_time: parentEndTime,
+		end_time: options?.partial ? void 0 : parentEndTime,
 		extra: { metadata: withTrustedMetadata({
 			...options?.metadata,
 			...task.context
@@ -18687,15 +19340,16 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			length: 1
 		};
 	});
+	const postedToolIds = /* @__PURE__ */ new Set();
 	const postedSubagentThreads = /* @__PURE__ */ new Set();
 	async function postSubagentThread(subagentThread) {
-		if (postedSubagentThreads.has(subagentThread)) return;
+		if (options?.partial || postedSubagentThreads.has(subagentThread)) return;
 		postedSubagentThreads.add(subagentThread);
 		if (options?.visitedThreads?.has(subagentThread)) return;
 		options?.visitedThreads?.add(subagentThread);
 		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 		if (subagentFile == null) return;
-		const events = await loadSession(subagentFile);
+		const events = await readTranscript(subagentFile);
 		await convertToRunTree({
 			transcript_path: subagentFile,
 			turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
@@ -18703,7 +19357,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			...options,
 			parentRunTree: parent,
 			debugNow,
-			replayHistory: true
+			replayHistory: true,
+			hook: void 0,
+			events: void 0,
+			capturedTools: void 0
 		});
 	}
 	for (const [outputIndex, output] of outputs.entries()) {
@@ -18732,7 +19389,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				usage_metadata: getUsageMetadata(tokenCounts)
 			}) }
 		}, mode, parent);
-		postPromises.push(llmChild.postRun());
+		if (!options?.partial) postPromises.push(llmChild.postRun());
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
 			const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -18749,8 +19406,12 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+			postedToolIds.add(toolCallId);
 			const toolAttribution = attribution?.tools.get(toolCallId);
-			const toolRepositoryFields = toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null) ? toolRepositoryMetadata(toolAttribution.resolved) : {};
+			const toolRepositoryFields = reconciliation?.tools[toolCallId] ? repositoryFields(reconciliation.tools[toolCallId]) : toolAttribution != null && (toolAttribution.resolved != null || !options?.incremental && toolAttribution.explicit) ? {
+				...toolRepositoryMetadata(toolAttribution.resolved),
+				...options?.incremental && toolAttribution.resolved ? { ls_attribution_identifier: toolAttribution.resolved.identifier ?? base.ls_attribution_identifier } : {}
+			} : {};
 			const toolRun = createRunTree({
 				id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `tool:${toolCallId}`),
 				name: runName,
@@ -18801,6 +19462,18 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
+	if (options?.incremental) postPromises.push(postCapturedTools({
+		tools: options.capturedTools ?? [],
+		postedToolIds,
+		messages,
+		parent,
+		base,
+		mode,
+		reconciliation,
+		sessionId: sessionMeta?.session_id,
+		rolloutFile,
+		turnKey
+	}));
 	await Promise.all(postPromises);
 	await client.awaitPendingTraceBatches();
 	if (deliveryErrors.length > 0) throw deliveryErrors[0];
@@ -18831,7 +19504,7 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
 	const turnStates = await loadTurnStates(input.transcript_path);
-	const events = await loadSession(input.transcript_path);
+	const events = options?.events ?? await readTranscript(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
 			const source = payload.source;
@@ -18958,26 +19631,37 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 					turnNumber += 1;
 					task.turnNumber = turnNumber;
 				}
-				if (!(completedTurnId != null && turnStates.has(completedTurnId))) {
+				if (options?.partial && completedTurnId !== input.turn_id) {
+					task = void 0;
+					continue;
+				}
+				const alreadyHandled = completedTurnId != null && turnStates.has(completedTurnId);
+				if (alreadyHandled && options?.incremental && completedTurnId != null) await clearTurnCapture(input.transcript_path, completedTurnId);
+				if (!alreadyHandled) {
 					const turnMode = sessionMeta?.session_id ? await rolloutTurnMode(input.transcript_path, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : {
 						mode: "metadata",
 						hasEvidence: false
 					};
 					const isBacklog = options?.replayHistory !== true && input.turn_id != null && completedTurnId !== input.turn_id && !turnMode.hasEvidence;
 					const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
+					const capture = options?.incremental && !isBacklog ? await prepareTurnCapture(input.transcript_path, turnKey, turnMode.mode, options.redactCapture) : void 0;
+					const partial = options?.partial || capture != null && pendingCapturedTools(capture.tools, events, turnKey);
 					if (!isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
 						rolloutFile: input.transcript_path,
 						options: {
 							...options,
-							visitedThreads
+							visitedThreads,
+							partial,
+							capturedTools: capture?.tools ?? []
 						},
 						mode: turnMode.mode,
 						turnKey,
 						fallbackTime: task.turnId?.timestamp ?? eventTime
 					});
-					if (completedTurnId != null) {
+					if (completedTurnId != null && !partial) {
 						await markTurnHandled(input.transcript_path, completedTurnId, state);
 						turnStates.set(completedTurnId, state);
+						if (options?.incremental) await clearTurnCapture(input.transcript_path, completedTurnId);
 					}
 				}
 				task = void 0;
@@ -18987,7 +19671,46 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 }
 async function convertToRunTree(input, options) {
 	const visitedThreads = options?.visitedThreads ?? /* @__PURE__ */ new Set();
-	return withRolloutLock(input.transcript_path, () => convertToRunTreeWorker(input, options, visitedThreads));
+	return withRolloutLock(input.transcript_path, async () => {
+		if (!options?.hook || !input.turn_id) return convertToRunTreeWorker(input, options, visitedThreads);
+		if ((await loadTurnStates(input.transcript_path)).has(input.turn_id)) {
+			await clearTurnCapture(input.transcript_path, input.turn_id);
+			return;
+		}
+		const { mode } = await rolloutTurnMode(input.transcript_path, options.hook.session_id, input.turn_id, options.privacyPath ?? defaultPrivacyPath(), options.sessionsRoot);
+		if (options.hook.hook_event_name === "PostToolUse") await recordToolHook(options.hook, mode, options.redactCapture);
+		if (options.hook.hook_event_name === "Stop" && mode !== "off") await markTurnStopped(input.transcript_path, input.turn_id);
+		const capture = await prepareTurnCapture(input.transcript_path, input.turn_id, mode, options.redactCapture);
+		const partial = !capture.stopped && options.hook.hook_event_name === "PostToolUse";
+		const events = [...capture.events];
+		let currentTurn = false;
+		let completed = false;
+		for (const event of events) {
+			if (event.type !== "event_msg") continue;
+			if (event.payload.type === "task_started") currentTurn = event.payload.turn_id === input.turn_id;
+			if (currentTurn && [
+				"task_complete",
+				"turn_complete",
+				"turn_aborted"
+			].includes(event.payload.type)) completed = true;
+		}
+		if (!completed) events.push({
+			timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+			type: "event_msg",
+			payload: {
+				type: "task_complete",
+				turn_id: input.turn_id
+			}
+		});
+		await convertToRunTreeWorker(input, {
+			...options,
+			incremental: true,
+			partial,
+			events,
+			capturedTools: capture.tools
+		}, visitedThreads);
+		if ((await loadTurnStates(input.transcript_path)).has(input.turn_id)) await clearTurnCapture(input.transcript_path, input.turn_id);
+	});
 }
 //#endregion
 //#region src/user-prompt-submit.ts
@@ -19053,7 +19776,11 @@ async function runHook() {
 		if (result) console.log(JSON.stringify(result));
 		return;
 	}
-	if (content.hook_event_name !== "Stop") return;
+	if (![
+		"PreToolUse",
+		"PostToolUse",
+		"Stop"
+	].includes(content.hook_event_name)) return;
 	const config = await getConfig({
 		home: process.env.HOME,
 		cwd: content.cwd,
@@ -19061,6 +19788,14 @@ async function runHook() {
 	});
 	if (!config.enabled) return;
 	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
+	if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+		const meta = (await readTranscript(content.transcript_path, content.turn_id)).find((event) => event.type === "session_meta");
+		if (meta?.type === "session_meta" && (meta.payload.id !== content.session_id || meta.payload.thread_source === "subagent" || isRecord(meta.payload.source) && meta.payload.source.subagent != null)) return;
+	}
+	if (content.hook_event_name === "PreToolUse") {
+		await recordToolHook(content, savedTurnMode(defaultPrivacyPath(), content.session_id, content.turn_id), anonymizer);
+		return;
+	}
 	const client = new Client({
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
@@ -19083,6 +19818,8 @@ async function runHook() {
 		project_name: config.project
 	}) : void 0;
 	await convertToRunTree(content, {
+		hook: content,
+		redactCapture: anonymizer,
 		client,
 		projectName: config.project,
 		metadata: config.metadata,

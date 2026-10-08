@@ -1,3 +1,5 @@
+import type { LineSchema } from "../types.js";
+import type { CapturedTool, CaptureRedactor, TracingHookInput } from "./tool-capture.js";
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { TurnMode } from "./tracing-policy.js";
 import type { TRACE_UPLOAD_STATES } from "../constants.js";
@@ -18,6 +20,12 @@ export interface RolloutTurnMode {
 }
 
 export interface TraceConversionOptions {
+  partial?: boolean;
+  incremental?: boolean;
+  events?: LineSchema[];
+  capturedTools?: CapturedTool[];
+  redactCapture?: CaptureRedactor;
+  hook?: TracingHookInput;
   parentRunTree?: RunTree;
   client?: Client;
   metadata?: Record<string, unknown>;

@@ -16,6 +16,22 @@ import {
   markTurnRunTopology,
   withRolloutLock,
 } from "./trace-delivery-store.js";
+import { trackIncrementalDelivery } from "./incremental-delivery.js";
+import {
+  capturedAttributionMessages,
+  postCapturedTools,
+  proposedReconciliation,
+  repositoryFields,
+} from "./tool-trace.js";
+import {
+  clearTurnCapture,
+  prepareTurnCapture,
+  recordToolHook,
+  readTranscript,
+  markTurnStopped,
+  pendingCapturedTools,
+  reconciliationMetadata,
+} from "./tool-capture.js";
 import { stableRunId, trackRunDelivery } from "./trace-delivery.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
@@ -43,17 +59,6 @@ import {
 } from "./tracing-policy.js";
 import type { TurnMode } from "./models/tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
-
-async function loadSession(name: string) {
-  const data = await fs.readFile(name, "utf-8");
-
-  const result = data
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as LineSchema);
-
-  return result;
-}
 
 // spawn_agent's output carries the child thread id as `agent_id` (string or object).
 function extractSpawnedAgentId(output: unknown): string | undefined {
@@ -198,7 +203,7 @@ async function rolloutTurnMode(
 ): Promise<RolloutTurnMode> {
   if (visited.has(sessionId)) return { mode: "metadata", hasEvidence: false };
   visited.add(sessionId);
-  const events = await loadSession(file);
+  const events = await readTranscript(file, turnId);
   const meta = events.find((event) => event.type === "session_meta");
   if (meta?.type !== "session_meta" || meta.payload.id !== sessionId)
     return { mode: "metadata", hasEvidence: false };
@@ -226,7 +231,7 @@ async function rolloutTurnMode(
     let nativeTurn: string | undefined;
     const calls = new Map<string, string>();
     const launches = new Set<string>();
-    for (const event of await loadSession(parentFile)) {
+    for (const event of await readTranscript(parentFile)) {
       if (event.type === "event_msg") {
         if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
         const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -523,15 +528,31 @@ async function postTurn(
   }
   if (mode === "off") return;
   const deliveryErrors: unknown[] = [];
-  const client = trackRunDelivery(
-    options?.client ?? new Client({ autoBatchTracing: false }),
-    deliveryErrors,
-  );
+  const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+  const client = options?.incremental
+    ? trackIncrementalDelivery(
+        sourceClient,
+        deliveryErrors,
+        rolloutFile,
+        turnKey,
+        !options?.partial,
+      )
+    : trackRunDelivery(sourceClient, deliveryErrors);
   const replicas = options?.replicas?.map((replica) => {
     const replicaClient = "client" in replica ? replica.client : undefined;
     return {
       ...replica,
-      client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client,
+      client: replicaClient
+        ? options?.incremental
+          ? trackIncrementalDelivery(
+              replicaClient,
+              deliveryErrors,
+              rolloutFile,
+              turnKey,
+              !options?.partial,
+            )
+          : trackRunDelivery(replicaClient, deliveryErrors)
+        : client,
     };
   });
   const postPromises: Promise<void>[] = [];
@@ -572,14 +593,17 @@ async function postTurn(
 
   const existingRootMetadata = { ...options?.metadata, ...task.context };
   const attribution =
-    mode === "full"
+    mode === "full" && !options?.partial
       ? await resolveTurnAttribution({
           cwd,
           sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined,
           sessionGit: sessionMeta?.git,
           sessionIdentifier: sessionMeta?.ls_attribution_identifier,
           existingMetadata: existingRootMetadata,
-          messages,
+          messages: [
+            ...messages,
+            ...capturedAttributionMessages(options?.capturedTools ?? [], messages),
+          ].sort((a, b) => a.timestamp - b.timestamp),
           toolCalls: task.toolCalls,
         })
       : undefined;
@@ -605,6 +629,16 @@ async function postTurn(
     sandboxType,
   } satisfies CodingAgentContext;
   const base = codingAgentMetadata(metadataContext, existingRootMetadata);
+  const proposed = proposedReconciliation(base, attribution);
+  const reconciliation =
+    options?.incremental && !options.partial && mode === "full"
+      ? await reconciliationMetadata(
+          rolloutFile,
+          turnKey,
+          options?.redactCapture ? options.redactCapture(proposed) : proposed,
+        )
+      : undefined;
+  if (reconciliation) Object.assign(base, repositoryFields(reconciliation.root));
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
@@ -616,10 +650,10 @@ async function postTurn(
     run_type: "chain",
     replicas,
     inputs: { messages: user != null ? [user.message] : [] },
-    outputs: { messages: agent.map((i) => i.message) },
+    outputs: options?.partial ? undefined : { messages: agent.map((i) => i.message) },
     error: task.error,
     start_time: parentStartTime,
-    end_time: parentEndTime,
+    end_time: options?.partial ? undefined : parentEndTime,
     extra: {
       metadata: withTrustedMetadata(
         { ...options?.metadata, ...task.context },
@@ -696,9 +730,10 @@ async function postTurn(
     return { start, length: 1 };
   });
 
+  const postedToolIds = new Set<string>();
   const postedSubagentThreads = new Set<string>();
   async function postSubagentThread(subagentThread: string) {
-    if (postedSubagentThreads.has(subagentThread)) return;
+    if (options?.partial || postedSubagentThreads.has(subagentThread)) return;
     postedSubagentThreads.add(subagentThread);
     if (options?.visitedThreads?.has(subagentThread)) return;
     options?.visitedThreads?.add(subagentThread);
@@ -710,7 +745,7 @@ async function postTurn(
     );
     if (subagentFile == null) return;
 
-    const events = await loadSession(subagentFile);
+    const events = await readTranscript(subagentFile);
     const lastEvent = findLast(
       events,
       (event) => event.type === "event_msg" && event.payload.turn_id != null,
@@ -718,7 +753,15 @@ async function postTurn(
 
     await convertToRunTree(
       { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
-      { ...options, parentRunTree: parent, debugNow, replayHistory: true },
+      {
+        ...options,
+        parentRunTree: parent,
+        debugNow,
+        replayHistory: true,
+        hook: undefined,
+        events: undefined,
+        capturedTools: undefined,
+      },
     );
   }
 
@@ -768,7 +811,7 @@ async function postTurn(
       mode,
       parent,
     );
-    postPromises.push(llmChild.postRun());
+    if (!options?.partial) postPromises.push(llmChild.postRun());
 
     for (const toolMessage of toolMessages) {
       if (toolMessage.message.role !== "tool") continue;
@@ -803,10 +846,22 @@ async function postTurn(
       const runName = nativeToolName ?? "openai.codex.tool";
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+      postedToolIds.add(toolCallId);
       const toolAttribution = attribution?.tools.get(toolCallId);
-      const toolRepositoryFields =
-        toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null)
-          ? toolRepositoryMetadata(toolAttribution.resolved)
+      const toolRepositoryFields = reconciliation?.tools[toolCallId]
+        ? repositoryFields(reconciliation.tools[toolCallId])
+        : toolAttribution != null &&
+            (toolAttribution.resolved != null ||
+              (!options?.incremental && toolAttribution.explicit))
+          ? {
+              ...toolRepositoryMetadata(toolAttribution.resolved),
+              ...(options?.incremental && toolAttribution.resolved
+                ? {
+                    ls_attribution_identifier:
+                      toolAttribution.resolved.identifier ?? base.ls_attribution_identifier,
+                  }
+                : {}),
+            }
           : {};
 
       const toolRun = createRunTree(
@@ -891,6 +946,22 @@ async function postTurn(
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(subagentThread);
   }
+  if (options?.incremental) {
+    postPromises.push(
+      postCapturedTools({
+        tools: options.capturedTools ?? [],
+        postedToolIds,
+        messages,
+        parent,
+        base,
+        mode,
+        reconciliation,
+        sessionId: sessionMeta?.session_id,
+        rolloutFile,
+        turnKey,
+      }),
+    );
+  }
   await Promise.all(postPromises);
   await client.awaitPendingTraceBatches();
   if (deliveryErrors.length > 0) throw deliveryErrors[0];
@@ -937,7 +1008,7 @@ async function convertToRunTreeWorker(
   }
 
   const turnStates = await loadTurnStates(input.transcript_path);
-  const events = await loadSession(input.transcript_path);
+  const events = options?.events ?? (await readTranscript(input.transcript_path));
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
       // Subagent threads carry `source.subagent.thread_spawn`; roots use "cli".
@@ -1128,7 +1199,13 @@ async function convertToRunTreeWorker(
           turnNumber += 1;
           task.turnNumber = turnNumber;
         }
+        if (options?.partial && completedTurnId !== input.turn_id) {
+          task = undefined;
+          continue;
+        }
         const alreadyHandled = completedTurnId != null && turnStates.has(completedTurnId);
+        if (alreadyHandled && options?.incremental && completedTurnId != null)
+          await clearTurnCapture(input.transcript_path, completedTurnId);
         if (!alreadyHandled) {
           const turnMode = sessionMeta?.session_id
             ? await rolloutTurnMode(
@@ -1145,18 +1222,32 @@ async function convertToRunTreeWorker(
             completedTurnId !== input.turn_id &&
             !turnMode.hasEvidence;
           const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
+          const capture =
+            options?.incremental && !isBacklog
+              ? await prepareTurnCapture(
+                  input.transcript_path,
+                  turnKey,
+                  turnMode.mode,
+                  options.redactCapture,
+                )
+              : undefined;
+          const partial =
+            options?.partial ||
+            (capture != null && pendingCapturedTools(capture.tools, events, turnKey));
           if (!isBacklog) {
             await postTurn(task, sessionMeta, privacyTurnId, {
               rolloutFile: input.transcript_path,
-              options: { ...options, visitedThreads },
+              options: { ...options, visitedThreads, partial, capturedTools: capture?.tools ?? [] },
               mode: turnMode.mode,
               turnKey,
               fallbackTime: task.turnId?.timestamp ?? eventTime,
             });
           }
-          if (completedTurnId != null) {
+          if (completedTurnId != null && !partial) {
             await markTurnHandled(input.transcript_path, completedTurnId, state);
             turnStates.set(completedTurnId, state);
+            if (options?.incremental)
+              await clearTurnCapture(input.transcript_path, completedTurnId);
           }
         }
         task = undefined;
@@ -1170,7 +1261,57 @@ export async function convertToRunTree(
   options?: TraceConversionOptions,
 ) {
   const visitedThreads = options?.visitedThreads ?? new Set<string>();
-  return withRolloutLock(input.transcript_path, () =>
-    convertToRunTreeWorker(input, options, visitedThreads),
-  );
+  return withRolloutLock(input.transcript_path, async () => {
+    if (!options?.hook || !input.turn_id)
+      return convertToRunTreeWorker(input, options, visitedThreads);
+    const states = await loadTurnStates(input.transcript_path);
+    if (states.has(input.turn_id)) {
+      await clearTurnCapture(input.transcript_path, input.turn_id);
+      return;
+    }
+    const { mode } = await rolloutTurnMode(
+      input.transcript_path,
+      options.hook.session_id,
+      input.turn_id,
+      options.privacyPath ?? defaultPrivacyPath(),
+      options.sessionsRoot,
+    );
+    if (options.hook.hook_event_name === "PostToolUse")
+      await recordToolHook(options.hook, mode, options.redactCapture);
+    if (options.hook.hook_event_name === "Stop" && mode !== "off")
+      await markTurnStopped(input.transcript_path, input.turn_id);
+    const capture = await prepareTurnCapture(
+      input.transcript_path,
+      input.turn_id,
+      mode,
+      options.redactCapture,
+    );
+    const partial = !capture.stopped && options.hook.hook_event_name === "PostToolUse";
+    const events = [...capture.events];
+    let currentTurn = false;
+    let completed = false;
+    for (const event of events) {
+      if (event.type !== "event_msg") continue;
+      if (event.payload.type === "task_started")
+        currentTurn = event.payload.turn_id === input.turn_id;
+      if (
+        currentTurn &&
+        ["task_complete", "turn_complete", "turn_aborted"].includes(event.payload.type)
+      )
+        completed = true;
+    }
+    if (!completed)
+      events.push({
+        timestamp: new Date().toISOString(),
+        type: "event_msg",
+        payload: { type: "task_complete", turn_id: input.turn_id },
+      });
+    await convertToRunTreeWorker(
+      input,
+      { ...options, incremental: true, partial, events, capturedTools: capture.tools },
+      visitedThreads,
+    );
+    if ((await loadTurnStates(input.transcript_path)).has(input.turn_id))
+      await clearTurnCapture(input.transcript_path, input.turn_id);
+  });
 }
