@@ -1,4 +1,3 @@
-import { createServer } from "node:http";
 import * as fs from "node:fs/promises";
 import { Client } from "langsmith";
 import { vol } from "memfs";
@@ -6,7 +5,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convertToRunTree } from "../src/trace.js";
 import { loadTurnStates } from "../src/trace-delivery-store.js";
 import { submitPreference } from "../src/tracing-policy.js";
-import type { RolloutEventsOptions } from "./models/trace-delivery.js";
+import type { RolloutEventsOptions, TraceRunExtra } from "./models/trace-delivery.js";
+import type { LocalTraceServer } from "./models/incremental-trace.js";
+import { createIncrementalTraceServer } from "./incremental-trace-server.js";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000002";
@@ -18,7 +19,7 @@ const PARENT_THREAD = "parent-thread-id";
 const PARENT_TURN = "parent-turn-id";
 const CHILD_THREAD = "child-thread-id";
 const CHILD_TURN = "child-turn-id";
-let deliveryServer: Awaited<ReturnType<typeof startDeliveryServer>> | undefined;
+let deliveryServer: LocalTraceServer | undefined;
 
 vi.mock("node:fs/promises", async () => {
   const { fs } = await import("memfs");
@@ -30,88 +31,12 @@ vi.mock("node:fs", async () => {
   return fs;
 });
 
-async function startDeliveryServer() {
-  let failWrites = false;
-  let delayMs = 0;
-  const runs = new Map<string, Record<string, unknown>>();
-  const requests = new Map<string, Record<string, unknown>[]>();
-  const projectReads: string[] = [];
-  const conflicts: string[] = [];
-  const server = createServer(async (request, response) => {
-    if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
-    const url = new URL(request.url ?? "/", "http://127.0.0.1");
-    if (request.method === "GET" && url.pathname === "/sessions") {
-      const projectName = url.searchParams.get("name") ?? "default";
-      projectReads.push(projectName);
-      response.setHeader("content-type", "application/json");
-      response.end(
-        JSON.stringify([
-          {
-            id: projectName === PROJECT_NAME ? PROJECT_ID : DEFAULT_PROJECT_ID,
-            name: projectName,
-          },
-        ]),
-      );
-      return;
-    }
-    if (request.method === "GET" && url.pathname.startsWith("/runs/")) {
-      const run = runs.get(url.pathname.slice("/runs/".length));
-      response.statusCode = run ? 200 : 404;
-      response.setHeader("content-type", "application/json");
-      response.end(JSON.stringify(run ?? { detail: "missing" }));
-      return;
-    }
-    if (request.method === "POST" && url.pathname === "/runs") {
-      const chunks: Buffer[] = [];
-      for await (const chunk of request) chunks.push(Buffer.from(chunk));
-      const run = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
-      const id = String(run.id);
-      const projectName =
-        typeof run.session_name === "string"
-          ? run.session_name
-          : typeof run.project_name === "string"
-            ? run.project_name
-            : "default";
-      const attempts = requests.get(id) ?? [];
-      attempts.push(run);
-      requests.set(id, attempts);
-      if (failWrites) {
-        response.statusCode = 400;
-        response.end("synthetic failure");
-      } else if (runs.has(id)) {
-        conflicts.push(id);
-        response.statusCode = 409;
-        response.end("duplicate run");
-      } else {
-        runs.set(id, {
-          ...run,
-          session_id: projectName === PROJECT_NAME ? PROJECT_ID : DEFAULT_PROJECT_ID,
-        });
-        response.statusCode = 202;
-        response.end();
-      }
-      return;
-    }
-    response.statusCode = 404;
-    response.end();
+function startDeliveryServer() {
+  return createIncrementalTraceServer({
+    defaultProjectName: "default",
+    postStatus: 202,
+    projectIdForName: (name) => (name === PROJECT_NAME ? PROJECT_ID : DEFAULT_PROJECT_ID),
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (!address || typeof address === "string") throw new Error("Missing local test address");
-  return {
-    server,
-    url: `http://127.0.0.1:${address.port}`,
-    runs,
-    requests,
-    projectReads,
-    conflicts,
-    setFailWrites(value: boolean) {
-      failWrites = value;
-    },
-    setDelayMs(value: number) {
-      delayMs = value;
-    },
-  };
 }
 
 function rolloutEvents(options: RolloutEventsOptions) {
@@ -184,13 +109,65 @@ async function writeRollout(file = ROLLOUT, options: RolloutEventsOptions = {}) 
   await fs.writeFile(file, `${events.map((event) => JSON.stringify(event)).join("\n")}\n`);
 }
 
+async function writeSubagentRollouts() {
+  const parentFile = `${SESSIONS_ROOT}/rollout-${PARENT_THREAD}.jsonl`;
+  const childFile = `${SESSIONS_ROOT}/rollout-${CHILD_THREAD}.jsonl`;
+  await writeRollout(parentFile, {
+    threadId: PARENT_THREAD,
+    turnId: PARENT_TURN,
+    childThreadId: CHILD_THREAD,
+  });
+  await writeRollout(childFile, {
+    threadId: CHILD_THREAD,
+    turnId: CHILD_TURN,
+    parentThreadId: PARENT_THREAD,
+  });
+  return { parentFile, childFile };
+}
+
+function isSubagentRun(run: Record<string, unknown>, threadId: string) {
+  const metadata = (run.extra as TraceRunExtra | undefined)?.metadata;
+  return metadata?.ls_subagent_id === threadId;
+}
+
+function subagentRuns(threadId: string) {
+  const requests = [...deliveryServer!.runAttempts];
+  const root = requests.find(([, attempts]) => isSubagentRun(attempts[0], threadId));
+  if (root == null) return new Map<string, Record<string, unknown>>();
+  const rootRun = root[1][0];
+  return new Map(
+    requests
+      .filter(([id, attempts]) => {
+        const run = attempts[0];
+        return (
+          id === root[0] ||
+          (run.trace_id === rootRun.trace_id &&
+            typeof run.dotted_order === "string" &&
+            run.dotted_order.startsWith(`${rootRun.dotted_order}.`))
+        );
+      })
+      .map(([id, attempts]) => [id, attempts[0]]),
+  );
+}
+
 function epochMilliseconds(value: unknown) {
   return new Date(value as string | number).getTime();
 }
 
+function expectTopologyRetries(firstRuns: Map<string, Record<string, unknown>>) {
+  for (const [id, first] of firstRuns) {
+    const attempts = deliveryServer!.runAttempts.get(id)!;
+    expect(deliveryServer!.conflicts).toContain(id);
+    expect(attempts).toHaveLength(2);
+    expect(attempts[1].trace_id).toBe(first.trace_id);
+    expect(attempts[1].parent_run_id).toBe(first.parent_run_id);
+    expect(attempts[1].dotted_order).toBe(first.dotted_order);
+  }
+}
+
 function client() {
   return new Client({
-    apiUrl: deliveryServer!.url,
+    apiUrl: deliveryServer!.apiUrl,
     apiKey: "local-test-key",
     autoBatchTracing: false,
   });
@@ -220,9 +197,7 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vol.reset();
   if (deliveryServer) {
-    await new Promise<void>((resolve, reject) =>
-      deliveryServer!.server.close((error) => (error ? reject(error) : resolve())),
-    );
+    await deliveryServer.close();
     deliveryServer = undefined;
   }
 });
@@ -261,7 +236,7 @@ it("retries a sent turn after acknowledgement fails and checks real duplicate re
   expect(await loadTurnStates(ROLLOUT)).toEqual(new Map([["turn-id", "uploaded"]]));
   expect(deliveryServer.projectReads.length).toBeGreaterThan(0);
   expect(new Set(deliveryServer.projectReads)).toEqual(new Set([PROJECT_NAME]));
-  for (const attempts of deliveryServer.requests.values()) {
+  for (const attempts of deliveryServer.runAttempts.values()) {
     expect(attempts).toHaveLength(2);
     expect(attempts[0].id).toBe(attempts[1].id);
     expect(attempts[0].trace_id).toBe(attempts[1].trace_id);
@@ -282,6 +257,76 @@ it("retries a sent turn after acknowledgement fails and checks real duplicate re
       project_name: PROJECT_NAME,
     }),
   ).rejects.toMatchObject({ status: 409 });
+});
+
+it("keeps the first child topology when a parent retries after a lost child acknowledgement", async () => {
+  deliveryServer = await startDeliveryServer();
+  const { parentFile, childFile } = await writeSubagentRollouts();
+  const tracingClient = client();
+  const appendFile = fs.appendFile.bind(fs);
+  const append = vi
+    .spyOn(fs, "appendFile")
+    .mockImplementation((file, data, options) =>
+      String(file) === `${childFile}.langsmith`
+        ? Promise.reject(new Error("synthetic child acknowledgement failure"))
+        : appendFile(file, data, options),
+    );
+
+  await expect(upload(childFile, CHILD_TURN, tracingClient, SESSIONS_ROOT)).rejects.toThrow(
+    "synthetic child acknowledgement failure",
+  );
+  append.mockRestore();
+  expect(await loadTurnStates(childFile)).toEqual(new Map());
+  const firstChildRuns = new Map(
+    [...deliveryServer.runAttempts].map(([id, attempts]) => [id, attempts[0]]),
+  );
+  expect(firstChildRuns.size).toBeGreaterThan(1);
+
+  await upload(parentFile, PARENT_TURN, tracingClient, SESSIONS_ROOT);
+
+  expect(await loadTurnStates(childFile)).toEqual(new Map([[CHILD_TURN, "uploaded"]]));
+  expect(await loadTurnStates(parentFile)).toEqual(new Map([[PARENT_TURN, "uploaded"]]));
+  expectTopologyRetries(firstChildRuns);
+});
+
+it("keeps nested child topology when the child retries after a lost parent acknowledgement", async () => {
+  deliveryServer = await startDeliveryServer();
+  const { parentFile, childFile } = await writeSubagentRollouts();
+  const tracingClient = client();
+
+  await upload(parentFile, PARENT_TURN, tracingClient, SESSIONS_ROOT);
+  const firstChildRuns = subagentRuns(CHILD_THREAD);
+  expect(firstChildRuns.size).toBeGreaterThan(1);
+  await fs.unlink(`${childFile}.langsmith`);
+
+  await upload(childFile, CHILD_TURN, tracingClient, SESSIONS_ROOT);
+
+  expect(await loadTurnStates(childFile)).toEqual(new Map([[CHILD_TURN, "uploaded"]]));
+  expectTopologyRetries(firstChildRuns);
+});
+
+it("keeps muted nested child order when the child retries after a lost acknowledgement", async () => {
+  deliveryServer = await startDeliveryServer();
+  const { parentFile, childFile } = await writeSubagentRollouts();
+  await submitPreference(PRIVACY, PARENT_THREAD, "mute-command-turn", true, "mute");
+  await submitPreference(PRIVACY, PARENT_THREAD, PARENT_TURN, true);
+  const tracingClient = client();
+
+  await upload(parentFile, PARENT_TURN, tracingClient, SESSIONS_ROOT);
+  const firstChildRuns = subagentRuns(CHILD_THREAD);
+  expect(firstChildRuns.size).toBeGreaterThan(1);
+  for (const first of firstChildRuns.values()) {
+    expect(first.extra).toMatchObject({ metadata: { ls_tracing_mode: "metadata" } });
+  }
+  await fs.unlink(`${childFile}.langsmith`);
+
+  await upload(childFile, CHILD_TURN, tracingClient, SESSIONS_ROOT);
+
+  expectTopologyRetries(firstChildRuns);
+  for (const id of firstChildRuns.keys()) {
+    const attempts = deliveryServer.runAttempts.get(id)!;
+    expect(attempts[1].extra).toMatchObject({ metadata: { ls_tracing_mode: "metadata" } });
+  }
 });
 
 it("rejects a conflict when the stored run belongs to another project", async () => {
@@ -306,9 +351,9 @@ it("keeps muted turns skipped after the preference changes", async () => {
 
   await upload(ROLLOUT, "turn-id", tracingClient);
   expect(await loadTurnStates(ROLLOUT)).toEqual(new Map([["turn-id", "off"]]));
-  expect(deliveryServer.requests.size).toBe(0);
+  expect(deliveryServer.runAttempts.size).toBe(0);
 
   await submitPreference(PRIVACY, "thread-id", "turn-id", true, "unmute");
   await upload(ROLLOUT, "turn-id", tracingClient);
-  expect(deliveryServer.requests.size).toBe(0);
+  expect(deliveryServer.runAttempts.size).toBe(0);
 });

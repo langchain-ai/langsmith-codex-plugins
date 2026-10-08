@@ -31,8 +31,6 @@ async function runHook() {
   // Skip entirely if tracing is disabled
   if (!config.enabled) return;
 
-  // Redact secrets before upload (on by default). The anonymizer is set on the
-  // single Client, so it also covers replica destinations, which reuse it.
   const anonymizer = config.redact
     ? createSecretAnonymizer(
         config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : undefined,
@@ -44,7 +42,18 @@ async function runHook() {
     apiUrl: config.api_url,
     anonymizer,
     hideMetadata: anonymizer,
+    autoBatchTracing: false,
   });
+  const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
+    ...replica,
+    client: new Client({
+      apiKey: replica.apiKey ?? config.api_key,
+      apiUrl: replica.apiUrl ?? config.api_url,
+      anonymizer,
+      hideMetadata: anonymizer,
+      autoBatchTracing: false,
+    }),
+  }));
 
   // (Optionally) reconstruct the distributed parent so Codex runs attach to the target trace.
   const parentRunTree = config.parent_headers
@@ -58,7 +67,7 @@ async function runHook() {
     client,
     projectName: config.project,
     metadata: config.metadata,
-    replicas: toSdkReplicas(config.replicas),
+    replicas,
     parentRunTree,
   });
 }

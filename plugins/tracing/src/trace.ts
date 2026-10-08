@@ -937,7 +937,6 @@ async function convertToRunTreeWorker(
   }
 
   const turnStates = await loadTurnStates(input.transcript_path);
-  const skipBacklog = options?.replayHistory !== true && turnStates.size === 0;
   const events = await loadSession(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
@@ -1144,7 +1143,7 @@ async function convertToRunTreeWorker(
             options?.replayHistory !== true &&
             input.turn_id != null &&
             completedTurnId !== input.turn_id &&
-            skipBacklog;
+            !turnMode.hasEvidence;
           const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
           if (!isBacklog) {
             await postTurn(task, sessionMeta, privacyTurnId, {

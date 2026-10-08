@@ -18884,7 +18884,6 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
 	const turnStates = await loadTurnStates(input.transcript_path);
-	const skipBacklog = options?.replayHistory !== true && turnStates.size === 0;
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
@@ -19017,7 +19016,7 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 						mode: "metadata",
 						hasEvidence: false
 					};
-					const isBacklog = options?.replayHistory !== true && input.turn_id != null && completedTurnId !== input.turn_id && skipBacklog;
+					const isBacklog = options?.replayHistory !== true && input.turn_id != null && completedTurnId !== input.turn_id && !turnMode.hasEvidence;
 					const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
 					if (!isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
 						rolloutFile: input.transcript_path,
@@ -19119,8 +19118,19 @@ async function runHook() {
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
 		anonymizer,
-		hideMetadata: anonymizer
+		hideMetadata: anonymizer,
+		autoBatchTracing: false
 	});
+	const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
+		...replica,
+		client: new Client({
+			apiKey: replica.apiKey ?? config.api_key,
+			apiUrl: replica.apiUrl ?? config.api_url,
+			anonymizer,
+			hideMetadata: anonymizer,
+			autoBatchTracing: false
+		})
+	}));
 	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
 		project_name: config.project
@@ -19129,7 +19139,7 @@ async function runHook() {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: toSdkReplicas(config.replicas),
+		replicas,
 		parentRunTree
 	});
 }
