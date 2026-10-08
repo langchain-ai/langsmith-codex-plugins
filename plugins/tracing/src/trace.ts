@@ -6,6 +6,9 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
+import { isRecord } from "./utils/objects.js";
+import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
+import { resolveTurnAttribution } from "./attribution.js";
 import {
   loadTurnRunTopology,
   loadTurnStates,
@@ -14,7 +17,6 @@ import {
   withRolloutLock,
 } from "./trace-delivery-store.js";
 import { stableRunId, trackRunDelivery } from "./trace-delivery.js";
-import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   PostTurnOptions,
@@ -32,6 +34,7 @@ import type {
 } from "./types.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
+import type { CodingAgentContext } from "./metadata-models.js";
 import {
   defaultPrivacyPath,
   hasSavedTurnEvidence,
@@ -67,10 +70,6 @@ function extractSpawnedAgentId(output: unknown): string | undefined {
     if (typeof id === "string") return id;
   }
   return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatError(value: unknown): string | undefined {
@@ -571,7 +570,21 @@ async function postTurn(
     return undefined;
   })();
 
-  const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : undefined;
+  const existingRootMetadata = { ...options?.metadata, ...task.context };
+  const attribution =
+    mode === "full"
+      ? await resolveTurnAttribution({
+          cwd,
+          sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined,
+          sessionGit: sessionMeta?.git,
+          sessionIdentifier: sessionMeta?.ls_attribution_identifier,
+          existingMetadata: existingRootMetadata,
+          messages,
+          toolCalls: task.toolCalls,
+        })
+      : undefined;
+  const git = attribution?.git;
+  const attributionIdentifier = attribution?.identifier;
 
   const isSubagent = sessionMeta?.is_subagent === true;
 
@@ -580,7 +593,7 @@ async function postTurn(
     (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
 
   // coding-agent-v1 base contract, stamped onto every run below.
-  const base = codingAgentMetadata({
+  const metadataContext = {
     agentType: isSubagent ? "subagent" : "root",
     threadId: conversationThreadId,
     turnId: task.turnId?.id,
@@ -588,8 +601,10 @@ async function postTurn(
     cliVersion: sessionMeta?.cli_version,
     cwd,
     git,
+    attributionIdentifier,
     sandboxType,
-  });
+  } satisfies CodingAgentContext;
+  const base = codingAgentMetadata(metadataContext, existingRootMetadata);
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
@@ -788,6 +803,11 @@ async function postTurn(
       const runName = nativeToolName ?? "openai.codex.tool";
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+      const toolAttribution = attribution?.tools.get(toolCallId);
+      const toolRepositoryFields =
+        toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null)
+          ? toolRepositoryMetadata(toolAttribution.resolved)
+          : {};
 
       const toolRun = createRunTree(
         {
@@ -805,6 +825,7 @@ async function postTurn(
               {
                 ...base,
                 ...CHILD_SCOPE_RESET,
+                ...toolRepositoryFields,
                 ls_model_type: "chat",
                 ls_provider: sessionMeta?.model_provider,
                 ls_model_name: task.context?.model,
@@ -937,6 +958,7 @@ async function convertToRunTreeWorker(
         cli_version: payload.cli_version,
         cwd: payload.cwd,
         git: payload.git,
+        ls_attribution_identifier: payload.ls_attribution_identifier,
         is_subagent: isSubagent,
         parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined,
         agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
@@ -997,6 +1019,15 @@ async function convertToRunTreeWorker(
         task ??= createTask();
         task.toolCalls[payload.call_id] ??= { error: undefined, timings: [], outputs: {} };
         task.toolCalls[payload.call_id].timings.push(eventTime);
+
+        if (payload.type === "exec_command_end" && typeof payload.cwd === "string") {
+          task.toolCalls[payload.call_id].executionCwd = payload.cwd;
+        }
+        if (payload.type === "patch_apply_end") {
+          task.toolCalls[payload.call_id].changedPaths = isRecord(payload.changes)
+            ? Object.keys(payload.changes)
+            : [];
+        }
 
         if (payload.type.endsWith("_end")) {
           // attempt to find an error message

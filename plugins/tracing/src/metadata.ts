@@ -1,9 +1,7 @@
 // Shared coding-agent-v1 trace-metadata contract for the Codex plugin.
 // Spec: Coding-Agent Trace Metadata Standard (coding-agent-v1) / LSEN-277.
 
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import type { GitInfo } from "./types.js";
+import type { CodingAgentContext, ResolvedGitAttribution } from "./metadata-models.js";
 import {
   LS_AGENT_PURPOSE,
   LS_AGENT_RUNTIME,
@@ -11,141 +9,42 @@ import {
   LS_INTEGRATION_VERSION,
   LS_TRACE_SCHEMA_VERSION,
 } from "./constants.js";
+import { REPOSITORY_METADATA_KEYS } from "./metadata-constants.js";
+import { parseRepository, sameRepository } from "./repository.js";
+import { stripUndefined } from "./utils/objects.js";
 
-const execFileAsync = promisify(execFile);
-
-/** The role a run plays within a coding-agent trace. */
-export type LSAgentType = "root" | "subagent" | "middleware" | "compaction";
-
-function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as Partial<T>;
-}
-
-// Derive repository_provider/repository_name from an https or scp git remote URL.
-export function parseRepository(url: string | undefined): {
-  repository_url?: string;
-  repository_provider?: string;
-  repository_name?: string;
-} {
-  const normalized = url?.trim();
-  if (!normalized) return {};
-
-  let host: string | undefined;
-  let pathname: string | undefined;
-
-  // scp-like syntax: git@github.com:org/repo.git
-  const scp = /^[^/@]+@([^:/]+):(.+)$/.exec(normalized);
-  if (scp) {
-    host = scp[1];
-    pathname = scp[2];
-  } else {
-    try {
-      const parsed = new URL(normalized);
-      host = parsed.hostname;
-      pathname = parsed.pathname;
-    } catch {
-      // Unparseable remote — still surface the raw URL.
-      return { repository_url: normalized };
-    }
-  }
-
-  const provider = (() => {
-    const h = (host ?? "").toLowerCase();
-    if (h.includes("github")) return "github";
-    if (h.includes("gitlab")) return "gitlab";
-    if (h.includes("bitbucket")) return "bitbucket";
-    return h || "other";
-  })();
-
-  // Full org/repo slug (e.g. langchain-ai/langsmith-codex-plugins), not bare repo.
-  const name =
-    (pathname ?? "")
-      .replace(/^\/+/, "")
-      .replace(/\.git$/, "")
-      .split("/")
-      .filter(Boolean)
-      .slice(-2)
-      .join("/") || undefined;
-
-  return {
-    repository_url: normalized.replace(/\.git$/, ""),
-    repository_provider: provider,
-    repository_name: name,
+export function toolRepositoryMetadata(
+  attribution: ResolvedGitAttribution | undefined,
+): Record<string, unknown> {
+  const repo = parseRepository(attribution?.git.repository_url);
+  const metadata = {
+    repository_url: repo.repository_url,
+    repository_provider: repo.repository_provider,
+    repository_name: repo.repository_name,
+    git_branch: attribution?.git.branch,
+    git_commit_sha: attribution?.git.commit_hash,
+    ls_attribution_identifier: attribution?.identifier,
   };
-}
-
-async function runGit(cwd: string, args: string[]): Promise<string | undefined> {
-  try {
-    const { stdout } = await execFileAsync("git", args, { cwd, timeout: 2000 });
-    const out = stdout.trim();
-    return out.length > 0 ? out : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-// Cache per cwd so we probe `git` at most once per workspace.
-const gitInfoCache = new Map<string, Promise<GitInfo | undefined>>();
-
-// Prefer the rollout's own session_meta.git; otherwise fall back to the git CLI.
-export async function resolveGitInfo(
-  cwd: string | undefined,
-  sessionGit: GitInfo | undefined,
-): Promise<GitInfo | undefined> {
-  if (
-    sessionGit != null &&
-    (sessionGit.repository_url != null ||
-      sessionGit.commit_hash != null ||
-      sessionGit.branch != null)
-  ) {
-    return sessionGit;
-  }
-
-  if (!cwd) return undefined;
-
-  let pending = gitInfoCache.get(cwd);
-  if (pending == null) {
-    pending = (async () => {
-      const [repository_url, branch, commit_hash] = await Promise.all([
-        runGit(cwd, ["remote", "get-url", "origin"]),
-        runGit(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]),
-        runGit(cwd, ["rev-parse", "HEAD"]),
-      ]);
-      if (repository_url == null && branch == null && commit_hash == null) {
-        return undefined;
-      }
-      return { repository_url, branch, commit_hash };
-    })();
-    gitInfoCache.set(cwd, pending);
-  }
-  return pending;
-}
-
-export interface CodingAgentContext {
-  /** Role of these runs within the coding agent trace → `ls_agent_type`. */
-  agentType: LSAgentType;
-  /** Stable conversation/thread id used to group turns (Codex `thread_id`/session id). */
-  threadId?: string;
-  /** Stable per-turn id (Codex `turn_id`). */
-  turnId?: string;
-  /** 1-based native turn index within the thread. */
-  turnNumber?: number;
-  /** Codex CLI runtime version. */
-  cliVersion?: string;
-  /** Working directory for the turn. */
-  cwd?: string;
-  /** Resolved git info for the workspace. */
-  git?: GitInfo;
-  /** Sandbox / runtime isolation provider. */
-  sandboxType?: string;
+  return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
 }
 
 // Base contract merged onto every run; run-type-scoped keys are added at call
 // sites. Unknown values are omitted.
-export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unknown> {
-  const repo = parseRepository(ctx.git?.repository_url);
+export function codingAgentMetadata(
+  ctx: CodingAgentContext,
+  existing: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const existingRepositoryUrl =
+    typeof existing.repository_url === "string" && existing.repository_url.length > 0
+      ? existing.repository_url
+      : undefined;
+  const repo = parseRepository(existingRepositoryUrl ?? ctx.git?.repository_url);
+  const inferredGitMatchesExisting =
+    existingRepositoryUrl == null ||
+    (ctx.git?.repository_url != null &&
+      sameRepository(existingRepositoryUrl, ctx.git.repository_url));
+  const existingValue = (key: string) =>
+    typeof existing[key] === "string" && existing[key].length > 0 ? existing[key] : undefined;
 
   return stripUndefined({
     // Identity & grouping — required on every run.
@@ -163,11 +62,16 @@ export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unk
     turn_number: ctx.turnNumber,
 
     // Git & workspace.
-    repository_url: repo.repository_url,
-    repository_provider: repo.repository_provider,
-    repository_name: repo.repository_name,
-    git_branch: ctx.git?.branch,
-    git_commit_sha: ctx.git?.commit_hash,
+    repository_url: existingRepositoryUrl ?? repo.repository_url,
+    repository_provider: existingValue("repository_provider") ?? repo.repository_provider,
+    repository_name: existingValue("repository_name") ?? repo.repository_name,
+    git_branch:
+      existingValue("git_branch") ?? (inferredGitMatchesExisting ? ctx.git?.branch : undefined),
+    git_commit_sha:
+      existingValue("git_commit_sha") ??
+      (inferredGitMatchesExisting ? ctx.git?.commit_hash : undefined),
+    ls_attribution_identifier:
+      existingValue("ls_attribution_identifier") ?? ctx.attributionIdentifier,
     cwd: ctx.cwd,
 
     // Environment.

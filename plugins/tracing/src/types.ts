@@ -18,6 +18,14 @@ export type GitInfo = {
   repository_url?: string;
 };
 
+export type ToolCallEvidence = {
+  error: string | undefined;
+  timings: number[];
+  outputs: Record<string, unknown>;
+  executionCwd?: string;
+  changedPaths?: string[];
+};
+
 // `session_meta.source` for a spawned subagent thread.
 export type SubagentSource = {
   subagent: {
@@ -50,6 +58,7 @@ export type SessionMetaPayload = {
   dynamic_tools?: unknown[];
   memory_mode?: string;
   git?: GitInfo;
+  ls_attribution_identifier?: string;
 };
 
 export type SessionMetaLine = {
@@ -1070,6 +1079,7 @@ export type Session = {
   cli_version: string;
   cwd?: string;
   git?: GitInfo;
+  ls_attribution_identifier?: string;
   // Derived from `session_meta.source` (root vs spawned subagent thread).
   is_subagent?: boolean;
   // Parent (root, for depth-1) thread that this subagent groups under.
@@ -1111,13 +1121,7 @@ export type Task = {
   error: string | undefined;
   isErrorInterrupt: boolean;
   subagentThreads: string[];
-  toolCalls: {
-    [callId: string]: {
-      error: string | undefined;
-      timings: number[];
-      outputs: Record<string, unknown>;
-    };
-  };
+  toolCalls: Record<string, ToolCallEvidence>;
 };
 
 export type StandardMessage = {
