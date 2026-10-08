@@ -105,10 +105,3 @@ export function mergeGitInfo(
   const merged = stripUndefined({ ...liveGit, ...sessionGit }) as GitInfo;
   return Object.keys(merged).length > 0 ? merged : undefined;
 }
-
-export async function resolveGitInfo(
-  cwd: string | undefined,
-  sessionGit: GitInfo | undefined,
-): Promise<GitInfo | undefined> {
-  return mergeGitInfo((await resolveGitAttribution(cwd))?.git, sessionGit);
-}
