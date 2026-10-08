@@ -17350,203 +17350,14 @@ function containsExpected(actual, expected) {
 	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
 }
 //#endregion
-//#region src/tracing-policy.ts
-function isMode(value) {
-	return value === "full" || value === "metadata";
-}
-function isTurnMode(value) {
-	return isMode(value) || value === "off";
-}
-function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
-}
-function isObject(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasCode(error, code) {
-	return isObject(error) && error.code === code;
-}
-/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
-function readPolicy(path) {
-	let raw;
-	try {
-		raw = readFileSync(path, "utf8");
-	} catch (error) {
-		if (hasCode(error, "ENOENT")) try {
-			lstatSync(path);
-		} catch (statError) {
-			if (hasCode(statError, "ENOENT")) return {
-				version: 1,
-				threads: {}
-			};
-			throw statError;
-		}
-		throw error;
-	}
-	const value = JSON.parse(raw);
-	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
-	return value;
-}
-function defaultPrivacyPath() {
-	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
-}
-function threadPolicy(policy, id) {
-	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
-}
-/** No launch evidence means metadata-only, never today's sticky preference. */
-function savedTurnMode(file, sessionId, turnId) {
-	try {
-		const thread = threadPolicy(readPolicy(file), sessionId);
-		if (thread?.inherited) return thread.inherited;
-		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
-	} catch {
-		return "metadata";
-	}
-}
-function hasSavedTurnEvidence(file, sessionId, turnId) {
-	if (!turnId) return false;
-	try {
-		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
-	} catch {
-		return false;
-	}
-}
-/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
-function parseTracingCommand(prompt) {
-	if (prompt === "langsmith-tracing:mute") return "mute";
-	if (prompt === "langsmith-tracing:unmute") return "unmute";
-}
-/**
-* Independent of tracing state and its pruning. Writers serialize through an
-* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
-* No age/PID-based stealing: even a slow live writer is safe.
-* A crashed writer's lock requires explicit removal after confirming it is idle.
-* Rename commits the effective preference. Later durability/cleanup failures are
-* returned as local warnings, not thrown as if the preference were unchanged.
-*/
-async function updatePolicy(path, update) {
-	const lockPath = `${path}.lock`;
-	await mkdir(dirname(path), {
-		recursive: true,
-		mode: 448
-	});
-	const deadline = performance$1.now() + 2e3;
-	let locked = false;
-	while (!locked) try {
-		await mkdir(lockPath, { mode: 448 });
-		locked = true;
-	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
-		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
-		await setTimeout$1(10 + Math.random() * 20);
-	}
-	const warnings = [];
-	async function bestEffort(action, message) {
-		try {
-			await action();
-		} catch (error) {
-			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	let tempPath;
-	try {
-		let policy;
-		try {
-			policy = readPolicy(path);
-		} catch (error) {
-			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
-		}
-		update(policy);
-		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-		const temp = await open(tempPath, "wx", 384);
-		try {
-			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
-			await temp.sync();
-		} catch (error) {
-			await bestEffort(() => temp.close(), "Temporary file close failed");
-			throw error;
-		}
-		await temp.close();
-		await rename(tempPath, path);
-		tempPath = void 0;
-		await bestEffort(async () => {
-			const directory = await open(dirname(path), "r");
-			try {
-				await directory.sync();
-			} finally {
-				await bestEffort(() => directory.close(), "Directory close cleanup failed");
-			}
-		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
-	} finally {
-		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
-		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
-}
-function requireIds(sessionId, turnId) {
-	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
-}
-/** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
-	requireIds(sessionId, turnId);
-	return updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
-			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
-		};
-		if (command) thread.preference = command === "mute" ? "metadata" : "full";
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-}
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
-async function inheritThreadMode(file, sessionId, mode) {
-	let inherited = "metadata";
-	const result = await updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		thread.inherited ??= mode;
-		inherited = thread.inherited;
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
-	return inherited;
-}
-//#endregion
-//#region src/utils/files.ts
-async function writeCapture(file, value, firstWriteWins = false) {
-	const temporary = `${file}.${randomUUID()}.tmp`;
-	await nodeFsPromises.mkdir(nodePath.dirname(file), {
-		recursive: true,
-		mode: 448
-	});
-	try {
-		await nodeFsPromises.writeFile(temporary, value, {
-			encoding: "utf8",
-			mode: 384,
-			flag: "wx"
-		});
-		if (firstWriteWins) try {
-			await nodeFsPromises.link(temporary, file);
-		} catch (error) {
-			if (error.code !== "EEXIST") throw error;
-		}
-		else await nodeFsPromises.rename(temporary, file);
-	} finally {
-		await nodeFsPromises.unlink(temporary).catch((error) => {
-			if (error.code !== "ENOENT") throw error;
-		});
-	}
-}
+//#region src/constants/tracing-policy.ts
+const THREAD_POLICY_FIELDS = [
+	"preference",
+	"turns",
+	"inherited",
+	"lastActivityAt",
+	"historyPruned"
+];
 //#endregion
 //#region src/utils/fileLock.ts
 async function readOwner(file) {
@@ -17713,6 +17524,214 @@ async function withFileLock(lockPath, action) {
 		return await action();
 	} finally {
 		await removeLockIfOwned(lockPath, token);
+	}
+}
+//#endregion
+//#region src/tracing-policy.ts
+function isMode(value) {
+	return value === "full" || value === "metadata";
+}
+function isTurnMode(value) {
+	return isMode(value) || value === "off";
+}
+function validThread(value) {
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && (value.lastActivityAt === void 0 || typeof value.lastActivityAt === "number" && Number.isFinite(value.lastActivityAt)) && (value.historyPruned === void 0 || typeof value.historyPruned === "boolean") && Object.keys(value).every((key) => THREAD_POLICY_FIELDS.includes(key));
+}
+function isObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasCode(error, code) {
+	return isObject(error) && error.code === code;
+}
+/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
+function readPolicy(path) {
+	let raw;
+	try {
+		raw = readFileSync(path, "utf8");
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) try {
+			lstatSync(path);
+		} catch (statError) {
+			if (hasCode(statError, "ENOENT")) return {
+				version: 1,
+				threads: {}
+			};
+			throw statError;
+		}
+		throw error;
+	}
+	const value = JSON.parse(raw);
+	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+	return value;
+}
+function defaultPrivacyPath() {
+	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+}
+function threadPolicy(policy, id) {
+	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
+}
+/** No launch evidence means metadata-only, never today's sticky preference. */
+function savedTurnMode(file, sessionId, turnId) {
+	try {
+		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.historyPruned) {
+			if (thread.inherited === "off") return "off";
+			if (turnId && thread && Object.hasOwn(thread.turns, turnId)) return thread.turns[turnId];
+			return "metadata";
+		}
+		if (thread?.inherited) return thread.inherited;
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+	} catch {
+		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
+	}
+}
+function hasPrunedSessionHistory(file, sessionId) {
+	try {
+		return threadPolicy(readPolicy(file), sessionId)?.historyPruned === true;
+	} catch {
+		return false;
+	}
+}
+/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
+function parseTracingCommand(prompt) {
+	if (prompt === "langsmith-tracing:mute") return "mute";
+	if (prompt === "langsmith-tracing:unmute") return "unmute";
+}
+/**
+* Independent of tracing state and its pruning. Writers serialize through an
+* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
+* No age/PID-based stealing: even a slow live writer is safe.
+* A crashed writer's lock requires explicit removal after confirming it is idle.
+* Rename commits the effective preference. Later durability/cleanup failures are
+* returned as local warnings, not thrown as if the preference were unchanged.
+*/
+async function updatePolicy(path, update) {
+	const lockPath = `${path}.lock`;
+	await mkdir(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const deadline = performance$1.now() + 2e3;
+	let locked = false;
+	while (!locked) try {
+		await mkdir(lockPath, { mode: 448 });
+		locked = true;
+	} catch (error) {
+		if (!hasCode(error, "EEXIST")) throw error;
+		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
+		await setTimeout$1(10 + Math.random() * 20);
+	}
+	const warnings = [];
+	async function bestEffort(action, message) {
+		try {
+			await action();
+		} catch (error) {
+			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	let tempPath;
+	try {
+		let policy;
+		try {
+			policy = readPolicy(path);
+		} catch (error) {
+			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
+		}
+		const original = JSON.stringify(policy);
+		await update(policy);
+		if (JSON.stringify(policy) === original) return {};
+		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+		const temp = await open(tempPath, "wx", 384);
+		try {
+			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
+			await temp.sync();
+		} catch (error) {
+			await bestEffort(() => temp.close(), "Temporary file close failed");
+			throw error;
+		}
+		await temp.close();
+		await rename(tempPath, path);
+		tempPath = void 0;
+		await bestEffort(async () => {
+			const directory = await open(dirname(path), "r");
+			try {
+				await directory.sync();
+			} finally {
+				await bestEffort(() => directory.close(), "Directory close cleanup failed");
+			}
+		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
+	} finally {
+		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
+		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+function requireIds(sessionId, turnId) {
+	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
+}
+/** One atomic transaction preserves active/queued snapshots before changing preference. */
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+	requireIds(sessionId, turnId);
+	return updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.lastActivityAt = Date.now();
+		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
+			...thread.turns,
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+		};
+		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+}
+async function inheritThreadMode(file, sessionId, mode) {
+	let inherited = "metadata";
+	const result = await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		if (!thread.historyPruned) thread.inherited ??= mode;
+		inherited = thread.historyPruned ? thread.inherited === "off" ? "off" : "metadata" : thread.inherited;
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	return inherited;
+}
+//#endregion
+//#region src/utils/files.ts
+async function writeCapture(file, value, firstWriteWins = false) {
+	const temporary = `${file}.${randomUUID()}.tmp`;
+	await nodeFsPromises.mkdir(nodePath.dirname(file), {
+		recursive: true,
+		mode: 448
+	});
+	try {
+		await nodeFsPromises.writeFile(temporary, value, {
+			encoding: "utf8",
+			mode: 384,
+			flag: "wx"
+		});
+		if (firstWriteWins) try {
+			await nodeFsPromises.link(temporary, file);
+		} catch (error) {
+			if (error.code !== "EEXIST") throw error;
+		}
+		else await nodeFsPromises.rename(temporary, file);
+	} finally {
+		await nodeFsPromises.unlink(temporary).catch((error) => {
+			if (error.code !== "ENOENT") throw error;
+		});
 	}
 }
 //#endregion
@@ -19041,6 +19060,10 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		mode: savedTurnMode(privacyPath, sessionId, turnId),
 		hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId)
 	};
+	if (hasPrunedSessionHistory(privacyPath, sessionId) && hasSavedTurnEvidence(privacyPath, sessionId, turnId)) return {
+		mode: savedTurnMode(privacyPath, sessionId, turnId),
+		hasEvidence: true
+	};
 	let mode = "metadata";
 	let hasEvidence = false;
 	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
@@ -19812,7 +19835,8 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 			cwd: input.cwd,
 			env: process.env
 		});
-		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const savePreference = () => submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const result = input.transcript_path ? await withTurnCaptureLock(input.transcript_path, savePreference) : await savePreference();
 		if (!command) {
 			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
 			return;

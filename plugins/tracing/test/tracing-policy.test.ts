@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { build } from "tsdown";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
@@ -237,7 +239,15 @@ it("ordinary prompts also fail closed rather than start without durable evidence
 
 it("serializes independent hook processes and retains preferences after restart", async () => {
   const run = promisify(execFile);
-  const moduleUrl = new URL("../src/tracing-policy.ts", import.meta.url).href;
+  await build({
+    config: false,
+    entry: [fileURLToPath(new URL("../src/tracing-policy.ts", import.meta.url))],
+    outDir: path.join(home, "bundle"),
+    format: "esm",
+    dts: false,
+    logLevel: "silent",
+  });
+  const moduleUrl = pathToFileURL(path.join(home, "bundle/tracing-policy.mjs")).href;
   await Promise.all(
     Array.from({ length: 8 }, (_, i) =>
       run(process.execPath, [
@@ -273,8 +283,11 @@ it("normal submissions never materialize a default preference; existing threads 
   expect(policy).toEqual({
     version: 1,
     threads: {
-      thread: { turns: { full: "full", muted: "metadata", off: "off", future: "full" } },
-      "new-muted": { turns: { first: "metadata" } },
+      thread: {
+        lastActivityAt: expect.any(Number),
+        turns: { full: "full", muted: "metadata", off: "off", future: "full" },
+      },
+      "new-muted": { lastActivityAt: expect.any(Number), turns: { first: "metadata" } },
     },
   });
 });
@@ -326,6 +339,7 @@ it("the hook resolves config at each submission using payload cwd, without savin
     version: 1,
     threads: {
       thread: {
+        lastActivityAt: expect.any(Number),
         turns: { muted: "metadata", full: "full", "env-muted": "metadata", "env-full": "full" },
       },
     },

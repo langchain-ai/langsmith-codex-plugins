@@ -1,26 +1,27 @@
 import { getConfig } from "./config.js";
 import { defaultPrivacyPath, parseTracingCommand, submitPreference } from "./tracing-policy.js";
+import { withTurnCaptureLock } from "./tool-capture.js";
+import type { PromptSubmitInput } from "./models/tool-capture.js";
 
 export async function handlePromptSubmit(
-  input: {
-    session_id: string;
-    turn_id: string;
-    cwd: string;
-    prompt: string;
-  },
+  input: PromptSubmitInput,
   privacyPath = defaultPrivacyPath(),
 ) {
   const command = parseTracingCommand(input.prompt);
   try {
     const config = await getConfig({ home: process.env.HOME!, cwd: input.cwd, env: process.env });
-    const result = await submitPreference(
-      privacyPath,
-      input.session_id,
-      input.turn_id,
-      config.enabled,
-      command,
-      config.defaultMuted,
-    );
+    const savePreference = () =>
+      submitPreference(
+        privacyPath,
+        input.session_id,
+        input.turn_id,
+        config.enabled,
+        command,
+        config.defaultMuted,
+      );
+    const result = input.transcript_path
+      ? await withTurnCaptureLock(input.transcript_path, savePreference)
+      : await savePreference();
     if (!command) {
       if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
       return;

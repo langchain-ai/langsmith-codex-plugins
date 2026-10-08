@@ -189,7 +189,9 @@ it("the production bundle follows changing defaults without materializing an ove
   );
   expect(policy).toEqual({
     version: 1,
-    threads: { thread: { turns: { muted: "metadata", full: "full" } } },
+    threads: {
+      thread: { turns: { muted: "metadata", full: "full" }, lastActivityAt: expect.any(Number) },
+    },
   });
 });
 

@@ -54,6 +54,7 @@ import type { CodingAgentContext } from "./metadata-models.js";
 import {
   defaultPrivacyPath,
   hasSavedTurnEvidence,
+  hasPrunedSessionHistory,
   savedTurnMode,
   inheritThreadMode,
 } from "./tracing-policy.js";
@@ -221,6 +222,12 @@ async function rolloutTurnMode(
       mode: savedTurnMode(privacyPath, sessionId, turnId),
       hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId),
     };
+  }
+  if (
+    hasPrunedSessionHistory(privacyPath, sessionId) &&
+    hasSavedTurnEvidence(privacyPath, sessionId, turnId)
+  ) {
+    return { mode: savedTurnMode(privacyPath, sessionId, turnId), hasEvidence: true };
   }
   let mode: TurnMode = "metadata";
   let hasEvidence = false;
