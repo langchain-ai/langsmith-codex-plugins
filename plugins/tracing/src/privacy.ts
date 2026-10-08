@@ -1,5 +1,5 @@
 import { RunTree, type RunTreeConfig } from "langsmith";
-import type { TracingMode } from "./tracing-policy.js";
+import type { TracingMode } from "./models/tracing-policy.js";
 import { trustedCodingAgentMetadata } from "./metadata.js";
 
 export const MUTED_TRACE_CONTENT =
@@ -98,6 +98,8 @@ export function runConfigForMode<T extends Record<string, unknown>>(
     "parent_run_id",
     "trace_id",
     "dotted_order",
+    "execution_order",
+    "child_execution_order",
   ]) {
     if (key in config && config[key] !== undefined) safe[key] = config[key];
   }

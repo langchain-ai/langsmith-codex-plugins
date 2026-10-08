@@ -1253,7 +1253,9 @@ it("traces only the live turn on the first Stop for a resumed rollout", async ()
   // The backlog is not replayed...
   expect.soft(turnIds).toEqual([EDITING_TURN]);
   // ...but it is recorded, so the next Stop is an ordinary one.
-  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EARLIER_TURN}\n${EDITING_TURN}\n`);
+  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(
+    `${JSON.stringify({ turnId: EARLIER_TURN, state: "backlog" })}\n${JSON.stringify({ turnId: EDITING_TURN, state: "uploaded" })}\n`,
+  );
 });
 
 it("still traces a backlog turn once the rollout has a traced history", async () => {

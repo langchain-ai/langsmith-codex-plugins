@@ -1,4 +1,5 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
+import type { TurnMode } from "./tracing-policy.js";
 import type { TRACE_UPLOAD_STATES } from "../constants.js";
 
 export type TurnDeliveryState = (typeof TRACE_UPLOAD_STATES)[number];
@@ -9,6 +10,11 @@ export interface TurnRunTopology {
   dottedOrder: string;
   executionOrder: number;
   childExecutionOrder: number;
+}
+
+export interface RolloutTurnMode {
+  mode: TurnMode;
+  hasEvidence: boolean;
 }
 
 export interface TraceConversionOptions {
@@ -31,4 +37,12 @@ export interface TraceConversionOptions {
 export interface TraceConversionInput {
   transcript_path: string;
   turn_id: string | null;
+}
+
+export interface PostTurnOptions {
+  rolloutFile: string;
+  options?: TraceConversionOptions;
+  mode: TurnMode;
+  turnKey: string;
+  fallbackTime: number;
 }
