@@ -53,3 +53,8 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+
+export const FILE_LOCK_OWNER_FILENAME = "owner.json";
+export const FILE_LOCK_INITIALIZING_MS = 1000;
+export const FILE_LOCK_RETRY_MS = 25;
+export const FILE_LOCK_WAIT_TIMEOUT_MS = 5000;
