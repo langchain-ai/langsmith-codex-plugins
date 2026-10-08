@@ -7,18 +7,13 @@ import { setTimeout as delay } from "node:timers/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-export type TracingMode = "full" | "metadata";
-export type TurnMode = TracingMode | "off";
+import type {
+  ThreadPolicy,
+  TracingMode,
+  TracingPolicy,
+  TurnMode,
+} from "./models/tracing-policy.js";
 
-interface ThreadPolicy {
-  preference?: TracingMode;
-  turns: Record<string, TurnMode>;
-  inherited?: TurnMode;
-}
-interface TracingPolicy {
-  version: 1;
-  threads: Record<string, ThreadPolicy>;
-}
 function isMode(value: unknown): value is TracingMode {
   return value === "full" || value === "metadata";
 }

@@ -37,8 +37,8 @@ import {
   hasSavedTurnEvidence,
   savedTurnMode,
   inheritThreadMode,
-  type TurnMode,
 } from "./tracing-policy.js";
+import type { TurnMode } from "./models/tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 
 async function loadSession(name: string) {
