@@ -9,6 +9,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
+import type { AttributionRolloutOptions } from "./models/attribution.js";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
 declare const __LS_INTEGRATION_VERSION__: string;
@@ -46,15 +47,15 @@ async function createGitRepository(author: string | undefined, remote: string, p
   return { root, commit: stdout.trim(), remote: remote.replace(/\.git$/, "") };
 }
 
-async function writeAttributionRollout(options: {
-  sessionCwd: string;
-  sessionMetaCwd?: string;
-  sessionGit?: Record<string, string>;
-  sessionIdentifier?: string;
-  calls: { id: string; name: string; args?: Record<string, unknown>; input?: string }[];
-  completionOrder?: string[];
-  evidence?: Record<string, Record<string, unknown>>;
-}) {
+async function createOutsideGitDirectory() {
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
+  temporaryGitDirectories.push(directory);
+  vol.mkdirSync(directory, { recursive: true });
+  return directory;
+}
+
+async function writeAttributionRollout(options: AttributionRolloutOptions) {
   const sessionId = "attribution-thread";
   const turnId = "attribution-turn";
   const events: Record<string, unknown>[] = [];
@@ -1281,10 +1282,7 @@ it("fills missing root Git fields and attributes structured tools to their repos
     "https://github.com/example/nested-repo.git",
     path.join(repoA.root, "workspace"),
   );
-  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
-  temporaryGitDirectories.push(outsideRepo);
-  vol.mkdirSync(outsideRepo, { recursive: true });
+  const outsideRepo = await createOutsideGitDirectory();
   const { client, callSpy } = mockClient();
 
   const calls = [
@@ -1452,10 +1450,7 @@ it("keeps the turn repository when the session directory moves elsewhere", async
 it("uses the first unambiguous tool in call order when the turn directory is outside Git", async () => {
   const repoA = await createGitRepository("Author A", "https://github.com/example/repo-a.git");
   const repoB = await createGitRepository("Author B", "https://github.com/example/repo-b.git");
-  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
-  temporaryGitDirectories.push(outsideRepo);
-  vol.mkdirSync(outsideRepo, { recursive: true });
+  const outsideRepo = await createOutsideGitDirectory();
   const { client, callSpy } = mockClient();
   const calls = [
     { id: "first", name: "read_file", args: { file_path: path.join(repoA.root, "file.txt") } },
@@ -1591,10 +1586,7 @@ it("preserves configured root repository metadata without mixing in another repo
     "Current Author",
     "https://github.com/example/current.git",
   );
-  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-  const outsideRepo = await fs.mkdtemp(path.join(os.tmpdir(), "codex-trace-outside-"));
-  temporaryGitDirectories.push(outsideRepo);
-  vol.mkdirSync(outsideRepo, { recursive: true });
+  const outsideRepo = await createOutsideGitDirectory();
   const { client, callSpy } = mockClient();
   const { turnId } = await writeAttributionRollout({
     sessionCwd: outsideRepo,

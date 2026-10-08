@@ -7,14 +7,8 @@ import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { isRecord } from "./utils/objects.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import {
-  codingAgentMetadata,
-  mergeGitInfo,
-  resolveGitAttribution,
-  resolveToolAttribution,
-  toolRepositoryMetadata,
-  withTrustedMetadata,
-} from "./metadata.js";
+import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
+import { resolveTurnAttribution } from "./attribution.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
@@ -569,56 +563,21 @@ async function postTurn(
     return undefined;
   })();
 
-  let rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : undefined;
-  const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined;
-  const sessionCwdChanged = sessionCwd != null && sessionCwd !== cwd;
-  const sessionAttribution =
-    mode === "full" && sessionCwd != null
-      ? sessionCwd === cwd
-        ? rootAttribution
-        : await resolveGitAttribution(sessionCwd)
-      : undefined;
-  const sessionGitForCurrentRoot = () => {
-    if (
-      sessionCwdChanged &&
-      rootAttribution != null &&
-      sessionAttribution?.root !== rootAttribution.root
-    ) {
-      return undefined;
-    }
-    return sessionMeta?.git;
-  };
-  let fallbackIdentifier = rootAttribution?.identifier;
-  const toolAttributions = new Map<string, Awaited<ReturnType<typeof resolveToolAttribution>>>();
-  if (mode === "full") {
-    for (const { message } of messages) {
-      if (message.role !== "ai") continue;
-      for (const call of message.content) {
-        if (call.type !== "tool_call" || typeof call.id !== "string") continue;
-        const attribution = await resolveToolAttribution(
-          call.args,
-          task.toolCalls[call.id],
-          cwd,
-          sessionGitForCurrentRoot(),
-        );
-        toolAttributions.set(call.id, attribution);
-        if (fallbackIdentifier == null && attribution.resolved?.identifier != null) {
-          fallbackIdentifier = attribution.resolved.identifier;
-        }
-        if (rootAttribution == null && attribution.explicit && attribution.resolved != null) {
-          rootAttribution = attribution.resolved;
-        }
-      }
-    }
-  }
-  const git =
-    mode === "full" ? mergeGitInfo(rootAttribution?.git, sessionGitForCurrentRoot()) : undefined;
   const existingRootMetadata = { ...options?.metadata, ...task.context };
-  const attributionIdentifier =
-    sessionMeta?.ls_attribution_identifier ??
-    (typeof existingRootMetadata.ls_attribution_identifier === "string"
-      ? existingRootMetadata.ls_attribution_identifier
-      : fallbackIdentifier);
+  const attribution =
+    mode === "full"
+      ? await resolveTurnAttribution({
+          cwd,
+          sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : undefined,
+          sessionGit: sessionMeta?.git,
+          sessionIdentifier: sessionMeta?.ls_attribution_identifier,
+          existingMetadata: existingRootMetadata,
+          messages,
+          toolCalls: task.toolCalls,
+        })
+      : undefined;
+  const git = attribution?.git;
+  const attributionIdentifier = attribution?.identifier;
 
   const isSubagent = sessionMeta?.is_subagent === true;
 
@@ -809,7 +768,7 @@ async function postTurn(
       const runName = nativeToolName ?? "openai.codex.tool";
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
-      const toolAttribution = toolAttributions.get(toolCallId);
+      const toolAttribution = attribution?.tools.get(toolCallId);
       const toolRepositoryFields =
         toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null)
           ? toolRepositoryMetadata(toolAttribution.resolved)

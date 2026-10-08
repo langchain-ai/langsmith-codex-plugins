@@ -17224,32 +17224,6 @@ const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
-const GIT_LOCATION_ENV_KEYS = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_COMMON_DIR",
-	"GIT_INDEX_FILE",
-	"GIT_CEILING_DIRECTORIES"
-];
-const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
-const TOOL_PATH_KEYS = [
-	"file_path",
-	"notebook_path",
-	"path"
-];
-const REPOSITORY_METADATA_KEYS = [
-	"repository_url",
-	"repository_provider",
-	"repository_name",
-	"git_branch",
-	"git_commit_sha",
-	"ls_attribution_identifier"
-];
-const GITHUB_HOSTS_FILE = "hosts.yml";
-const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
-const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
-const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
-const GIT_SUFFIX = /\.git$/;
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
@@ -17329,6 +17303,9 @@ const findLast = (array, predicate) => {
 function isRecord(value) {
 	return value != null && typeof value === "object" && !Array.isArray(value);
 }
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
 //#endregion
 //#region src/sidecar.ts
 async function loadUploadedTurnIds(rolloutFile) {
@@ -17349,30 +17326,36 @@ async function markTurnUploaded(rolloutFile, turnId) {
 	}
 }
 //#endregion
-//#region src/utils/paths.ts
-async function nearestExistingDirectory(target) {
-	let current = nodePath.resolve(target);
-	for (;;) {
-		try {
-			if ((await nodeFsPromises.stat(current)).isDirectory()) return current;
-		} catch {}
-		const parent = nodePath.dirname(current);
-		if (parent === current) return void 0;
-		current = parent;
-	}
-}
-function absoluteTarget(value, base) {
-	if (typeof value !== "string" || value.length === 0) return void 0;
-	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
-	if (!base || !nodePath.isAbsolute(base)) return void 0;
-	return nodePath.resolve(base, value);
-}
+//#region src/metadata-constants.ts
+const GIT_COMMAND_TIMEOUT_MS = 2e3;
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
+const GITHUB_HOSTS_FILE = "hosts.yml";
+const GITHUB_HOST_ENTRY = /^([^\s:#][^:]*):\s*(?:#.*)?$/;
+const GITHUB_USER_ENTRY = /^\s+user:\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))\s*(?:#.*)?$/;
+const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_SUFFIX = /\.git$/;
 //#endregion
-//#region src/metadata.ts
-const execFileAsync = promisify(execFile);
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
+//#region src/repository.ts
 function parseRepository(url) {
 	const normalized = url?.trim();
 	if (!normalized) return {};
@@ -17403,6 +17386,108 @@ function parseRepository(url) {
 		repository_name: name
 	};
 }
+function sameRepository(left, right) {
+	const leftIdentity = repositoryIdentity(left);
+	const rightIdentity = repositoryIdentity(right);
+	if (leftIdentity && rightIdentity) return leftIdentity.host === rightIdentity.host && leftIdentity.path === rightIdentity.path;
+	const leftParsed = parseRepository(left);
+	const rightParsed = parseRepository(right);
+	return leftParsed.repository_url === rightParsed.repository_url;
+}
+function repositoryIdentity(url) {
+	const scp = GIT_SCP_REMOTE.exec(url.trim());
+	if (scp?.[1] && scp[2]) {
+		const repositoryPath = scp[2].split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
+		return repositoryPath ? {
+			host: scp[1].toLowerCase(),
+			path: repositoryPath
+		} : void 0;
+	}
+	try {
+		const parsed = new URL(url);
+		const repositoryPath = parsed.pathname.split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
+		return parsed.host && repositoryPath ? {
+			host: parsed.host.toLowerCase(),
+			path: repositoryPath
+		} : void 0;
+	} catch {
+		return;
+	}
+}
+//#endregion
+//#region src/metadata.ts
+function toolRepositoryMetadata(attribution) {
+	const repo = parseRepository(attribution?.git.repository_url);
+	const metadata = {
+		repository_url: repo.repository_url,
+		repository_provider: repo.repository_provider,
+		repository_name: repo.repository_name,
+		git_branch: attribution?.git.branch,
+		git_commit_sha: attribution?.git.commit_hash,
+		ls_attribution_identifier: attribution?.identifier
+	};
+	return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
+}
+function codingAgentMetadata(ctx, existing = {}) {
+	const existingRepositoryUrl = typeof existing.repository_url === "string" && existing.repository_url.length > 0 ? existing.repository_url : void 0;
+	const repo = parseRepository(existingRepositoryUrl ?? ctx.git?.repository_url);
+	const inferredGitMatchesExisting = existingRepositoryUrl == null || ctx.git?.repository_url != null && sameRepository(existingRepositoryUrl, ctx.git.repository_url);
+	const existingValue = (key) => typeof existing[key] === "string" && existing[key].length > 0 ? existing[key] : void 0;
+	return stripUndefined({
+		ls_agent_purpose: LS_AGENT_PURPOSE,
+		ls_agent_type: ctx.agentType,
+		ls_integration: LS_INTEGRATION,
+		ls_agent_runtime: LS_AGENT_RUNTIME,
+		thread_id: ctx.threadId,
+		ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
+		ls_integration_version: LS_INTEGRATION_VERSION,
+		ls_agent_runtime_version: ctx.cliVersion,
+		turn_id: ctx.turnId,
+		turn_number: ctx.turnNumber,
+		repository_url: existingRepositoryUrl ?? repo.repository_url,
+		repository_provider: existingValue("repository_provider") ?? repo.repository_provider,
+		repository_name: existingValue("repository_name") ?? repo.repository_name,
+		git_branch: existingValue("git_branch") ?? (inferredGitMatchesExisting ? ctx.git?.branch : void 0),
+		git_commit_sha: existingValue("git_commit_sha") ?? (inferredGitMatchesExisting ? ctx.git?.commit_hash : void 0),
+		ls_attribution_identifier: existingValue("ls_attribution_identifier") ?? ctx.attributionIdentifier,
+		cwd: ctx.cwd,
+		sandbox_type: ctx.sandboxType
+	});
+}
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
+function withTrustedMetadata(untrusted, structural) {
+	const merged = {
+		...untrusted,
+		...structural
+	};
+	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
+	return merged;
+}
+function trustedCodingAgentMetadata(metadata) {
+	return metadata?.[TRUSTED_METADATA];
+}
+//#endregion
+//#region src/utils/paths.ts
+async function nearestExistingDirectory(target) {
+	let current = nodePath.resolve(target);
+	for (;;) {
+		try {
+			if ((await nodeFsPromises.stat(current)).isDirectory()) return current;
+		} catch {}
+		const parent = nodePath.dirname(current);
+		if (parent === current) return void 0;
+		current = parent;
+	}
+}
+function absoluteTarget(value, base) {
+	if (typeof value !== "string" || value.length === 0) return void 0;
+	if (nodePath.isAbsolute(value)) return nodePath.normalize(value);
+	if (!base || !nodePath.isAbsolute(base)) return void 0;
+	return nodePath.resolve(base, value);
+}
+//#endregion
+//#region src/git.ts
+const execFileAsync = promisify(execFile);
 async function runGit(cwd, args) {
 	try {
 		const env = { ...process.env };
@@ -17410,7 +17495,7 @@ async function runGit(cwd, args) {
 		const { stdout } = await execFileAsync("git", args, {
 			cwd,
 			env,
-			timeout: 2e3
+			timeout: GIT_COMMAND_TIMEOUT_MS
 		});
 		const out = stdout.trim();
 		return out.length > 0 ? out : void 0;
@@ -17473,34 +17558,6 @@ async function resolveGitAttribution(cwd) {
 		identifier: configuredName ?? await githubLogin()
 	};
 }
-function sameRepository(left, right) {
-	const leftIdentity = repositoryIdentity(left);
-	const rightIdentity = repositoryIdentity(right);
-	if (leftIdentity && rightIdentity) return leftIdentity.host === rightIdentity.host && leftIdentity.path === rightIdentity.path;
-	const leftParsed = parseRepository(left);
-	const rightParsed = parseRepository(right);
-	return leftParsed.repository_url === rightParsed.repository_url;
-}
-function repositoryIdentity(url) {
-	const scp = GIT_SCP_REMOTE.exec(url.trim());
-	if (scp?.[1] && scp[2]) {
-		const repositoryPath = scp[2].split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
-		return repositoryPath ? {
-			host: scp[1].toLowerCase(),
-			path: repositoryPath
-		} : void 0;
-	}
-	try {
-		const parsed = new URL(url);
-		const repositoryPath = parsed.pathname.split("/").filter(Boolean).join("/").replace(GIT_SUFFIX, "");
-		return parsed.host && repositoryPath ? {
-			host: parsed.host.toLowerCase(),
-			path: repositoryPath
-		} : void 0;
-	} catch {
-		return;
-	}
-}
 function mergeGitInfo(liveGit, sessionGit) {
 	if (liveGit?.repository_url && sessionGit?.repository_url && !sameRepository(liveGit.repository_url, sessionGit.repository_url)) return sessionGit;
 	const merged = stripUndefined({
@@ -17509,6 +17566,8 @@ function mergeGitInfo(liveGit, sessionGit) {
 	});
 	return Object.keys(merged).length > 0 ? merged : void 0;
 }
+//#endregion
+//#region src/tool-attribution.ts
 function toolPathTargets(input, evidence, sessionCwd) {
 	const args = isRecord(input) ? input : void 0;
 	const executionDirectory = absoluteTarget(evidence?.executionCwd, sessionCwd);
@@ -17551,55 +17610,35 @@ async function resolveToolAttribution(input, evidence, sessionCwd, sessionGit) {
 		resolved: first
 	};
 }
-function toolRepositoryMetadata(attribution) {
-	const repo = parseRepository(attribution?.git.repository_url);
-	const metadata = {
-		repository_url: repo.repository_url,
-		repository_provider: repo.repository_provider,
-		repository_name: repo.repository_name,
-		git_branch: attribution?.git.branch,
-		git_commit_sha: attribution?.git.commit_hash,
-		ls_attribution_identifier: attribution?.identifier
+//#endregion
+//#region src/attribution.ts
+async function resolveTurnAttribution(input) {
+	let rootAttribution = await resolveGitAttribution(input.cwd);
+	const sessionCwdChanged = input.sessionCwd != null && input.sessionCwd !== input.cwd;
+	const sessionAttribution = input.sessionCwd != null ? input.sessionCwd === input.cwd ? rootAttribution : await resolveGitAttribution(input.sessionCwd) : void 0;
+	const sessionGitForCurrentRoot = () => {
+		if (sessionCwdChanged && rootAttribution != null && sessionAttribution?.root !== rootAttribution.root) return;
+		return input.sessionGit;
 	};
-	return Object.fromEntries(REPOSITORY_METADATA_KEYS.map((key) => [key, metadata[key]]));
-}
-function codingAgentMetadata(ctx, existing = {}) {
-	const existingRepositoryUrl = typeof existing.repository_url === "string" && existing.repository_url.length > 0 ? existing.repository_url : void 0;
-	const repo = parseRepository(existingRepositoryUrl ?? ctx.git?.repository_url);
-	const inferredGitMatchesExisting = existingRepositoryUrl == null || ctx.git?.repository_url != null && sameRepository(existingRepositoryUrl, ctx.git.repository_url);
-	const existingValue = (key) => typeof existing[key] === "string" && existing[key].length > 0 ? existing[key] : void 0;
-	return stripUndefined({
-		ls_agent_purpose: LS_AGENT_PURPOSE,
-		ls_agent_type: ctx.agentType,
-		ls_integration: LS_INTEGRATION,
-		ls_agent_runtime: LS_AGENT_RUNTIME,
-		thread_id: ctx.threadId,
-		ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
-		ls_integration_version: LS_INTEGRATION_VERSION,
-		ls_agent_runtime_version: ctx.cliVersion,
-		turn_id: ctx.turnId,
-		turn_number: ctx.turnNumber,
-		repository_url: existingRepositoryUrl ?? repo.repository_url,
-		repository_provider: existingValue("repository_provider") ?? repo.repository_provider,
-		repository_name: existingValue("repository_name") ?? repo.repository_name,
-		git_branch: existingValue("git_branch") ?? (inferredGitMatchesExisting ? ctx.git?.branch : void 0),
-		git_commit_sha: existingValue("git_commit_sha") ?? (inferredGitMatchesExisting ? ctx.git?.commit_hash : void 0),
-		ls_attribution_identifier: existingValue("ls_attribution_identifier") ?? ctx.attributionIdentifier,
-		cwd: ctx.cwd,
-		sandbox_type: ctx.sandboxType
-	});
-}
-const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-function withTrustedMetadata(untrusted, structural) {
-	const merged = {
-		...untrusted,
-		...structural
+	let fallbackIdentifier = rootAttribution?.identifier;
+	const tools = /* @__PURE__ */ new Map();
+	for (const { message } of input.messages) {
+		if (message.role !== "ai") continue;
+		for (const call of message.content) {
+			if (call.type !== "tool_call" || typeof call.id !== "string") continue;
+			const toolAttribution = await resolveToolAttribution(call.args, input.toolCalls[call.id], input.cwd, sessionGitForCurrentRoot());
+			tools.set(call.id, toolAttribution);
+			if (fallbackIdentifier == null && toolAttribution.resolved?.identifier != null) fallbackIdentifier = toolAttribution.resolved.identifier;
+			if (rootAttribution == null && toolAttribution.explicit && toolAttribution.resolved != null) rootAttribution = toolAttribution.resolved;
+		}
+	}
+	const git = mergeGitInfo(rootAttribution?.git, sessionGitForCurrentRoot());
+	const existingIdentifier = input.existingMetadata.ls_attribution_identifier;
+	return {
+		git,
+		identifier: input.sessionIdentifier ?? (typeof existingIdentifier === "string" ? existingIdentifier : fallbackIdentifier),
+		tools
 	};
-	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
-	return merged;
-}
-function trustedCodingAgentMetadata(metadata) {
-	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
 //#region src/skills.ts
@@ -18300,32 +18339,21 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		if (typeof policy === "string") return policy;
 		if (policy != null) return JSON.stringify(policy);
 	})();
-	let rootAttribution = mode === "full" ? await resolveGitAttribution(cwd) : void 0;
-	const sessionCwd = typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0;
-	const sessionCwdChanged = sessionCwd != null && sessionCwd !== cwd;
-	const sessionAttribution = mode === "full" && sessionCwd != null ? sessionCwd === cwd ? rootAttribution : await resolveGitAttribution(sessionCwd) : void 0;
-	const sessionGitForCurrentRoot = () => {
-		if (sessionCwdChanged && rootAttribution != null && sessionAttribution?.root !== rootAttribution.root) return;
-		return sessionMeta?.git;
-	};
-	let fallbackIdentifier = rootAttribution?.identifier;
-	const toolAttributions = /* @__PURE__ */ new Map();
-	if (mode === "full") for (const { message } of messages) {
-		if (message.role !== "ai") continue;
-		for (const call of message.content) {
-			if (call.type !== "tool_call" || typeof call.id !== "string") continue;
-			const attribution = await resolveToolAttribution(call.args, task.toolCalls[call.id], cwd, sessionGitForCurrentRoot());
-			toolAttributions.set(call.id, attribution);
-			if (fallbackIdentifier == null && attribution.resolved?.identifier != null) fallbackIdentifier = attribution.resolved.identifier;
-			if (rootAttribution == null && attribution.explicit && attribution.resolved != null) rootAttribution = attribution.resolved;
-		}
-	}
-	const git = mode === "full" ? mergeGitInfo(rootAttribution?.git, sessionGitForCurrentRoot()) : void 0;
 	const existingRootMetadata = {
 		...options?.metadata,
 		...task.context
 	};
-	const attributionIdentifier = sessionMeta?.ls_attribution_identifier ?? (typeof existingRootMetadata.ls_attribution_identifier === "string" ? existingRootMetadata.ls_attribution_identifier : fallbackIdentifier);
+	const attribution = mode === "full" ? await resolveTurnAttribution({
+		cwd,
+		sessionCwd: typeof sessionMeta?.cwd === "string" ? sessionMeta.cwd : void 0,
+		sessionGit: sessionMeta?.git,
+		sessionIdentifier: sessionMeta?.ls_attribution_identifier,
+		existingMetadata: existingRootMetadata,
+		messages,
+		toolCalls: task.toolCalls
+	}) : void 0;
+	const git = attribution?.git;
+	const attributionIdentifier = attribution?.identifier;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const base = codingAgentMetadata({
@@ -18443,7 +18471,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
-			const toolAttribution = toolAttributions.get(toolCallId);
+			const toolAttribution = attribution?.tools.get(toolCallId);
 			const toolRepositoryFields = toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null) ? toolRepositoryMetadata(toolAttribution.resolved) : {};
 			const toolRun = createRunTree({
 				name: runName,
