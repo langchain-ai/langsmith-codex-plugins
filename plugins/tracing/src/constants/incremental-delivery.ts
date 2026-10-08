@@ -55,6 +55,7 @@ export const INCREMENTAL_RECOVERY_METADATA_KEYS = [
 
 export const INCREMENTAL_RECOVERY_KEYS = [
   "turnKey",
+  "sessionId",
   "metadata",
   "endTime",
   "redactionPolicy",

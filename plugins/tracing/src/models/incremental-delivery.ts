@@ -51,6 +51,7 @@ export interface VerifiedIncrementalRun {
 
 export interface IncrementalRecovery {
   redactionPolicy?: string;
+  sessionId?: string;
   turnKey: string;
   metadata: Record<string, unknown>;
   endTime?: number | string;

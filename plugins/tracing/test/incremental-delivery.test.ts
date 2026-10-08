@@ -311,6 +311,19 @@ it("fails closed when a duplicate id belongs to another topology", async () => {
   expect(errors).toHaveLength(1);
 });
 
+it("fails closed when a duplicate id belongs to another project", async () => {
+  const { client, errors } = tracedClient();
+  const proposed = runConfig();
+  const existing = local.seedRun(
+    proposed as unknown as Record<string, unknown>,
+    String(proposed.project_name),
+  );
+  existing.session_id = "different-project-id";
+  await expect(client.createRun(proposed)).rejects.toThrow("Could not verify the existing run");
+  expect(local.requests.filter((request) => request.method === "PATCH")).toHaveLength(0);
+  expect(errors).toHaveLength(1);
+});
+
 it("fails closed when its checkpoint is corrupt", async () => {
   const { client, errors } = tracedClient();
   const partial = runConfig();

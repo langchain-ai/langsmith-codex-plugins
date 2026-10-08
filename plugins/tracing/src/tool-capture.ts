@@ -123,11 +123,17 @@ export async function prepareTurnCapture(
   turn: string,
   mode: TurnMode,
   redact?: CaptureRedactor,
+  savedOnly = false,
 ): Promise<TurnCapture> {
   const directory = turnCaptureDirectory(transcript, turn);
   const snapshot = path.join(directory, TURN_CAPTURE_TRANSCRIPT);
-  const events = await readTranscript(transcript, turn);
-  if (mode === "full") {
+  const events = savedOnly
+    ? await readTranscript(snapshot).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return [];
+        throw error;
+      })
+    : await readTranscript(transcript, turn);
+  if (mode === "full" && !savedOnly) {
     let active = false;
     const current = events.filter((event) => {
       if (event.type === "session_meta") return true;

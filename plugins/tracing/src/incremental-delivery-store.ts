@@ -61,6 +61,7 @@ export function validateCheckpoint(
     (value.recovery !== undefined &&
       (!isRecord(value.recovery) ||
         typeof value.recovery.turnKey !== "string" ||
+        (value.recovery.sessionId !== undefined && typeof value.recovery.sessionId !== "string") ||
         (value.recovery.redactionPolicy !== undefined &&
           (typeof value.recovery.redactionPolicy !== "string" ||
             !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.recovery.redactionPolicy))) ||

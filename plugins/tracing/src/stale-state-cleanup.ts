@@ -23,6 +23,7 @@ import type {
   SessionScan,
   StaleStateArtifactGroup,
   StaleStateCleanupOptions,
+  StaleTranscriptFileState,
 } from "./models/stale-state-cleanup.js";
 import {
   TOOL_CAPTURE_FILE_PATTERN,
@@ -217,6 +218,37 @@ async function nativeLocks(root: string): Promise<Set<string> | undefined> {
   }
 }
 
+async function nativeTranscriptPaths(
+  root: string,
+  sessionId: string,
+): Promise<Set<string> | undefined> {
+  const transcripts = new Set<string>();
+  async function walk(directory: string): Promise<boolean> {
+    let entries: Dirent[];
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true });
+    } catch {
+      return false;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) return false;
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (!(await walk(file))) return false;
+        continue;
+      }
+      if (!entry.isFile() || !STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN.test(entry.name)) continue;
+      const nativeSessionId =
+        STALE_PLUGIN_UUID_PATTERN.exec(entry.name)?.[1] ?? (await transcriptSessionId(file));
+      if (!nativeSessionId) return false;
+      if (nativeSessionId === sessionId)
+        transcripts.add(file.replace(STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN, ""));
+    }
+    return true;
+  }
+  return (await walk(root)) ? transcripts : undefined;
+}
+
 async function underLocks(locks: string[], action: () => Promise<void>, index = 0): Promise<void> {
   if (index === locks.length) return action();
   await tryWithFileLock(locks[index], () => underLocks(locks, action, index + 1));
@@ -325,7 +357,56 @@ export async function cleanupStalePluginState(
           protectedSessionIds.add(sessionId);
           return;
         }
-        if ((sessionLastActivity(privacyPath, sessionId) ?? 0) > cutoff) {
+        const transcriptStates = new Map<string, StaleTranscriptFileState | undefined>();
+        for (const group of currentGroups) {
+          try {
+            const stat = await fs.lstat(group.transcript);
+            if (!stat.isFile() || stat.isSymbolicLink()) {
+              protectedSessionIds.add(sessionId);
+              return;
+            }
+            transcriptStates.set(group.transcript, {
+              ctimeMs: stat.ctimeMs,
+              dev: stat.dev,
+              ino: stat.ino,
+              mtimeMs: stat.mtimeMs,
+              size: stat.size,
+            });
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+            transcriptStates.set(group.transcript, undefined);
+          }
+        }
+        const isStillInactive = async (checkSessionsRoot = false) => {
+          if ((sessionLastActivity(privacyPath, sessionId) ?? 0) > cutoff) return false;
+          const activeNativeWriters = await nativeLocks(root);
+          if (!activeNativeWriters || activeNativeWriters.has(sessionId)) return false;
+          for (const [file, initial] of transcriptStates) {
+            try {
+              const stat = await fs.lstat(file);
+              if (
+                !initial ||
+                !stat.isFile() ||
+                stat.isSymbolicLink() ||
+                stat.ctimeMs !== initial.ctimeMs ||
+                stat.dev !== initial.dev ||
+                stat.ino !== initial.ino ||
+                stat.mtimeMs !== initial.mtimeMs ||
+                stat.size !== initial.size
+              )
+                return false;
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== "ENOENT" || initial) return false;
+            }
+          }
+          if (checkSessionsRoot) {
+            const latestTranscripts = await nativeTranscriptPaths(root, sessionId);
+            if (!latestTranscripts) return false;
+            for (const file of latestTranscripts) if (!knownTranscripts.has(file)) return false;
+          }
+          return true;
+        };
+        if (!(await isStillInactive(true))) {
           protectedSessionIds.add(sessionId);
           return;
         }
@@ -334,11 +415,15 @@ export async function cleanupStalePluginState(
             group.artifacts.some((file) =>
               STALE_PLUGIN_INCREMENTAL_PATTERN.test(path.basename(file)),
             ) &&
-            !(await options.recover?.(group))
+            !(await options.recover?.(group, isStillInactive))
           ) {
             protectedSessionIds.add(sessionId);
             return;
           }
+        }
+        if (!(await isStillInactive(true))) {
+          protectedSessionIds.add(sessionId);
+          return;
         }
         const evidence = await pruneInactiveSessionEvidence(privacyPath, {
           inactiveBefore: cutoff,
@@ -348,6 +433,10 @@ export async function cleanupStalePluginState(
           targetSessionIds: [sessionId],
         });
         if (evidence.activeSessionIds.includes(sessionId)) {
+          protectedSessionIds.add(sessionId);
+          return;
+        }
+        if (!(await isStillInactive(true))) {
           protectedSessionIds.add(sessionId);
           return;
         }

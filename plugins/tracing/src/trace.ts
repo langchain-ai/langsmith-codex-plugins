@@ -391,6 +391,7 @@ async function postTurn(
         !options?.partial,
         options?.redactCapture,
         options?.redactionPolicy,
+        sessionMeta?.session_id,
       )
     : trackRunDelivery(sourceClient, deliveryErrors);
   const replicas = options?.replicas?.map((replica) => {
@@ -407,6 +408,7 @@ async function postTurn(
               !options?.partial,
               options?.redactCapture,
               options?.redactionPolicy,
+              sessionMeta?.session_id,
             )
           : trackRunDelivery(replicaClient, deliveryErrors)
         : client,

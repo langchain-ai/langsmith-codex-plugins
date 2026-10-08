@@ -17950,11 +17950,14 @@ async function readTranscript(file, turn) {
 		}
 	});
 }
-async function prepareTurnCapture(transcript, turn, mode, redact) {
+async function prepareTurnCapture(transcript, turn, mode, redact, savedOnly = false) {
 	const directory = turnCaptureDirectory(transcript, turn);
 	const snapshot = nodePath.join(directory, TURN_CAPTURE_TRANSCRIPT);
-	const events = await readTranscript(transcript, turn);
-	if (mode === "full") {
+	const events = savedOnly ? await readTranscript(snapshot).catch((error) => {
+		if (error.code === "ENOENT") return [];
+		throw error;
+	}) : await readTranscript(transcript, turn);
+	if (mode === "full" && !savedOnly) {
 		let active = false;
 		const current = events.filter((event) => {
 			if (event.type === "session_meta") return true;
@@ -18145,6 +18148,7 @@ const INCREMENTAL_RECOVERY_METADATA_KEYS = [
 ];
 const INCREMENTAL_RECOVERY_KEYS = [
 	"turnKey",
+	"sessionId",
 	"metadata",
 	"endTime",
 	"redactionPolicy"
@@ -18160,7 +18164,7 @@ function validateCheckpoint(value, identity) {
 	if (Object.keys(value).some((key) => !INCREMENTAL_DELIVERY_CHECKPOINT_KEYS.includes(key)) || Object.keys(value.topology).some((key) => !INCREMENTAL_DELIVERY_TOPOLOGY_KEYS.includes(key))) throw new Error("Incremental delivery checkpoint is invalid");
 	const topology = value.topology;
 	const validStartTime = typeof topology.startTime === "string" || typeof topology.startTime === "number" && Number.isFinite(topology.startTime);
-	if (typeof value.endpoint !== "string" || typeof value.projectName !== "string" || typeof value.runId !== "string" || value.recovery !== void 0 && (!isRecord(value.recovery) || typeof value.recovery.turnKey !== "string" || value.recovery.redactionPolicy !== void 0 && (typeof value.recovery.redactionPolicy !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.recovery.redactionPolicy)) || !isRecord(value.recovery.metadata) || Object.keys(value.recovery).some((key) => !INCREMENTAL_RECOVERY_KEYS.includes(key)) || Object.entries(value.recovery.metadata).some(([key, item]) => ![...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].includes(key) || typeof item !== "string") || value.recovery.endTime !== void 0 && !Number.isFinite(new Date(value.recovery.endTime).getTime())) || value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.finalized !== void 0 && value.finalized !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
+	if (typeof value.endpoint !== "string" || typeof value.projectName !== "string" || typeof value.runId !== "string" || value.recovery !== void 0 && (!isRecord(value.recovery) || typeof value.recovery.turnKey !== "string" || value.recovery.sessionId !== void 0 && typeof value.recovery.sessionId !== "string" || value.recovery.redactionPolicy !== void 0 && (typeof value.recovery.redactionPolicy !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.recovery.redactionPolicy)) || !isRecord(value.recovery.metadata) || Object.keys(value.recovery).some((key) => !INCREMENTAL_RECOVERY_KEYS.includes(key)) || Object.entries(value.recovery.metadata).some(([key, item]) => ![...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].includes(key) || typeof item !== "string") || value.recovery.endTime !== void 0 && !Number.isFinite(new Date(value.recovery.endTime).getTime())) || value.endpoint !== identity.endpoint || value.projectName !== identity.projectName || value.runId !== identity.runId || value.workspaceId !== identity.workspaceId || value.credentialHash !== identity.credentialHash || value.credentialHash !== void 0 && (typeof value.credentialHash !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.credentialHash)) || value.createAttempted !== true || value.finalized !== void 0 && value.finalized !== true || value.deliveredDigest !== void 0 && (typeof value.deliveredDigest !== "string" || !INCREMENTAL_DELIVERY_DIGEST_PATTERN.test(value.deliveredDigest)) || !(topology.parentRunId === null || typeof topology.parentRunId === "string") || topology.traceId !== void 0 && typeof topology.traceId !== "string" || topology.dottedOrder !== void 0 && typeof topology.dottedOrder !== "string" || !validStartTime || typeof topology.name !== "string" || typeof topology.runType !== "string") throw new Error("Incremental delivery checkpoint is invalid");
 	return {
 		endpoint: identity.endpoint,
 		projectName: identity.projectName,
@@ -18396,12 +18400,13 @@ async function postWithConflictRecovery(client, createRun, run, options, endpoin
 		...finalize ? { finalized: true } : {}
 	});
 }
-async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize, redact, redactionPolicy) {
+async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize, redact, redactionPolicy, sessionId) {
 	const cleanRun = copyExtraThroughJson(run);
 	const originalMetadata = asRecord(asRecord(cleanRun.extra).metadata);
 	const recoveryMetadata = Object.fromEntries([...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].flatMap((key) => typeof originalMetadata[key] !== "string" || originalMetadata.ls_tracing_mode === "metadata" && key !== "thread_id" && key !== "turn_id" && key !== "ls_tracing_mode" ? [] : [[key, originalMetadata[key]]]));
 	const recovery = {
 		turnKey,
+		...sessionId === void 0 ? {} : { sessionId },
 		...redactionPolicy === void 0 ? {} : { redactionPolicy },
 		metadata: {
 			...redact ? redact(recoveryMetadata) : recoveryMetadata,
@@ -18474,12 +18479,12 @@ async function deliverCreate(client, createRun, run, options, rolloutFile, turnK
 		});
 	});
 }
-function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true, redact, redactionPolicy) {
+function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true, redact, redactionPolicy, sessionId) {
 	const createRun = client.createRun.bind(client);
 	return new Proxy(client, { get(target, property) {
 		if (property === "createRun") return async (...args) => {
 			try {
-				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize, redact, redactionPolicy);
+				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize, redact, redactionPolicy, sessionId);
 			} catch (error) {
 				errors.push(error);
 				throw error;
@@ -19329,12 +19334,12 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	if (mode === "off") return;
 	const deliveryErrors = [];
 	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
-	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy) : trackRunDelivery(sourceClient, deliveryErrors);
+	const client = options?.incremental ? trackIncrementalDelivery(sourceClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy, sessionMeta?.session_id) : trackRunDelivery(sourceClient, deliveryErrors);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
 		return {
 			...replica,
-			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy) : trackRunDelivery(replicaClient, deliveryErrors) : client
+			client: replicaClient ? options?.incremental ? trackIncrementalDelivery(replicaClient, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy, sessionMeta?.session_id) : trackRunDelivery(replicaClient, deliveryErrors) : client
 		};
 	});
 	const postPromises = [];

@@ -1,7 +1,17 @@
 export interface StaleStateCleanupOptions {
   now?: number;
   privacyPath?: string;
-  recover?: (group: StaleStateArtifactGroup) => Promise<boolean>;
+  recover?: (group: StaleStateArtifactGroup, guard: StaleRecoveryGuard) => Promise<boolean>;
+}
+
+export type StaleRecoveryGuard = (checkSessionsRoot?: boolean) => Promise<boolean>;
+
+export interface StaleTranscriptFileState {
+  ctimeMs: number;
+  dev: number;
+  ino: number;
+  mtimeMs: number;
+  size: number;
 }
 
 export interface StaleStateArtifactGroup {

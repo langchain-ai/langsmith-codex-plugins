@@ -146,6 +146,7 @@ async function deliverCreate(
   finalize: boolean,
   redact?: <T>(value: T) => T,
   redactionPolicy?: string,
+  sessionId?: string,
 ) {
   const cleanRun = copyExtraThroughJson(run);
   const originalMetadata = asRecord(asRecord(cleanRun.extra).metadata);
@@ -162,6 +163,7 @@ async function deliverCreate(
   );
   const recovery = {
     turnKey,
+    ...(sessionId === undefined ? {} : { sessionId }),
     ...(redactionPolicy === undefined ? {} : { redactionPolicy }),
     metadata: {
       ...(redact ? redact(recoveryMetadata) : recoveryMetadata),
@@ -271,6 +273,7 @@ export function trackIncrementalDelivery(
   finalize = true,
   redact?: <T>(value: T) => T,
   redactionPolicy?: string,
+  sessionId?: string,
 ): Client {
   const createRun = client.createRun.bind(client);
   return new Proxy(client, {
@@ -288,6 +291,7 @@ export function trackIncrementalDelivery(
               finalize,
               redact,
               redactionPolicy,
+              sessionId,
             );
           } catch (error) {
             errors.push(error);
