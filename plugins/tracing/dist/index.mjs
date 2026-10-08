@@ -7,11 +7,12 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
+import { v5 } from "uuid";
+import { createHash, randomUUID } from "node:crypto";
+import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
-import { setTimeout as setTimeout$1 } from "node:timers/promises";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -185,11 +186,11 @@ function v35(version, hash, value, namespace, buf, offset) {
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v5.js
-function v5(value, namespace, buf, offset) {
+function v5$1(value, namespace, buf, offset) {
 	return v35(80, sha1, value, namespace, buf, offset);
 }
-v5.DNS = DNS;
-v5.URL = URL$1;
+v5$1.DNS = DNS;
+v5$1.URL = URL$1;
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
@@ -10869,7 +10870,7 @@ const getDefaultProjectName = () => {
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
-	return v5(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
+	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
 }
 function stripNonAlphanumeric(input) {
 	return input.replace(/[-:.]/g, "");
@@ -17215,6 +17216,9 @@ const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_UPLOAD_TOPOLOGY_SUFFIX = ".langsmith-topology";
+const TRACE_UPLOAD_LOCK_INITIALIZING_MS = 1e3;
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -17300,22 +17304,186 @@ const findLast = (array, predicate) => {
 };
 //#endregion
 //#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
+async function readOwner(file) {
+	let contents;
 	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
+		contents = await nodeFsPromises.readFile(file, "utf8");
 	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		if (error.code === "ENOENT") return void 0;
+		throw error;
+	}
+	try {
+		const value = JSON.parse(contents);
+		if (value != null && typeof value === "object" && Number.isInteger(value.pid) && value.pid > 0 && typeof value.token === "string") return {
+			pid: value.pid,
+			token: value.token
+		};
+	} catch {}
+}
+function processIsAlive(pid) {
+	if (pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+async function lockIsOld(lockPath) {
+	try {
+		const stat = await nodeFsPromises.stat(lockPath);
+		return Date.now() - stat.mtimeMs >= TRACE_UPLOAD_LOCK_INITIALIZING_MS;
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
 		throw error;
 	}
 }
-async function markTurnUploaded(rolloutFile, turnId) {
+async function recoverLock(lockPath, observedOwner) {
+	const ownerFile = nodePath.join(lockPath, "owner.json");
+	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
+	let recovery;
 	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${turnId}\n`, "utf-8");
-		return true;
+		recovery = await nodeFsPromises.open(recoveryPath, "wx", 384);
 	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		const recoveryOwner = await readOwner(recoveryPath);
+		if (recoveryOwner && !processIsAlive(recoveryOwner.pid) || recoveryOwner == null && await lockIsOld(recoveryPath)) await nodeFsPromises.unlink(recoveryPath).catch((unlinkError) => {
+			if (unlinkError.code !== "ENOENT") throw unlinkError;
+		});
 		return false;
 	}
+	try {
+		await recovery.writeFile(JSON.stringify({
+			pid: process.pid,
+			token: randomUUID()
+		}), "utf8");
+		const currentOwner = await readOwner(ownerFile);
+		if (currentOwner?.pid === observedOwner.pid && currentOwner?.token === observedOwner.token && !processIsAlive(currentOwner.pid)) {
+			await nodeFsPromises.unlink(ownerFile);
+			await nodeFsPromises.rmdir(lockPath);
+			return true;
+		}
+		if (currentOwner == null && observedOwner.token === "invalid" && await lockIsOld(lockPath)) {
+			await nodeFsPromises.unlink(ownerFile).catch((error) => {
+				if (error.code !== "ENOENT") throw error;
+			});
+			await nodeFsPromises.rmdir(lockPath);
+			return true;
+		}
+		return false;
+	} finally {
+		await recovery.close();
+		await nodeFsPromises.unlink(recoveryPath).catch((error) => {
+			if (error.code !== "ENOENT") throw error;
+		});
+	}
+}
+async function withRolloutLock(rolloutFile, action) {
+	const lockPath = `${rolloutFile}.langsmith.lock`;
+	const ownerFile = nodePath.join(lockPath, "owner.json");
+	const token = randomUUID();
+	while (true) try {
+		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
+		try {
+			await nodeFsPromises.writeFile(ownerFile, JSON.stringify({
+				pid: process.pid,
+				token
+			}), {
+				encoding: "utf8",
+				flag: "wx",
+				mode: 384
+			});
+		} catch (error) {
+			await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
+			throw error;
+		}
+		break;
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		const owner = await readOwner(ownerFile);
+		if (owner == null) {
+			if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
+				pid: 0,
+				token: "invalid"
+			});
+		} else if (!processIsAlive(owner.pid)) await recoverLock(lockPath, owner);
+		await setTimeout$1(25);
+	}
+	try {
+		return await action();
+	} finally {
+		const owner = await readOwner(ownerFile);
+		if (owner?.pid === process.pid && owner.token === token) {
+			await nodeFsPromises.unlink(ownerFile);
+			await nodeFsPromises.rmdir(lockPath);
+		}
+	}
+}
+async function loadTurnStates(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
+		const states = /* @__PURE__ */ new Map();
+		for (const line of data.split("\n").filter(Boolean)) {
+			try {
+				const value = JSON.parse(line);
+				if (value != null && typeof value === "object" && typeof value.turnId === "string" && [
+					"uploaded",
+					"backlog",
+					"off"
+				].includes(value.state)) {
+					states.set(value.turnId, value.state);
+					continue;
+				}
+			} catch {}
+			states.set(line, "uploaded");
+		}
+		return states;
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Map();
+		throw error;
+	}
+}
+async function markTurnHandled(rolloutFile, turnId, state) {
+	await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${JSON.stringify({
+		turnId,
+		state
+	})}\n`, "utf-8");
+}
+async function loadTurnRunTopology(rolloutFile, turnId) {
+	const topologyFile = topologyFilePath(rolloutFile, turnId);
+	let contents;
+	try {
+		if ((await nodeFsPromises.stat(topologyFile)).size > 4096) throw new Error("Trace upload topology checkpoint exceeds its size limit");
+		contents = await nodeFsPromises.readFile(topologyFile, "utf-8");
+	} catch (error) {
+		if (error.code === "ENOENT") return void 0;
+		throw error;
+	}
+	for (const line of contents.split("\n").filter(Boolean)) try {
+		const topology = JSON.parse(line)?.topology;
+		if (topology != null && (topology.parentRunId === null || typeof topology.parentRunId === "string" && topology.parentRunId.length <= 64) && typeof topology.traceId === "string" && topology.traceId.length <= 64 && typeof topology.dottedOrder === "string" && topology.dottedOrder.length <= 2048 && Number.isInteger(topology.executionOrder) && topology.executionOrder > 0 && Number.isInteger(topology.childExecutionOrder) && topology.childExecutionOrder > 0) return topology;
+	} catch {}
+}
+async function markTurnRunTopology(rolloutFile, turnId, topology) {
+	const topologyFile = topologyFilePath(rolloutFile, turnId);
+	const temporaryFile = `${topologyFile}.${randomUUID()}.tmp`;
+	const contents = JSON.stringify({ topology });
+	if (Buffer.byteLength(contents, "utf-8") > 4096) throw new Error("Trace upload topology checkpoint exceeds its size limit");
+	try {
+		await nodeFsPromises.writeFile(temporaryFile, contents, {
+			encoding: "utf-8",
+			flag: "wx",
+			mode: 384
+		});
+		await nodeFsPromises.rename(temporaryFile, topologyFile);
+	} catch (error) {
+		await nodeFsPromises.unlink(temporaryFile).catch(() => void 0);
+		throw error;
+	}
+}
+function topologyFilePath(rolloutFile, turnId) {
+	const turnKey = createHash("sha256").update(turnId).digest("hex");
+	return `${rolloutFile}${TRACE_UPLOAD_TOPOLOGY_SUFFIX}-${turnKey}.json`;
 }
 //#endregion
 //#region src/metadata.ts
@@ -17537,7 +17705,9 @@ function runConfigForMode(config, mode = "full") {
 		"end_time",
 		"parent_run_id",
 		"trace_id",
-		"dotted_order"
+		"dotted_order",
+		"execution_order",
+		"child_execution_order"
 	]) if (key in config && config[key] !== void 0) safe[key] = config[key];
 	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
 	safe.inputs = { messages: [{
@@ -17627,6 +17797,14 @@ function savedTurnMode(file, sessionId, turnId) {
 		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
 	} catch {
 		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
 	}
 }
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
@@ -17851,14 +18029,24 @@ async function findRolloutFileByThreadId(parentFileName, threadId, sessionsRoot)
 * parent's native turn, not the parent's current preference or Stop turn_id.
 * Missing/ambiguous launch evidence is metadata-only. No timing heuristic. */
 async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoot, visited = /* @__PURE__ */ new Set()) {
-	if (visited.has(sessionId)) return "metadata";
+	if (visited.has(sessionId)) return {
+		mode: "metadata",
+		hasEvidence: false
+	};
 	visited.add(sessionId);
 	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
-	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return "metadata";
+	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return {
+		mode: "metadata",
+		hasEvidence: false
+	};
 	const source = meta.payload.source;
 	const parentId = source && typeof source === "object" ? source.subagent?.thread_spawn?.parent_thread_id ?? meta.payload.parent_thread_id : meta.payload.parent_thread_id;
-	if (!(!!parentId || meta.payload.thread_source === "subagent" || source && typeof source === "object" && !!source.subagent)) return savedTurnMode(privacyPath, sessionId, turnId);
+	if (!(!!parentId || meta.payload.thread_source === "subagent" || source && typeof source === "object" && !!source.subagent)) return {
+		mode: savedTurnMode(privacyPath, sessionId, turnId),
+		hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId)
+	};
 	let mode = "metadata";
+	let hasEvidence = false;
 	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
 	if (parentFile && parentId) {
 		let nativeTurn;
@@ -17881,12 +18069,22 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 				if (event.payload.type === "function_call_output" && calls.has(event.payload.call_id) && extractSpawnedAgentId(event.payload.output) === sessionId) launches.add(calls.get(event.payload.call_id));
 			}
 		}
-		if (launches.size === 1) mode = await rolloutTurnMode(parentFile, parentId, [...launches][0], privacyPath, sessionsRoot, visited);
+		if (launches.size === 1) {
+			const launch = await rolloutTurnMode(parentFile, parentId, [...launches][0], privacyPath, sessionsRoot, visited);
+			mode = launch.mode;
+			hasEvidence = launch.hasEvidence;
+		}
 	}
 	try {
-		return await inheritThreadMode(privacyPath, sessionId, mode);
+		return {
+			mode: await inheritThreadMode(privacyPath, sessionId, mode),
+			hasEvidence
+		};
 	} catch {
-		return "metadata";
+		return {
+			mode: "metadata",
+			hasEvidence: false
+		};
 	}
 }
 function mergeMessages(result) {
@@ -18086,14 +18284,49 @@ function getUsageMetadata(counts) {
 		}
 	};
 }
-const PROMISE_QUEUE = [];
-async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options }) {
-	const mode = sessionMeta?.session_id ? await rolloutTurnMode(rolloutFile, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : "metadata";
+function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
+	return v5(`langsmith-codex:${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
+}
+function trackRunDelivery(client, errors) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			const run = args[0];
+			const projectName = "session_name" in run && typeof run.session_name === "string" ? run.session_name : typeof run.project_name === "string" ? run.project_name : "default";
+			try {
+				return await createRun(...args);
+			} catch (error) {
+				if (typeof error === "object" && error !== null && "status" in error && error.status === 409) try {
+					if (typeof run.id !== "string") throw error;
+					const existing = await target.readRun(run.id);
+					const project = await target.readProject({ projectName });
+					if (existing.id === run.id && existing.trace_id === run.trace_id && (existing.parent_run_id ?? void 0) === (run.parent_run_id ?? void 0) && existing.dotted_order === run.dotted_order && existing.name === run.name && existing.run_type === run.run_type && existing.session_id === project.id) return;
+				} catch {}
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
+}
+async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options, mode, turnKey, fallbackTime }) {
+	if (sessionMeta?.session_id) options?.visitedThreads?.add(sessionMeta.session_id);
+	if (sessionMeta?.parent_thread_id) options?.visitedThreads?.add(sessionMeta.parent_thread_id);
 	for (const child of task.subagentThreads) try {
 		await inheritThreadMode(options?.privacyPath ?? defaultPrivacyPath(), child, mode);
 	} catch {}
 	if (mode === "off") return;
-	const fallbackTime = Date.now();
+	const deliveryErrors = [];
+	const client = trackRunDelivery(options?.client ?? new Client({ autoBatchTracing: false }), deliveryErrors);
+	const replicas = options?.replicas?.map((replica) => {
+		const replicaClient = "client" in replica ? replica.client : void 0;
+		return {
+			...replica,
+			client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client
+		};
+	});
+	const postPromises = [];
 	const getSystemMessage = (session, task) => {
 		if (session?.base_instructions == null || task?.turnId == null) return [];
 		return [{
@@ -18113,7 +18346,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : void 0;
 	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
-	const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
+	const parentEndTime = Math.max(agent.at(-1)?.timestamp.end ?? parentStartTime, parentStartTime);
 	const debugNow = options?.debugNow ?? {
 		now: Date.now(),
 		startTime: parentStartTime
@@ -18145,12 +18378,13 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		git,
 		sandboxType
 	});
-	const parent = createRunTree({
+	const parentConfig = {
+		id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, "root"),
 		name: "openai.codex",
-		client: options?.client,
+		client,
 		project_name: options?.projectName,
 		run_type: "chain",
-		replicas: options?.replicas,
+		replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
 		error: task.error,
@@ -18169,8 +18403,25 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			ls_message_format: "anthropic",
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		}) }
-	}, mode, options?.parentRunTree);
-	PROMISE_QUEUE.push(parent.postRun());
+	};
+	const topology = await loadTurnRunTopology(rolloutFile, turnKey);
+	const parent = createRunTree(topology ? {
+		...parentConfig,
+		...topology.parentRunId === null ? {} : { parent_run_id: topology.parentRunId },
+		trace_id: topology.traceId,
+		dotted_order: topology.dottedOrder,
+		execution_order: topology.executionOrder,
+		child_execution_order: topology.childExecutionOrder
+	} : parentConfig, mode, topology ? void 0 : options?.parentRunTree);
+	parent.client = client;
+	if (topology == null) await markTurnRunTopology(rolloutFile, turnKey, {
+		parentRunId: parent.parent_run?.id ?? parent.parent_run_id ?? null,
+		traceId: parent.trace_id,
+		dottedOrder: parent.dotted_order,
+		executionOrder: parent.execution_order,
+		childExecutionOrder: parent.child_execution_order
+	});
+	postPromises.push(parent.postRun());
 	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 	const outputs = fullMessages.reduce((acc, item, idx) => {
 		if (item.message.role === "ai") acc.push(idx);
@@ -18194,6 +18445,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	async function postSubagentThread(subagentThread) {
 		if (postedSubagentThreads.has(subagentThread)) return;
 		postedSubagentThreads.add(subagentThread);
+		if (options?.visitedThreads?.has(subagentThread)) return;
+		options?.visitedThreads?.add(subagentThread);
 		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 		if (subagentFile == null) return;
 		const events = await loadSession(subagentFile);
@@ -18207,7 +18460,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			replayHistory: true
 		});
 	}
-	for (const output of outputs) {
+	for (const [outputIndex, output] of outputs.entries()) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
 		const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -18216,6 +18469,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = createRunTree({
+			id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `llm:${outputIndex}`),
 			name: "openai.codex.turn",
 			run_type: "llm",
 			start_time: outputStartTime,
@@ -18232,7 +18486,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				usage_metadata: getUsageMetadata(tokenCounts)
 			}) }
 		}, mode, parent);
-		PROMISE_QUEUE.push(llmChild.postRun());
+		postPromises.push(llmChild.postRun());
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
 			const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -18250,6 +18504,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
 			const toolRun = createRunTree({
+				id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `tool:${toolCallId}`),
 				name: runName,
 				run_type: "tool",
 				start_time: min,
@@ -18271,9 +18526,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
 				}) }
 			}, mode, parent);
-			PROMISE_QUEUE.push(toolRun.postRun());
+			postPromises.push(toolRun.postRun());
 			for (const skillName of skillNames) {
 				const skillRun = createRunTree({
+					id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `skill:${toolCallId}:${skillName}`),
 					name: "Skill",
 					run_type: "tool",
 					start_time: min,
@@ -18290,14 +18546,17 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 						ls_skill_name: skillName
 					}) }
 				}, mode, parent);
-				PROMISE_QUEUE.push(skillRun.postRun());
+				postPromises.push(skillRun.postRun());
 			}
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
+	await Promise.all(postPromises);
+	await client.awaitPendingTraceBatches();
+	if (deliveryErrors.length > 0) throw deliveryErrors[0];
 }
-async function convertToRunTree(input, options) {
+async function convertToRunTreeWorker(input, options, visitedThreads) {
 	let sessionMeta;
 	let task;
 	function createTask() {
@@ -18322,8 +18581,7 @@ async function convertToRunTree(input, options) {
 		const message = spawnAgentMessages.get(callId);
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
-	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
-	const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
+	const turnStates = await loadTurnStates(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
@@ -18439,6 +18697,7 @@ async function convertToRunTree(input, options) {
 				task ??= createTask();
 				const privacyTurnId = task.turnId?.id;
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
+				const turnKey = completedTurnId ?? `timestamp:${task.turnId?.timestamp ?? eventTime}`;
 				if (task.turnId == null && completedTurnId != null) task.turnId = {
 					id: completedTurnId,
 					timestamp: eventTime
@@ -18447,21 +18706,36 @@ async function convertToRunTree(input, options) {
 					turnNumber += 1;
 					task.turnNumber = turnNumber;
 				}
-				const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
-				const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-				if (!alreadyUploaded && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
-					rolloutFile: input.transcript_path,
-					options
-				});
-				if (completedTurnId != null && !alreadyUploaded) {
-					uploadedTurnIds.add(completedTurnId);
-					await markTurnUploaded(input.transcript_path, completedTurnId);
+				if (!(completedTurnId != null && turnStates.has(completedTurnId))) {
+					const turnMode = sessionMeta?.session_id ? await rolloutTurnMode(input.transcript_path, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : {
+						mode: "metadata",
+						hasEvidence: false
+					};
+					const isBacklog = options?.replayHistory !== true && input.turn_id != null && completedTurnId !== input.turn_id && !turnMode.hasEvidence;
+					const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
+					if (!isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
+						rolloutFile: input.transcript_path,
+						options: {
+							...options,
+							visitedThreads
+						},
+						mode: turnMode.mode,
+						turnKey,
+						fallbackTime: task.turnId?.timestamp ?? eventTime
+					});
+					if (completedTurnId != null) {
+						await markTurnHandled(input.transcript_path, completedTurnId, state);
+						turnStates.set(completedTurnId, state);
+					}
 				}
 				task = void 0;
 			}
 		}
 	}
-	await Promise.all(PROMISE_QUEUE);
+}
+async function convertToRunTree(input, options) {
+	const visitedThreads = options?.visitedThreads ?? /* @__PURE__ */ new Set();
+	return withRolloutLock(input.transcript_path, () => convertToRunTreeWorker(input, options, visitedThreads));
 }
 //#endregion
 //#region src/user-prompt-submit.ts
@@ -18539,8 +18813,19 @@ async function runHook() {
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
 		anonymizer,
-		hideMetadata: anonymizer
+		hideMetadata: anonymizer,
+		autoBatchTracing: false
 	});
+	const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
+		...replica,
+		client: new Client({
+			apiKey: replica.apiKey ?? config.api_key,
+			apiUrl: replica.apiUrl ?? config.api_url,
+			anonymizer,
+			hideMetadata: anonymizer,
+			autoBatchTracing: false
+		})
+	}));
 	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
 		project_name: config.project
@@ -18549,7 +18834,7 @@ async function runHook() {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: toSdkReplicas(config.replicas),
+		replicas,
 		parentRunTree
 	});
 }

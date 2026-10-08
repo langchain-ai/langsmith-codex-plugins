@@ -12,6 +12,12 @@ export const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 
+export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+export const TRACE_UPLOAD_TOPOLOGY_SUFFIX = ".langsmith-topology";
+export const TRACE_UPLOAD_TOPOLOGY_MAX_BYTES = 4096;
+export const TRACE_UPLOAD_LOCK_INITIALIZING_MS = 1000;
+export const TRACE_UPLOAD_LOCK_RETRY_MS = 25;
+
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 
 // Plugin version, injected at build time via bundler `define`.

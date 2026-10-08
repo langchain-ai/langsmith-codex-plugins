@@ -72,7 +72,7 @@ To mute by default instead of thread by thread, set `LANGSMITH_CODEX_DEFAULT_MUT
 
 ## What gets traced
 
-Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. A turn you cancel still uploads.
+Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. Stop uploads run in the background so prompts stay responsive, while mute and unmute controls finish before the prompt continues. Closing Codex can cancel a pending upload, which retries when the transcript is processed again; no background service keeps running after exit. Retries keep the original parent-child placement.
 
 When muted, the structure, timing, identifiers and token counts remain while messages, tool arguments and results are replaced with a placeholder.
 

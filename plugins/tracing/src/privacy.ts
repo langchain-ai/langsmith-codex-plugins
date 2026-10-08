@@ -98,6 +98,8 @@ export function runConfigForMode<T extends Record<string, unknown>>(
     "parent_run_id",
     "trace_id",
     "dotted_order",
+    "execution_order",
+    "child_execution_order",
   ]) {
     if (key in config && config[key] !== undefined) safe[key] = config[key];
   }

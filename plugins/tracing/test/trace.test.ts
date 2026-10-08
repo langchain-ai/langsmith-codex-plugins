@@ -6,6 +6,7 @@ import { vol } from "memfs";
 import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
+import { defaultPrivacyPath } from "../src/tracing-policy.js";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
 declare const __LS_INTEGRATION_VERSION__: string;
@@ -1086,6 +1087,66 @@ it("discovers subagents from current Codex v2 activity items", async () => {
   ]);
 });
 
+it("avoids parent-child lock cycles during overlapping Stops", async () => {
+  const { client, callSpy } = mockClient();
+  const files = await preloadTestFiles({ makeTurnIncomplete: false, subagentProtocol: "v2" });
+  const parentFile = path.join(
+    "/home/codex-user/.codex/sessions/2026/04/23/rollout-subagents.jsonl",
+  );
+  const childId = "019dbc03-79de-7d53-8196-3167d9a32762";
+  const childFile = path.join(
+    `/home/codex-user/.codex/sessions/2026/04/23/rollout-subagents-${childId}.jsonl`,
+  );
+  const parentId = "019dbc02-cc63-7893-9d13-9b24a7db0ace";
+  const childEvents = files[childFile]
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const terminalIndex = childEvents.findIndex(
+    (event) => event.type === "event_msg" && event.payload.type === "turn_complete",
+  );
+  childEvents.splice(terminalIndex, 0, {
+    timestamp: "2026-04-23T20:24:00.000Z",
+    type: "event_msg",
+    payload: { type: "sub_agent_activity", kind: "started", agent_thread_id: parentId },
+  });
+  files[childFile] = `${childEvents.map((event) => JSON.stringify(event)).join("\n")}\n`;
+  vol.fromJSON(files);
+  seedFullLaunchEvidence();
+  callSpy.mockImplementation(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    return {
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: () => Promise.resolve(""),
+      json: () => Promise.resolve({}),
+    } as Response;
+  });
+
+  const childEventsForTurn = childEvents.filter(
+    (event) => event.type === "event_msg" && event.payload.turn_id != null,
+  );
+  const childStop = convertToRunTree(
+    { transcript_path: childFile, turn_id: childEventsForTurn.at(-1)?.payload.turn_id },
+    { client, sessionsRoot: "/home/codex-user/.codex/sessions" },
+  );
+  while (callSpy.mock.calls.length === 0) await new Promise((resolve) => setTimeout(resolve, 1));
+  const parentStop = convertToRunTree(
+    { transcript_path: parentFile, turn_id: "019dbc03-4aa2-72a0-8190-c747168c8f1d" },
+    { client, sessionsRoot: "/home/codex-user/.codex/sessions" },
+  );
+
+  await Promise.all([childStop, parentStop]);
+  const runs = callSpy.mock.calls.map((call: any) =>
+    JSON.parse(
+      typeof call[1].body === "string" ? call[1].body : new TextDecoder().decode(call[1].body),
+    ),
+  );
+  const runIds = runs.map((run: any) => run.id);
+  expect(new Set(runIds).size).toBe(runIds.length);
+});
+
 const EDITING_FILE = path.join("/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl");
 const EDITING_TURN = "019dbc00-ede4-77c2-9e7a-b6876efeab9b";
 const EARLIER_TURN = "019dbc00-1111-77c2-9e7a-b6876efeab9b";
@@ -1104,6 +1165,17 @@ it("traces only the live turn on the first Stop for a resumed rollout", async ()
   vol.fromJSON(await preloadResumedThread());
 
   seedFullLaunchEvidence();
+  const events = vol
+    .readFileSync(EDITING_FILE)
+    .toString("utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const threadId = events.find((event) => event.type === "session_meta").payload.id;
+  const privacyPath = defaultPrivacyPath();
+  const policy = JSON.parse(vol.readFileSync(privacyPath).toString("utf8"));
+  policy.threads[threadId].turns = { [EDITING_TURN]: "full" };
+  vol.writeFileSync(privacyPath, JSON.stringify(policy));
   await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
   await client.awaitPendingTraceBatches();
 
@@ -1115,7 +1187,25 @@ it("traces only the live turn on the first Stop for a resumed rollout", async ()
   // The backlog is not replayed...
   expect.soft(turnIds).toEqual([EDITING_TURN]);
   // ...but it is recorded, so the next Stop is an ordinary one.
-  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EARLIER_TURN}\n${EDITING_TURN}\n`);
+  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(
+    `${JSON.stringify({ turnId: EARLIER_TURN, state: "backlog" })}\n${JSON.stringify({ turnId: EDITING_TURN, state: "uploaded" })}\n`,
+  );
+});
+
+it("recovers an older completed turn that has saved prompt evidence", async () => {
+  const { client, callSpy } = mockClient();
+  vol.fromJSON(await preloadResumedThread());
+
+  seedFullLaunchEvidence();
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await client.awaitPendingTraceBatches();
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const turnIds = Object.values(tree.data)
+    .filter((run) => run.name === "openai.codex")
+    .map((run) => run.extra?.metadata?.turn_id);
+
+  expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
 });
 
 it("still traces a backlog turn once the rollout has a traced history", async () => {

@@ -94,6 +94,15 @@ export function savedTurnMode(file: string, sessionId: string, turnId?: string):
   }
 }
 
+export function hasSavedTurnEvidence(file: string, sessionId: string, turnId?: string): boolean {
+  if (!turnId) return false;
+  try {
+    return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+  } catch {
+    return false;
+  }
+}
+
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
 export function parseTracingCommand(prompt: string): "mute" | "unmute" | undefined {
   if (prompt === "langsmith-tracing:mute") return "mute";
