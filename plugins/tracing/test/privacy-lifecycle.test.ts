@@ -2,22 +2,33 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { Client } from "langsmith";
 import { convertToRunTree } from "../src/trace.js";
 import { savedTurnMode, submitPreference } from "../src/tracing-policy.js";
 import { MUTED_TRACE_CONTENT } from "../src/privacy.js";
-import { mockClient } from "./utils/mock_client.js";
+import type { TraceRunExtra } from "./models/trace-delivery.js";
+import type { LocalTraceServer } from "./models/incremental-trace.js";
+import { createIncrementalTraceServer } from "./incremental-trace-server.js";
 
 let dir: string;
 let privacyPath: string;
+let local: LocalTraceServer;
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), "codex-lifecycle-"));
   privacyPath = path.join(dir, "privacy.json");
   for (const key of Object.keys(process.env))
     if (/^(LANGCHAIN_|LANGSMITH_)/.test(key)) vi.stubEnv(key, undefined);
+  local = await createIncrementalTraceServer();
 });
 afterEach(async () => {
+  await local.close();
   vi.unstubAllEnvs();
-  await fs.rm(dir, { recursive: true, force: true });
+  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+    const file = path.join(dir, entry.name);
+    if (entry.isFile() || entry.isSymbolicLink()) await fs.unlink(file);
+    else throw new Error(`Unexpected directory left in lifecycle test: ${entry.name}`);
+  }
+  await fs.rmdir(dir);
 });
 const event = (type: string, payload: Record<string, unknown>) => ({
   timestamp: "2026-04-23T00:00:01.000Z",
@@ -85,21 +96,36 @@ async function rollout(
   return file;
 }
 async function upload(file: string, turnId: string) {
-  const { client, callSpy } = mockClient();
-  await convertToRunTree(
-    { transcript_path: file, turn_id: turnId },
-    {
-      client,
-      privacyPath,
-      sessionsRoot: dir,
-      metadata: { ls_tool_name: "PRIVATE_CUSTOM_COLLISION", custom: "PRIVATE_CUSTOM" },
-    },
-  );
-  return callSpy.mock.calls.map((call: any) =>
-    JSON.parse(
-      typeof call[1].body === "string" ? call[1].body : new TextDecoder().decode(call[1].body),
-    ),
-  );
+  const requestOffset = local.requests.length;
+  try {
+    await convertToRunTree(
+      { transcript_path: file, turn_id: turnId },
+      {
+        client: new Client({
+          apiUrl: local.apiUrl,
+          apiKey: "local-test-key",
+          autoBatchTracing: false,
+        }),
+        privacyPath,
+        sessionsRoot: dir,
+        metadata: { ls_tool_name: "PRIVATE_CUSTOM_COLLISION", custom: "PRIVATE_CUSTOM" },
+      },
+    );
+  } finally {
+    for (const request of local.requests.slice(requestOffset)) {
+      if (request.method !== "POST" && request.method !== "PATCH") continue;
+      const id =
+        request.method === "POST" ? request.body?.id : request.pathname.slice("/runs/".length);
+      if (typeof id !== "string") continue;
+      const metadata = (local.runs.get(id)?.extra as TraceRunExtra | undefined)?.metadata;
+      const sentMetadata = (request.body?.extra as TraceRunExtra | undefined)?.metadata;
+      if (typeof metadata?.ls_tracing_mode === "string")
+        expect(sentMetadata?.ls_tracing_mode).toBe(metadata.ls_tracing_mode);
+      if (sentMetadata?.ls_tracing_mode === "metadata")
+        expect(JSON.stringify(request.body)).not.toContain("PRIVATE_");
+    }
+  }
+  return [...local.runs.values()];
 }
 // A first Stop for a rollout records its earlier turns without uploading them,
 // so give these cases a traced history to exercise the replay path itself.
@@ -135,7 +161,9 @@ it("whole-rollout Stop and replay never upgrade older muted turns on unmute", as
       .filter((run: any) => run.extra.metadata.turn_id === "future")
       .some((run: any) => JSON.stringify(run).includes("PUBLIC_FUTURE")),
   ).toBe(true);
-  expect(await upload(file, "future")).toEqual([]);
+  const requestCount = local.requests.length;
+  await upload(file, "future");
+  expect(local.requests).toHaveLength(requestCount);
   await seedTracedHistory(file);
   const replay = await upload(file, "future");
   expectMuted(replay.filter((run: any) => run.extra.metadata.turn_id === "private"));
@@ -167,7 +195,9 @@ it.each([false, true])(
     const recursive = await upload(root, "launch");
     expectMuted(recursive);
     expect(recursive.filter((run: any) => run.run_type === "chain")).toHaveLength(3);
-    expect(await upload(child, "child-turn")).toEqual([]);
+    const requestCount = local.requests.length;
+    await upload(child, "child-turn");
+    expect(local.requests).toHaveLength(requestCount);
   },
 );
 it("full launch stays full for direct descendants even after parent mute", async () => {
@@ -250,3 +280,13 @@ it.each([true, false])(
     }
   },
 );
+
+it("keeps rejected metadata-only writes free of private content", async () => {
+  const file = await rollout("root", turn("private", "PRIVATE_REJECTED"));
+  local.setFailWrites(true);
+  await expect(upload(file, "private")).rejects.toThrow();
+  expectMuted(
+    local.requests.filter((request) => request.method === "POST").map((request) => request.body),
+  );
+  expect(local.runs.size).toBe(0);
+});

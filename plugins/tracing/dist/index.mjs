@@ -14388,6 +14388,23 @@ const $ZodEnum = /*@__PURE__*/ $constructor("$ZodEnum", (inst, def) => {
 		return payload;
 	};
 });
+const $ZodLiteral = /*@__PURE__*/ $constructor("$ZodLiteral", (inst, def) => {
+	$ZodType.init(inst, def);
+	const values = new Set(def.values);
+	inst._zod.values = values;
+	inst._zod.pattern = new RegExp(def.values.length ? `^(${def.values.map((o) => typeof o === "string" ? escapeRegex(o) : o ? escapeRegex(o.toString()) : String(o)).join("|")})$` : "^[^\\s\\S]$");
+	inst._zod.parse = (payload, _ctx) => {
+		const input = payload.value;
+		if (values.has(input)) return payload;
+		payload.issues.push({
+			code: "invalid_value",
+			values: def.values,
+			input,
+			inst
+		});
+		return payload;
+	};
+});
 const $ZodTransform = /*@__PURE__*/ $constructor("$ZodTransform", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.optin = "optional";
@@ -16008,6 +16025,32 @@ const enumProcessor = (schema, _ctx, json, _params) => {
 	if (values.every((v) => typeof v === "string")) json.type = "string";
 	json.enum = values;
 };
+const literalProcessor = (schema, ctx, json, params) => {
+	const def = schema._zod.def;
+	if (def.values.length === 0) {
+		json.not = {};
+		return;
+	}
+	const vals = [];
+	for (const val of def.values) if (val === void 0) {
+		if (handleUnrepresentable(schema, ctx, json, params, "Literal `undefined` cannot be represented in JSON Schema")) return;
+	} else if (typeof val === "bigint") {
+		if (handleUnrepresentable(schema, ctx, json, params, "BigInt literals cannot be represented in JSON Schema")) return;
+		vals.push(Number(val));
+	} else vals.push(val);
+	if (vals.length === 0) {} else if (vals.length === 1) {
+		const val = vals[0];
+		json.type = val === null ? "null" : typeof val;
+		if (ctx.target === "draft-04" || ctx.target === "openapi-3.0") json.enum = [val];
+		else json.const = val;
+	} else {
+		if (vals.every((v) => typeof v === "number")) json.type = "number";
+		if (vals.every((v) => typeof v === "string")) json.type = "string";
+		if (vals.every((v) => typeof v === "boolean")) json.type = "boolean";
+		if (vals.every((v) => v === null)) json.type = "null";
+		json.enum = vals;
+	}
+};
 const customProcessor = (schema, ctx, json, params) => {
 	handleUnrepresentable(schema, ctx, json, params, "Custom types cannot be represented in JSON Schema");
 };
@@ -16950,6 +16993,14 @@ function object$1(shape, params) {
 	};
 	return new ZodObject(def);
 }
+function strictObject(shape, params) {
+	return new ZodObject({
+		type: "object",
+		shape,
+		catchall: never(),
+		...normalizeParams(params)
+	});
+}
 function looseObject(shape, params) {
 	return new ZodObject({
 		type: "object",
@@ -17005,6 +17056,15 @@ function record(keyType, valueType, params) {
 		...normalizeParams(params)
 	});
 }
+function partialRecord(keyType, valueType, params) {
+	return new ZodRecord({
+		type: "record",
+		keyType,
+		valueType,
+		...normalizeParams(params),
+		partial: true
+	});
+}
 const ZodEnum = /*@__PURE__*/ $constructor("ZodEnum", (inst, def) => {
 	$ZodEnum.init(inst, def);
 	ZodType.init(inst, def);
@@ -17040,6 +17100,23 @@ function _enum(values, params) {
 	return new ZodEnum({
 		type: "enum",
 		entries,
+		...normalizeParams(params)
+	});
+}
+const ZodLiteral = /*@__PURE__*/ $constructor("ZodLiteral", (inst, def) => {
+	$ZodLiteral.init(inst, def);
+	ZodType.init(inst, def);
+	inst._zod.processJSONSchema = (ctx, json, params) => literalProcessor(inst, ctx, json, params);
+	inst.values = new Set(def.values);
+	Object.defineProperty(inst, "value", { get() {
+		if (def.values.length > 1) throw new Error("This schema contains multiple valid literal values. Use `.values` instead.");
+		return def.values[0];
+	} });
+});
+function literal(value, params) {
+	return new ZodLiteral({
+		type: "literal",
+		values: Array.isArray(value) ? value : [value],
 		...normalizeParams(params)
 	});
 }
@@ -17654,15 +17731,6 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
-//#region src/models/trace-delivery.ts
-const TurnRunTopologySchema = looseObject({
-	parentRunId: string().max(64).nullable(),
-	traceId: string().max(64),
-	dottedOrder: string().max(TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH),
-	executionOrder: number().positive().refine(Number.isInteger),
-	childExecutionOrder: number().positive().refine(Number.isInteger)
-});
-//#endregion
 //#region src/utils/files.ts
 async function writePrivateFile(file, value, options = {}) {
 	const temporary = `${file}.${randomUUID()}.tmp`;
@@ -17873,6 +17941,455 @@ async function withFileLock(lockPath, action) {
 	}
 }
 //#endregion
+//#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function isRecord(value) {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+}
+//#endregion
+//#region src/tool-capture-constants.ts
+const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
+const TURN_CAPTURE_TRANSCRIPT = "transcript.jsonl";
+//#endregion
+//#region src/tool-capture.ts
+function turnCaptureDirectory(transcript, turn) {
+	return `${transcript}${TURN_CAPTURE_SUFFIX}${createHash("sha256").update(turn).digest("hex")}`;
+}
+async function readTranscript(file, turn) {
+	let contents;
+	try {
+		contents = await nodeFsPromises.readFile(file, "utf8");
+	} catch (error) {
+		if (error.code !== "ENOENT" || !turn) throw error;
+		contents = await nodeFsPromises.readFile(nodePath.join(turnCaptureDirectory(file, turn), TURN_CAPTURE_TRANSCRIPT), "utf8");
+	}
+	const lines = contents.split("\n");
+	return lines.flatMap((line, index) => {
+		if (!line.trim()) return [];
+		try {
+			return [JSON.parse(line)];
+		} catch (error) {
+			if (index === lines.length - 1 && !contents.endsWith("\n")) return [];
+			throw error;
+		}
+	});
+}
+//#endregion
+//#region src/metadata-constants.ts
+const GIT_COMMAND_TIMEOUT_MS = 2e3;
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
+const TOOL_PATH_KEYS = [
+	"file_path",
+	"notebook_path",
+	"path"
+];
+const REPOSITORY_METADATA_KEYS = [
+	"repository_url",
+	"repository_provider",
+	"repository_name",
+	"git_branch",
+	"git_commit_sha",
+	"ls_attribution_identifier"
+];
+const GITHUB_API_TIMEOUT_MS = 2e3;
+const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_SUFFIX = /\.git$/;
+//#endregion
+//#region src/utils/time.ts
+function normalizedTime(value) {
+	if (typeof value === "number") return value;
+	if (typeof value === "string") {
+		const parsed = Date.parse(value);
+		return Number.isNaN(parsed) ? value : parsed;
+	}
+}
+//#endregion
+//#region src/utils/http.ts
+function normalizedEndpoint(apiUrl) {
+	const url = new URL(apiUrl);
+	url.username = "";
+	url.password = "";
+	url.search = "";
+	url.hash = "";
+	return url.toString().replace(/\/+$/, "");
+}
+function errorStatus(error) {
+	if (error == null || typeof error !== "object" || !("status" in error)) return void 0;
+	const status = error.status;
+	return typeof status === "number" ? status : void 0;
+}
+//#endregion
+//#region src/utils/serialization.ts
+function copyExtraThroughJson(run) {
+	const copy = { ...run };
+	const extra = run.extra;
+	if (extra != null && typeof extra === "object") {
+		const serialized = JSON.stringify(extra);
+		if (serialized === void 0) delete copy.extra;
+		else copy.extra = JSON.parse(serialized);
+	}
+	return copy;
+}
+function sortedJson(value) {
+	if (value === null || typeof value !== "object") return JSON.stringify(value);
+	if (Array.isArray(value)) return `[${value.map(sortedJson).join(",")}]`;
+	const record = value;
+	return `{${Object.keys(record).sort().filter((key) => record[key] !== void 0).map((key) => `${JSON.stringify(key)}:${sortedJson(record[key])}`).join(",")}}`;
+}
+function digestFor(value) {
+	const json = JSON.stringify(value);
+	if (json === void 0) throw new Error("Incremental delivery payload is not serializable");
+	return createHash("sha256").update(sortedJson(JSON.parse(json))).digest("hex");
+}
+function containsExpected(actual, expected) {
+	if (expected === void 0) return true;
+	if (expected === null || typeof expected !== "object") return actual === expected;
+	if (Array.isArray(expected)) return Array.isArray(actual) && digestFor(actual) === digestFor(expected);
+	const record = asRecord(actual);
+	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
+}
+//#endregion
+//#region src/constants/incremental-delivery.ts
+const INCREMENTAL_DELIVERY_STORE_SUFFIX = ".langsmith-incremental";
+const INCREMENTAL_DELIVERY_LOCK_SUFFIX = ".lock";
+const INCREMENTAL_DELIVERY_MAX_BYTES = 4194304;
+const INCREMENTAL_DELIVERY_DIGEST_PATTERN = /^[a-f0-9]{64}$/;
+const INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS = ["LANGSMITH_PROJECT", "LANGCHAIN_PROJECT"];
+const INCREMENTAL_DELIVERY_READ_DELAYS = [
+	100,
+	250,
+	500,
+	1e3,
+	2e3,
+	4e3
+];
+const INCREMENTAL_DELIVERY_PATCH_FIELDS = [
+	"inputs",
+	"outputs",
+	"error",
+	"extra",
+	"tags",
+	"events"
+];
+const INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"ls_trace_schema_version",
+	"ls_integration",
+	"ls_agent_type",
+	"ls_tracing_mode"
+];
+const INCREMENTAL_RECOVERY_METADATA_KEYS = [
+	"thread_id",
+	"turn_id",
+	"cwd",
+	"ls_tracing_mode"
+];
+//#endregion
+//#region src/models/incremental-delivery.ts
+const IncrementalRunTopologySchema = strictObject({
+	parentRunId: string().nullable(),
+	traceId: string().optional(),
+	dottedOrder: string().optional(),
+	startTime: union([number(), string()]),
+	name: string(),
+	runType: string()
+});
+const IncrementalDeliveryCheckpointSchema = strictObject({
+	endpoint: string(),
+	projectName: string(),
+	runId: string(),
+	workspaceId: string().optional(),
+	credentialHash: string().regex(INCREMENTAL_DELIVERY_DIGEST_PATTERN).optional()
+}).extend({
+	topology: IncrementalRunTopologySchema,
+	createAttempted: literal(true),
+	deliveredDigest: string().regex(INCREMENTAL_DELIVERY_DIGEST_PATTERN).optional(),
+	finalized: literal(true).optional(),
+	recovery: strictObject({
+		redactionPolicy: string().regex(INCREMENTAL_DELIVERY_DIGEST_PATTERN).optional(),
+		sessionId: string().optional(),
+		turnKey: string(),
+		metadata: partialRecord(_enum([...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS]), string()),
+		endTime: union([number(), string()]).refine((value) => Number.isFinite(new Date(value).getTime())).optional()
+	}).optional()
+});
+//#endregion
+//#region src/incremental-delivery-store.ts
+function checkpointPath(rolloutFile, turnKey, identity) {
+	const identityHash = createHash("sha256").update(`${turnKey}\0${identity.endpoint}\0${identity.projectName}\0${identity.runId}\0workspace:${identity.workspaceId ?? ""}\0credential:${identity.credentialHash ?? ""}`).digest("hex");
+	return `${nodePath.resolve(rolloutFile)}${INCREMENTAL_DELIVERY_STORE_SUFFIX}-${identityHash}.json`;
+}
+function validateCheckpoint(value, identity) {
+	const parsed = IncrementalDeliveryCheckpointSchema.safeParse(value);
+	if (!parsed.success || parsed.data.endpoint !== identity.endpoint || parsed.data.projectName !== identity.projectName || parsed.data.runId !== identity.runId || parsed.data.workspaceId !== identity.workspaceId || parsed.data.credentialHash !== identity.credentialHash) throw new Error("Incremental delivery checkpoint is invalid");
+	return parsed.data;
+}
+function withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, action) {
+	const file = checkpointPath(rolloutFile, turnKey, identity);
+	return withFileLock(`${file}${INCREMENTAL_DELIVERY_LOCK_SUFFIX}`, async () => {
+		return action({
+			async load() {
+				const contents = await readBoundedText(file, INCREMENTAL_DELIVERY_MAX_BYTES).catch(ignoreMissingFile);
+				if (contents === void 0) return void 0;
+				let value;
+				try {
+					value = JSON.parse(contents);
+				} catch (error) {
+					throw new Error("Incremental delivery checkpoint is corrupt", { cause: error });
+				}
+				return validateCheckpoint(value, identity);
+			},
+			async save(checkpoint) {
+				const validated = validateCheckpoint(checkpoint, identity);
+				const contents = JSON.stringify(validated);
+				if (Buffer.byteLength(contents, "utf8") > 4194304) throw new Error("Incremental delivery checkpoint exceeds its size limit");
+				await writePrivateFile(file, contents, { sync: true });
+			}
+		});
+	});
+}
+//#endregion
+//#region src/incremental-run.ts
+function runtimeClientConfig(client) {
+	return client;
+}
+function endpointFor(client, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	return normalizedEndpoint(options?.apiUrl ?? configured);
+}
+function projectNameFor(run) {
+	const record = asRecord(run);
+	const explicit = record.project_name ?? record.session_name;
+	if (typeof explicit === "string" && explicit.length > 0) return explicit;
+	for (const key of INCREMENTAL_DELIVERY_ENV_PROJECT_KEYS) {
+		const value = process.env[key];
+		if (value) return value;
+	}
+	return TRACE_UPLOAD_DEFAULT_PROJECT;
+}
+function identityFor(client, endpoint, projectName, runId, options) {
+	const runtime = runtimeClientConfig(client);
+	const workspaceId = options?.workspaceId ?? runtime.workspaceId;
+	if (typeof workspaceId === "string" && workspaceId.trim().length > 0) return {
+		endpoint,
+		projectName,
+		runId,
+		workspaceId
+	};
+	const apiKey = options?.apiKey ?? runtime.apiKey;
+	return {
+		endpoint,
+		projectName,
+		runId,
+		...typeof apiKey === "string" && apiKey.length > 0 ? { credentialHash: createHash("sha256").update(apiKey).digest("hex") } : {}
+	};
+}
+function topologyFor(run) {
+	return {
+		parentRunId: run.parent_run_id ?? null,
+		...typeof run.trace_id === "string" ? { traceId: run.trace_id } : {},
+		...typeof run.dotted_order === "string" ? { dottedOrder: run.dotted_order } : {},
+		startTime: run.start_time ?? Date.now(),
+		name: run.name,
+		runType: run.run_type
+	};
+}
+function canonicalCreate(run, checkpoint) {
+	return {
+		...run,
+		id: checkpoint.runId,
+		name: checkpoint.topology.name,
+		run_type: checkpoint.topology.runType,
+		start_time: checkpoint.topology.startTime,
+		parent_run_id: checkpoint.topology.parentRunId ?? void 0,
+		trace_id: checkpoint.topology.traceId,
+		dotted_order: checkpoint.topology.dottedOrder
+	};
+}
+function mergePatchExtra(existing, desired, root) {
+	const desiredExtra = asRecord(desired.extra);
+	const desiredMetadata = asRecord(desiredExtra.metadata);
+	if (desiredMetadata.ls_tracing_mode === "metadata") return {
+		...desiredExtra,
+		metadata: desiredMetadata
+	};
+	const existingExtra = asRecord(existing.extra);
+	const existingMetadata = asRecord(existingExtra.metadata);
+	const metadata = { ...existingMetadata };
+	for (const [key, value] of Object.entries(desiredMetadata)) if (value !== void 0) metadata[key] = value;
+	if (root) for (const key of REPOSITORY_METADATA_KEYS) {
+		const existingValue = existingMetadata[key];
+		if (typeof existingValue === "string" && existingValue.length > 0) metadata[key] = existingValue;
+	}
+	return {
+		...existingExtra,
+		...desiredExtra,
+		metadata: Object.keys(metadata).length > 0 ? metadata : void 0
+	};
+}
+function matchesCheckpoint(existing, checkpoint, projectId) {
+	const topology = checkpoint.topology;
+	return existing.id === checkpoint.runId && (existing.parent_run_id ?? null) === topology.parentRunId && (existing.trace_id ?? void 0) === topology.traceId && (existing.dotted_order ?? void 0) === topology.dottedOrder && normalizedTime(existing.start_time) === normalizedTime(topology.startTime) && existing.name === topology.name && existing.run_type === topology.runType && existing.session_id === projectId;
+}
+function readClientForEndpoint(client, endpoint, options) {
+	const configured = runtimeClientConfig(client).apiUrl;
+	if (configured === void 0) throw new Error("LangSmith client has no API endpoint");
+	if (endpoint === normalizedEndpoint(configured) && options?.apiUrl === void 0 && options?.apiKey === void 0 && options?.workspaceId === void 0) return client;
+	const runtime = runtimeClientConfig(client);
+	return new Client({
+		apiUrl: options?.apiUrl ?? endpoint,
+		apiKey: options?.apiKey ?? runtime.apiKey,
+		workspaceId: options?.workspaceId ?? runtime.workspaceId,
+		headers: runtime.headers,
+		fetchOptions: runtime.fetchOptions,
+		fetchImplementation: runtime.fetchImplementation,
+		autoBatchTracing: false
+	});
+}
+//#endregion
+//#region src/incremental-delivery.ts
+async function readIndexedRun(client, runId) {
+	for (const wait of INCREMENTAL_DELIVERY_READ_DELAYS) try {
+		return await client.readRun(runId);
+	} catch (error) {
+		if (errorStatus(error) !== 404) throw error;
+		await setTimeout$1(wait);
+	}
+	return client.readRun(runId);
+}
+async function readAndValidate(client, options, checkpoint) {
+	const reader = readClientForEndpoint(client, checkpoint.endpoint, options);
+	const [existing, project] = await Promise.all([readIndexedRun(reader, checkpoint.runId), reader.readProject({ projectName: checkpoint.projectName })]);
+	if (!matchesCheckpoint(existing, checkpoint, project.id)) throw new Error("Existing run does not match its incremental delivery checkpoint");
+	return existing;
+}
+async function patchAndVerify(client, update, options, checkpoint) {
+	try {
+		await client.updateRun(checkpoint.runId, update, options);
+	} catch (error) {
+		if (errorStatus(error) !== 409) throw error;
+	}
+	for (const wait of [...INCREMENTAL_DELIVERY_READ_DELAYS, 0]) {
+		const existing = await readAndValidate(client, options, checkpoint);
+		if (normalizedTime(existing.end_time) === normalizedTime(update.end_time) && INCREMENTAL_DELIVERY_PATCH_FIELDS.every((key) => containsExpected(existing[key], asRecord(update)[key]))) return;
+		if (wait === 0) throw new Error("LangSmith has not applied the final run update");
+		await setTimeout$1(wait);
+	}
+}
+async function deliverCreate(client, createRun, run, options, rolloutFile, turnKey, finalize, redact, redactionPolicy, sessionId) {
+	const cleanRun = copyExtraThroughJson(run);
+	const originalMetadata = asRecord(asRecord(cleanRun.extra).metadata);
+	const recoveryMetadata = Object.fromEntries([...INCREMENTAL_RECOVERY_METADATA_KEYS, ...REPOSITORY_METADATA_KEYS].flatMap((key) => typeof originalMetadata[key] !== "string" || originalMetadata.ls_tracing_mode === "metadata" && key !== "thread_id" && key !== "turn_id" && key !== "ls_tracing_mode" ? [] : [[key, originalMetadata[key]]]));
+	const recovery = {
+		turnKey,
+		...sessionId === void 0 ? {} : { sessionId },
+		...redactionPolicy === void 0 ? {} : { redactionPolicy },
+		metadata: {
+			...redact ? redact(recoveryMetadata) : recoveryMetadata,
+			ls_tracing_mode: originalMetadata.ls_tracing_mode === "metadata" ? "metadata" : "full"
+		},
+		...cleanRun.end_time === void 0 ? {} : { endTime: cleanRun.end_time }
+	};
+	if (!finalize) {
+		cleanRun.end_time = void 0;
+		cleanRun.extra = {
+			metadata: asRecord(asRecord(cleanRun.extra).metadata),
+			toJSON() {
+				return { metadata: Object.fromEntries(INCREMENTAL_DELIVERY_INITIAL_METADATA_KEYS.flatMap((key) => this.metadata[key] === void 0 ? [] : [[key, this.metadata[key]]])) };
+			}
+		};
+	}
+	if (typeof cleanRun.id !== "string" || cleanRun.id.length === 0) {
+		await createRun(cleanRun, options);
+		return;
+	}
+	const projectName = projectNameFor(cleanRun);
+	const identity = identityFor(client, endpointFor(client, options), projectName, cleanRun.id, options);
+	await withIncrementalDeliveryCheckpoint(rolloutFile, turnKey, identity, async (store) => {
+		let checkpoint = await store.load();
+		const firstAttempt = checkpoint === void 0;
+		if (!checkpoint) {
+			checkpoint = {
+				...identity,
+				topology: topologyFor(cleanRun),
+				createAttempted: true,
+				recovery
+			};
+			await store.save(checkpoint);
+		}
+		if (!finalize && checkpoint.deliveredDigest !== void 0) return;
+		const canonical = canonicalCreate(cleanRun, checkpoint);
+		const digest = digestFor(canonical);
+		if (checkpoint.deliveredDigest === digest) return;
+		let existing;
+		if (!firstAttempt) try {
+			existing = await readAndValidate(client, options, checkpoint);
+		} catch (error) {
+			if (errorStatus(error) !== 404 || checkpoint.deliveredDigest !== void 0) throw error;
+		}
+		if (!existing) try {
+			await createRun(canonical, options);
+		} catch (error) {
+			if (errorStatus(error) !== 409) throw error;
+			try {
+				existing = await readAndValidate(client, options, checkpoint);
+			} catch (verificationError) {
+				throw new Error("Could not verify the existing run after a create conflict", { cause: verificationError });
+			}
+		}
+		if (existing && finalize) await patchAndVerify(client, {
+			end_time: canonical.end_time,
+			inputs: canonical.inputs,
+			outputs: canonical.outputs,
+			error: canonical.error,
+			extra: mergePatchExtra(existing, canonical, checkpoint.topology.runType === "chain")
+		}, options, checkpoint);
+		await store.save({
+			...checkpoint,
+			deliveredDigest: digest,
+			...finalize ? { finalized: true } : {}
+		});
+	});
+}
+function trackIncrementalDelivery(client, errors, rolloutFile, turnKey, finalize = true, redact, redactionPolicy, sessionId) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			try {
+				await deliverCreate(target, createRun, args[0], args[1], rolloutFile, turnKey, finalize, redact, redactionPolicy, sessionId);
+			} catch (error) {
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
+}
+//#endregion
+//#region src/models/trace-delivery.ts
+const TurnRunTopologySchema = looseObject({
+	parentRunId: string().max(64).nullable(),
+	traceId: string().max(64),
+	dottedOrder: string().max(TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH),
+	executionOrder: number().positive().refine(Number.isInteger),
+	childExecutionOrder: number().positive().refine(Number.isInteger)
+});
+//#endregion
 //#region src/trace-delivery-store.ts
 async function withRolloutLock(rolloutFile, action) {
 	return withFileLock(`${rolloutFile}${TRACE_UPLOAD_LOCK_SUFFIX}`, action);
@@ -17918,33 +18435,6 @@ function topologyFilePath(rolloutFile, turnId) {
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
-//#endregion
-//#region src/utils/objects.ts
-function isRecord(value) {
-	return value != null && typeof value === "object" && !Array.isArray(value);
-}
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
-//#region src/metadata-constants.ts
-const GIT_COMMAND_TIMEOUT_MS = 2e3;
-const GIT_LOCATION_ENV_KEYS = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_COMMON_DIR",
-	"GIT_INDEX_FILE",
-	"GIT_CEILING_DIRECTORIES"
-];
-const TOOL_WORKING_DIRECTORY_KEYS = ["cwd", "workdir"];
-const TOOL_PATH_KEYS = [
-	"file_path",
-	"notebook_path",
-	"path"
-];
-const GITHUB_API_TIMEOUT_MS = 2e3;
-const GIT_SCP_REMOTE = /^[^/@]+@([^:/]+):(.+)$/;
-const GIT_SUFFIX = /\.git$/;
 //#endregion
 //#region src/utils/paths.ts
 async function nearestExistingDirectory(target) {
@@ -18222,29 +18712,6 @@ async function resolveTurnAttribution(input) {
 //#region src/trace-delivery.ts
 function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
 	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
-}
-function trackRunDelivery(client, errors) {
-	const createRun = client.createRun.bind(client);
-	return new Proxy(client, { get(target, property) {
-		if (property === "createRun") return async (...args) => {
-			const run = args[0];
-			const projectName = "session_name" in run && typeof run.session_name === "string" ? run.session_name : typeof run.project_name === "string" ? run.project_name : TRACE_UPLOAD_DEFAULT_PROJECT;
-			try {
-				return await createRun(...args);
-			} catch (error) {
-				if (typeof error === "object" && error !== null && "status" in error && error.status === 409) try {
-					if (typeof run.id !== "string") throw error;
-					const existing = await target.readRun(run.id);
-					const project = await target.readProject({ projectName });
-					if (existing.id === run.id && existing.trace_id === run.trace_id && (existing.parent_run_id ?? void 0) === (run.parent_run_id ?? void 0) && existing.dotted_order === run.dotted_order && existing.name === run.name && existing.run_type === run.run_type && existing.session_id === project.id) return;
-				} catch {}
-				errors.push(error);
-				throw error;
-			}
-		};
-		const value = Reflect.get(target, property, target);
-		return typeof value === "function" ? value.bind(target) : value;
-	} });
 }
 //#endregion
 //#region src/skills.ts
@@ -18572,9 +19039,6 @@ function* enumerate(arr) {
 }
 //#endregion
 //#region src/trace.ts
-async function loadSession(name) {
-	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
 function extractSpawnedAgentId(output) {
 	let obj = output;
 	if (typeof output === "string") try {
@@ -18679,7 +19143,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		hasEvidence: false
 	};
 	visited.add(sessionId);
-	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+	const meta = (await readTranscript(file)).find((event) => event.type === "session_meta");
 	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return {
 		mode: "metadata",
 		hasEvidence: false
@@ -18697,7 +19161,7 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		let nativeTurn;
 		const calls = /* @__PURE__ */ new Map();
 		const launches = /* @__PURE__ */ new Set();
-		for (const event of await loadSession(parentFile)) {
+		for (const event of await readTranscript(parentFile)) {
 			if (event.type === "event_msg") {
 				if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
 				const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -18937,12 +19401,14 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	} catch {}
 	if (mode === "off") return;
 	const deliveryErrors = [];
-	const client = trackRunDelivery(options?.client ?? new Client({ autoBatchTracing: false }), deliveryErrors);
+	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+	const trackClient = (target) => trackIncrementalDelivery(target, deliveryErrors, rolloutFile, turnKey, !options?.partial);
+	const client = trackClient(sourceClient);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
 		return {
 			...replica,
-			client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client
+			client: replicaClient ? trackClient(replicaClient) : client
 		};
 	});
 	const postPromises = [];
@@ -19083,7 +19549,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		options?.visitedThreads?.add(subagentThread);
 		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 		if (subagentFile == null) return;
-		const events = await loadSession(subagentFile);
+		const events = await readTranscript(subagentFile);
 		await convertToRunTree({
 			transcript_path: subagentFile,
 			turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
@@ -19219,7 +19685,7 @@ async function convertToRunTreeWorker(input, options, visitedThreads) {
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
 	const turnStates = await loadTurnStates(input.transcript_path);
-	const events = await loadSession(input.transcript_path);
+	const events = await readTranscript(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
 			const source = payload.source;

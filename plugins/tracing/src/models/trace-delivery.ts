@@ -25,6 +25,8 @@ export interface RolloutTurnMode {
 }
 
 export interface TraceConversionOptions {
+  incremental?: boolean;
+  partial?: boolean;
   parentRunTree?: RunTree;
   client?: Client;
   metadata?: Record<string, unknown>;
