@@ -1,3 +1,4 @@
+import type { ToolCallEvidence } from "./models/tool-attribution.js";
 /**
  * Plain TypeScript types for legacy rollout JSONL lines from codex-rs/protocol
  * `RolloutLine`.
@@ -50,6 +51,7 @@ export type SessionMetaPayload = {
   dynamic_tools?: unknown[];
   memory_mode?: string;
   git?: GitInfo;
+  ls_attribution_identifier?: string;
 };
 
 export type SessionMetaLine = {
@@ -1070,6 +1072,7 @@ export type Session = {
   cli_version: string;
   cwd?: string;
   git?: GitInfo;
+  ls_attribution_identifier?: string;
   // Derived from `session_meta.source` (root vs spawned subagent thread).
   is_subagent?: boolean;
   // Parent (root, for depth-1) thread that this subagent groups under.
@@ -1111,13 +1114,7 @@ export type Task = {
   error: string | undefined;
   isErrorInterrupt: boolean;
   subagentThreads: string[];
-  toolCalls: {
-    [callId: string]: {
-      error: string | undefined;
-      timings: number[];
-      outputs: Record<string, unknown>;
-    };
-  };
+  toolCalls: Record<string, ToolCallEvidence>;
 };
 
 export type StandardMessage = {

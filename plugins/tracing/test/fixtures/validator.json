@@ -136,6 +136,15 @@
       "requiredWhereKnown": true
     },
     {
+      "key": "ls_attribution_identifier",
+      "appliesTo": ["root", "llm", "tool", "subagent", "interrupted"],
+      "type": "string",
+      "allowedValues": null,
+      "requirement": "contextual",
+      "requiredWhereKnown": false,
+      "note": "The Git author name or GitHub login for the repository attributed to the run. PII-sensitive."
+    },
+    {
       "key": "cwd",
       "appliesTo": ["root", "llm", "tool", "subagent", "interrupted"],
       "type": "string",
