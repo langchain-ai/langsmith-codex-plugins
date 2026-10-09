@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { constants as fsConstants } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { ignoreMissingFile, writePrivateFile } from "./utils/files.js";
@@ -12,8 +11,8 @@ import type {
   ReconciliationMetadata,
 } from "./models/tool-capture.js";
 import type { TurnMode } from "./models/tracing-policy.js";
-import type { LineSchema } from "./types.js";
-import { isRecord } from "./utils/objects.js";
+import type { LineSchema, SessionMetaLine } from "./types.js";
+import { readTranscriptSessionMetadata } from "./transcript-metadata.js";
 import {
   TURN_CAPTURE_SUFFIX,
   TURN_CAPTURE_TRANSCRIPT,
@@ -24,7 +23,6 @@ import {
   TURN_CAPTURE_PLAN,
   TOOL_CAPTURE_TEMP_PATTERN,
   TURN_CAPTURE_LOCK_SUFFIX,
-  SESSION_META_READ_MAX_BYTES,
 } from "./tool-capture-constants.js";
 
 export function turnCaptureDirectory(transcript: string, turn: string) {
@@ -94,27 +92,25 @@ export async function readTranscript(file: string, turn?: string): Promise<LineS
 }
 
 export async function transcriptSessionId(file: string): Promise<string | undefined> {
-  let handle: fs.FileHandle | undefined;
   try {
-    handle = await fs.open(
-      file,
-      fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW | (fsConstants.O_NONBLOCK ?? 0),
-    );
-    if (!(await handle.stat()).isFile()) return undefined;
-    const buffer = Buffer.alloc(SESSION_META_READ_MAX_BYTES);
-    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
-    const end = buffer.indexOf(0x0a, 0);
-    if (end < 0 || end > bytesRead) return undefined;
-    const event: unknown = JSON.parse(buffer.toString("utf8", 0, end));
-    return isRecord(event) && event.type === "session_meta" && isRecord(event.payload)
-      ? typeof event.payload.id === "string"
-        ? event.payload.id
-        : undefined
-      : undefined;
+    const metadata = await readTranscriptSessionMetadata(file);
+    return typeof metadata?.payload.id === "string" ? metadata.payload.id : undefined;
   } catch {
     return undefined;
-  } finally {
-    await handle?.close().catch(() => undefined);
+  }
+}
+
+export async function readTranscriptSessionMeta(
+  file: string,
+  turn?: string,
+): Promise<SessionMetaLine | undefined> {
+  try {
+    return await readTranscriptSessionMetadata(file);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT" || !turn) throw error;
+    return readTranscriptSessionMetadata(
+      path.join(turnCaptureDirectory(file, turn), TURN_CAPTURE_TRANSCRIPT),
+    );
   }
 }
 

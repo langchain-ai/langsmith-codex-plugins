@@ -5,27 +5,25 @@ import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "./shared-config.js";
+import { digestFor } from "./utils/serialization.js";
+import { isRecord } from "./utils/objects.js";
+import { defaultPrivacyPath, savedTurnMode } from "./tracing-policy.js";
+import type { TracingHookInput } from "./models/tool-capture.js";
 import { convertToRunTree } from "./trace.js";
+import { readTranscriptSessionMeta, recordToolHook } from "./tool-capture.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
-  const content = await readStdin<{
-    session_id: string;
-    turn_id: string;
-    transcript_path: string;
-    hook_event_name: "Stop" | "UserPromptSubmit";
-    cwd: string;
-    prompt: string;
-  }>();
+  const content = await readStdin<TracingHookInput>();
 
   if (content.hook_event_name === "UserPromptSubmit") {
     const result = await handlePromptSubmit(content);
     if (result) console.log(JSON.stringify(result));
     return;
   }
-  if (content.hook_event_name !== "Stop") return;
+  if (!["PreToolUse", "PostToolUse", "Stop"].includes(content.hook_event_name)) return;
   const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
 
   // Skip entirely if tracing is disabled
@@ -36,6 +34,23 @@ async function runHook() {
         config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : undefined,
       )
     : undefined;
+
+  if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+    const meta = await readTranscriptSessionMeta(content.transcript_path, content.turn_id);
+    if (
+      meta &&
+      (meta.payload.id !== content.session_id ||
+        meta.payload.thread_source === "subagent" ||
+        (isRecord(meta.payload.source) && meta.payload.source.subagent != null))
+    )
+      return;
+  }
+
+  if (content.hook_event_name === "PreToolUse") {
+    const mode = savedTurnMode(defaultPrivacyPath(), content.session_id, content.turn_id);
+    await recordToolHook(content, mode, anonymizer);
+    return;
+  }
 
   const client = new Client({
     apiKey: config.api_key,
@@ -63,7 +78,11 @@ async function runHook() {
       })
     : undefined;
 
+  const redactionPolicy = digestFor({ redact: config.redact, rules: config.redact_extra_rules });
   await convertToRunTree(content, {
+    redactionPolicy,
+    hook: content,
+    redactCapture: anonymizer,
     client,
     projectName: config.project,
     metadata: config.metadata,
