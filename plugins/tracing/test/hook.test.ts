@@ -4,6 +4,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
+import { SESSION_META_READ_MAX_BYTES } from "../src/constants/transcript-metadata.js";
+import { TURN_CAPTURE_TRANSCRIPT } from "../src/tool-capture-constants.js";
+import { turnCaptureDirectory } from "../src/tool-capture.js";
 
 let home: string;
 beforeEach(async () => {
@@ -141,6 +144,55 @@ it("keeps prompt handling synchronous and runs Stop uploads asynchronously", asy
     async: true,
     statusMessage: "Uploading Codex trace to LangSmith",
   });
+});
+it("checks the saved session header without parsing the transcript tail", async () => {
+  const transcript = path.join(home, "sessions", "rollout.jsonl");
+  const capture = turnCaptureDirectory(transcript, "turn");
+  await fs.mkdir(capture, { recursive: true });
+  await fs.writeFile(
+    path.join(capture, TURN_CAPTURE_TRANSCRIPT),
+    `${JSON.stringify({ type: "session_meta", payload: { id: "thread", source: "cli" } })}\nnot-json\n`,
+  );
+  const result = await raw(
+    JSON.stringify({
+      hook_event_name: "PreToolUse",
+      session_id: "thread",
+      turn_id: "turn",
+      cwd: home,
+      transcript_path: transcript,
+      tool_use_id: "tool",
+      tool_name: "exec_command",
+      tool_input: { command: "true" },
+    }),
+  );
+  expect(result).toEqual({ code: 0, stdout: "", stderr: "" });
+  expect((await fs.readdir(capture)).some((file) => file.endsWith(".start.json"))).toBe(true);
+});
+it("fails closed when session metadata exceeds the read limit", async () => {
+  const transcript = path.join(home, "sessions", "rollout.jsonl");
+  const capture = turnCaptureDirectory(transcript, "turn");
+  await fs.mkdir(path.dirname(transcript), { recursive: true });
+  await fs.writeFile(
+    transcript,
+    `${" ".repeat(SESSION_META_READ_MAX_BYTES + 1)}${JSON.stringify({
+      type: "session_meta",
+      payload: { id: "other", source: "cli" },
+    })}\n`,
+  );
+  const result = await raw(
+    JSON.stringify({
+      hook_event_name: "PreToolUse",
+      session_id: "thread",
+      turn_id: "turn",
+      cwd: home,
+      transcript_path: transcript,
+      tool_use_id: "tool",
+      tool_name: "exec_command",
+      tool_input: { command: "true" },
+    }),
+  );
+  expect(result.stderr).toContain("Transcript session metadata exceeds its size limit");
+  await expect(fs.stat(capture)).rejects.toMatchObject({ code: "ENOENT" });
 });
 it("the production bundle consumes exact controls with no credentials, across restarts", async () => {
   const muted = await hook("langsmith-tracing:mute", "control");

@@ -3,6 +3,8 @@ import {
   TRACE_UPLOAD_RUN_ID_MAX_LENGTH,
   TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH,
 } from "../constants.js";
+import type { LineSchema } from "../types.js";
+import type { CapturedTool, CaptureRedactor, TracingHookInput } from "./tool-capture.js";
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { TurnMode } from "./tracing-policy.js";
 import type { TRACE_UPLOAD_STATES } from "../constants.js";
@@ -25,8 +27,13 @@ export interface RolloutTurnMode {
 }
 
 export interface TraceConversionOptions {
-  incremental?: boolean;
   partial?: boolean;
+  incremental?: boolean;
+  events?: LineSchema[];
+  capturedTools?: CapturedTool[];
+  redactCapture?: CaptureRedactor;
+  redactionPolicy?: string;
+  hook?: TracingHookInput;
   parentRunTree?: RunTree;
   client?: Client;
   metadata?: Record<string, unknown>;
