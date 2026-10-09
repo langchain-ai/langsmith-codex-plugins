@@ -1,3 +1,5 @@
+import { readTranscript } from "./tool-capture.js";
+import { trackIncrementalDelivery } from "./incremental-delivery.js";
 import {
   loadTurnRunTopology,
   loadTurnStates,
@@ -16,7 +18,7 @@ import { findLast } from "./utils/findLast.js";
 import { isRecord } from "./utils/objects.js";
 import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
 import { resolveTurnAttribution } from "./attribution.js";
-import { stableRunId, trackRunDelivery } from "./trace-delivery.js";
+import { stableRunId } from "./trace-delivery.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   PostTurnOptions,
@@ -43,17 +45,6 @@ import {
 } from "./tracing-policy.js";
 import type { TurnMode } from "./models/tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
-
-async function loadSession(name: string) {
-  const data = await fs.readFile(name, "utf-8");
-
-  const result = data
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as LineSchema);
-
-  return result;
-}
 
 // spawn_agent's output carries the child thread id as `agent_id` (string or object).
 function extractSpawnedAgentId(output: unknown): string | undefined {
@@ -198,7 +189,7 @@ async function rolloutTurnMode(
 ): Promise<RolloutTurnMode> {
   if (visited.has(sessionId)) return { mode: "metadata", hasEvidence: false };
   visited.add(sessionId);
-  const events = await loadSession(file);
+  const events = await readTranscript(file);
   const meta = events.find((event) => event.type === "session_meta");
   if (meta?.type !== "session_meta" || meta.payload.id !== sessionId)
     return { mode: "metadata", hasEvidence: false };
@@ -226,7 +217,7 @@ async function rolloutTurnMode(
     let nativeTurn: string | undefined;
     const calls = new Map<string, string>();
     const launches = new Set<string>();
-    for (const event of await loadSession(parentFile)) {
+    for (const event of await readTranscript(parentFile)) {
       if (event.type === "event_msg") {
         if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
         const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -502,15 +493,15 @@ async function postTurn(
   }
   if (mode === "off") return;
   const deliveryErrors: unknown[] = [];
-  const client = trackRunDelivery(
-    options?.client ?? new Client({ autoBatchTracing: false }),
-    deliveryErrors,
-  );
+  const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
+  const trackClient = (target: Client) =>
+    trackIncrementalDelivery(target, deliveryErrors, rolloutFile, turnKey, !options?.partial);
+  const client = trackClient(sourceClient);
   const replicas = options?.replicas?.map((replica) => {
     const replicaClient = "client" in replica ? replica.client : undefined;
     return {
       ...replica,
-      client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client,
+      client: replicaClient ? trackClient(replicaClient) : client,
     };
   });
   const postPromises: Promise<void>[] = [];
@@ -710,7 +701,7 @@ async function postTurn(
     );
     if (subagentFile == null) return;
 
-    const events = await loadSession(subagentFile);
+    const events = await readTranscript(subagentFile);
     const lastEvent = findLast(
       events,
       (event) => event.type === "event_msg" && event.payload.turn_id != null,
@@ -937,7 +928,7 @@ async function convertToRunTreeWorker(
   }
 
   const turnStates = await loadTurnStates(input.transcript_path);
-  const events = await loadSession(input.transcript_path);
+  const events = await readTranscript(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
       // Subagent threads carry `source.subagent.thread_spawn`; roots use "cli".

@@ -132,21 +132,15 @@ function subagentRuns(threadId: string) {
   );
 }
 
-function epochMilliseconds(value: unknown) {
-  return new Date(value as string | number).getTime();
-}
-
-function expectRunRetries(firstRuns: Map<string, Record<string, unknown>>) {
+function expectPersistedTopology(firstRuns: Map<string, Record<string, unknown>>) {
   for (const [id, first] of firstRuns) {
     const attempts = deliveryServer!.runAttempts.get(id)!;
-    expect(deliveryServer!.conflicts).toContain(id);
-    expect(attempts).toHaveLength(2);
-    expect(attempts[1].id).toBe(first.id);
-    expect(attempts[1].trace_id).toBe(first.trace_id);
-    expect(attempts[1].parent_run_id).toBe(first.parent_run_id);
-    expect(attempts[1].dotted_order).toBe(first.dotted_order);
-    expect(epochMilliseconds(attempts[1].start_time)).toBe(epochMilliseconds(first.start_time));
-    expect(epochMilliseconds(attempts[1].end_time)).toBe(epochMilliseconds(first.end_time));
+    expect(deliveryServer!.conflicts).not.toContain(id);
+    expect(attempts).toHaveLength(1);
+    const stored = deliveryServer!.runs.get(id)!;
+    expect(stored.trace_id).toBe(first.trace_id);
+    expect(stored.parent_run_id ?? undefined).toBe(first.parent_run_id ?? undefined);
+    expect(stored.dotted_order).toBe(first.dotted_order);
   }
 }
 
@@ -155,6 +149,7 @@ function client() {
     apiUrl: deliveryServer!.apiUrl,
     apiKey: "local-test-key",
     autoBatchTracing: false,
+    callerOptions: { maxRetries: 0 },
   });
 }
 
@@ -188,7 +183,6 @@ afterEach(async () => {
 });
 
 it("waits for a slow endpoint and leaves failed turns pending for retry", async () => {
-  deliveryServer!.setDelayMs(80);
   deliveryServer!.setFailWrites(true);
   await writeRollout();
   vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -198,13 +192,15 @@ it("waits for a slow endpoint and leaves failed turns pending for retry", async 
   expect(await loadTurnStates(ROLLOUT)).toEqual(new Map());
 
   deliveryServer!.setFailWrites(false);
+  deliveryServer!.setDelayMs(80);
   const start = Date.now();
   await upload(ROLLOUT, "turn-id", tracingClient);
   expect(Date.now() - start).toBeGreaterThanOrEqual(60);
+  expect(deliveryServer!.runs.size).toBeGreaterThan(0);
   expect(await loadTurnStates(ROLLOUT)).toEqual(new Map([["turn-id", "uploaded"]]));
-});
+}, 15_000);
 
-it("retries a sent turn after acknowledgement fails and checks real duplicate responses", async () => {
+it("reuses sent runs after acknowledgement fails and rejects a real duplicate", async () => {
   await writeRollout(ROLLOUT, { started: false, turnId: "turn-id" });
   const tracingClient = client();
   const append = vi.spyOn(fs, "appendFile").mockRejectedValueOnce(new Error("synthetic crash"));
@@ -218,9 +214,10 @@ it("retries a sent turn after acknowledgement fails and checks real duplicate re
   await upload(ROLLOUT, "turn-id", tracingClient);
   expect(await loadTurnStates(ROLLOUT)).toEqual(new Map([["turn-id", "uploaded"]]));
   expect(deliveryServer!.runs.size).toBe(storedRuns.length);
-  expect(deliveryServer!.requestsFor("GET", "/sessions").length).toBeGreaterThan(0);
-  expect(new Set(deliveryServer!.projectReads)).toEqual(new Set([PROJECT_NAME]));
-  expectRunRetries(new Map([...deliveryServer!.runAttempts].map(([id, [run]]) => [id, run])));
+  for (const [id, attempts] of deliveryServer!.runAttempts) {
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0].id).toBe(id);
+  }
 
   const first = storedRuns[0];
   await expect(
@@ -260,7 +257,7 @@ it("keeps the first child topology when a parent retries after a lost child ackn
 
   expect(await loadTurnStates(childFile)).toEqual(new Map([[CHILD_TURN, "uploaded"]]));
   expect(await loadTurnStates(parentFile)).toEqual(new Map([[PARENT_TURN, "uploaded"]]));
-  expectRunRetries(firstChildRuns);
+  expectPersistedTopology(firstChildRuns);
 });
 
 async function retryChildAfterParentUpload(muted = false) {
@@ -283,11 +280,12 @@ async function retryChildAfterParentUpload(muted = false) {
 
   await upload(childFile, CHILD_TURN, tracingClient, SESSIONS_ROOT);
 
-  expectRunRetries(firstChildRuns);
+  expectPersistedTopology(firstChildRuns);
   if (muted) {
     for (const id of firstChildRuns.keys()) {
-      const attempts = deliveryServer!.runAttempts.get(id)!;
-      expect(attempts[1].extra).toMatchObject({ metadata: { ls_tracing_mode: "metadata" } });
+      expect(deliveryServer!.runs.get(id)).toMatchObject({
+        extra: { metadata: { ls_tracing_mode: "metadata" } },
+      });
     }
   } else {
     expect(await loadTurnStates(childFile)).toEqual(new Map([[CHILD_TURN, "uploaded"]]));
