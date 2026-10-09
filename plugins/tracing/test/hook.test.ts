@@ -124,7 +124,7 @@ it("still refuses a command line it does not recognise", async () => {
   expect(result).toBe(1);
 });
 
-it("the installed hook definition is synchronous and preserves Stop timing", async () => {
+it("keeps prompt handling synchronous and runs Stop uploads asynchronously", async () => {
   const definition = JSON.parse(
     await fs.readFile(new URL("../hooks/hooks.json", import.meta.url), "utf8"),
   );
@@ -138,6 +138,7 @@ it("the installed hook definition is synchronous and preserves Stop timing", asy
     command: submit.command,
     commandWindows: submit.commandWindows,
     timeout: 30,
+    async: true,
     statusMessage: "Uploading Codex trace to LangSmith",
   });
 });

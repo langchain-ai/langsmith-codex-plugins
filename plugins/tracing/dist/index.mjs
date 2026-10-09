@@ -1,5 +1,5 @@
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync, statSync } from "node:fs";
+import { constants, lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -7,11 +7,12 @@ import { dirname } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { v5 } from "uuid";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -185,11 +186,11 @@ function v35(version, hash, value, namespace, buf, offset) {
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v5.js
-function v5(value, namespace, buf, offset) {
+function v5$1(value, namespace, buf, offset) {
 	return v35(80, sha1, value, namespace, buf, offset);
 }
-v5.DNS = DNS;
-v5.URL = URL$1;
+v5$1.DNS = DNS;
+v5$1.URL = URL$1;
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
@@ -10869,7 +10870,7 @@ const getDefaultProjectName = () => {
 //#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
-	return v5(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
+	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
 }
 function stripNonAlphanumeric(input) {
 	return input.replace(/[-:.]/g, "");
@@ -12012,6 +12013,13 @@ function cleanRegex(source) {
 	const end = source.endsWith("$") ? source.length - 1 : source.length;
 	return source.slice(start, end);
 }
+function floatSafeRemainder(val, step) {
+	const ratio = val / step;
+	const roundedRatio = Math.round(ratio);
+	const tolerance = 4 * Number.EPSILON * Math.max(Math.abs(ratio), 1);
+	if (Math.abs(ratio - roundedRatio) < tolerance) return 0;
+	return ratio - roundedRatio;
+}
 function assignProp(target, prop, value) {
 	Object.defineProperty(target, prop, {
 		value,
@@ -12103,6 +12111,13 @@ function optionalKeys(shape) {
 		return shape[k]._zod.optin !== void 0 && shape[k]._zod.optout === "optional";
 	});
 }
+const NUMBER_FORMAT_RANGES = /*@__PURE__*/ (() => ({
+	safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+	int32: [-2147483648, 2147483647],
+	uint32: [0, 4294967295],
+	float32: [-34028234663852886e22, 34028234663852886e22],
+	float64: [-Number.MAX_VALUE, Number.MAX_VALUE]
+}))();
 function pick(schema, mask) {
 	const currDef = schema._zod.def;
 	const checks = currDef.checks;
@@ -12887,7 +12902,7 @@ const string$1 = (params) => {
 	return new RegExp(`^${regex}$`);
 };
 const integer = /^-?\d+$/;
-const number = /^-?\d+(?:\.\d+)?$/;
+const number$1 = /^-?\d+(?:\.\d+)?$/;
 const boolean$1 = /^(?:true|false)$/i;
 const lowercase = /^[^A-Z]*$/;
 const uppercase = /^[^a-z]*$/;
@@ -12904,6 +12919,149 @@ const _whenHasLength = (payload) => {
 	const val = payload.value;
 	return !nullish(val) && val.length !== void 0;
 };
+const numericOriginMap = {
+	number: "number",
+	bigint: "bigint",
+	object: "date"
+};
+const $ZodCheckLessThan = /*@__PURE__*/ $constructor("$ZodCheckLessThan", (inst, def) => {
+	$ZodCheck.init(inst, def);
+	const origin = numericOriginMap[typeof def.value];
+	inst._zod.onattach.push((inst) => {
+		const bag = inst._zod.bag;
+		const curr = (def.inclusive ? bag.maximum : bag.exclusiveMaximum) ?? Number.POSITIVE_INFINITY;
+		if (def.value < curr) {
+			if (def.inclusive) bag.maximum = def.value;
+			else bag.exclusiveMaximum = def.value;
+		}
+	});
+	inst._zod.check = (payload) => {
+		if (def.inclusive ? payload.value <= def.value : payload.value < def.value) return;
+		payload.issues.push({
+			origin: numericOriginMap[typeof payload.value] ?? origin,
+			code: "too_big",
+			maximum: typeof def.value === "object" ? def.value.getTime() : def.value,
+			input: payload.value,
+			inclusive: def.inclusive,
+			inst,
+			continue: !def.abort
+		});
+	};
+});
+const $ZodCheckGreaterThan = /*@__PURE__*/ $constructor("$ZodCheckGreaterThan", (inst, def) => {
+	$ZodCheck.init(inst, def);
+	const origin = numericOriginMap[typeof def.value];
+	inst._zod.onattach.push((inst) => {
+		const bag = inst._zod.bag;
+		const curr = (def.inclusive ? bag.minimum : bag.exclusiveMinimum) ?? Number.NEGATIVE_INFINITY;
+		if (def.value > curr) {
+			if (def.inclusive) bag.minimum = def.value;
+			else bag.exclusiveMinimum = def.value;
+		}
+	});
+	inst._zod.check = (payload) => {
+		if (def.inclusive ? payload.value >= def.value : payload.value > def.value) return;
+		payload.issues.push({
+			origin: numericOriginMap[typeof payload.value] ?? origin,
+			code: "too_small",
+			minimum: typeof def.value === "object" ? def.value.getTime() : def.value,
+			input: payload.value,
+			inclusive: def.inclusive,
+			inst,
+			continue: !def.abort
+		});
+	};
+});
+const $ZodCheckMultipleOf = /*@__PURE__*/ $constructor("$ZodCheckMultipleOf", (inst, def) => {
+	$ZodCheck.init(inst, def);
+	inst._zod.onattach.push((inst) => {
+		var _a;
+		(_a = inst._zod.bag).multipleOf ?? (_a.multipleOf = def.value);
+	});
+	inst._zod.check = (payload) => {
+		if (typeof payload.value !== typeof def.value) throw new Error("Cannot mix number and bigint in multiple_of check.");
+		if (typeof payload.value === "bigint" ? def.value !== BigInt(0) && payload.value % def.value === BigInt(0) : floatSafeRemainder(payload.value, def.value) === 0) return;
+		payload.issues.push({
+			origin: typeof payload.value,
+			code: "not_multiple_of",
+			divisor: def.value,
+			input: payload.value,
+			inst,
+			continue: !def.abort
+		});
+	};
+});
+const $ZodCheckNumberFormat = /*@__PURE__*/ $constructor("$ZodCheckNumberFormat", (inst, def) => {
+	$ZodCheck.init(inst, def);
+	def.format = def.format || "float64";
+	const isInt = def.format?.includes("int");
+	const origin = isInt ? "int" : "number";
+	const [minimum, maximum] = NUMBER_FORMAT_RANGES[def.format];
+	inst._zod.onattach.push((inst) => {
+		const bag = inst._zod.bag;
+		bag.format = def.format;
+		bag.minimum = minimum;
+		bag.maximum = maximum;
+		if (isInt) bag.pattern = integer;
+	});
+	inst._zod.check = (payload) => {
+		const input = payload.value;
+		if (isInt) {
+			if (!Number.isInteger(input)) {
+				payload.issues.push({
+					expected: origin,
+					format: def.format,
+					code: "invalid_type",
+					continue: false,
+					input,
+					inst
+				});
+				return;
+			}
+			if (!Number.isSafeInteger(input)) {
+				if (input > 0) payload.issues.push({
+					input,
+					code: "too_big",
+					maximum: Number.MAX_SAFE_INTEGER,
+					note: "Integers must be within the safe integer range.",
+					inst,
+					origin,
+					inclusive: true,
+					continue: !def.abort
+				});
+				else payload.issues.push({
+					input,
+					code: "too_small",
+					minimum: Number.MIN_SAFE_INTEGER,
+					note: "Integers must be within the safe integer range.",
+					inst,
+					origin,
+					inclusive: true,
+					continue: !def.abort
+				});
+				return;
+			}
+		}
+		if (input < minimum) payload.issues.push({
+			origin: "number",
+			input,
+			code: "too_small",
+			minimum,
+			inclusive: true,
+			inst,
+			continue: !def.abort
+		});
+		if (input > maximum) payload.issues.push({
+			origin: "number",
+			input,
+			code: "too_big",
+			maximum,
+			inclusive: true,
+			inst,
+			continue: !def.abort
+		});
+	};
+});
 const $ZodCheckMaxLength = /*@__PURE__*/ $constructor("$ZodCheckMaxLength", (inst, def) => {
 	var _a;
 	$ZodCheck.init(inst, def);
@@ -13568,6 +13726,30 @@ const $ZodJWT = /*@__PURE__*/ $constructor("$ZodJWT", (inst, def) => {
 		});
 	};
 });
+const $ZodNumber = /*@__PURE__*/ $constructor("$ZodNumber", (inst, def) => {
+	$ZodType.init(inst, def);
+	inst._zod.pattern = inst._zod.bag.pattern ?? number$1;
+	inst._zod.parse = (payload, _ctx) => {
+		if (def.coerce) try {
+			payload.value = Number(payload.value);
+		} catch (_) {}
+		const input = payload.value;
+		if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) return payload;
+		const received = typeof input === "number" ? Number.isNaN(input) ? "NaN" : !Number.isFinite(input) ? String(input) : void 0 : void 0;
+		payload.issues.push({
+			expected: "number",
+			code: "invalid_type",
+			input,
+			inst,
+			...received ? { received } : {}
+		});
+		return payload;
+	};
+});
+const $ZodNumberFormat = /*@__PURE__*/ $constructor("$ZodNumberFormat", (inst, def) => {
+	$ZodCheckNumberFormat.init(inst, def);
+	$ZodNumber.init(inst, def);
+});
 const $ZodBoolean = /*@__PURE__*/ $constructor("$ZodBoolean", (inst, def) => {
 	$ZodType.init(inst, def);
 	inst._zod.pattern = boolean$1;
@@ -14137,7 +14319,7 @@ const $ZodRecord = /*@__PURE__*/ $constructor("$ZodRecord", (inst, def) => {
 					issues: []
 				}, ctx);
 				if (keyResult instanceof Promise) throw new Error("Async schemas not supported in object keys currently");
-				if (typeof key === "string" && number.test(key) && keyResult.issues.length) {
+				if (typeof key === "string" && number$1.test(key) && keyResult.issues.length) {
 					const retryResult = def.keyType._zod.run({
 						value: Number(key),
 						issues: []
@@ -15080,6 +15262,24 @@ function _isoDuration(Class, params) {
 	});
 }
 // @__NO_SIDE_EFFECTS__
+function _number(Class, params) {
+	return new Class({
+		type: "number",
+		checks: [],
+		...normalizeParams(params)
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _int(Class, params) {
+	return new Class({
+		type: "number",
+		check: "number_format",
+		abort: false,
+		format: "safeint",
+		...normalizeParams(params)
+	});
+}
+// @__NO_SIDE_EFFECTS__
 function _boolean(Class, params) {
 	return new Class({
 		type: "boolean",
@@ -15095,6 +15295,50 @@ function _never(Class, params) {
 	return new Class({
 		type: "never",
 		...normalizeParams(params)
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _lt(value, params) {
+	return new $ZodCheckLessThan({
+		check: "less_than",
+		...normalizeParams(params),
+		value,
+		inclusive: false
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _lte(value, params) {
+	return new $ZodCheckLessThan({
+		check: "less_than",
+		...normalizeParams(params),
+		value,
+		inclusive: true
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _gt(value, params) {
+	return new $ZodCheckGreaterThan({
+		check: "greater_than",
+		...normalizeParams(params),
+		value,
+		inclusive: false
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _gte(value, params) {
+	return new $ZodCheckGreaterThan({
+		check: "greater_than",
+		...normalizeParams(params),
+		value,
+		inclusive: true
+	});
+}
+// @__NO_SIDE_EFFECTS__
+function _multipleOf(value, params) {
+	return new $ZodCheckMultipleOf({
+		check: "multiple_of",
+		...normalizeParams(params),
+		value
 	});
 }
 // @__NO_SIDE_EFFECTS__
@@ -15722,6 +15966,31 @@ const stringProcessor = (schema, ctx, _json, _params) => {
 		}))];
 	}
 };
+const numberProcessor = (schema, ctx, _json, params) => {
+	const json = _json;
+	const { minimum, maximum, format, multipleOf, exclusiveMaximum, exclusiveMinimum } = schema._zod.bag;
+	if (typeof format === "string" && format.includes("int")) json.type = "integer";
+	else json.type = "number";
+	const exMin = typeof exclusiveMinimum === "number" && exclusiveMinimum >= (minimum ?? Number.NEGATIVE_INFINITY);
+	const exMax = typeof exclusiveMaximum === "number" && exclusiveMaximum <= (maximum ?? Number.POSITIVE_INFINITY);
+	const legacy = ctx.target === "draft-04" || ctx.target === "openapi-3.0";
+	if (exMin) {
+		if (legacy) {
+			json.minimum = exclusiveMinimum;
+			json.exclusiveMinimum = true;
+		} else json.exclusiveMinimum = exclusiveMinimum;
+	} else if (typeof minimum === "number") json.minimum = minimum;
+	if (exMax) {
+		if (legacy) {
+			json.maximum = exclusiveMaximum;
+			json.exclusiveMaximum = true;
+		} else json.exclusiveMaximum = exclusiveMaximum;
+	} else if (typeof maximum === "number") json.maximum = maximum;
+	if (typeof multipleOf === "number") {
+		if (Number.isFinite(multipleOf) && multipleOf !== 0) json.multipleOf = Math.abs(multipleOf);
+		else handleUnrepresentable(schema, ctx, json, params, `A multipleOf divisor of ${multipleOf} cannot be represented in JSON Schema`);
+	}
+};
 const booleanProcessor = (_schema, _ctx, json, _params) => {
 	json.type = "boolean";
 };
@@ -15866,7 +16135,7 @@ function stringifyKeyNames(bySchema, json, visited) {
 	else if (typeof rest.const === "number") rest.const = String(rest.const);
 	if (!numericType) return rest;
 	rest.type = "string";
-	if (!values) rest.pattern = (types.includes("number") ? number : integer).source;
+	if (!values) rest.pattern = (types.includes("number") ? number$1 : integer).source;
 	return rest;
 }
 /** Every record of one conversion, so the carriers are found in a single pass rather than once per record. */
@@ -16491,6 +16760,73 @@ const ZodJWT = /*@__PURE__*/ $constructor("ZodJWT", (inst, def) => {
 	$ZodJWT.init(inst, def);
 	ZodStringFormat.init(inst, def);
 });
+const ZodNumber = /*@__PURE__*/ $constructor("ZodNumber", (inst, def) => {
+	$ZodNumber.init(inst, def);
+	ZodType.init(inst, def);
+	inst._zod.processJSONSchema = (ctx, json, params) => numberProcessor(inst, ctx, json, params);
+	const bag = inst._zod.bag;
+	inst.minValue = Math.max(bag.minimum ?? Number.NEGATIVE_INFINITY, bag.exclusiveMinimum ?? Number.NEGATIVE_INFINITY) ?? null;
+	inst.maxValue = Math.min(bag.maximum ?? Number.POSITIVE_INFINITY, bag.exclusiveMaximum ?? Number.POSITIVE_INFINITY) ?? null;
+	inst.isInt = (bag.format ?? "").includes("int") || Number.isSafeInteger(bag.multipleOf ?? .5);
+	inst.isFinite = true;
+	inst.format = bag.format ?? null;
+}, {
+	gt(value, params) {
+		return this.check(/* @__PURE__ */ _gt(value, params));
+	},
+	gte(value, params) {
+		return this.check(/* @__PURE__ */ _gte(value, params));
+	},
+	min(value, params) {
+		return this.check(/* @__PURE__ */ _gte(value, params));
+	},
+	lt(value, params) {
+		return this.check(/* @__PURE__ */ _lt(value, params));
+	},
+	lte(value, params) {
+		return this.check(/* @__PURE__ */ _lte(value, params));
+	},
+	max(value, params) {
+		return this.check(/* @__PURE__ */ _lte(value, params));
+	},
+	int(params) {
+		return this.check(int(params));
+	},
+	safe(params) {
+		return this.check(int(params));
+	},
+	positive(params) {
+		return this.check(/* @__PURE__ */ _gt(0, params));
+	},
+	nonnegative(params) {
+		return this.check(/* @__PURE__ */ _gte(0, params));
+	},
+	negative(params) {
+		return this.check(/* @__PURE__ */ _lt(0, params));
+	},
+	nonpositive(params) {
+		return this.check(/* @__PURE__ */ _lte(0, params));
+	},
+	multipleOf(value, params) {
+		return this.check(/* @__PURE__ */ _multipleOf(value, params));
+	},
+	step(value, params) {
+		return this.check(/* @__PURE__ */ _multipleOf(value, params));
+	},
+	finite() {
+		return this;
+	}
+});
+function number(params) {
+	return /* @__PURE__ */ _number(ZodNumber, params);
+}
+const ZodNumberFormat = /*@__PURE__*/ $constructor("ZodNumberFormat", (inst, def) => {
+	$ZodNumberFormat.init(inst, def);
+	ZodNumber.init(inst, def);
+});
+function int(params) {
+	return /* @__PURE__ */ _int(ZodNumberFormat, params);
+}
 const ZodBoolean = /*@__PURE__*/ $constructor("ZodBoolean", (inst, def) => {
 	$ZodBoolean.init(inst, def);
 	ZodType.init(inst, def);
@@ -16613,6 +16949,14 @@ function object$1(shape, params) {
 		...normalizeParams(params)
 	};
 	return new ZodObject(def);
+}
+function looseObject(shape, params) {
+	return new ZodObject({
+		type: "object",
+		shape,
+		catchall: unknown(),
+		...normalizeParams(params)
+	});
 }
 const ZodUnion = /*@__PURE__*/ $constructor("ZodUnion", (inst, def) => {
 	$ZodUnion.init(inst, def);
@@ -17215,6 +17559,22 @@ const LS_INTEGRATION = "openai-codex";
 const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
+const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+const TRACE_UPLOAD_DEFAULT_PROJECT = "default";
+const TRACE_UPLOAD_STATES = [
+	"uploaded",
+	"backlog",
+	"off"
+];
+const TRACE_UPLOAD_STATE_SUFFIX = ".langsmith";
+const TRACE_UPLOAD_LOCK_SUFFIX = ".langsmith.lock";
+const TRACE_UPLOAD_TOPOLOGY_SUFFIX = ".langsmith-topology";
+const TRACE_UPLOAD_TOPOLOGY_MAX_BYTES = 4096;
+const TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH = 2048;
+const FILE_LOCK_OWNER_FILENAME = "owner.json";
+const FILE_LOCK_INITIALIZING_MS = 1e3;
+const FILE_LOCK_WAIT_TIMEOUT_MS = 5e3;
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -17294,6 +17654,266 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
+//#region src/models/trace-delivery.ts
+const TurnRunTopologySchema = looseObject({
+	parentRunId: string().max(64).nullable(),
+	traceId: string().max(64),
+	dottedOrder: string().max(TRACE_UPLOAD_DOTTED_ORDER_MAX_LENGTH),
+	executionOrder: number().positive().refine(Number.isInteger),
+	childExecutionOrder: number().positive().refine(Number.isInteger)
+});
+//#endregion
+//#region src/utils/files.ts
+async function writePrivateFile(file, value, options = {}) {
+	const temporary = `${file}.${randomUUID()}.tmp`;
+	await nodeFsPromises.mkdir(nodePath.dirname(file), {
+		recursive: true,
+		mode: 448
+	});
+	try {
+		const handle = await nodeFsPromises.open(temporary, "wx", 384);
+		try {
+			await handle.writeFile(value, "utf8");
+			if (options.sync) await handle.sync();
+		} finally {
+			await handle.close();
+		}
+		if (options.firstWriteWins) try {
+			await nodeFsPromises.link(temporary, file);
+		} catch (error) {
+			if (error.code !== "EEXIST") throw error;
+		}
+		else await nodeFsPromises.rename(temporary, file);
+	} finally {
+		await nodeFsPromises.unlink(temporary).catch(ignoreMissingFile);
+	}
+}
+async function readBoundedText(file, maxBytes) {
+	const handle = await nodeFsPromises.open(file, "r");
+	try {
+		const buffer = Buffer.alloc(maxBytes + 1);
+		let length = 0;
+		while (length < buffer.length) {
+			const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+			if (bytesRead === 0) break;
+			length += bytesRead;
+		}
+		if (length > maxBytes) throw new Error("File exceeds its size limit");
+		return buffer.toString("utf8", 0, length);
+	} finally {
+		await handle.close();
+	}
+}
+function ignoreMissingFile(error) {
+	if (error.code !== "ENOENT") throw error;
+}
+//#endregion
+//#region src/utils/fileLock.ts
+async function readOwner(file) {
+	const stat = await nodeFsPromises.lstat(file).catch(ignoreMissingFile);
+	if (!stat) return { status: "missing" };
+	if (stat.isSymbolicLink() || !stat.isFile()) return { status: "unsafe" };
+	let handle;
+	try {
+		const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+		handle = await nodeFsPromises.open(file, flags);
+	} catch (error) {
+		const code = error.code;
+		if (code === "ENOENT") return { status: "missing" };
+		if (code === "ELOOP") return { status: "unsafe" };
+		throw error;
+	}
+	try {
+		if (!(await handle.stat()).isFile()) return { status: "unsafe" };
+		const contents = await handle.readFile("utf8");
+		let value;
+		try {
+			value = JSON.parse(contents);
+		} catch {
+			return { status: "malformed" };
+		}
+		if (value != null && typeof value === "object" && Number.isInteger(value.pid) && value.pid > 0 && typeof value.token === "string") return {
+			status: "valid",
+			owner: {
+				pid: value.pid,
+				token: value.token
+			}
+		};
+		return { status: "malformed" };
+	} finally {
+		await handle.close();
+	}
+}
+function processIsAlive(pid) {
+	if (pid <= 0) return false;
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return error.code === "EPERM";
+	}
+}
+async function lockDirectoryIsUnsafe(lockPath) {
+	const stat = await nodeFsPromises.lstat(lockPath).catch(ignoreMissingFile);
+	return stat != null && (stat.isSymbolicLink() || !stat.isDirectory());
+}
+async function lockIsOld(lockPath) {
+	const stat = await nodeFsPromises.lstat(lockPath).catch(ignoreMissingFile);
+	if (!stat || stat.isSymbolicLink()) return false;
+	return Date.now() - stat.mtimeMs >= FILE_LOCK_INITIALIZING_MS;
+}
+async function recoverLock(lockPath, observedOwner) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const recoveryPath = `${lockPath}.recover-${observedOwner.pid}`;
+	if (await lockDirectoryIsUnsafe(lockPath)) return false;
+	let recovery;
+	try {
+		recovery = await nodeFsPromises.open(recoveryPath, "wx", 384);
+	} catch (error) {
+		if (error.code !== "EEXIST") throw error;
+		const recoveryOwner = await readOwner(recoveryPath);
+		if (recoveryOwner.status === "valid" && !processIsAlive(recoveryOwner.owner.pid) || (recoveryOwner.status === "missing" || recoveryOwner.status === "malformed") && await lockIsOld(recoveryPath)) await nodeFsPromises.unlink(recoveryPath).catch(ignoreMissingFile);
+		return false;
+	}
+	try {
+		await recovery.writeFile(JSON.stringify({
+			pid: process.pid,
+			token: randomUUID()
+		}), "utf8");
+		if (await lockDirectoryIsUnsafe(lockPath)) return false;
+		const currentOwner = await readOwner(ownerFile);
+		if (currentOwner.status === "valid" && currentOwner.owner.pid === observedOwner.pid && currentOwner.owner.token === observedOwner.token && !processIsAlive(currentOwner.owner.pid)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			await nodeFsPromises.unlink(ownerFile);
+			await nodeFsPromises.rmdir(lockPath);
+			return true;
+		}
+		if ((currentOwner.status === "missing" || currentOwner.status === "malformed") && observedOwner.token === "invalid" && await lockIsOld(lockPath)) {
+			if (await lockDirectoryIsUnsafe(lockPath)) return false;
+			if (currentOwner.status === "malformed") await nodeFsPromises.unlink(ownerFile);
+			try {
+				await nodeFsPromises.rmdir(lockPath);
+				return true;
+			} catch (error) {
+				const code = error.code;
+				if (code === "ENOTEMPTY" || code === "EEXIST" || code === "ENOTDIR") return false;
+				throw error;
+			}
+		}
+		return false;
+	} finally {
+		await recovery.close();
+		await nodeFsPromises.unlink(recoveryPath).catch(ignoreMissingFile);
+	}
+}
+async function removeLockIfOwned(lockPath, token) {
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	const owner = await readOwner(ownerFile);
+	if (owner.status !== "valid" || owner.owner.pid !== process.pid || owner.owner.token !== token) return;
+	if (await lockDirectoryIsUnsafe(lockPath)) return;
+	await nodeFsPromises.unlink(ownerFile);
+	await nodeFsPromises.rmdir(lockPath);
+}
+async function acquireLock(lockPath, token) {
+	try {
+		await nodeFsPromises.mkdir(lockPath, { mode: 448 });
+		try {
+			await nodeFsPromises.writeFile(nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME), JSON.stringify({
+				pid: process.pid,
+				token
+			}), {
+				encoding: "utf8",
+				flag: "wx",
+				mode: 384
+			});
+		} catch (error) {
+			await nodeFsPromises.rmdir(lockPath).catch(() => void 0);
+			throw error;
+		}
+		return true;
+	} catch (error) {
+		if (error.code === "EEXIST") return false;
+		throw error;
+	}
+}
+async function inspectExistingLock(lockPath, failOnUnsafe) {
+	const ownerFile = nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME);
+	if (await lockDirectoryIsUnsafe(lockPath)) {
+		if (failOnUnsafe) throw new Error("Unsafe file lock directory");
+		return false;
+	}
+	const ownerRead = await readOwner(ownerFile);
+	if (ownerRead.status === "unsafe") {
+		if (failOnUnsafe) throw new Error("Unsafe file lock owner record");
+		return false;
+	}
+	if (ownerRead.status === "missing" || ownerRead.status === "malformed") {
+		if (await lockIsOld(lockPath)) await recoverLock(lockPath, {
+			pid: 0,
+			token: "invalid"
+		});
+	} else if (!processIsAlive(ownerRead.owner.pid)) await recoverLock(lockPath, ownerRead.owner);
+	return true;
+}
+async function withFileLock(lockPath, action) {
+	const token = randomUUID();
+	const deadline = performance$1.now() + FILE_LOCK_WAIT_TIMEOUT_MS;
+	while (true) {
+		if (await acquireLock(lockPath, token)) break;
+		await inspectExistingLock(lockPath, true);
+		const remaining = deadline - performance$1.now();
+		if (remaining <= 0) throw new Error(`Timed out waiting for file lock ${lockPath}`);
+		await setTimeout$1(Math.min(25, remaining));
+	}
+	try {
+		return await action();
+	} finally {
+		await removeLockIfOwned(lockPath, token);
+	}
+}
+//#endregion
+//#region src/trace-delivery-store.ts
+async function withRolloutLock(rolloutFile, action) {
+	return withFileLock(`${rolloutFile}${TRACE_UPLOAD_LOCK_SUFFIX}`, action);
+}
+function parseTurnState(line) {
+	try {
+		const value = JSON.parse(line);
+		if (value != null && typeof value === "object" && typeof value.turnId === "string" && TRACE_UPLOAD_STATES.includes(value.state)) return [value.turnId, value.state];
+	} catch {}
+	return [line, "uploaded"];
+}
+async function loadTurnStates(rolloutFile) {
+	const data = await nodeFsPromises.readFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, "utf-8").catch(ignoreMissingFile);
+	return new Map(data?.split("\n").filter(Boolean).map(parseTurnState));
+}
+async function markTurnHandled(rolloutFile, turnId, state) {
+	await nodeFsPromises.appendFile(`${rolloutFile}${TRACE_UPLOAD_STATE_SUFFIX}`, `${JSON.stringify({
+		turnId,
+		state
+	})}\n`, "utf-8");
+}
+async function loadTurnRunTopology(rolloutFile, turnId) {
+	const contents = await readBoundedText(topologyFilePath(rolloutFile, turnId), TRACE_UPLOAD_TOPOLOGY_MAX_BYTES).catch(ignoreMissingFile);
+	if (contents === void 0) return void 0;
+	for (const line of contents.split("\n").filter(Boolean)) try {
+		const value = JSON.parse(line);
+		const parsed = TurnRunTopologySchema.safeParse(value?.topology);
+		if (parsed.success) return parsed.data;
+	} catch {}
+}
+async function markTurnRunTopology(rolloutFile, turnId, topology) {
+	const topologyFile = topologyFilePath(rolloutFile, turnId);
+	const contents = JSON.stringify({ topology });
+	if (Buffer.byteLength(contents, "utf-8") > 4096) throw new Error("Trace upload topology checkpoint exceeds its size limit");
+	await writePrivateFile(topologyFile, contents);
+}
+function topologyFilePath(rolloutFile, turnId) {
+	const turnKey = createHash("sha256").update(turnId).digest("hex");
+	return `${rolloutFile}${TRACE_UPLOAD_TOPOLOGY_SUFFIX}-${turnKey}.json`;
+}
+//#endregion
 //#region src/utils/findLast.ts
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
@@ -17305,25 +17925,6 @@ function isRecord(value) {
 }
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
-//#endregion
-//#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}.langsmith`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}.langsmith`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch (error) {
-		return false;
-	}
 }
 //#endregion
 //#region src/metadata-constants.ts
@@ -17618,6 +18219,34 @@ async function resolveTurnAttribution(input) {
 	};
 }
 //#endregion
+//#region src/trace-delivery.ts
+function stableRunId(sessionId, rolloutFile, turnKey, runKey) {
+	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnKey}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
+}
+function trackRunDelivery(client, errors) {
+	const createRun = client.createRun.bind(client);
+	return new Proxy(client, { get(target, property) {
+		if (property === "createRun") return async (...args) => {
+			const run = args[0];
+			const projectName = "session_name" in run && typeof run.session_name === "string" ? run.session_name : typeof run.project_name === "string" ? run.project_name : TRACE_UPLOAD_DEFAULT_PROJECT;
+			try {
+				return await createRun(...args);
+			} catch (error) {
+				if (typeof error === "object" && error !== null && "status" in error && error.status === 409) try {
+					if (typeof run.id !== "string") throw error;
+					const existing = await target.readRun(run.id);
+					const project = await target.readProject({ projectName });
+					if (existing.id === run.id && existing.trace_id === run.trace_id && (existing.parent_run_id ?? void 0) === (run.parent_run_id ?? void 0) && existing.dotted_order === run.dotted_order && existing.name === run.name && existing.run_type === run.run_type && existing.session_id === project.id) return;
+				} catch {}
+				errors.push(error);
+				throw error;
+			}
+		};
+		const value = Reflect.get(target, property, target);
+		return typeof value === "function" ? value.bind(target) : value;
+	} });
+}
+//#endregion
 //#region src/skills.ts
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
@@ -17724,7 +18353,9 @@ function runConfigForMode(config, mode = "full") {
 		"end_time",
 		"parent_run_id",
 		"trace_id",
-		"dotted_order"
+		"dotted_order",
+		"execution_order",
+		"child_execution_order"
 	]) if (key in config && config[key] !== void 0) safe[key] = config[key];
 	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
 	safe.inputs = { messages: [{
@@ -17814,6 +18445,14 @@ function savedTurnMode(file, sessionId, turnId) {
 		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
 	} catch {
 		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
 	}
 }
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
@@ -18035,14 +18674,24 @@ async function findRolloutFileByThreadId(parentFileName, threadId, sessionsRoot)
 * parent's native turn, not the parent's current preference or Stop turn_id.
 * Missing/ambiguous launch evidence is metadata-only. No timing heuristic. */
 async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoot, visited = /* @__PURE__ */ new Set()) {
-	if (visited.has(sessionId)) return "metadata";
+	if (visited.has(sessionId)) return {
+		mode: "metadata",
+		hasEvidence: false
+	};
 	visited.add(sessionId);
 	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
-	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return "metadata";
+	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return {
+		mode: "metadata",
+		hasEvidence: false
+	};
 	const source = meta.payload.source;
 	const parentId = source && typeof source === "object" ? source.subagent?.thread_spawn?.parent_thread_id ?? meta.payload.parent_thread_id : meta.payload.parent_thread_id;
-	if (!(!!parentId || meta.payload.thread_source === "subagent" || source && typeof source === "object" && !!source.subagent)) return savedTurnMode(privacyPath, sessionId, turnId);
+	if (!(!!parentId || meta.payload.thread_source === "subagent" || source && typeof source === "object" && !!source.subagent)) return {
+		mode: savedTurnMode(privacyPath, sessionId, turnId),
+		hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId)
+	};
 	let mode = "metadata";
+	let hasEvidence = false;
 	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
 	if (parentFile && parentId) {
 		let nativeTurn;
@@ -18065,12 +18714,22 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 				if (event.payload.type === "function_call_output" && calls.has(event.payload.call_id) && extractSpawnedAgentId(event.payload.output) === sessionId) launches.add(calls.get(event.payload.call_id));
 			}
 		}
-		if (launches.size === 1) mode = await rolloutTurnMode(parentFile, parentId, [...launches][0], privacyPath, sessionsRoot, visited);
+		if (launches.size === 1) {
+			const launch = await rolloutTurnMode(parentFile, parentId, [...launches][0], privacyPath, sessionsRoot, visited);
+			mode = launch.mode;
+			hasEvidence = launch.hasEvidence;
+		}
 	}
 	try {
-		return await inheritThreadMode(privacyPath, sessionId, mode);
+		return {
+			mode: await inheritThreadMode(privacyPath, sessionId, mode),
+			hasEvidence
+		};
 	} catch {
-		return "metadata";
+		return {
+			mode: "metadata",
+			hasEvidence: false
+		};
 	}
 }
 function mergeMessages(result) {
@@ -18270,14 +18929,23 @@ function getUsageMetadata(counts) {
 		}
 	};
 }
-const PROMISE_QUEUE = [];
-async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options }) {
-	const mode = sessionMeta?.session_id ? await rolloutTurnMode(rolloutFile, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : "metadata";
+async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options, mode, turnKey, fallbackTime }) {
+	if (sessionMeta?.session_id) options?.visitedThreads?.add(sessionMeta.session_id);
+	if (sessionMeta?.parent_thread_id) options?.visitedThreads?.add(sessionMeta.parent_thread_id);
 	for (const child of task.subagentThreads) try {
 		await inheritThreadMode(options?.privacyPath ?? defaultPrivacyPath(), child, mode);
 	} catch {}
 	if (mode === "off") return;
-	const fallbackTime = Date.now();
+	const deliveryErrors = [];
+	const client = trackRunDelivery(options?.client ?? new Client({ autoBatchTracing: false }), deliveryErrors);
+	const replicas = options?.replicas?.map((replica) => {
+		const replicaClient = "client" in replica ? replica.client : void 0;
+		return {
+			...replica,
+			client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client
+		};
+	});
+	const postPromises = [];
 	const getSystemMessage = (session, task) => {
 		if (session?.base_instructions == null || task?.turnId == null) return [];
 		return [{
@@ -18297,7 +18965,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : void 0;
 	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
-	const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
+	const parentEndTime = Math.max(agent.at(-1)?.timestamp.end ?? parentStartTime, parentStartTime);
 	const debugNow = options?.debugNow ?? {
 		now: Date.now(),
 		startTime: parentStartTime
@@ -18344,12 +19012,13 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		attributionIdentifier,
 		sandboxType
 	}, existingRootMetadata);
-	const parent = createRunTree({
+	const parentConfig = {
+		id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, "root"),
 		name: "openai.codex",
-		client: options?.client,
+		client,
 		project_name: options?.projectName,
 		run_type: "chain",
-		replicas: options?.replicas,
+		replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
 		error: task.error,
@@ -18368,8 +19037,25 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			ls_message_format: "anthropic",
 			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 		}) }
-	}, mode, options?.parentRunTree);
-	PROMISE_QUEUE.push(parent.postRun());
+	};
+	const topology = await loadTurnRunTopology(rolloutFile, turnKey);
+	const parent = createRunTree(topology ? {
+		...parentConfig,
+		...topology.parentRunId === null ? {} : { parent_run_id: topology.parentRunId },
+		trace_id: topology.traceId,
+		dotted_order: topology.dottedOrder,
+		execution_order: topology.executionOrder,
+		child_execution_order: topology.childExecutionOrder
+	} : parentConfig, mode, topology ? void 0 : options?.parentRunTree);
+	parent.client = client;
+	if (topology == null) await markTurnRunTopology(rolloutFile, turnKey, {
+		parentRunId: parent.parent_run?.id ?? parent.parent_run_id ?? null,
+		traceId: parent.trace_id,
+		dottedOrder: parent.dotted_order,
+		executionOrder: parent.execution_order,
+		childExecutionOrder: parent.child_execution_order
+	});
+	postPromises.push(parent.postRun());
 	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 	const outputs = fullMessages.reduce((acc, item, idx) => {
 		if (item.message.role === "ai") acc.push(idx);
@@ -18393,6 +19079,8 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	async function postSubagentThread(subagentThread) {
 		if (postedSubagentThreads.has(subagentThread)) return;
 		postedSubagentThreads.add(subagentThread);
+		if (options?.visitedThreads?.has(subagentThread)) return;
+		options?.visitedThreads?.add(subagentThread);
 		const subagentFile = await findRolloutFileByThreadId(rolloutFile, subagentThread, options?.sessionsRoot);
 		if (subagentFile == null) return;
 		const events = await loadSession(subagentFile);
@@ -18406,7 +19094,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			replayHistory: true
 		});
 	}
-	for (const output of outputs) {
+	for (const [outputIndex, output] of outputs.entries()) {
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
 		const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -18415,6 +19103,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
 		const llmChild = createRunTree({
+			id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `llm:${outputIndex}`),
 			name: "openai.codex.turn",
 			run_type: "llm",
 			start_time: outputStartTime,
@@ -18431,7 +19120,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 				usage_metadata: getUsageMetadata(tokenCounts)
 			}) }
 		}, mode, parent);
-		PROMISE_QUEUE.push(llmChild.postRun());
+		postPromises.push(llmChild.postRun());
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
 			const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -18451,6 +19140,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const toolAttribution = attribution?.tools.get(toolCallId);
 			const toolRepositoryFields = toolAttribution != null && (toolAttribution.explicit || toolAttribution.resolved != null) ? toolRepositoryMetadata(toolAttribution.resolved) : {};
 			const toolRun = createRunTree({
+				id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `tool:${toolCallId}`),
 				name: runName,
 				run_type: "tool",
 				start_time: min,
@@ -18473,9 +19163,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
 				}) }
 			}, mode, parent);
-			PROMISE_QUEUE.push(toolRun.postRun());
+			postPromises.push(toolRun.postRun());
 			for (const skillName of skillNames) {
 				const skillRun = createRunTree({
+					id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `skill:${toolCallId}:${skillName}`),
 					name: "Skill",
 					run_type: "tool",
 					start_time: min,
@@ -18492,14 +19183,17 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 						ls_skill_name: skillName
 					}) }
 				}, mode, parent);
-				PROMISE_QUEUE.push(skillRun.postRun());
+				postPromises.push(skillRun.postRun());
 			}
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
+	await Promise.all(postPromises);
+	await client.awaitPendingTraceBatches();
+	if (deliveryErrors.length > 0) throw deliveryErrors[0];
 }
-async function convertToRunTree(input, options) {
+async function convertToRunTreeWorker(input, options, visitedThreads) {
 	let sessionMeta;
 	let task;
 	function createTask() {
@@ -18524,8 +19218,7 @@ async function convertToRunTree(input, options) {
 		const message = spawnAgentMessages.get(callId);
 		if (message != null && !message.subagentThreads.includes(threadId)) message.subagentThreads.push(threadId);
 	}
-	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
-	const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
+	const turnStates = await loadTurnStates(input.transcript_path);
 	const events = await loadSession(input.transcript_path);
 	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
 		if (type === "session_meta") {
@@ -18644,6 +19337,7 @@ async function convertToRunTree(input, options) {
 				task ??= createTask();
 				const privacyTurnId = task.turnId?.id;
 				const completedTurnId = task.turnId?.id ?? input.turn_id ?? void 0;
+				const turnKey = completedTurnId ?? `timestamp:${task.turnId?.timestamp ?? eventTime}`;
 				if (task.turnId == null && completedTurnId != null) task.turnId = {
 					id: completedTurnId,
 					timestamp: eventTime
@@ -18652,21 +19346,36 @@ async function convertToRunTree(input, options) {
 					turnNumber += 1;
 					task.turnNumber = turnNumber;
 				}
-				const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
-				const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-				if (!alreadyUploaded && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
-					rolloutFile: input.transcript_path,
-					options
-				});
-				if (completedTurnId != null && !alreadyUploaded) {
-					uploadedTurnIds.add(completedTurnId);
-					await markTurnUploaded(input.transcript_path, completedTurnId);
+				if (!(completedTurnId != null && turnStates.has(completedTurnId))) {
+					const turnMode = sessionMeta?.session_id ? await rolloutTurnMode(input.transcript_path, sessionMeta.session_id, privacyTurnId, options?.privacyPath ?? defaultPrivacyPath(), options?.sessionsRoot) : {
+						mode: "metadata",
+						hasEvidence: false
+					};
+					const isBacklog = options?.replayHistory !== true && input.turn_id != null && completedTurnId !== input.turn_id && !turnMode.hasEvidence;
+					const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
+					if (!isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
+						rolloutFile: input.transcript_path,
+						options: {
+							...options,
+							visitedThreads
+						},
+						mode: turnMode.mode,
+						turnKey,
+						fallbackTime: task.turnId?.timestamp ?? eventTime
+					});
+					if (completedTurnId != null) {
+						await markTurnHandled(input.transcript_path, completedTurnId, state);
+						turnStates.set(completedTurnId, state);
+					}
 				}
 				task = void 0;
 			}
 		}
 	}
-	await Promise.all(PROMISE_QUEUE);
+}
+async function convertToRunTree(input, options) {
+	const visitedThreads = options?.visitedThreads ?? /* @__PURE__ */ new Set();
+	return withRolloutLock(input.transcript_path, () => convertToRunTreeWorker(input, options, visitedThreads));
 }
 //#endregion
 //#region src/user-prompt-submit.ts
@@ -18744,8 +19453,19 @@ async function runHook() {
 		apiKey: config.api_key,
 		apiUrl: config.api_url,
 		anonymizer,
-		hideMetadata: anonymizer
+		hideMetadata: anonymizer,
+		autoBatchTracing: false
 	});
+	const replicas = toSdkReplicas(config.replicas)?.map((replica) => ({
+		...replica,
+		client: new Client({
+			apiKey: replica.apiKey ?? config.api_key,
+			apiUrl: replica.apiUrl ?? config.api_url,
+			anonymizer,
+			hideMetadata: anonymizer,
+			autoBatchTracing: false
+		})
+	}));
 	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
 		project_name: config.project
@@ -18754,7 +19474,7 @@ async function runHook() {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
-		replicas: toSdkReplicas(config.replicas),
+		replicas,
 		parentRunTree
 	});
 }

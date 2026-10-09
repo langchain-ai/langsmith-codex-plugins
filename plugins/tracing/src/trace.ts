@@ -1,15 +1,29 @@
+import {
+  loadTurnRunTopology,
+  loadTurnStates,
+  markTurnHandled,
+  markTurnRunTopology,
+  withRolloutLock,
+} from "./trace-delivery-store.js";
 import type { LineSchema, ResponseItem, SubagentSource } from "./types.js";
-import { Client, RunTreeConfig, RunTree } from "langsmith";
+import { Client } from "langsmith";
+import type { RunTreeConfig } from "langsmith";
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { isRecord } from "./utils/objects.js";
-import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { codingAgentMetadata, toolRepositoryMetadata, withTrustedMetadata } from "./metadata.js";
 import { resolveTurnAttribution } from "./attribution.js";
+import { stableRunId, trackRunDelivery } from "./trace-delivery.js";
 import { skillNamesFromToolCall } from "./skills.js";
+import type {
+  PostTurnOptions,
+  RolloutTurnMode,
+  TraceConversionInput,
+  TraceConversionOptions,
+} from "./models/trace-delivery.js";
 import type {
   Session,
   TokenCount,
@@ -23,10 +37,11 @@ import { createRunTree } from "./privacy.js";
 import type { CodingAgentContext } from "./metadata-models.js";
 import {
   defaultPrivacyPath,
+  hasSavedTurnEvidence,
   savedTurnMode,
   inheritThreadMode,
-  type TurnMode,
 } from "./tracing-policy.js";
+import type { TurnMode } from "./models/tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 
 async function loadSession(name: string) {
@@ -180,12 +195,13 @@ async function rolloutTurnMode(
   privacyPath: string,
   sessionsRoot?: string,
   visited = new Set<string>(),
-): Promise<TurnMode> {
-  if (visited.has(sessionId)) return "metadata";
+): Promise<RolloutTurnMode> {
+  if (visited.has(sessionId)) return { mode: "metadata", hasEvidence: false };
   visited.add(sessionId);
   const events = await loadSession(file);
   const meta = events.find((event) => event.type === "session_meta");
-  if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return "metadata";
+  if (meta?.type !== "session_meta" || meta.payload.id !== sessionId)
+    return { mode: "metadata", hasEvidence: false };
   const source = meta.payload.source as SubagentSource | undefined;
   const parentId =
     source && typeof source === "object"
@@ -195,8 +211,14 @@ async function rolloutTurnMode(
     !!parentId ||
     meta.payload.thread_source === "subagent" ||
     (source && typeof source === "object" && !!source.subagent);
-  if (!child) return savedTurnMode(privacyPath, sessionId, turnId);
+  if (!child) {
+    return {
+      mode: savedTurnMode(privacyPath, sessionId, turnId),
+      hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId),
+    };
+  }
   let mode: TurnMode = "metadata";
+  let hasEvidence = false;
   const parentFile = parentId
     ? await findRolloutFileByThreadId(file, parentId, sessionsRoot)
     : undefined;
@@ -233,8 +255,8 @@ async function rolloutTurnMode(
           launches.add(calls.get(event.payload.call_id)!);
       }
     }
-    if (launches.size === 1)
-      mode = await rolloutTurnMode(
+    if (launches.size === 1) {
+      const launch = await rolloutTurnMode(
         parentFile,
         parentId,
         [...launches][0],
@@ -242,11 +264,14 @@ async function rolloutTurnMode(
         sessionsRoot,
         visited,
       );
+      mode = launch.mode;
+      hasEvidence = launch.hasEvidence;
+    }
   }
   try {
-    return await inheritThreadMode(privacyPath, sessionId, mode);
+    return { mode: await inheritThreadMode(privacyPath, sessionId, mode), hasEvidence };
   } catch {
-    return "metadata";
+    return { mode: "metadata", hasEvidence: false };
   }
 }
 
@@ -459,39 +484,14 @@ function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknow
   };
 }
 
-const PROMISE_QUEUE: Promise<void>[] = [];
-
 async function postTurn(
   task: Task,
   sessionMeta: Session | undefined,
   privacyTurnId: string | undefined,
-  {
-    rolloutFile,
-    options,
-  }: {
-    rolloutFile: string;
-    options?: {
-      client?: Client;
-      projectName?: string;
-      metadata?: Record<string, unknown>;
-      replicas?: RunTreeConfig["replicas"];
-      sessionsRoot?: string;
-      privacyPath?: string;
-
-      parentRunTree?: RunTree;
-      debugNow?: { now: number; startTime: number };
-    };
-  },
+  { rolloutFile, options, mode, turnKey, fallbackTime }: PostTurnOptions,
 ) {
-  const mode = sessionMeta?.session_id
-    ? await rolloutTurnMode(
-        rolloutFile,
-        sessionMeta.session_id,
-        privacyTurnId,
-        options?.privacyPath ?? defaultPrivacyPath(),
-        options?.sessionsRoot,
-      )
-    : "metadata";
+  if (sessionMeta?.session_id) options?.visitedThreads?.add(sessionMeta.session_id);
+  if (sessionMeta?.parent_thread_id) options?.visitedThreads?.add(sessionMeta.parent_thread_id);
   // Persist launch inheritance even when master-off evidence skips this turn.
   for (const child of task.subagentThreads) {
     try {
@@ -501,17 +501,24 @@ async function postTurn(
     }
   }
   if (mode === "off") return;
-  const fallbackTime = Date.now();
+  const deliveryErrors: unknown[] = [];
+  const client = trackRunDelivery(
+    options?.client ?? new Client({ autoBatchTracing: false }),
+    deliveryErrors,
+  );
+  const replicas = options?.replicas?.map((replica) => {
+    const replicaClient = "client" in replica ? replica.client : undefined;
+    return {
+      ...replica,
+      client: replicaClient ? trackRunDelivery(replicaClient, deliveryErrors) : client,
+    };
+  });
+  const postPromises: Promise<void>[] = [];
 
   const getSystemMessage = (
     session: Session | undefined,
     task: Task | undefined,
-  ): {
-    message: StandardMessage;
-    timestamp: number;
-    tokenCount: TokenCount | undefined;
-    subagentThreads: string[];
-  }[] => {
+  ): AggregateMessage<StandardMessage>[] => {
     if (session?.base_instructions == null || task?.turnId == null) {
       return [];
     }
@@ -538,7 +545,7 @@ async function postTurn(
   );
 
   const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
-  const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
+  const parentEndTime = Math.max(agent.at(-1)?.timestamp.end ?? parentStartTime, parentStartTime);
 
   const debugNow = options?.debugNow ?? { now: Date.now(), startTime: parentStartTime };
 
@@ -602,11 +609,12 @@ async function postTurn(
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
   const parentConfig: RunTreeConfig = {
+    id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, "root"),
     name: "openai.codex",
-    client: options?.client,
+    client,
     project_name: options?.projectName,
     run_type: "chain",
-    replicas: options?.replicas,
+    replicas,
     inputs: { messages: user != null ? [user.message] : [] },
     outputs: { messages: agent.map((i) => i.message) },
     error: task.error,
@@ -635,9 +643,33 @@ async function postTurn(
       ),
     },
   };
-  const parent = createRunTree(parentConfig, mode, options?.parentRunTree);
+  const topology = await loadTurnRunTopology(rolloutFile, turnKey);
+  const parent = createRunTree(
+    topology
+      ? {
+          ...parentConfig,
+          ...(topology.parentRunId === null ? {} : { parent_run_id: topology.parentRunId }),
+          trace_id: topology.traceId,
+          dotted_order: topology.dottedOrder,
+          execution_order: topology.executionOrder,
+          child_execution_order: topology.childExecutionOrder,
+        }
+      : parentConfig,
+    mode,
+    topology ? undefined : options?.parentRunTree,
+  );
+  parent.client = client;
+  if (topology == null) {
+    await markTurnRunTopology(rolloutFile, turnKey, {
+      parentRunId: parent.parent_run?.id ?? parent.parent_run_id ?? null,
+      traceId: parent.trace_id,
+      dottedOrder: parent.dotted_order,
+      executionOrder: parent.execution_order,
+      childExecutionOrder: parent.child_execution_order,
+    });
+  }
 
-  PROMISE_QUEUE.push(parent.postRun());
+  postPromises.push(parent.postRun());
 
   const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 
@@ -668,6 +700,8 @@ async function postTurn(
   async function postSubagentThread(subagentThread: string) {
     if (postedSubagentThreads.has(subagentThread)) return;
     postedSubagentThreads.add(subagentThread);
+    if (options?.visitedThreads?.has(subagentThread)) return;
+    options?.visitedThreads?.add(subagentThread);
 
     const subagentFile = await findRolloutFileByThreadId(
       rolloutFile,
@@ -688,7 +722,7 @@ async function postTurn(
     );
   }
 
-  for (const output of outputs) {
+  for (const [outputIndex, output] of outputs.entries()) {
     const inputMessages = fullMessages.slice(0, output.start);
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
     const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -709,6 +743,7 @@ async function postTurn(
 
     const llmChild = createRunTree(
       {
+        id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `llm:${outputIndex}`),
         name: "openai.codex.turn",
         run_type: "llm",
         start_time: outputStartTime,
@@ -733,7 +768,7 @@ async function postTurn(
       mode,
       parent,
     );
-    PROMISE_QUEUE.push(llmChild.postRun());
+    postPromises.push(llmChild.postRun());
 
     for (const toolMessage of toolMessages) {
       if (toolMessage.message.role !== "tool") continue;
@@ -776,6 +811,7 @@ async function postTurn(
 
       const toolRun = createRunTree(
         {
+          id: stableRunId(sessionMeta?.session_id, rolloutFile, turnKey, `tool:${toolCallId}`),
           name: runName,
           run_type: "tool",
           start_time: min,
@@ -806,11 +842,17 @@ async function postTurn(
         mode,
         parent,
       );
-      PROMISE_QUEUE.push(toolRun.postRun());
+      postPromises.push(toolRun.postRun());
 
       for (const skillName of skillNames) {
         const skillRun = createRunTree(
           {
+            id: stableRunId(
+              sessionMeta?.session_id,
+              rolloutFile,
+              turnKey,
+              `skill:${toolCallId}:${skillName}`,
+            ),
             name: "Skill",
             run_type: "tool",
             // Only the call's own window is known, not when each read ran inside it.
@@ -836,7 +878,7 @@ async function postTurn(
           mode,
           parent,
         );
-        PROMISE_QUEUE.push(skillRun.postRun());
+        postPromises.push(skillRun.postRun());
       }
     }
 
@@ -849,25 +891,15 @@ async function postTurn(
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(subagentThread);
   }
+  await Promise.all(postPromises);
+  await client.awaitPendingTraceBatches();
+  if (deliveryErrors.length > 0) throw deliveryErrors[0];
 }
 
-export async function convertToRunTree(
-  input: { transcript_path: string; turn_id: string | null },
-  options?: {
-    parentRunTree?: RunTree;
-    client?: Client;
-    metadata?: Record<string, unknown>;
-    replicas?: RunTreeConfig["replicas"];
-    projectName?: string;
-    sessionsRoot?: string;
-    privacyPath?: string;
-    debugNow?: { now: number; startTime: number };
-    /**
-     * Post every turn the rollout holds, not just the one this hook fired for.
-     * Subagent rollouts are walked whole by design; the live Stop hook is not.
-     */
-    replayHistory?: boolean;
-  },
+async function convertToRunTreeWorker(
+  input: TraceConversionInput,
+  options: TraceConversionOptions | undefined,
+  visitedThreads: Set<string>,
 ) {
   let sessionMeta: Session | undefined;
   let task: Task | undefined;
@@ -904,16 +936,7 @@ export async function convertToRunTree(
     }
   }
 
-  // Turns that have already been uploaded in a previous hook invocation for the
-  // same rollout file. Used to avoid replaying completed turns when the user
-  // resumes or continues a conversation.
-  const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
-  // First Stop for this rollout: the file can already hold turns we never
-  // traced -- a thread resumed after the plugin was installed, or a fork that
-  // copied its parent's turns. Uploading that whole backlog inside one Stop
-  // hook is what times the hook out, so record those turns as handled and
-  // trace from this turn on.
-  const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
+  const turnStates = await loadTurnStates(input.transcript_path);
   const events = await loadSession(input.transcript_path);
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") {
@@ -1096,6 +1119,7 @@ export async function convertToRunTree(
         // that current ID to historical content with no native launch evidence.
         const privacyTurnId = task.turnId?.id;
         const completedTurnId = task.turnId?.id ?? input.turn_id ?? undefined;
+        const turnKey = completedTurnId ?? `timestamp:${task.turnId?.timestamp ?? eventTime}`;
         // Ensure a turn marker for turns completed without a task_started.
         if (task.turnId == null && completedTurnId != null) {
           task.turnId = { id: completedTurnId, timestamp: eventTime };
@@ -1104,22 +1128,49 @@ export async function convertToRunTree(
           turnNumber += 1;
           task.turnNumber = turnNumber;
         }
-        const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
-        const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-        if (!alreadyUploaded && !isBacklog) {
-          await postTurn(task, sessionMeta, privacyTurnId, {
-            rolloutFile: input.transcript_path,
-            options,
-          });
-        }
-        if (completedTurnId != null && !alreadyUploaded) {
-          uploadedTurnIds.add(completedTurnId);
-          await markTurnUploaded(input.transcript_path, completedTurnId);
+        const alreadyHandled = completedTurnId != null && turnStates.has(completedTurnId);
+        if (!alreadyHandled) {
+          const turnMode = sessionMeta?.session_id
+            ? await rolloutTurnMode(
+                input.transcript_path,
+                sessionMeta.session_id,
+                privacyTurnId,
+                options?.privacyPath ?? defaultPrivacyPath(),
+                options?.sessionsRoot,
+              )
+            : { mode: "metadata" as TurnMode, hasEvidence: false };
+          const isBacklog =
+            options?.replayHistory !== true &&
+            input.turn_id != null &&
+            completedTurnId !== input.turn_id &&
+            !turnMode.hasEvidence;
+          const state = isBacklog ? "backlog" : turnMode.mode === "off" ? "off" : "uploaded";
+          if (!isBacklog) {
+            await postTurn(task, sessionMeta, privacyTurnId, {
+              rolloutFile: input.transcript_path,
+              options: { ...options, visitedThreads },
+              mode: turnMode.mode,
+              turnKey,
+              fallbackTime: task.turnId?.timestamp ?? eventTime,
+            });
+          }
+          if (completedTurnId != null) {
+            await markTurnHandled(input.transcript_path, completedTurnId, state);
+            turnStates.set(completedTurnId, state);
+          }
         }
         task = undefined;
       }
     }
   }
+}
 
-  await Promise.all(PROMISE_QUEUE);
+export async function convertToRunTree(
+  input: TraceConversionInput,
+  options?: TraceConversionOptions,
+) {
+  const visitedThreads = options?.visitedThreads ?? new Set<string>();
+  return withRolloutLock(input.transcript_path, () =>
+    convertToRunTreeWorker(input, options, visitedThreads),
+  );
 }
