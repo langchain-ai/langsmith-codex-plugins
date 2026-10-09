@@ -13,6 +13,24 @@ export async function nearestExistingDirectory(target: string): Promise<string |
   }
 }
 
+export async function pathHasSymbolicLink(target: string): Promise<boolean> {
+  const parsed = path.parse(path.resolve(target));
+  let current = parsed.root;
+  for (const part of path
+    .resolve(target)
+    .slice(parsed.root.length)
+    .split(path.sep)
+    .filter(Boolean)) {
+    current = path.join(current, part);
+    try {
+      if ((await fs.lstat(current)).isSymbolicLink()) return true;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function absoluteTarget(value: unknown, base: string | undefined): string | undefined {
   if (typeof value !== "string" || value.length === 0) return undefined;
   if (path.isAbsolute(value)) return path.normalize(value);
