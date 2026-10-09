@@ -17772,177 +17772,33 @@ function containsExpected(actual, expected) {
 	return Object.entries(expected).every(([key, value]) => containsExpected(record[key], value));
 }
 //#endregion
-//#region src/tracing-policy.ts
-function isMode(value) {
-	return value === "full" || value === "metadata";
-}
-function isTurnMode(value) {
-	return isMode(value) || value === "off";
-}
-function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
-}
-function isObject(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasCode(error, code) {
-	return isObject(error) && error.code === code;
-}
-/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
-function readPolicy(path) {
-	let raw;
-	try {
-		raw = readFileSync(path, "utf8");
-	} catch (error) {
-		if (hasCode(error, "ENOENT")) try {
-			lstatSync(path);
-		} catch (statError) {
-			if (hasCode(statError, "ENOENT")) return {
-				version: 1,
-				threads: {}
-			};
-			throw statError;
-		}
-		throw error;
-	}
-	const value = JSON.parse(raw);
-	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
-	return value;
-}
-function defaultPrivacyPath() {
-	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
-}
-function threadPolicy(policy, id) {
-	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
-}
-/** No launch evidence means metadata-only, never today's sticky preference. */
-function savedTurnMode(file, sessionId, turnId) {
-	try {
-		const thread = threadPolicy(readPolicy(file), sessionId);
-		if (thread?.inherited) return thread.inherited;
-		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
-	} catch {
-		return "metadata";
-	}
-}
-function hasSavedTurnEvidence(file, sessionId, turnId) {
-	if (!turnId) return false;
-	try {
-		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
-	} catch {
-		return false;
-	}
-}
-/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
-function parseTracingCommand(prompt) {
-	if (prompt === "langsmith-tracing:mute") return "mute";
-	if (prompt === "langsmith-tracing:unmute") return "unmute";
-}
-/**
-* Independent of tracing state and its pruning. Writers serialize through an
-* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
-* No age/PID-based stealing: even a slow live writer is safe.
-* A crashed writer's lock requires explicit removal after confirming it is idle.
-* Rename commits the effective preference. Later durability/cleanup failures are
-* returned as local warnings, not thrown as if the preference were unchanged.
-*/
-async function updatePolicy(path, update) {
-	const lockPath = `${path}.lock`;
-	await mkdir(dirname(path), {
-		recursive: true,
-		mode: 448
-	});
-	const deadline = performance$1.now() + 2e3;
-	let locked = false;
-	while (!locked) try {
-		await mkdir(lockPath, { mode: 448 });
-		locked = true;
-	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
-		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
-		await setTimeout$1(10 + Math.random() * 20);
-	}
-	const warnings = [];
-	async function bestEffort(action, message) {
-		try {
-			await action();
-		} catch (error) {
-			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	let tempPath;
-	try {
-		let policy;
-		try {
-			policy = readPolicy(path);
-		} catch (error) {
-			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
-		}
-		update(policy);
-		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-		const temp = await open(tempPath, "wx", 384);
-		try {
-			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
-			await temp.sync();
-		} catch (error) {
-			await bestEffort(() => temp.close(), "Temporary file close failed");
-			throw error;
-		}
-		await temp.close();
-		await rename(tempPath, path);
-		tempPath = void 0;
-		await bestEffort(async () => {
-			const directory = await open(dirname(path), "r");
-			try {
-				await directory.sync();
-			} finally {
-				await bestEffort(() => directory.close(), "Directory close cleanup failed");
-			}
-		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
-	} finally {
-		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
-		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
-}
-function requireIds(sessionId, turnId) {
-	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
-}
-/** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
-	requireIds(sessionId, turnId);
-	return updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
-			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
-		};
-		if (command) thread.preference = command === "mute" ? "metadata" : "full";
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-}
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
-async function inheritThreadMode(file, sessionId, mode) {
-	let inherited = "metadata";
-	const result = await updatePolicy(file, (policy) => {
-		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
-		thread.inherited ??= mode;
-		inherited = thread.inherited;
-		policy.threads = {
-			...policy.threads,
-			[sessionId]: thread
-		};
-	});
-	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
-	return inherited;
-}
+//#region src/constants/tracing-policy.ts
+const THREAD_POLICY_FIELDS = [
+	"preference",
+	"turns",
+	"inherited",
+	"lastActivityAt",
+	"historyPruned"
+];
+//#endregion
+//#region src/constants/stale-state-cleanup.ts
+const STALE_PLUGIN_TTL_MS = 72e5;
+const STALE_PLUGIN_TOPOLOGY_TEMP_PATTERN = /^(.+\.jsonl)\.langsmith-topology-[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.tmp$/;
+const STALE_PLUGIN_INCREMENTAL_TEMP_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json\.[a-f0-9-]{36}\.tmp$/;
+const STALE_PLUGIN_STATE_PATTERN = /^(.+\.jsonl)\.langsmith$/;
+const STALE_PLUGIN_TOPOLOGY_PATTERN = /^(.+\.jsonl)\.langsmith-topology-[a-f0-9]{64}\.json$/;
+const STALE_PLUGIN_INCREMENTAL_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json$/;
+const STALE_PLUGIN_INCREMENTAL_LOCK_PATTERN = /^(.+\.jsonl)\.langsmith-incremental-[a-f0-9]{64}\.json\.lock$/;
+const STALE_PLUGIN_LOCK_RECOVERY_PATTERN = /^(.+\.jsonl)(\.langsmith\.lock|\.langsmith-capture\.lock|\.langsmith-incremental-[a-f0-9]{64}\.json\.lock)\.recover-[0-9]+$/;
+const STALE_PLUGIN_CAPTURE_PATTERN = /^(.+\.jsonl)\.langsmith-capture-[a-f0-9]{64}$/;
+const STALE_PLUGIN_UUID_PATTERN = /^rollout-.+-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.jsonl(?:\.zst)?$/;
+const STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN = /^rollout-.+\.jsonl(?:\.zst)?$/;
+const STALE_PLUGIN_NATIVE_LOCK_PATTERN = /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.lock$/;
+const STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN = /\.zst$/;
+const STALE_PRIVACY_TEMP_PATTERN = /^(\d+)\.[a-f0-9-]{36}\.tmp$/;
+const CODEX_SESSIONS_DIRECTORY = "sessions";
+const CODEX_WRITER_LOCKS_DIRECTORY = "thread-writer-locks";
+const STALE_RECOVERY_ERROR = "Turn interrupted before tracing completed";
 //#endregion
 //#region src/utils/files.ts
 async function writePrivateFile(file, value, options = {}) {
@@ -18032,6 +17888,23 @@ function processIsAlive(pid) {
 		return true;
 	} catch (error) {
 		return error.code === "EPERM";
+	}
+}
+async function fileLockRecoveryOwnerState(recoveryFile) {
+	const owner = await readOwner(recoveryFile);
+	if (owner.status !== "valid") return "unknown";
+	return processIsAlive(owner.owner.pid) ? "live" : "dead";
+}
+async function fileLockOwnerIsLive(lockPath) {
+	try {
+		const lock = await nodeFsPromises.lstat(lockPath);
+		if (lock.isSymbolicLink() || !lock.isDirectory()) return true;
+		const owner = await readOwner(nodePath.join(lockPath, FILE_LOCK_OWNER_FILENAME));
+		if (owner.status === "valid") return processIsAlive(owner.owner.pid);
+		return owner.status !== "missing";
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		return true;
 	}
 }
 async function lockDirectoryIsUnsafe(lockPath) {
@@ -18153,6 +18026,271 @@ async function withFileLock(lockPath, action) {
 		await removeLockIfOwned(lockPath, token);
 	}
 }
+async function tryWithFileLock(lockPath, action) {
+	const token = randomUUID();
+	if (!await acquireLock(lockPath, token)) {
+		if (!await inspectExistingLock(lockPath, false)) return { acquired: false };
+		if (await lockDirectoryIsUnsafe(lockPath)) return { acquired: false };
+		if (!await acquireLock(lockPath, token)) return { acquired: false };
+	}
+	try {
+		return {
+			acquired: true,
+			value: await action()
+		};
+	} finally {
+		await removeLockIfOwned(lockPath, token);
+	}
+}
+//#endregion
+//#region src/tracing-policy-cleanup.ts
+async function cleanupStalePrivacyTemps(file, cutoff) {
+	const directory = nodePath.dirname(file);
+	const prefix = `${nodePath.basename(file)}.`;
+	for (const name of await nodeFsPromises.readdir(directory)) {
+		if (!name.startsWith(prefix)) continue;
+		const match = STALE_PRIVACY_TEMP_PATTERN.exec(name.slice(prefix.length));
+		if (!match || processIsAlive(Number(match[1]))) continue;
+		const temporary = nodePath.join(directory, name);
+		const stat = await nodeFsPromises.lstat(temporary);
+		if (stat.isFile() && !stat.isSymbolicLink() && stat.mtimeMs <= cutoff) await nodeFsPromises.unlink(temporary);
+	}
+}
+//#endregion
+//#region src/tracing-policy.ts
+function isMode(value) {
+	return value === "full" || value === "metadata";
+}
+function isTurnMode(value) {
+	return isMode(value) || value === "off";
+}
+function validThread(value) {
+	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && (value.lastActivityAt === void 0 || typeof value.lastActivityAt === "number" && Number.isFinite(value.lastActivityAt)) && (value.historyPruned === void 0 || typeof value.historyPruned === "boolean") && Object.keys(value).every((key) => THREAD_POLICY_FIELDS.includes(key));
+}
+function isObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasCode(error, code) {
+	return isObject(error) && error.code === code;
+}
+/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
+function readPolicy(path) {
+	let raw;
+	try {
+		raw = readFileSync(path, "utf8");
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) try {
+			lstatSync(path);
+		} catch (statError) {
+			if (hasCode(statError, "ENOENT")) return {
+				version: 1,
+				threads: {}
+			};
+			throw statError;
+		}
+		throw error;
+	}
+	const value = JSON.parse(raw);
+	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+	return value;
+}
+function sessionLastActivity(file, sessionId) {
+	return threadPolicy(readPolicy(file), sessionId)?.lastActivityAt;
+}
+function defaultPrivacyPath() {
+	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+}
+function threadPolicy(policy, id) {
+	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
+}
+/** No launch evidence means metadata-only, never today's sticky preference. */
+function savedTurnMode(file, sessionId, turnId) {
+	try {
+		const thread = threadPolicy(readPolicy(file), sessionId);
+		if (thread?.historyPruned) {
+			if (thread.inherited === "off") return "off";
+			if (turnId && thread && Object.hasOwn(thread.turns, turnId)) return thread.turns[turnId];
+			return "metadata";
+		}
+		if (thread?.inherited) return thread.inherited;
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+	} catch {
+		return "metadata";
+	}
+}
+function hasSavedTurnEvidence(file, sessionId, turnId) {
+	if (!turnId) return false;
+	try {
+		return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+	} catch {
+		return false;
+	}
+}
+function hasPrunedSessionHistory(file, sessionId) {
+	try {
+		return threadPolicy(readPolicy(file), sessionId)?.historyPruned === true;
+	} catch {
+		return false;
+	}
+}
+/** Exact, argument-free commands only; ordinary prompts are never interpreted. */
+function parseTracingCommand(prompt) {
+	if (prompt === "langsmith-tracing:mute") return "mute";
+	if (prompt === "langsmith-tracing:unmute") return "unmute";
+}
+/**
+* Independent of tracing state and its pruning. Writers serialize through an
+* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
+* No age/PID-based stealing: even a slow live writer is safe.
+* A crashed writer's lock requires explicit removal after confirming it is idle.
+* Rename commits the effective preference. Later durability/cleanup failures are
+* returned as local warnings, not thrown as if the preference were unchanged.
+*/
+async function updatePolicy(path, update) {
+	const lockPath = `${path}.lock`;
+	await mkdir(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const deadline = performance$1.now() + 2e3;
+	let locked = false;
+	while (!locked) try {
+		await mkdir(lockPath, { mode: 448 });
+		locked = true;
+	} catch (error) {
+		if (!hasCode(error, "EEXIST")) throw error;
+		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
+		await setTimeout$1(10 + Math.random() * 20);
+	}
+	const warnings = [];
+	async function bestEffort(action, message) {
+		try {
+			await action();
+		} catch (error) {
+			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	let tempPath;
+	try {
+		let policy;
+		try {
+			policy = readPolicy(path);
+		} catch (error) {
+			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
+		}
+		const original = JSON.stringify(policy);
+		await update(policy);
+		if (JSON.stringify(policy) === original) return {};
+		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+		const temp = await open(tempPath, "wx", 384);
+		try {
+			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
+			await temp.sync();
+		} catch (error) {
+			await bestEffort(() => temp.close(), "Temporary file close failed");
+			throw error;
+		}
+		await temp.close();
+		await rename(tempPath, path);
+		tempPath = void 0;
+		await bestEffort(async () => {
+			const directory = await open(dirname(path), "r");
+			try {
+				await directory.sync();
+			} finally {
+				await bestEffort(() => directory.close(), "Directory close cleanup failed");
+			}
+		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
+	} finally {
+		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
+		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+function requireIds(sessionId, turnId) {
+	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
+}
+/** One atomic transaction preserves active/queued snapshots before changing preference. */
+async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+	requireIds(sessionId, turnId);
+	return updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		thread.lastActivityAt = Date.now();
+		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
+			...thread.turns,
+			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+		};
+		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+}
+async function inheritThreadMode(file, sessionId, mode) {
+	let inherited = "metadata";
+	const result = await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
+		if (!thread.historyPruned) thread.inherited ??= mode;
+		inherited = thread.historyPruned ? thread.inherited === "off" ? "off" : "metadata" : thread.inherited;
+		policy.threads = {
+			...policy.threads,
+			[sessionId]: thread
+		};
+	});
+	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	return inherited;
+}
+async function touchSessionActivity(file, sessionId) {
+	try {
+		lstatSync(file);
+	} catch (error) {
+		if (hasCode(error, "ENOENT")) return;
+		throw error;
+	}
+	await updatePolicy(file, (policy) => {
+		const thread = threadPolicy(policy, sessionId);
+		if (thread) thread.lastActivityAt = Date.now();
+	});
+}
+async function pruneInactiveSessionEvidence(file, options) {
+	const activeSessionIds = /* @__PURE__ */ new Set([options.currentSessionId, ...options.protectedSessionIds]);
+	const inactiveSessionIds = new Set(options.inactiveSessionIds);
+	const excludedSessionIds = new Set(options.excludedSessionIds ?? []);
+	const targetSessionIds = options.targetSessionIds && new Set(options.targetSessionIds);
+	const prunedSessionIds = /* @__PURE__ */ new Set();
+	try {
+		if (lstatSync(file).isSymbolicLink()) throw new Error("Cannot prune symbolic-link privacy state");
+	} catch (error) {
+		if (!hasCode(error, "ENOENT")) throw error;
+	}
+	const result = await updatePolicy(file, async (policy) => {
+		for (const [sessionId, thread] of Object.entries(policy.threads)) {
+			if (activeSessionIds.has(sessionId) || excludedSessionIds.has(sessionId) || targetSessionIds != null && !targetSessionIds.has(sessionId)) continue;
+			const timestamped = typeof thread.lastActivityAt === "number";
+			if (timestamped && thread.lastActivityAt > options.inactiveBefore) {
+				activeSessionIds.add(sessionId);
+				continue;
+			}
+			if (!timestamped && !inactiveSessionIds.has(sessionId)) {
+				if (Object.keys(thread.turns).length || thread.inherited !== void 0) thread.lastActivityAt = Date.now();
+				activeSessionIds.add(sessionId);
+				continue;
+			}
+			if (Object.keys(thread.turns).length || thread.inherited !== void 0) {
+				thread.turns = {};
+				thread.historyPruned = true;
+			}
+			prunedSessionIds.add(sessionId);
+		}
+		if (!targetSessionIds) await cleanupStalePrivacyTemps(file, options.inactiveBefore);
+	});
+	if (result.warning) throw new Error(result.warning);
+	return {
+		activeSessionIds: [...activeSessionIds],
+		prunedSessionIds: [...prunedSessionIds]
+	};
+}
 const SESSION_META_READ_CHUNK_BYTES = 4096;
 //#endregion
 //#region src/transcript-metadata.ts
@@ -18259,6 +18397,14 @@ async function readTranscript(file, turn) {
 		}
 	});
 }
+async function transcriptSessionId(file) {
+	try {
+		const metadata = await readTranscriptSessionMetadata(file);
+		return typeof metadata?.payload.id === "string" ? metadata.payload.id : void 0;
+	} catch {
+		return;
+	}
+}
 async function readTranscriptSessionMeta(file, turn) {
 	try {
 		return await readTranscriptSessionMetadata(file);
@@ -18267,11 +18413,11 @@ async function readTranscriptSessionMeta(file, turn) {
 		return readTranscriptSessionMetadata(nodePath.join(turnCaptureDirectory(file, turn), TURN_CAPTURE_TRANSCRIPT));
 	}
 }
-async function prepareTurnCapture(transcript, turn, mode, redact) {
+async function prepareTurnCapture(transcript, turn, mode, redact, savedOnly = false) {
 	const directory = turnCaptureDirectory(transcript, turn);
 	const snapshot = nodePath.join(directory, TURN_CAPTURE_TRANSCRIPT);
-	const events = await readTranscript(transcript, turn);
-	if (mode === "full") {
+	const events = savedOnly ? await readTranscript(snapshot).catch(ignoreMissingFile) ?? [] : await readTranscript(transcript, turn);
+	if (mode === "full" && !savedOnly) {
 		let active = false;
 		const current = events.filter((event) => {
 			if (event.type === "session_meta") return true;
@@ -18779,6 +18925,19 @@ async function nearestExistingDirectory(target) {
 		if (parent === current) return void 0;
 		current = parent;
 	}
+}
+async function pathHasSymbolicLink(target) {
+	const parsed = nodePath.parse(nodePath.resolve(target));
+	let current = parsed.root;
+	for (const part of nodePath.resolve(target).slice(parsed.root.length).split(nodePath.sep).filter(Boolean)) {
+		current = nodePath.join(current, part);
+		try {
+			if ((await nodeFsPromises.lstat(current)).isSymbolicLink()) return true;
+		} catch {
+			return true;
+		}
+	}
+	return false;
 }
 function absoluteTarget(value, base) {
 	if (typeof value !== "string" || value.length === 0) return void 0;
@@ -19370,6 +19529,10 @@ async function rolloutTurnMode(file, sessionId, turnId, privacyPath, sessionsRoo
 		mode: savedTurnMode(privacyPath, sessionId, turnId),
 		hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId)
 	};
+	if (hasPrunedSessionHistory(privacyPath, sessionId) && hasSavedTurnEvidence(privacyPath, sessionId, turnId)) return {
+		mode: savedTurnMode(privacyPath, sessionId, turnId),
+		hasEvidence: true
+	};
 	let mode = "metadata";
 	let hasEvidence = false;
 	const parentFile = parentId ? await findRolloutFileByThreadId(file, parentId, sessionsRoot) : void 0;
@@ -19618,7 +19781,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	if (mode === "off") return;
 	const deliveryErrors = [];
 	const sourceClient = options?.client ?? new Client({ autoBatchTracing: false });
-	const trackClient = (target) => trackIncrementalDelivery(target, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy);
+	const trackClient = (target) => trackIncrementalDelivery(target, deliveryErrors, rolloutFile, turnKey, !options?.partial, options?.redactCapture, options?.redactionPolicy, sessionMeta?.session_id);
 	const client = trackClient(sourceClient);
 	const replicas = options?.replicas?.map((replica) => {
 		const replicaClient = "client" in replica ? replica.client : void 0;
@@ -20129,6 +20292,425 @@ async function convertToRunTree(input, options) {
 	});
 }
 //#endregion
+//#region src/stale-turn-recovery.ts
+async function checkpointFromFile(file) {
+	const value = JSON.parse(await readBoundedText(file, INCREMENTAL_DELIVERY_MAX_BYTES));
+	return validateCheckpoint(value, value);
+}
+function matchingClient(checkpoint, clients) {
+	return clients.find((client) => {
+		const runtime = client;
+		if (!runtime.apiUrl || normalizedEndpoint(runtime.apiUrl) !== checkpoint.endpoint) return false;
+		const identity = identityFor(client, checkpoint.endpoint, checkpoint.projectName, checkpoint.runId);
+		return identity.workspaceId === checkpoint.workspaceId && identity.credentialHash === checkpoint.credentialHash;
+	});
+}
+async function recoverMetadata(group, checkpoint, redact) {
+	const recovery = checkpoint.recovery;
+	if (recovery.metadata.ls_tracing_mode !== "full") return void 0;
+	const capture = await prepareTurnCapture(group.transcript, recovery.turnKey, "full", void 0, true);
+	const evidence = {};
+	let active = false;
+	for (const event of capture.events) {
+		if (event.type !== "event_msg") continue;
+		const payload = event.payload;
+		if (payload.type === "task_started") active = payload.turn_id === recovery.turnKey;
+		if (!active || typeof payload.call_id !== "string") continue;
+		const tool = evidence[payload.call_id] ??= {
+			error: void 0,
+			timings: [],
+			outputs: {}
+		};
+		if (payload.type === "exec_command_end" && typeof payload.cwd === "string") tool.executionCwd = payload.cwd;
+		if (payload.type === "patch_apply_end") tool.changedPaths = Object.keys(asRecord(payload.changes));
+	}
+	const session = capture.events.find((event) => event.type === "session_meta");
+	if (session?.type === "session_meta" && session.payload.id !== group.sessionId) throw new Error("Recovery transcript does not match its session");
+	const metadata = recovery.metadata;
+	const messages = convertToStandardMessages(capture.events.flatMap((event) => event.type === "response_item" ? [{
+		message: event.payload,
+		timestamp: Date.parse(event.timestamp),
+		tokenCount: void 0,
+		subagentThreads: []
+	}] : []));
+	const attribution = await resolveTurnAttribution({
+		cwd: typeof metadata.cwd === "string" ? metadata.cwd : session?.payload.cwd,
+		sessionCwd: session?.payload.cwd,
+		sessionGit: session?.payload.git,
+		sessionIdentifier: session?.payload.ls_attribution_identifier,
+		existingMetadata: metadata,
+		messages: [...messages, ...capturedAttributionMessages(capture.tools, messages)].sort((a, b) => a.timestamp - b.timestamp),
+		toolCalls: evidence
+	});
+	const base = codingAgentMetadata({
+		agentType: "root",
+		git: attribution.git,
+		attributionIdentifier: attribution.identifier
+	}, metadata);
+	const plan = await reconciliationMetadata(group.transcript, recovery.turnKey, redact(proposedReconciliation(base, attribution)));
+	const planFile = nodePath.join(turnCaptureDirectory(group.transcript, recovery.turnKey), TURN_CAPTURE_PLAN);
+	if (!group.artifacts.includes(planFile)) group.artifacts.push(planFile);
+	return plan;
+}
+function staleTurnRecovery(clients, redact = createSecretAnonymizer(), redactionPolicy) {
+	let remaining = 100;
+	return async (group, guard = async () => true) => {
+		const files = group.artifacts.filter((file) => STALE_PLUGIN_INCREMENTAL_PATTERN.test(nodePath.basename(file)));
+		const checkpoints = await Promise.all(files.map(checkpointFromFile));
+		const matches = checkpoints.map((checkpoint) => matchingClient(checkpoint, clients));
+		if (checkpoints.some((checkpoint, index) => !checkpoint.finalized && (!matches[index] || !checkpoint.recovery || checkpoint.recovery.redactionPolicy !== redactionPolicy || (checkpoint.recovery.sessionId ?? checkpoint.recovery.metadata.thread_id) !== group.sessionId || checkpoint.recovery.metadata.turn_id !== checkpoint.recovery.turnKey))) return false;
+		const plans = /* @__PURE__ */ new Map();
+		for (const [index, checkpoint] of checkpoints.entries()) {
+			if (checkpoint.finalized) continue;
+			if (!await guard()) return false;
+			if (remaining-- <= 0) return false;
+			const client = matches[index];
+			const existing = await readAndValidate(client, void 0, checkpoint);
+			if (!await guard(true)) return false;
+			const recovery = checkpoint.recovery;
+			const rootId = stableRunId(group.sessionId, group.transcript, recovery.turnKey, "root");
+			const root = checkpoints.find((candidate) => candidate.runId === rootId && candidate.endpoint === checkpoint.endpoint && candidate.projectName === checkpoint.projectName && candidate.workspaceId === checkpoint.workspaceId && candidate.credentialHash === checkpoint.credentialHash);
+			if (!root) return false;
+			if (!plans.has(root)) plans.set(root, await recoverMetadata(group, root, redact));
+			if (!await guard()) return false;
+			const plan = plans.get(root);
+			const toolId = Object.keys(plan?.tools ?? {}).find((id) => stableRunId(group.sessionId, group.transcript, recovery.turnKey, `tool:${id}`) === checkpoint.runId);
+			const metadata = {
+				...asRecord(asRecord(existing.extra).metadata),
+				...recovery.metadata,
+				...toolId ? plan?.tools[toolId] : plan?.root
+			};
+			const endTime = recovery.endTime ?? Math.max(...checkpoints.filter((item) => item.recovery?.turnKey === recovery.turnKey).map((item) => new Date(item.recovery?.endTime ?? item.topology.startTime).getTime()));
+			const interrupted = recovery.endTime === void 0;
+			metadata.status = interrupted ? "error" : "completed";
+			if (!await guard(true)) return false;
+			await patchAndVerify(client, {
+				inputs: existing.inputs,
+				outputs: existing.outputs,
+				error: interrupted ? STALE_RECOVERY_ERROR : existing.error,
+				end_time: endTime,
+				extra: {
+					...asRecord(existing.extra),
+					metadata
+				}
+			}, void 0, checkpoint);
+			if (!await guard(true)) return false;
+			await writePrivateFile(files[index], JSON.stringify({
+				...checkpoint,
+				finalized: true
+			}));
+		}
+		return true;
+	};
+}
+//#endregion
+//#region src/stale-state-cleanup.ts
+function groupFor(scan, transcript) {
+	let group = scan.groups.get(transcript);
+	if (!group) {
+		group = {
+			transcript,
+			artifacts: [],
+			captureDirectories: [],
+			lockDirectories: [],
+			recoveryFiles: [],
+			recent: false,
+			live: false,
+			unsafe: false
+		};
+		scan.groups.set(transcript, group);
+	}
+	return group;
+}
+async function inspectDirectory(group, directory, cutoff, lock) {
+	const entries = await nodeFsPromises.readdir(directory, { withFileTypes: true });
+	for (const entry of entries) {
+		const file = nodePath.join(directory, entry.name);
+		const stat = await nodeFsPromises.lstat(file);
+		const recognized = lock ? entry.name === FILE_LOCK_OWNER_FILENAME : TOOL_CAPTURE_FILE_PATTERN.test(entry.name) || TOOL_CAPTURE_TEMP_PATTERN.test(entry.name) || [
+			"transcript.jsonl",
+			"stop.json",
+			"metadata.json"
+		].includes(entry.name);
+		if (!stat.isFile() || stat.isSymbolicLink() || !recognized) {
+			group.unsafe = true;
+			continue;
+		}
+		if (stat.mtimeMs > cutoff) group.recent = true;
+		if (!lock) group.artifacts.push(file);
+	}
+}
+async function scanDirectory(directory, scan, cutoff, ownLocks, recurse) {
+	let entries;
+	try {
+		entries = await nodeFsPromises.readdir(directory, { withFileTypes: true });
+	} catch {
+		scan.unreadable = true;
+		scan.failures++;
+		return;
+	}
+	for (const entry of entries) {
+		const file = nodePath.join(directory, entry.name);
+		const native = STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN.test(entry.name);
+		const capture = STALE_PLUGIN_CAPTURE_PATTERN.exec(entry.name);
+		const sidecar = STALE_PLUGIN_STATE_PATTERN.exec(entry.name) || STALE_PLUGIN_TOPOLOGY_PATTERN.exec(entry.name) || STALE_PLUGIN_INCREMENTAL_PATTERN.exec(entry.name) || STALE_PLUGIN_TOPOLOGY_TEMP_PATTERN.exec(entry.name) || STALE_PLUGIN_INCREMENTAL_TEMP_PATTERN.exec(entry.name);
+		const lock = STALE_PLUGIN_INCREMENTAL_LOCK_PATTERN.exec(entry.name);
+		const recovery = STALE_PLUGIN_LOCK_RECOVERY_PATTERN.exec(entry.name);
+		const rolloutLock = entry.name.endsWith(".langsmith.lock") ? entry.name.slice(0, -15) : entry.name.endsWith(".langsmith-capture.lock") ? entry.name.slice(0, -23) : void 0;
+		const transcriptName = native ? entry.name.replace(STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN, "") : capture?.[1] ?? sidecar?.[1] ?? lock?.[1] ?? recovery?.[1] ?? rolloutLock;
+		if (!transcriptName) {
+			if (recurse && entry.isDirectory() && !entry.isSymbolicLink()) await scanDirectory(file, scan, cutoff, ownLocks, true);
+			if (entry.isSymbolicLink()) scan.unreadable = true;
+			continue;
+		}
+		const group = groupFor(scan, nodePath.join(directory, transcriptName));
+		if (ownLocks.has(file)) continue;
+		try {
+			const stat = await nodeFsPromises.lstat(file);
+			if (stat.isSymbolicLink()) {
+				group.unsafe = true;
+				continue;
+			}
+			if (stat.mtimeMs > cutoff) group.recent = true;
+			if (recovery) {
+				group.lockDirectories.push(nodePath.join(directory, `${recovery[1]}${recovery[2]}`));
+				if (!stat.isFile()) group.unsafe = true;
+				else {
+					const ownerState = await fileLockRecoveryOwnerState(file);
+					if (ownerState === "live") group.live = true;
+					else if (ownerState === "unknown") group.unsafe = true;
+					else if (stat.mtimeMs <= cutoff) group.recoveryFiles.push(file);
+				}
+			} else if (native || sidecar) {
+				if (!stat.isFile()) group.unsafe = true;
+				else if (sidecar) group.artifacts.push(file);
+			} else if (capture || lock || rolloutLock) {
+				if (!stat.isDirectory()) group.unsafe = true;
+				else {
+					const isLock = !!(lock || rolloutLock);
+					(isLock ? group.lockDirectories : group.captureDirectories).push(file);
+					await inspectDirectory(group, file, cutoff, isLock);
+					if (isLock && await fileLockOwnerIsLive(file)) group.live = true;
+				}
+			}
+		} catch {
+			group.unsafe = true;
+			scan.unreadable = true;
+			scan.failures++;
+		}
+	}
+}
+function emptyScan() {
+	return {
+		groups: /* @__PURE__ */ new Map(),
+		failures: 0,
+		unreadable: false
+	};
+}
+async function sessionIdentity(group) {
+	const filenameId = STALE_PLUGIN_UUID_PATTERN.exec(nodePath.basename(group.transcript))?.[1];
+	const nativeId = await transcriptSessionId(group.transcript);
+	if (filenameId && nativeId && filenameId !== nativeId) return void 0;
+	if (nativeId) return nativeId;
+	if (filenameId) return filenameId;
+	for (const directory of group.captureDirectories) {
+		const id = await transcriptSessionId(nodePath.join(directory, TURN_CAPTURE_TRANSCRIPT));
+		if (id) return id;
+	}
+}
+async function sessionsRoot(transcript) {
+	let current = nodePath.dirname(nodePath.resolve(transcript));
+	for (;;) {
+		if (nodePath.basename(current) === "sessions") {
+			const canonicalParent = await nodeFsPromises.realpath(nodePath.dirname(current));
+			const root = nodePath.join(canonicalParent, CODEX_SESSIONS_DIRECTORY);
+			const stat = await nodeFsPromises.lstat(root);
+			return stat.isDirectory() && !stat.isSymbolicLink() ? root : void 0;
+		}
+		const parent = nodePath.dirname(current);
+		if (parent === current) return void 0;
+		current = parent;
+	}
+}
+async function nativeLocks(root) {
+	const directory = nodePath.join(nodePath.dirname(root), CODEX_WRITER_LOCKS_DIRECTORY);
+	try {
+		const stat = await nodeFsPromises.lstat(directory);
+		if (!stat.isDirectory() || stat.isSymbolicLink()) return void 0;
+		const entries = await nodeFsPromises.readdir(directory);
+		return new Set(entries.flatMap((name) => STALE_PLUGIN_NATIVE_LOCK_PATTERN.exec(name)?.[1] ?? []));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		return;
+	}
+}
+async function nativeTranscriptPaths(root, sessionId) {
+	const transcripts = /* @__PURE__ */ new Set();
+	async function walk(directory) {
+		let entries;
+		try {
+			entries = await nodeFsPromises.readdir(directory, { withFileTypes: true });
+		} catch {
+			return false;
+		}
+		for (const entry of entries) {
+			if (entry.isSymbolicLink()) return false;
+			const file = nodePath.join(directory, entry.name);
+			if (entry.isDirectory()) {
+				if (!await walk(file)) return false;
+				continue;
+			}
+			if (!entry.isFile() || !STALE_PLUGIN_NATIVE_ROLLOUT_PATTERN.test(entry.name)) continue;
+			const nativeSessionId = STALE_PLUGIN_UUID_PATTERN.exec(entry.name)?.[1] ?? await transcriptSessionId(file);
+			if (!nativeSessionId) return false;
+			if (nativeSessionId === sessionId) transcripts.add(file.replace(STALE_PLUGIN_COMPRESSED_SUFFIX_PATTERN, ""));
+		}
+		return true;
+	}
+	return await walk(root) ? transcripts : void 0;
+}
+async function underLocks(locks, action, index = 0) {
+	if (index === locks.length) return action();
+	await tryWithFileLock(locks[index], () => underLocks(locks, action, index + 1));
+}
+function locksForSession(groups) {
+	return [...new Set(groups.flatMap((group) => [
+		`${group.transcript}${TURN_CAPTURE_LOCK_SUFFIX}`,
+		`${group.transcript}${TRACE_UPLOAD_LOCK_SUFFIX}`,
+		...group.lockDirectories
+	]))].sort();
+}
+async function refreshSessionGroups(groups, cutoff, ownLocks) {
+	const refreshed = emptyScan();
+	for (const directory of new Set(groups.map((group) => nodePath.dirname(group.transcript)))) await scanDirectory(directory, refreshed, cutoff, ownLocks, false);
+	for (const group of refreshed.groups.values()) {
+		group.sessionId = await sessionIdentity(group);
+		if (!group.sessionId) refreshed.unreadable = true;
+	}
+	return refreshed;
+}
+async function hasLinkedParent(groups) {
+	for (const group of groups) if (await pathHasSymbolicLink(nodePath.dirname(group.transcript))) return true;
+	return false;
+}
+async function cleanupStalePluginState(transcript, currentSessionId, options = {}) {
+	const root = await sessionsRoot(transcript);
+	if (!root) return;
+	const currentTranscript = nodePath.join(await nodeFsPromises.realpath(nodePath.dirname(transcript)), nodePath.basename(transcript));
+	const cutoff = (options.now ?? Date.now()) - STALE_PLUGIN_TTL_MS;
+	const scan = emptyScan();
+	await scanDirectory(root, scan, cutoff, /* @__PURE__ */ new Set(), true);
+	const lockedSessionIds = await nativeLocks(root);
+	if (!lockedSessionIds) return;
+	const discoveredSessionIds = /* @__PURE__ */ new Set();
+	const protectedSessionIds = /* @__PURE__ */ new Set([currentSessionId, ...lockedSessionIds]);
+	const groupsBySession = /* @__PURE__ */ new Map();
+	for (const group of scan.groups.values()) {
+		group.sessionId = await sessionIdentity(group);
+		if (!group.sessionId) {
+			scan.unreadable = true;
+			continue;
+		}
+		discoveredSessionIds.add(group.sessionId);
+		const groups = groupsBySession.get(group.sessionId) ?? [];
+		groups.push(group);
+		groupsBySession.set(group.sessionId, groups);
+		if (group.transcript === currentTranscript || group.recent || group.live || group.unsafe) protectedSessionIds.add(group.sessionId);
+	}
+	const privacyPath = options.privacyPath ?? defaultPrivacyPath();
+	for (const [sessionId, groups] of groupsBySession) {
+		if (protectedSessionIds.has(sessionId)) continue;
+		try {
+			if (await hasLinkedParent(groups)) continue;
+			const locks = locksForSession(groups);
+			await underLocks(locks, async () => {
+				if (await hasLinkedParent(groups)) return;
+				const locked = await nativeLocks(root);
+				if (!locked || locked.has(sessionId)) return;
+				const refreshed = await refreshSessionGroups(groups, cutoff, new Set(locks));
+				scan.failures += refreshed.failures;
+				scan.unreadable ||= refreshed.unreadable;
+				const currentGroups = [...refreshed.groups.values()].filter((group) => group.sessionId === sessionId);
+				const knownTranscripts = new Set(groups.map((group) => group.transcript));
+				const changedOriginal = groups.some((group) => {
+					const current = refreshed.groups.get(group.transcript);
+					return current != null && current.sessionId !== sessionId;
+				});
+				for (const group of refreshed.groups.values()) if (group.sessionId) discoveredSessionIds.add(group.sessionId);
+				if (refreshed.unreadable || changedOriginal || currentGroups.some((group) => !knownTranscripts.has(group.transcript) || group.transcript === currentTranscript || group.unsafe || group.recent || group.live)) return;
+				const transcriptStates = /* @__PURE__ */ new Map();
+				for (const group of currentGroups) try {
+					const stat = await nodeFsPromises.lstat(group.transcript);
+					if (!stat.isFile() || stat.isSymbolicLink()) return;
+					transcriptStates.set(group.transcript, {
+						ctimeMs: stat.ctimeMs,
+						dev: stat.dev,
+						ino: stat.ino,
+						mtimeMs: stat.mtimeMs,
+						size: stat.size
+					});
+				} catch (error) {
+					if (error.code !== "ENOENT") throw error;
+					transcriptStates.set(group.transcript, void 0);
+				}
+				const isStillInactive = async (checkSessionsRoot = false) => {
+					if ((sessionLastActivity(privacyPath, sessionId) ?? 0) > cutoff) return false;
+					const activeNativeWriters = await nativeLocks(root);
+					if (!activeNativeWriters || activeNativeWriters.has(sessionId)) return false;
+					for (const [file, initial] of transcriptStates) try {
+						const stat = await nodeFsPromises.lstat(file);
+						if (!initial || !stat.isFile() || stat.isSymbolicLink() || stat.ctimeMs !== initial.ctimeMs || stat.dev !== initial.dev || stat.ino !== initial.ino || stat.mtimeMs !== initial.mtimeMs || stat.size !== initial.size) return false;
+					} catch (error) {
+						if (error.code !== "ENOENT" || initial) return false;
+					}
+					if (checkSessionsRoot) {
+						const latestTranscripts = await nativeTranscriptPaths(root, sessionId);
+						if (!latestTranscripts) return false;
+						for (const file of latestTranscripts) if (!knownTranscripts.has(file)) return false;
+					}
+					return true;
+				};
+				if (!await isStillInactive(true)) return;
+				for (const group of currentGroups) if (group.artifacts.some((file) => STALE_PLUGIN_INCREMENTAL_PATTERN.test(nodePath.basename(file))) && !await options.recover?.(group, isStillInactive)) return;
+				if (!await isStillInactive(true)) return;
+				if ((await pruneInactiveSessionEvidence(privacyPath, {
+					inactiveBefore: cutoff,
+					currentSessionId,
+					protectedSessionIds: [...protectedSessionIds],
+					inactiveSessionIds: [sessionId],
+					targetSessionIds: [sessionId]
+				})).activeSessionIds.includes(sessionId)) return;
+				if (!await isStillInactive(true)) return;
+				for (const group of currentGroups) {
+					for (const file of group.artifacts) await nodeFsPromises.unlink(file);
+					for (const file of group.recoveryFiles) await nodeFsPromises.unlink(file);
+					for (const directory of group.captureDirectories) await nodeFsPromises.rmdir(directory);
+				}
+			});
+		} catch {
+			scan.failures++;
+		}
+	}
+	if (!scan.unreadable) try {
+		const latestLocks = await nativeLocks(root);
+		if (!latestLocks) return;
+		await pruneInactiveSessionEvidence(privacyPath, {
+			inactiveBefore: cutoff,
+			currentSessionId,
+			protectedSessionIds: [...protectedSessionIds],
+			inactiveSessionIds: [],
+			excludedSessionIds: [
+				...discoveredSessionIds,
+				...lockedSessionIds,
+				...latestLocks
+			]
+		});
+	} catch {
+		scan.failures++;
+	}
+	if (scan.failures) console.error(`Tracing cleanup skipped ${scan.failures} unreadable or busy entries.`);
+}
+//#endregion
 //#region src/user-prompt-submit.ts
 async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 	const command = parseTracingCommand(input.prompt);
@@ -20138,7 +20720,8 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 			cwd: input.cwd,
 			env: process.env
 		});
-		const result = await submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const savePreference = () => submitPreference(privacyPath, input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const result = input.transcript_path ? await withTurnCaptureLock(input.transcript_path, savePreference) : await savePreference();
 		if (!command) {
 			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
 			return;
@@ -20197,6 +20780,24 @@ async function runHook() {
 		"PostToolUse",
 		"Stop"
 	].includes(content.hook_event_name)) return;
+	if (content.hook_event_name !== "Stop") return processHook(content);
+	const cleanup = { recover: staleTurnRecovery([]) };
+	try {
+		await processHook(content, cleanup);
+	} finally {
+		try {
+			await cleanupStalePluginState(content.transcript_path, content.session_id, cleanup);
+		} catch (error) {
+			console.error(`Tracing stale-state cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+}
+async function processHook(content, cleanup) {
+	try {
+		await withTurnCaptureLock(content.transcript_path, () => touchSessionActivity(defaultPrivacyPath(), content.session_id));
+	} catch (error) {
+		console.error(`Tracing activity update failed: ${error instanceof Error ? error.message : String(error)}`);
+	}
 	const config = await getConfig({
 		home: process.env.HOME,
 		cwd: content.cwd,
@@ -20229,17 +20830,19 @@ async function runHook() {
 			autoBatchTracing: false
 		})
 	}));
+	const redactionPolicy = digestFor({
+		redact: config.redact,
+		rules: config.redact_extra_rules
+	});
+	if (cleanup) cleanup.recover = staleTurnRecovery([client, ...replicas?.map((replica) => replica.client) ?? []], anonymizer, redactionPolicy);
 	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
 		project_name: config.project
 	}) : void 0;
 	await convertToRunTree(content, {
-		redactionPolicy: digestFor({
-			redact: config.redact,
-			rules: config.redact_extra_rules
-		}),
 		hook: content,
 		redactCapture: anonymizer,
+		redactionPolicy,
 		client,
 		projectName: config.project,
 		metadata: config.metadata,

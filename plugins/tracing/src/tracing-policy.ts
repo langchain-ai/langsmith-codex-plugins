@@ -6,11 +6,16 @@ import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { THREAD_POLICY_FIELDS } from "./constants/tracing-policy.js";
+import { cleanupStalePrivacyTemps } from "./tracing-policy-cleanup.js";
 
 import type {
+  PruneSessionEvidenceOptions,
+  PrunedSessionEvidence,
   ThreadPolicy,
   TracingMode,
   TracingPolicy,
+  TracingPolicyUpdate,
   TurnMode,
 } from "./models/tracing-policy.js";
 
@@ -27,7 +32,10 @@ function validThread(value: unknown): boolean {
     isObject(value.turns) &&
     Object.values(value.turns).every(isTurnMode) &&
     (value.inherited === undefined || isTurnMode(value.inherited)) &&
-    Object.keys(value).every((key) => ["preference", "turns", "inherited"].includes(key))
+    (value.lastActivityAt === undefined ||
+      (typeof value.lastActivityAt === "number" && Number.isFinite(value.lastActivityAt))) &&
+    (value.historyPruned === undefined || typeof value.historyPruned === "boolean") &&
+    Object.keys(value).every((key) => THREAD_POLICY_FIELDS.includes(key))
   );
 }
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -68,6 +76,10 @@ function readPolicy(path: string): TracingPolicy {
   return value as unknown as TracingPolicy;
 }
 
+export function sessionLastActivity(file: string, sessionId: string): number | undefined {
+  return threadPolicy(readPolicy(file), sessionId)?.lastActivityAt;
+}
+
 export function defaultPrivacyPath(): string {
   return path.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
 }
@@ -80,6 +92,11 @@ function threadPolicy(policy: TracingPolicy, id: string): ThreadPolicy | undefin
 export function savedTurnMode(file: string, sessionId: string, turnId?: string): TurnMode {
   try {
     const thread = threadPolicy(readPolicy(file), sessionId);
+    if (thread?.historyPruned) {
+      if (thread.inherited === "off") return "off";
+      if (turnId && thread && Object.hasOwn(thread.turns, turnId)) return thread.turns[turnId];
+      return "metadata";
+    }
     if (thread?.inherited) return thread.inherited;
     return turnId && thread && Object.hasOwn(thread.turns, turnId)
       ? thread.turns[turnId]
@@ -93,6 +110,14 @@ export function hasSavedTurnEvidence(file: string, sessionId: string, turnId?: s
   if (!turnId) return false;
   try {
     return Object.hasOwn(threadPolicy(readPolicy(file), sessionId)?.turns ?? {}, turnId);
+  } catch {
+    return false;
+  }
+}
+
+export function hasPrunedSessionHistory(file: string, sessionId: string): boolean {
+  try {
+    return threadPolicy(readPolicy(file), sessionId)?.historyPruned === true;
   } catch {
     return false;
   }
@@ -115,7 +140,7 @@ export function parseTracingCommand(prompt: string): "mute" | "unmute" | undefin
  */
 async function updatePolicy(
   path: string,
-  update: (policy: TracingPolicy) => void,
+  update: TracingPolicyUpdate,
 ): Promise<{ warning?: string }> {
   const lockPath = `${path}.lock`;
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -160,7 +185,9 @@ async function updatePolicy(
         { cause: error },
       );
     }
-    update(policy);
+    const original = JSON.stringify(policy);
+    await update(policy);
+    if (JSON.stringify(policy) === original) return {};
     tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
     const temp = await open(tempPath, "wx", 0o600);
     try {
@@ -214,6 +241,7 @@ export async function submitPreference(
   requireIds(sessionId, turnId);
   return updatePolicy(file, (policy) => {
     const thread: ThreadPolicy = threadPolicy(policy, sessionId) ?? { turns: {} };
+    thread.lastActivityAt = Date.now();
     if (!Object.hasOwn(thread.turns, turnId)) {
       thread.turns = {
         ...thread.turns,
@@ -227,7 +255,6 @@ export async function submitPreference(
   });
 }
 
-/** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
 export async function inheritThreadMode(
   file: string,
   sessionId: string,
@@ -236,10 +263,76 @@ export async function inheritThreadMode(
   let inherited: TurnMode = "metadata";
   const result = await updatePolicy(file, (policy) => {
     const thread: ThreadPolicy = threadPolicy(policy, sessionId) ?? { turns: {} };
-    thread.inherited ??= mode;
-    inherited = thread.inherited;
+    if (!thread.historyPruned) thread.inherited ??= mode;
+    inherited = thread.historyPruned
+      ? thread.inherited === "off"
+        ? "off"
+        : "metadata"
+      : thread.inherited!;
     policy.threads = { ...policy.threads, [sessionId]: thread };
   });
   if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
   return inherited;
+}
+
+export async function touchSessionActivity(file: string, sessionId: string): Promise<void> {
+  try {
+    lstatSync(file);
+  } catch (error) {
+    if (hasCode(error, "ENOENT")) return;
+    throw error;
+  }
+  await updatePolicy(file, (policy) => {
+    const thread = threadPolicy(policy, sessionId);
+    if (thread) thread.lastActivityAt = Date.now();
+  });
+}
+
+export async function pruneInactiveSessionEvidence(
+  file: string,
+  options: PruneSessionEvidenceOptions,
+): Promise<PrunedSessionEvidence> {
+  const activeSessionIds = new Set([options.currentSessionId, ...options.protectedSessionIds]);
+  const inactiveSessionIds = new Set(options.inactiveSessionIds);
+  const excludedSessionIds = new Set(options.excludedSessionIds ?? []);
+  const targetSessionIds = options.targetSessionIds && new Set(options.targetSessionIds);
+  const prunedSessionIds = new Set<string>();
+  try {
+    if (lstatSync(file).isSymbolicLink())
+      throw new Error("Cannot prune symbolic-link privacy state");
+  } catch (error) {
+    if (!hasCode(error, "ENOENT")) throw error;
+  }
+  const result = await updatePolicy(file, async (policy) => {
+    for (const [sessionId, thread] of Object.entries(policy.threads)) {
+      if (
+        activeSessionIds.has(sessionId) ||
+        excludedSessionIds.has(sessionId) ||
+        (targetSessionIds != null && !targetSessionIds.has(sessionId))
+      )
+        continue;
+      const timestamped = typeof thread.lastActivityAt === "number";
+      if (timestamped && thread.lastActivityAt! > options.inactiveBefore) {
+        activeSessionIds.add(sessionId);
+        continue;
+      }
+      if (!timestamped && !inactiveSessionIds.has(sessionId)) {
+        if (Object.keys(thread.turns).length || thread.inherited !== undefined)
+          thread.lastActivityAt = Date.now();
+        activeSessionIds.add(sessionId);
+        continue;
+      }
+      if (Object.keys(thread.turns).length || thread.inherited !== undefined) {
+        thread.turns = {};
+        thread.historyPruned = true;
+      }
+      prunedSessionIds.add(sessionId);
+    }
+    if (!targetSessionIds) await cleanupStalePrivacyTemps(file, options.inactiveBefore);
+  });
+  if (result.warning) throw new Error(result.warning);
+  return {
+    activeSessionIds: [...activeSessionIds],
+    prunedSessionIds: [...prunedSessionIds],
+  };
 }

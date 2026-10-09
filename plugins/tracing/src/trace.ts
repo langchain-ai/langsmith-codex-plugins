@@ -54,6 +54,7 @@ import type { CodingAgentContext } from "./metadata-models.js";
 import {
   defaultPrivacyPath,
   hasSavedTurnEvidence,
+  hasPrunedSessionHistory,
   savedTurnMode,
   inheritThreadMode,
 } from "./tracing-policy.js";
@@ -222,6 +223,12 @@ async function rolloutTurnMode(
       hasEvidence: hasSavedTurnEvidence(privacyPath, sessionId, turnId),
     };
   }
+  if (
+    hasPrunedSessionHistory(privacyPath, sessionId) &&
+    hasSavedTurnEvidence(privacyPath, sessionId, turnId)
+  ) {
+    return { mode: savedTurnMode(privacyPath, sessionId, turnId), hasEvidence: true };
+  }
   let mode: TurnMode = "metadata";
   let hasEvidence = false;
   const parentFile = parentId
@@ -309,7 +316,7 @@ function mergeMessages(result: AggregateMessage<StandardMessage>[]) {
   );
 }
 
-function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
+export function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
   return messages.map(({ message, ...rest }): AggregateMessage<StandardMessage> => {
     if (message.type === "message") {
       const role = (() => {
@@ -517,6 +524,7 @@ async function postTurn(
       !options?.partial,
       options?.redactCapture,
       options?.redactionPolicy,
+      sessionMeta?.session_id,
     );
   const client = trackClient(sourceClient);
   const replicas = options?.replicas?.map((replica) => {
