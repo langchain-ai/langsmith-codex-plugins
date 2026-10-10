@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: langchain-ai/langsmith-plugin-binary/.github/workflows/build-binary.yml@8e0f62e485438d455cdb9ea43f45f666aa6a8e68
+    uses: langchain-ai/langsmith-plugin-binary/.github/workflows/build-binary.yml@63d73a41eb564a3361a0441b1f307bad4dc95fe6
     secrets: inherit
     with:
       binary-directory: plugins/tracing/binary
