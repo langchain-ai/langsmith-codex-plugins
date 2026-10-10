@@ -125,6 +125,48 @@ it("serializes concurrent updates, safe prototype IDs, and writes private files"
     ),
   ).toEqual([]);
 });
+it.each(["missing", "file", "symlink"] as const)(
+  "propagates EPERM when the lock path is %s",
+  async (kind) => {
+    const lockPath = `${file}.lock`;
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    if (kind === "file") await fs.writeFile(lockPath, "occupied");
+    if (kind === "symlink") {
+      const target = path.join(home, "other-lock");
+      await fs.mkdir(target);
+      await fs.symlink(target, lockPath, process.platform === "win32" ? "junction" : "dir");
+    }
+    const originalMkdir = fs.mkdir.bind(fs);
+    vi.spyOn(fs, "mkdir").mockImplementation(async (...args) => {
+      if (String(args[0]) === lockPath) {
+        throw Object.assign(new Error("operation not permitted"), { code: "EPERM" });
+      }
+      return originalMkdir(...args);
+    });
+    await expect(submitPreference(file, "thread", "turn", true, "mute")).rejects.toMatchObject({
+      code: "EPERM",
+    });
+  },
+);
+it("retries EPERM when another writer owns the lock directory", async () => {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.mkdir(`${file}.lock`, { mode: 0o700 });
+  const originalMkdir = fs.mkdir.bind(fs);
+  vi.spyOn(fs, "mkdir").mockImplementation(async (...args) => {
+    if (String(args[0]) === `${file}.lock`) {
+      throw Object.assign(new Error("operation not permitted"), { code: "EPERM" });
+    }
+    return originalMkdir(...args);
+  });
+  const start = performance.now();
+  await expect(submitPreference(file, "thread", "turn", true, "mute")).rejects.toThrow(
+    "confirming no preference writer",
+  );
+  expect(performance.now() - start).toBeGreaterThanOrEqual(2000);
+  expect(performance.now() - start).toBeLessThan(2600);
+  if (process.platform !== "win32")
+    expect((await fs.stat(`${file}.lock`)).mode & 0o777).toBe(0o700);
+});
 it("never steals a stale lock; retries are bounded and actionable", async () => {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.mkdir(`${file}.lock`, { mode: 0o700 });

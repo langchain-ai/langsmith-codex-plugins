@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
-import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
+import { lstat, mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
 import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { WINDOWS_LOCK_CONTENTION_CODES } from "./constants.ts";
 
 export type TracingMode = "full" | "metadata";
 export type TurnMode = TracingMode | "off";
@@ -123,7 +124,16 @@ async function updatePolicy(
       await mkdir(lockPath, { mode: 0o700 });
       locked = true;
     } catch (error) {
-      if (!hasCode(error, "EEXIST")) throw error;
+      if (!hasCode(error, "EEXIST")) {
+        if (!WINDOWS_LOCK_CONTENTION_CODES.some((code) => hasCode(error, code))) throw error;
+        let directoryExists = false;
+        try {
+          directoryExists = (await lstat(lockPath)).isDirectory();
+        } catch {
+          throw error;
+        }
+        if (!directoryExists) throw error;
+      }
       if (performance.now() >= deadline) {
         throw new Error(
           `Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`,

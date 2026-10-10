@@ -4,7 +4,7 @@ import * as fs from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { tryAcquireFileLock } from "@langchain/plugins-base/storage";
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -60,7 +60,7 @@ afterEach(async () => {
   await new Promise<void>((resolve, reject) =>
     server.close((err) => (err ? reject(err) : resolve())),
   );
-  await fs.rm(dir, { recursive: true, force: true });
+  await fs.rm(dir, { recursive: true, force: true, maxRetries: 10 });
 });
 
 function childEnvironment(env: Record<string, string> = {}) {
@@ -214,9 +214,9 @@ it("saves PostToolUse output without its transcript while the worker is locked",
     join(sessionDirectory, "rollout-thread.jsonl"),
     JSON.stringify({ type: "session_meta", payload: { id: "thread", cwd } }),
   );
-  const clockFile = join(dir, "test-clock.cjs");
+  const clockFile = join(dir, "test-clock.mjs");
   const oldEnvironment = {
-    NODE_OPTIONS: `--require="${clockFile}"`,
+    NODE_OPTIONS: `--import=${pathToFileURL(clockFile).href}`,
     CODEX_TEST_NOW: String(Date.now() - 3 * 60 * 60 * 1000),
   };
   await fs.writeFile(

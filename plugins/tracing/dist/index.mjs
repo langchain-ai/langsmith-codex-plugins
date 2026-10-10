@@ -17242,6 +17242,7 @@ const CODEX_SESSION_UUID_PATTERN = /[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$
 const TOOL_SNAPSHOT_EVENT_SUFFIX = ":native-tool";
 const TOOL_START_EVENT_SUFFIX = ":tool-start";
 const TOOL_COMPLETE_EVENT_SUFFIX = ":tool-complete";
+const WINDOWS_LOCK_CONTENTION_CODES = ["EPERM", "EACCES"];
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
@@ -21464,7 +21465,16 @@ async function updatePolicy(path, update) {
 		await mkdir(lockPath, { mode: 448 });
 		locked = true;
 	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
+		if (!hasCode(error, "EEXIST")) {
+			if (!WINDOWS_LOCK_CONTENTION_CODES.some((code) => hasCode(error, code))) throw error;
+			let directoryExists = false;
+			try {
+				directoryExists = (await lstat(lockPath)).isDirectory();
+			} catch {
+				throw error;
+			}
+			if (!directoryExists) throw error;
+		}
 		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
 		await setTimeout$1(10 + Math.random() * 20);
 	}
