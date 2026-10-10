@@ -1135,3 +1135,34 @@ it("still traces a backlog turn once the rollout has a traced history", async ()
 
   expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
 });
+
+it("retries a completed turn when its native session ID arrives after Stop", async () => {
+  const { client, callSpy } = mockClient();
+  const files = await preloadTestFiles({ makeTurnIncomplete: false });
+  const complete = files[EDITING_FILE];
+  files[EDITING_FILE] = complete
+    .split("\n")
+    .map((line) => {
+      if (!line) return line;
+      const event = JSON.parse(line);
+      if (event.type === "session_meta") delete event.payload.id;
+      return JSON.stringify(event);
+    })
+    .join("\n");
+  vol.fromJSON(files);
+
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await client.awaitPendingTraceBatches();
+  expect(callSpy).not.toHaveBeenCalled();
+  expect.soft(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBeUndefined();
+
+  vol.fromJSON({ [EDITING_FILE]: complete });
+  seedFullLaunchEvidence();
+  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await client.awaitPendingTraceBatches();
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const roots = Object.values(tree.data).filter((run) => run.name === "openai.codex");
+  expect.soft(roots).toHaveLength(1);
+  expect(roots[0]?.extra?.metadata?.thread_id).toBe("019dbc00-a3c9-7681-8e0c-73139815b4f2");
+  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EDITING_TURN}\n`);
+});

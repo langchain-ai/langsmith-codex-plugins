@@ -8,6 +8,7 @@
             "command": "\"$PLUGIN_ROOT/binary/langsmith-tracing\"",
             "commandWindows": "node \"${PLUGIN_ROOT}/dist/index.mjs\"",
             "timeout": 30,
+            "async": true,
             "statusMessage": "Uploading Codex trace to LangSmith"
           }
         ]
@@ -21,6 +22,31 @@
             "command": "\"$PLUGIN_ROOT/binary/langsmith-tracing\"",
             "commandWindows": "node \"${PLUGIN_ROOT}/dist/index.mjs\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/binary/langsmith-tracing\"",
+            "commandWindows": "node \"${PLUGIN_ROOT}/dist/index.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/binary/langsmith-tracing\"",
+            "commandWindows": "node \"${PLUGIN_ROOT}/dist/index.mjs\"",
+            "timeout": 30,
+            "async": true
           }
         ]
       }

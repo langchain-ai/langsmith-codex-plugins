@@ -1,10 +1,14 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { tryAcquireFileLock } from "@langchain/plugins-base/storage";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { getConfig } from "../src/config.js";
+import { createCodexTracingSession } from "../src/tracing-engine.js";
 
 // Exercise the installed bundle, real file discovery, and real SDK. Only the
 // destination is local; no Client/RunTree/config or fetch mocks are involved.
@@ -14,7 +18,7 @@ let cwd: string;
 let server: Server;
 let api: string;
 type Payload = Record<string, any>;
-let requests: { path: string; key?: string; body: Payload }[];
+let requests: { method: string; path: string; key?: string; body: Payload }[];
 
 beforeEach(async () => {
   dir = await fs.mkdtemp(join(tmpdir(), "codex-config-wire-"));
@@ -32,6 +36,7 @@ beforeEach(async () => {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(Buffer.from(chunk));
     requests.push({
+      method: req.method!,
       path: req.url!,
       key: typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"] : undefined,
       body: JSON.parse(Buffer.concat(chunks).toString("utf8")),
@@ -49,6 +54,20 @@ afterEach(async () => {
   );
   await fs.rm(dir, { recursive: true, force: true });
 });
+
+async function directoryContainsFiles(directory: string): Promise<boolean> {
+  const entries = await fs.readdir(directory, { withFileTypes: true }).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  });
+  if (!entries) return false;
+  for (const entry of entries) {
+    if (entry.isFile()) return true;
+    if (entry.isDirectory() && (await directoryContainsFiles(join(directory, entry.name))))
+      return true;
+  }
+  return false;
+}
 
 async function hook(event: Record<string, unknown>, env: Record<string, string> = {}) {
   const cleanEnv = Object.fromEntries(
@@ -80,9 +99,42 @@ async function hook(event: Record<string, unknown>, env: Record<string, string> 
   expect({ code, stdout, stderr }).toEqual({ code: 0, stdout: "", stderr: "" });
 }
 
+async function runWorker() {
+  const cleanEnv = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) => !/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key),
+    ),
+  );
+  const child = spawn(
+    process.execPath,
+    [
+      fileURLToPath(new URL("../dist/index.mjs", import.meta.url)),
+      "--engine-worker",
+      "thread",
+      cwd,
+    ],
+    { cwd: dir, env: { ...cleanEnv, HOME: home } },
+  );
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  child.stdin.end();
+  const code = await new Promise<number | null>((resolve, reject) => {
+    child.on("error", reject);
+    child.on("close", resolve);
+  });
+  return { code, stdout, stderr };
+}
+
 async function upload(env: Record<string, string> = {}) {
+  const timestamp = new Date().toISOString();
   const event = (type: string, payload: Record<string, unknown>) => ({
-    timestamp: "2026-04-23T00:00:01.000Z",
+    timestamp,
     type,
     payload,
   });
@@ -115,9 +167,95 @@ async function upload(env: Record<string, string> = {}) {
   );
   await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env);
   await hook({ hook_event_name: "Stop", transcript_path }, env);
-  expect(requests.length).toBeGreaterThan(0);
-  return requests.flatMap(({ body }) => body.post ?? [body]);
+  const runs = () =>
+    requests.filter(({ method }) => method === "POST").flatMap(({ body }) => body.post ?? [body]);
+  await vi.waitFor(
+    () => {
+      expect(runs().length).toBeGreaterThanOrEqual(2);
+      expect(
+        requests.some(({ method, path }) => method === "PATCH" && /\/runs\/[^/]+$/.test(path)),
+      ).toBe(true);
+      return expect(
+        directoryContainsFiles(join(home, ".codex/langsmith_engine_v1/background-worker")),
+      ).resolves.toBe(false);
+    },
+    { timeout: 5000, interval: 25 },
+  );
+  return runs();
 }
+
+it("saves PostToolUse output without its transcript while the worker is locked", async () => {
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({
+      enabled: true,
+      defaultMuted: false,
+      redact: false,
+      api_url: `${api}/primary`,
+      api_key: "primary-key",
+      project: "primary-project",
+      replicas: [],
+    }),
+  );
+  await hook(
+    { hook_event_name: "UserPromptSubmit", prompt: "work" },
+    { TRACE_TO_LANGSMITH: "true" },
+  );
+  const config = await getConfig({ home, cwd, env: { HOME: home, TRACE_TO_LANGSMITH: "true" } });
+  const context = createCodexTracingSession(config, "thread", cwd, home);
+  expect(context).toBeDefined();
+  const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+  const workerDirectory = join(
+    context!.storageRoot,
+    "background-worker",
+    "integrations",
+    "openai-codex",
+    "sessions",
+    hash("thread"),
+    "accounts",
+    hash(context!.accountFingerprint),
+  );
+  const lock = await tryAcquireFileLock(join(workerDirectory, "worker"));
+  if (!lock) throw new Error("Could not hold the test worker lock");
+  const transcript = join(cwd, "missing.jsonl");
+  try {
+    await hook({
+      hook_event_name: "PostToolUse",
+      transcript_path: transcript,
+      tool_use_id: "call-1",
+      tool_name: "Bash",
+      tool_input: { cmd: "synthetic-command" },
+      tool_response: "synthetic-output",
+    });
+    expect(await fs.stat(transcript).catch(() => undefined)).toBeUndefined();
+    expect(requests).toEqual([]);
+    expect(
+      JSON.parse(await fs.readFile(join(workerDirectory, "wake.pending"), "utf8")),
+    ).toMatchObject({
+      version: 1,
+    });
+  } finally {
+    await lock.release();
+  }
+  const worker = await runWorker();
+  expect(worker).toEqual({ code: 0, stdout: "", stderr: "" });
+  await vi.waitFor(
+    () => {
+      expect(requests.some(({ method }) => method === "POST")).toBe(true);
+      expect(requests.some(({ method }) => method === "PATCH")).toBe(true);
+      return expect(
+        directoryContainsFiles(join(home, ".codex/langsmith_engine_v1/background-worker")),
+      ).resolves.toBe(false);
+    },
+    { timeout: 5000, interval: 25 },
+  );
+  expect(JSON.stringify(requests.filter(({ method }) => method === "POST"))).toContain(
+    "synthetic-command",
+  );
+  expect(JSON.stringify(requests.filter(({ method }) => method === "PATCH"))).toContain(
+    "synthetic-output",
+  );
+});
 
 it.each([
   { muted: false, redact: true },

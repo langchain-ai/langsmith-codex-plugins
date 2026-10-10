@@ -6,7 +6,9 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { findLast } from "./utils/findLast.js";
 import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
-import { codingAgentMetadata, resolveGitInfo, withTrustedMetadata } from "./metadata.js";
+import { parseRepository, resolveGitInfo } from "./metadata.js";
+import { buildCodingAgentMetadata } from "@langchain/plugins-base/metadata";
+import { CHILD_SCOPE_RESET, LS_INTEGRATION, LS_INTEGRATION_VERSION } from "./constants.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import type {
   Session,
@@ -15,9 +17,15 @@ import type {
   MergedMessage,
   Task,
   StandardMessage,
+  TurnPostStatus,
+  TurnMetadataOptions,
 } from "./types.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
+import { stripUndefined } from "./utils/objects.js";
 import { createRunTree } from "./privacy.js";
+import { stableRunId, stableRunStartTime } from "./trace-delivery.js";
+import type { CodexRunCapture } from "./models/tracing-engine.js";
+import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import {
   defaultPrivacyPath,
   savedTurnMode,
@@ -435,15 +443,6 @@ function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
   });
 }
 
-// Null run-type-scoped keys on llm/tool runs to override langsmith's
-// parent->child metadata inheritance (serialization drops undefined).
-const CHILD_SCOPE_RESET = {
-  approval_policy: undefined,
-  ls_is_error_interrupt: undefined,
-  ls_subagent_id: undefined,
-  ls_subagent_type: undefined,
-} as const;
-
 function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknown> | undefined {
   if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) {
     return undefined;
@@ -476,6 +475,8 @@ async function postTurn(
       projectName?: string;
       metadata?: Record<string, unknown>;
       replicas?: RunTreeConfig["replicas"];
+      captureRun?: CodexRunCapture;
+      capturedToolIds?: ReadonlySet<string>;
       sessionsRoot?: string;
       privacyPath?: string;
 
@@ -483,7 +484,7 @@ async function postTurn(
       debugNow?: { now: number; startTime: number };
     };
   },
-) {
+): Promise<TurnPostStatus> {
   const mode = sessionMeta?.session_id
     ? await rolloutTurnMode(
         rolloutFile,
@@ -501,7 +502,7 @@ async function postTurn(
       /* Corrupt/unwritable policy is resolved metadata-only by child uploads. */
     }
   }
-  if (mode === "off") return;
+  if (mode === "off") return "handled";
   const fallbackTime = Date.now();
 
   const getSystemMessage = (
@@ -572,21 +573,56 @@ async function postTurn(
   const conversationThreadId =
     (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
 
-  // coding-agent-v1 base contract, stamped onto every run below.
-  const base = codingAgentMetadata({
+  if (typeof conversationThreadId !== "string" || !conversationThreadId.trim()) return "deferred";
+
+  const nativeTurnId = task.turnId?.id ?? privacyTurnId;
+  if (!nativeTurnId) return "deferred";
+  const parentRunId = stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, "root");
+  const stableParentStartTime = stableRunStartTime(nativeTurnId, parentStartTime);
+
+  const base: TurnMetadataOptions = {
+    integration: LS_INTEGRATION,
+    integrationVersion: LS_INTEGRATION_VERSION,
     agentType: isSubagent ? "subagent" : "root",
     threadId: conversationThreadId,
     turnId: task.turnId?.id,
     turnNumber: task.turnNumber,
-    cliVersion: sessionMeta?.cli_version,
+    runtimeVersion: sessionMeta?.cli_version,
+  };
+  const workspace = stripUndefined({
+    ...parseRepository(git?.repository_url),
+    git_branch: git?.branch,
+    git_commit_sha: git?.commit_hash,
     cwd,
-    git,
-    sandboxType,
+    sandbox_type: sandboxType,
   });
 
   // Scope-restricted keys: approval_policy on root only, ls_subagent_* on
   // subagent only. Set undefined elsewhere to override inherited values.
+  const parentMetadata: CodingAgentMetadataOptions = {
+    ...base,
+    runType: isSubagent ? "subagent" : task.isErrorInterrupt ? "interrupted" : "root",
+    approvalPolicy: isSubagent ? undefined : approvalPolicy,
+    subagentId: isSubagent ? sessionMeta?.session_id : undefined,
+    subagentType: isSubagent ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname) : undefined,
+    providerMetadata: {
+      codex_cli_version: sessionMeta?.cli_version,
+      ls_message_format: "anthropic",
+      ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
+    },
+    runSpecific: {
+      ...workspace,
+      ...(task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}),
+      approval_policy: isSubagent ? undefined : approvalPolicy,
+      ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
+      ls_subagent_type: isSubagent
+        ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
+        : undefined,
+    },
+    base: { ...options?.metadata, ...task.context },
+  };
   const parentConfig: RunTreeConfig = {
+    id: parentRunId,
     name: "openai.codex",
     client: options?.client,
     project_name: options?.projectName,
@@ -595,34 +631,19 @@ async function postTurn(
     inputs: { messages: user != null ? [user.message] : [] },
     outputs: { messages: agent.map((i) => i.message) },
     error: task.error,
-    start_time: parentStartTime,
+    start_time: stableParentStartTime,
     end_time: parentEndTime,
     extra: {
-      metadata: withTrustedMetadata(
-        { ...options?.metadata, ...task.context },
-        {
-          ...base,
-          ...(task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}),
-
-          approval_policy: isSubagent ? undefined : approvalPolicy,
-          ls_subagent_id: isSubagent ? sessionMeta?.session_id : undefined,
-          ls_subagent_type: isSubagent
-            ? (sessionMeta?.agent_role ?? sessionMeta?.agent_nickname)
-            : undefined,
-
-          codex_cli_version: sessionMeta?.cli_version,
-          ls_message_format: "anthropic",
-
-          // Non-reserved key: backend auto-aggregates child llm usage into the
-          // parent, so usage_metadata here would double-count.
-          ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
-        },
-      ),
+      metadata: buildCodingAgentMetadata(parentMetadata),
     },
   };
   const parent = createRunTree(parentConfig, mode, options?.parentRunTree);
-
-  PROMISE_QUEUE.push(parent.postRun());
+  const runsToCapture: { run: RunTree; metadata: CodingAgentMetadataOptions }[] = [];
+  function postRun(run: RunTree, metadata: CodingAgentMetadataOptions) {
+    if (options?.captureRun) runsToCapture.push({ run, metadata });
+    else PROMISE_QUEUE.push(run.postRun());
+  }
+  postRun(parent, parentMetadata);
 
   const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 
@@ -673,7 +694,9 @@ async function postTurn(
     );
   }
 
+  let outputIndex = 0;
   for (const output of outputs) {
+    const thisOutputIndex = outputIndex++;
     const inputMessages = fullMessages.slice(0, output.start);
     const aiMessage = fullMessages.slice(output.start, output.start + 1);
     const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -692,8 +715,28 @@ async function postTurn(
       (message) => message.subagentThreads.length > 0,
     )?.subagentThreads;
 
+    const llmMetadata: CodingAgentMetadataOptions = {
+      ...base,
+      runType: "llm",
+      clearSubagent: true,
+      modelName: task.context?.model,
+      usageMetadata: getUsageMetadata(tokenCounts),
+      providerMetadata: {
+        ls_model_type: "chat",
+        ls_provider: sessionMeta?.model_provider,
+        ls_invocation_params: task.context,
+      },
+      runSpecific: { ...workspace, ...CHILD_SCOPE_RESET },
+      base: options?.metadata,
+    };
     const llmChild = createRunTree(
       {
+        id: stableRunId(
+          sessionMeta?.session_id,
+          rolloutFile,
+          nativeTurnId,
+          `llm:${thisOutputIndex}`,
+        ),
         name: "openai.codex.turn",
         run_type: "llm",
         start_time: outputStartTime,
@@ -701,24 +744,13 @@ async function postTurn(
         inputs: { messages: inputMessages.map((i) => i.message) },
         outputs: { messages: aiMessage.map((i) => i.message) },
         extra: {
-          metadata: withTrustedMetadata(
-            { ...options?.metadata },
-            {
-              ...base,
-              ...CHILD_SCOPE_RESET,
-              ls_model_type: "chat",
-              ls_provider: sessionMeta?.model_provider,
-              ls_model_name: task.context?.model,
-              ls_invocation_params: task.context,
-              usage_metadata: getUsageMetadata(tokenCounts),
-            },
-          ),
+          metadata: buildCodingAgentMetadata(llmMetadata),
         },
       },
       mode,
       parent,
     );
-    PROMISE_QUEUE.push(llmChild.postRun());
+    postRun(llmChild, llmMetadata);
 
     for (const toolMessage of toolMessages) {
       if (toolMessage.message.role !== "tool") continue;
@@ -754,42 +786,66 @@ async function postTurn(
 
       const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
 
-      const toolRun = createRunTree(
-        {
-          name: runName,
-          run_type: "tool",
-          start_time: min,
-          end_time: max,
-          inputs: { input: msgToolCall.args },
-          outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
-          error: toolCall.error,
-          extra: {
-            metadata: withTrustedMetadata(
-              { ...options?.metadata },
-              {
-                ...base,
-                ...CHILD_SCOPE_RESET,
-                ls_model_type: "chat",
-                ls_provider: sessionMeta?.model_provider,
-                ls_model_name: task.context?.model,
-                ls_invocation_params: task.context,
-                usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-                // Native tool name, only when it differs from the run name.
-                ...(nativeToolName != null && runName !== nativeToolName
-                  ? { ls_tool_name: nativeToolName }
-                  : {}),
-              },
-            ),
-          },
+      const toolMetadata: CodingAgentMetadataOptions = {
+        ...base,
+        runType: "tool",
+        clearSubagent: true,
+        toolName: nativeToolName,
+        runName,
+        modelName: task.context?.model,
+        usageMetadata: getUsageMetadata(toolMessage.tokenCount),
+        providerMetadata: {
+          ls_model_type: "chat",
+          ls_provider: sessionMeta?.model_provider,
+          ls_invocation_params: task.context,
         },
-        mode,
-        parent,
-      );
-      PROMISE_QUEUE.push(toolRun.postRun());
+        runSpecific: { ...workspace, ...CHILD_SCOPE_RESET },
+        base: options?.metadata,
+      };
+
+      if (!options?.capturedToolIds?.has(toolCallId)) {
+        const toolRun = createRunTree(
+          {
+            id: stableRunId(
+              sessionMeta?.session_id,
+              rolloutFile,
+              nativeTurnId,
+              `tool:${toolCallId}`,
+            ),
+            name: runName,
+            run_type: "tool",
+            start_time: min,
+            end_time: max,
+            inputs: { input: msgToolCall.args },
+            outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
+            error: toolCall.error,
+            extra: {
+              metadata: buildCodingAgentMetadata(toolMetadata),
+            },
+          },
+          mode,
+          parent,
+        );
+        postRun(toolRun, toolMetadata);
+      }
 
       for (const skillName of skillNames) {
+        const skillMetadata: CodingAgentMetadataOptions = {
+          ...base,
+          runType: "tool",
+          clearSubagent: true,
+          skillName,
+          runSpecific: { ...workspace, ...CHILD_SCOPE_RESET, usage_metadata: undefined },
+          base: options?.metadata,
+        };
         const skillRun = createRunTree(
           {
+            id: stableRunId(
+              sessionMeta?.session_id,
+              rolloutFile,
+              nativeTurnId,
+              `skill:${toolCallId}:${skillName}`,
+            ),
             name: "Skill",
             run_type: "tool",
             // Only the call's own window is known, not when each read ran inside it.
@@ -800,22 +856,13 @@ async function postTurn(
             // The rollout never shows the skill's own result, only the read's.
             outputs: { output: { commandName: skillName, success: toolCall.error == null } },
             extra: {
-              metadata: withTrustedMetadata(
-                { ...options?.metadata },
-                {
-                  ...base,
-                  ...CHILD_SCOPE_RESET,
-                  // Configured metadata reaches every run; the tokens belong to the call.
-                  usage_metadata: undefined,
-                  ls_skill_name: skillName,
-                },
-              ),
+              metadata: buildCodingAgentMetadata(skillMetadata),
             },
           },
           mode,
           parent,
         );
-        PROMISE_QUEUE.push(skillRun.postRun());
+        postRun(skillRun, skillMetadata);
       }
     }
 
@@ -828,6 +875,35 @@ async function postTurn(
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(subagentThread);
   }
+  if (options?.captureRun) {
+    const childRunIds = new Set<string>();
+    const collectChildren = (run: RunTree) => {
+      for (const child of run.child_runs ?? []) {
+        if (childRunIds.has(child.id)) continue;
+        childRunIds.add(child.id);
+        collectChildren(child);
+      }
+    };
+    collectChildren(parent);
+    for (const toolId of options.capturedToolIds ?? []) {
+      childRunIds.add(
+        stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, `tool:${toolId}`),
+      );
+    }
+    const lastRun = runsToCapture.at(-1)?.run;
+    for (const item of runsToCapture) {
+      await options.captureRun(item.run, {
+        childRunIds: [...childRunIds],
+        closureState: item.run === lastRun ? "authoritative" : "open",
+        metadata: item.metadata,
+        mode,
+        rolloutFile,
+        rootRunId: parent.id,
+        turnId: nativeTurnId,
+      });
+    }
+  }
+  return "handled";
 }
 
 export async function convertToRunTree(
@@ -837,6 +913,8 @@ export async function convertToRunTree(
     client?: Client;
     metadata?: Record<string, unknown>;
     replicas?: RunTreeConfig["replicas"];
+    captureRun?: CodexRunCapture;
+    capturedToolIds?: ReadonlySet<string>;
     projectName?: string;
     sessionsRoot?: string;
     privacyPath?: string;
@@ -1075,13 +1153,14 @@ export async function convertToRunTree(
         }
         const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
         const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
+        let postStatus: TurnPostStatus = "handled";
         if (!alreadyUploaded && !isBacklog) {
-          await postTurn(task, sessionMeta, privacyTurnId, {
+          postStatus = await postTurn(task, sessionMeta, privacyTurnId, {
             rolloutFile: input.transcript_path,
             options,
           });
         }
-        if (completedTurnId != null && !alreadyUploaded) {
+        if (completedTurnId != null && !alreadyUploaded && postStatus === "handled") {
           uploadedTurnIds.add(completedTurnId);
           await markTurnUploaded(input.transcript_path, completedTurnId);
         }

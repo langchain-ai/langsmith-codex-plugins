@@ -123,8 +123,33 @@ it("still refuses a command line it does not recognise", async () => {
   });
   expect(result).toBe(1);
 });
+it("starts the production bundle without installed dependencies", async () => {
+  const entry = path.join(home, "index.mjs");
+  await fs.copyFile(fileURLToPath(new URL("../dist/index.mjs", import.meta.url)), entry);
+  const result = await new Promise<{ code: number | null; stdout: string; stderr: string }>(
+    (resolve, reject) => {
+      const child = spawn(process.execPath, [entry, "--version"], {
+        env: { HOME: home },
+        cwd: home,
+      });
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (data) => {
+        stdout += data;
+      });
+      child.stderr.on("data", (data) => {
+        stderr += data;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, stdout, stderr }));
+    },
+  );
+  expect(result.code).toBe(0);
+  expect(result.stdout.trim()).not.toBe("");
+  expect(result.stderr).toBe("");
+});
 
-it("the installed hook definition is synchronous and preserves Stop timing", async () => {
+it("keeps prompt and start hooks synchronous while Stop and completion hooks run async", async () => {
   const definition = JSON.parse(
     await fs.readFile(new URL("../hooks/hooks.json", import.meta.url), "utf8"),
   );
@@ -133,11 +158,23 @@ it("the installed hook definition is synchronous and preserves Stop timing", asy
   expect(submit.command).toBe(`"$PLUGIN_ROOT/binary/langsmith-tracing"`);
   expect(submit.timeout).toBe(10);
   expect(submit.async).toBeUndefined();
+  expect(definition.hooks.PreToolUse[0].hooks[0]).toMatchObject({
+    command: submit.command,
+    commandWindows: submit.commandWindows,
+    timeout: 10,
+  });
+  expect(definition.hooks.PostToolUse[0].hooks[0]).toMatchObject({
+    command: submit.command,
+    commandWindows: submit.commandWindows,
+    timeout: 30,
+    async: true,
+  });
   expect(definition.hooks.Stop[0].hooks[0]).toEqual({
     type: "command",
     command: submit.command,
     commandWindows: submit.commandWindows,
     timeout: 30,
+    async: true,
     statusMessage: "Uploading Codex trace to LangSmith",
   });
 });

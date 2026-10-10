@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Client as SDKClient, RunTreeConfig } from "langsmith";
+import { METADATA_FIXTURE_IDENTITY } from "./utils/metadata-constants.js";
 
 // No SDK mocks: capture only the HTTP boundary, after SDK enrichment,
 // anonymization, batching and (for multipart) splitting into individual parts.
@@ -21,7 +22,7 @@ const transports: Transport[] = ["non-batched", "json-batch", "multipart"];
 
 let Client: typeof import("langsmith").Client;
 let RunTree: typeof import("langsmith").RunTree;
-let withTrustedMetadata: typeof import("../src/metadata.js").withTrustedMetadata;
+let metadataFixture: typeof import("./utils/metadata.js").metadataFixture;
 let createRunTree: typeof import("../src/privacy.js").createRunTree;
 let createSecretAnonymizer: typeof import("langsmith/anonymizer").createSecretAnonymizer;
 let clients: Set<SDKClient>;
@@ -138,7 +139,7 @@ beforeEach(async () => {
   transport = "non-batched";
   ({ Client, RunTree } = await import("langsmith"));
   ({ createRunTree } = await import("../src/privacy.js"));
-  ({ withTrustedMetadata } = await import("../src/metadata.js"));
+  ({ metadataFixture } = await import("./utils/metadata.js"));
   ({ createSecretAnonymizer } = await import("langsmith/anonymizer"));
 });
 
@@ -192,7 +193,7 @@ function config(
     extra: {
       private: `${FORBIDDEN}_extra`,
       runtime: { custom: `${FORBIDDEN}_runtime` },
-      metadata: withTrustedMetadata(
+      metadata: metadataFixture(
         {
           ...allowedMetadata,
           cwd: `${FORBIDDEN}_cwd`,
@@ -291,7 +292,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
       const client = makeClient();
       const initial = config(client);
       initial.extra = {
-        metadata: withTrustedMetadata(
+        metadata: metadataFixture(
           { custom: FORBIDDEN, usage_metadata: { annotation: FORBIDDEN } },
           {
             usage_metadata: usage,
@@ -310,6 +311,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
       expectMutedContent(operations[0].payload);
       expect(operations[0].payload.extra).toEqual({
         metadata: {
+          ...METADATA_FIXTURE_IDENTITY,
           usage_metadata: usage,
           ls_raw_aggregated_usage: usage,
           status: "running",
@@ -328,7 +330,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     const initial = config(makeClient());
     const usage = { ...allowedUsage, annotation: { model: SECRET } };
     initial.extra = {
-      metadata: withTrustedMetadata(
+      metadata: metadataFixture(
         {},
         {
           usage_metadata: usage,
@@ -342,6 +344,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     const redactedUsage = { ...allowedUsage, annotation: { model: REDACTED } };
     expect(operation.payload.extra).toEqual({
       metadata: {
+        ...METADATA_FIXTURE_IDENTITY,
         usage_metadata: redactedUsage,
         ls_raw_aggregated_usage: redactedUsage,
         status: "running",
@@ -362,7 +365,7 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     });
     const initial = config(client);
     initial.extra = {
-      metadata: withTrustedMetadata(
+      metadata: metadataFixture(
         { ...allowedMetadata, ls_subagent_type: FORBIDDEN },
         { thread_id: "trusted-thread" },
       ),
@@ -373,7 +376,12 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     const [operation] = expectTransport(1);
     expect(operation.payload.parent_run_id).toBe(parent.id);
     expect(operation.payload.extra).toEqual({
-      metadata: { thread_id: "trusted-thread", status: "running", ls_tracing_mode: "metadata" },
+      metadata: {
+        ...METADATA_FIXTURE_IDENTITY,
+        thread_id: "trusted-thread",
+        status: "running",
+        ls_tracing_mode: "metadata",
+      },
     });
     expect(JSON.stringify(operation)).not.toContain(FORBIDDEN);
   });

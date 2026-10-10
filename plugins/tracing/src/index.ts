@@ -7,22 +7,34 @@ import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
+import {
+  captureCodexRun,
+  clearCodexToolCapture,
+  createCodexTracingSession,
+  handleCodexToolHook,
+  runCodexEngineWorker,
+} from "./tracing-engine.js";
+import { readCapturedTools } from "./tool-capture.js";
+import type { TracingHookInput } from "./models/tracing-hook.js";
 import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
-  const content = await readStdin<{
-    session_id: string;
-    turn_id: string;
-    transcript_path: string;
-    hook_event_name: "Stop" | "UserPromptSubmit";
-    cwd: string;
-    prompt: string;
-  }>();
+  const content = await readStdin<TracingHookInput>();
 
   if (content.hook_event_name === "UserPromptSubmit") {
     const result = await handlePromptSubmit(content);
     if (result) console.log(JSON.stringify(result));
+    return;
+  }
+  if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+    const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
+    const anonymizer = config.redact
+      ? createSecretAnonymizer(
+          config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : undefined,
+        )
+      : undefined;
+    await handleCodexToolHook(content, config, anonymizer);
     return;
   }
   if (content.hook_event_name !== "Stop") return;
@@ -54,13 +66,24 @@ async function runHook() {
       })
     : undefined;
 
+  const engine = createCodexTracingSession(config, content.session_id, content.cwd);
+  const capturedTools = await readCapturedTools(content.transcript_path, content.turn_id);
   await convertToRunTree(content, {
     client,
     projectName: config.project,
     metadata: config.metadata,
     replicas: toSdkReplicas(config.replicas),
     parentRunTree,
+    ...(engine
+      ? {
+          captureRun: (run, capture) => captureCodexRun(engine, run, capture),
+          capturedToolIds: new Set(
+            capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id),
+          ),
+        }
+      : {}),
   });
+  if (engine) await clearCodexToolCapture(content.transcript_path, content.turn_id);
 }
 
 const invocationArguments = process.argv.slice(1);
@@ -74,6 +97,19 @@ if (invoked("--help") || invoked("-h")) {
   console.log(USAGE);
 } else if (invoked("--version") || invoked("-v")) {
   console.log(LS_INTEGRATION_VERSION ?? "development");
+} else if (invoked("--engine-worker")) {
+  const flagIndex = process.argv.indexOf("--engine-worker");
+  const sessionId = process.argv[flagIndex + 1];
+  const cwd = process.argv[flagIndex + 2];
+  if (!sessionId || !cwd) {
+    console.error("shared trace worker needs a session ID and working directory");
+    process.exitCode = 1;
+  } else {
+    runCodexEngineWorker(sessionId, cwd).catch((error: unknown) => {
+      console.error(tracingFailed(error));
+      process.exitCode = 1;
+    });
+  }
 } else if (unrecognised.length > 0) {
   console.error(`unknown option: ${unrecognised[0]}`);
   console.error(USAGE);

@@ -1,15 +1,15 @@
 import * as nodeFs from "node:fs";
-import { lstatSync, readFileSync, statSync } from "node:fs";
+import { constants, lstatSync, readFileSync, statSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
-import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
+import { chmod, link, lstat, mkdir, open, readFile, readdir, rename, rmdir, unlink, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
-import { dirname } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 //#region \0rolldown/runtime.js
@@ -35,39 +35,39 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/regex.js
-var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/regex.js
+var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/validate.js
-function validate(uuid) {
-	return typeof uuid === "string" && regex_default.test(uuid);
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/validate.js
+function validate$1(uuid) {
+	return typeof uuid === "string" && regex_default$1.test(uuid);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/parse.js
-function parse$1(uuid) {
-	if (!validate(uuid)) throw TypeError("Invalid UUID");
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/parse.js
+function parse$2(uuid) {
+	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/stringify.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/stringify.js
 /**
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 */
-const byteToHex = [];
-for (let i = 0; i < 256; ++i) byteToHex.push((i + 256).toString(16).slice(1));
-function unsafeStringify(arr, offset = 0) {
-	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+const byteToHex$1 = [];
+for (let i = 0; i < 256; ++i) byteToHex$1.push((i + 256).toString(16).slice(1));
+function unsafeStringify$1(arr, offset = 0) {
+	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/rng.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/rng.js
 const rnds8 = /* @__PURE__ */ new Uint8Array(16);
 function rng() {
 	return crypto.getRandomValues(rnds8);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v4.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v4.js
 function v4(options, buf, offset) {
 	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
 	return _v4(options, buf, offset);
@@ -84,10 +84,10 @@ function _v4(options, buf, offset) {
 		for (let i = 0; i < 16; ++i) buf[offset + i] = rnds[i];
 		return buf;
 	}
-	return unsafeStringify(rnds);
+	return unsafeStringify$1(rnds);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/sha1.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/sha1.js
 function f(s, x, y, z) {
 	switch (s) {
 		case 0: return x & y ^ ~x & z;
@@ -99,7 +99,7 @@ function f(s, x, y, z) {
 function ROTL(x, n) {
 	return x << n | x >>> 32 - n;
 }
-function sha1(bytes) {
+function sha1$1(bytes) {
 	const K = [
 		1518500249,
 		1859775393,
@@ -155,19 +155,19 @@ function sha1(bytes) {
 	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v35.js
-function stringToBytes(str) {
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v35.js
+function stringToBytes$1(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
 	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
 	return bytes;
 }
-const DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-const URL$1 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
-function v35(version, hash, value, namespace, buf, offset) {
-	const valueBytes = typeof value === "string" ? stringToBytes(value) : value;
-	const namespaceBytes = typeof namespace === "string" ? parse$1(namespace) : namespace;
-	if (typeof namespace === "string") namespace = parse$1(namespace);
+const DNS$1 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const URL$2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+function v35$1(version, hash, value, namespace, buf, offset) {
+	const valueBytes = typeof value === "string" ? stringToBytes$1(value) : value;
+	const namespaceBytes = typeof namespace === "string" ? parse$2(namespace) : namespace;
+	if (typeof namespace === "string") namespace = parse$2(namespace);
 	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
 	let bytes = new Uint8Array(16 + valueBytes.length);
 	bytes.set(namespaceBytes);
@@ -181,17 +181,17 @@ function v35(version, hash, value, namespace, buf, offset) {
 		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
 		return buf;
 	}
-	return unsafeStringify(bytes);
+	return unsafeStringify$1(bytes);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v5.js
-function v5(value, namespace, buf, offset) {
-	return v35(80, sha1, value, namespace, buf, offset);
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v5.js
+function v5$1(value, namespace, buf, offset) {
+	return v35$1(80, sha1$1, value, namespace, buf, offset);
 }
-v5.DNS = DNS;
-v5.URL = URL$1;
+v5$1.DNS = DNS$1;
+v5$1.URL = URL$2;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v7.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
 function v7(options, buf, offset) {
 	let bytes;
@@ -202,7 +202,7 @@ function v7(options, buf, offset) {
 		updateV7State(_state, now, rnds);
 		bytes = v7Bytes(rnds, _state.msecs, _state.seq, buf, offset);
 	}
-	return buf ?? unsafeStringify(bytes);
+	return buf ?? unsafeStringify$1(bytes);
 }
 function updateV7State(state, now, rnds) {
 	state.msecs ??= -Infinity;
@@ -243,7 +243,7 @@ function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	return buf;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/experimental/otel/constants.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/experimental/otel/constants.js
 const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
 const GEN_AI_SYSTEM = "gen_ai.system";
 const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
@@ -279,7 +279,7 @@ const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
 const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
 const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/env.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/env.js
 let globalEnv;
 const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
 const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
@@ -444,7 +444,7 @@ function resolveTracingMode(configValue) {
 	return "langsmith";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/otel.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/otel.js
 var MockTracer = class {
 	constructor() {
 		Object.defineProperty(this, "hasWarned", {
@@ -545,7 +545,7 @@ function getDefaultOTLPTracerComponents() {
 	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/experimental/otel/translator.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/experimental/otel/translator.js
 const WELL_KNOWN_OPERATION_NAMES = {
 	llm: "chat",
 	tool: "execute_tool",
@@ -765,7 +765,7 @@ var LangSmithToOTELTranslator = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/is-network-error/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/is-network-error/index.js
 const objectToString = Object.prototype.toString;
 const isError = (value) => objectToString.call(value) === "[object Error]";
 const errorMessages = /* @__PURE__ */ new Set([
@@ -787,7 +787,7 @@ function isNetworkError(error) {
 	return errorMessages.has(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/p-retry/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/p-retry/index.js
 function validateRetries(retries) {
 	if (typeof retries === "number") {
 		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
@@ -923,7 +923,7 @@ async function pRetry(input, options = {}) {
 	throw new Error("Retry attempts exhausted without throwing an error.");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/eventemitter3/index.js
 var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var has = Object.prototype.hasOwnProperty;
 	var prefix = "~";
@@ -1159,7 +1159,7 @@ var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 	if ("undefined" !== typeof module) module.exports = EventEmitter;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-finally/index.js
 var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = (promise, onFinally) => {
 		onFinally = onFinally || (() => {});
@@ -1173,7 +1173,7 @@ var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	};
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-timeout/index.js
 var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	const pFinally = require_p_finally();
 	var TimeoutError = class extends Error {
@@ -1211,7 +1211,7 @@ var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports.TimeoutError = TimeoutError;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-queue/dist/lower-bound.js
 var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	function lowerBound(array, value, comparator) {
@@ -1230,7 +1230,7 @@ var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = lowerBound;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-queue/dist/priority-queue.js
 var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const lower_bound_1 = require_lower_bound();
@@ -1265,7 +1265,7 @@ var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = PriorityQueue;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/p-queue.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/p-queue.js
 var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const EventEmitter = require_eventemitter3();
@@ -1515,7 +1515,7 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 })))(), 1);
 const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/async_caller.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/async_caller.js
 const STATUS_RETRYABLE = [
 	408,
 	425,
@@ -1622,7 +1622,7 @@ var AsyncCaller = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/messages.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/messages.js
 function isLangChainMessage(message) {
 	return typeof message?._getType === "function";
 }
@@ -1635,7 +1635,7 @@ function convertLangChainMessageToExample(message) {
 	return converted;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -1650,7 +1650,7 @@ let uuid4 = function() {
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/errors.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/errors.js
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -1673,7 +1673,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/error.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/error.js
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -1752,7 +1752,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -1785,13 +1785,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/version.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/version.js
 const VERSION = "0.0.1";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -1906,7 +1906,7 @@ const getPlatformHeaders = () => {
 	return _platformHeaders ??= getPlatformProperties();
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/shims.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/shims.js
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -1946,7 +1946,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -1954,7 +1954,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -1962,7 +1962,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -2021,7 +2021,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -2197,12 +2197,12 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -2255,7 +2255,7 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/parse.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/parse.js
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
@@ -2278,7 +2278,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
 var __classPrivateFieldSet$2 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2371,7 +2371,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/pagination.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/pagination.js
 var __classPrivateFieldSet$1 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2605,7 +2605,7 @@ var ItemsCursorGetPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -2626,7 +2626,7 @@ function getName(value) {
 }
 const isAsyncIterable = (value) => value != null && typeof value === "object" && typeof value[Symbol.asyncIterator] === "function";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -2684,7 +2684,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/resource.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/resource.js
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -2697,7 +2697,7 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -2754,7 +2754,7 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/items.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/items.js
 var Items = class extends APIResource {
 	/**
 	* Add RUN or THREAD items to a single annotation queue. RUN items require run_id
@@ -2834,7 +2834,7 @@ var Items = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/runs.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/runs.js
 var Runs$2 = class extends APIResource {
 	/**
 	* Add Runs To Annotation Queue
@@ -2907,7 +2907,7 @@ var Runs$2 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/annotation-queues.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/annotation-queues.js
 var AnnotationQueues = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3044,7 +3044,7 @@ var AnnotationQueues = class extends APIResource {
 AnnotationQueues.Runs = Runs$2;
 AnnotationQueues.Items = Items;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
 var ExperimentRuns = class extends APIResource {
 	/**
 	* Returns a paginated page of dataset examples with runs from the requested
@@ -3061,7 +3061,7 @@ var ExperimentRuns = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3075,7 +3075,7 @@ var Datasets = class extends APIResource {
 };
 Datasets.ExperimentRuns = ExperimentRuns;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/info.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/info.js
 var Info = class extends APIResource {
 	/**
 	* Returns information about the current LangSmith deployment: version, instance
@@ -3087,7 +3087,7 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/issues.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/issues.js
 var Issues = class extends APIResource {
 	/**
 	* **Beta:** This endpoint is in active development and may change without notice.
@@ -3111,7 +3111,7 @@ var Issues = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/headers.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/headers.js
 const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
 	if (!headers) return;
@@ -3171,7 +3171,7 @@ const buildHeaders = (newHeaders) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -3248,7 +3248,7 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/public/runs.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/public/runs.js
 var Runs$1 = class extends APIResource {
 	/**
 	* Returns one run within the trace identified by the share token. The request
@@ -3299,7 +3299,7 @@ var Runs$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/public/public.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/public/public.js
 var Public = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3313,7 +3313,7 @@ var Public = class extends APIResource {
 };
 Public.Runs = Runs$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/runs/share.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/runs/share.js
 var Share = class extends APIResource {
 	/**
 	* Creates or returns a share token for a run. Child runs share their trace root.
@@ -3355,7 +3355,7 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3448,7 +3448,7 @@ var Runs = class extends APIResource {
 };
 Runs.Share = Share;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -3543,7 +3543,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -3589,7 +3589,7 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
 var Snapshots = class extends APIResource {
 	/**
 	* Create a snapshot from a Docker image (async build).
@@ -3637,7 +3637,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3665,7 +3665,7 @@ Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/threads.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/threads.js
 var Threads = class extends APIResource {
 	/**
 	* Retrieve all traces belonging to a specific thread within a project.
@@ -3735,7 +3735,7 @@ var Threads = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/traces.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/traces.js
 var Traces = class extends APIResource {
 	/**
 	* Returns runs for a trace ID within min/max start time. Optional `filter`;
@@ -3791,7 +3791,7 @@ var Traces = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
 /**
 * Read an environment variable.
 *
@@ -3804,7 +3804,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/client.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/client.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -4453,7 +4453,7 @@ Langsmith.Info = Info;
 Langsmith.Issues = Issues;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/warn.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/warn.js
 const warnedMessages = {};
 function warnOnce(message, options) {
 	const key = options?.code ?? message;
@@ -4468,7 +4468,7 @@ function warnOnce(message, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/xxhash/xxhash.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/xxhash/xxhash.js
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -4737,7 +4737,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/_uuid.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/_uuid.js
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -4851,7 +4851,7 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/v2_migration.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/v2_migration.js
 const QueryBackend = {
 	CLICKHOUSE_ONLY: "clickhouse_only",
 	SMITHDB_ONLY: "smithdb_only",
@@ -4867,7 +4867,7 @@ function getQueryBackend(instanceFlags) {
 	return QueryBackend.CLICKHOUSE_ONLY;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/error.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/error.js
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -4999,7 +4999,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/prompts.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/prompts.js
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -5027,7 +5027,7 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/fs.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/fs.js
 /**
 * File system abstraction (Node.js version).
 *
@@ -5046,7 +5046,7 @@ async function writeFileAtomic(filePath, content) {
 	});
 	await nodeFsPromises.rename(tempPath, filePath);
 }
-async function readdir(dir) {
+async function readdir$1(dir) {
 	return nodeFsPromises.readdir(dir);
 }
 async function stat(filePath) {
@@ -5087,7 +5087,7 @@ async function rmRecursive(filePath) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/prompt_cache/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/prompt_cache/index.js
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -5369,7 +5369,7 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/fetch.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/fetch.js
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
 const _shouldStreamForGlobalFetchImplementation = () => {
@@ -5391,7 +5391,7 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/profile-lock.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/profile-lock.js
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
@@ -5774,7 +5774,7 @@ function authHeaderFromProfile(profile) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -6024,7 +6024,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/worker_threads.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/worker_threads.js
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -6036,7 +6036,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/serialize_worker.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/serialize_worker.js
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -6360,7 +6360,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/client.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/client.js
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -7503,7 +7503,7 @@ var Client = class Client {
 				Client._fallbackDirsCreated.add(directory);
 			}
 			if (maxBytes !== void 0 && maxBytes > 0) try {
-				const traceFiles = (await readdir(directory)).filter((f) => f.startsWith("trace_") && f.endsWith(".json"));
+				const traceFiles = (await readdir$1(directory)).filter((f) => f.startsWith("trace_") && f.endsWith(".json"));
 				let total = 0;
 				for (const name of traceFiles) {
 					const { size } = await stat(path.join(directory, name));
@@ -10835,17 +10835,17 @@ function isExampleCreate(input) {
 	return "dataset_id" in input || "dataset_name" in input;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/env.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/env.js
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/constants.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/constants.js
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/context_vars.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/context_vars.js
 /**
 * Get a context variable from a run tree instance
 */
@@ -10861,15 +10861,15 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/project.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/project.js
 const getDefaultProjectName = () => {
 	return getLangSmithEnvironmentVariable("PROJECT") ?? getEnvironmentVariable("LANGCHAIN_SESSION") ?? "default";
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/run_trees.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
-	return v5(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
+	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
 }
 function stripNonAlphanumeric(input) {
 	return input.replace(/[-:.]/g, "");
@@ -11724,7 +11724,23 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/traceable.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/uuid.js
+/**
+* Compute the run ID used for a secondary tracing replica.
+*
+* @param runId - The original UUID v7 run ID.
+* @param projectName - The secondary replica's destination project name.
+* @returns The run ID used in the secondary replica destination.
+*/
+function computeRunIdForSecondaryReplica(runId, projectName) {
+	if (typeof projectName !== "string" || projectName.length === 0) throw new Error("projectName must be a non-empty string");
+	assertUuid(runId, "runId");
+	const normalizedRunId = runId.toLowerCase();
+	if (getUuidVersion(normalizedRunId) !== 7) throw new Error("runId must be a UUID v7");
+	return nonCryptographicUuid7Deterministic(normalizedRunId, projectName);
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/traceable.js
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -11743,10 +11759,10 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/index.js
 const __version__ = "0.9.0";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/anonymizer/index.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/anonymizer/index.js
 function extractStringNodes(data, options) {
 	const parsedOptions = {
 		...options,
@@ -11983,7 +11999,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/util.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
 	return Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -12445,7 +12461,7 @@ function constantCatch(value) {
 	return fn;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/core.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/core.js
 var _a$1;
 const _zodDesc$1 = {
 	value: void 0,
@@ -12552,7 +12568,7 @@ function config(newConfig) {
 	return globalConfig;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/errors.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/errors.js
 function _getMessage() {
 	const internals = this._zod;
 	internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -12675,7 +12691,7 @@ function formatError$1(error, mapper = (issue) => issue.message) {
 	return fieldErrors;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/parse.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
 	return {
 		callee: params?.callee ?? callee,
@@ -12817,7 +12833,7 @@ const _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 	return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/regexes.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/regexes.js
 /**
 * @deprecated CUID v1 is deprecated by its authors due to information leakage
 * (timestamps embedded in the id). Use {@link cuid2} instead.
@@ -12892,7 +12908,7 @@ const boolean$1 = /^(?:true|false)$/i;
 const lowercase = /^[^A-Z]*$/;
 const uppercase = /^[^a-z]*$/;
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/checks.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/checks.js
 const $ZodCheck = /*@__PURE__*/ $constructor("$ZodCheck", (inst, def) => {
 	var _a;
 	inst._zod ?? (inst._zod = {});
@@ -13110,7 +13126,7 @@ const $ZodCheckOverwrite = /*@__PURE__*/ $constructor("$ZodCheckOverwrite", (ins
 	};
 });
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/doc.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/doc.js
 var Doc = class {
 	constructor(args = [], closed = {}) {
 		this.content = [];
@@ -13141,14 +13157,14 @@ var Doc = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/versions.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/versions.js
 const version = {
 	major: 4,
 	minor: 5,
 	patch: 4
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/schemas.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/schemas.js
 const $ZodType = /*@__PURE__*/ $constructor("$ZodType", (inst, def) => {
 	var _a;
 	inst ?? (inst = {});
@@ -14431,7 +14447,7 @@ function handleRefineResult(result, payload, input, inst) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/memoizer.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/memoizer.js
 var $ZodCyclicError = class extends Error {
 	constructor() {
 		super(`Cannot parse a reference cycle that closes through a transform`);
@@ -14650,7 +14666,7 @@ function isBackEdge(ctx, value) {
 	return backEdges !== void 0 && value !== null && typeof value === "object" && backEdges.has(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/locales/en.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/locales/en.js
 const error = () => {
 	const Sizable = {
 		string: {
@@ -14756,7 +14772,7 @@ function en_default() {
 	return { localeError: error() };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/registries.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/registries.js
 var _a;
 var $ZodRegistry = class {
 	constructor() {
@@ -14803,7 +14819,7 @@ function registry() {
 (_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
 const globalRegistry = globalThis.__zod_globalRegistry;
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/api.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class, params) {
 	return new Class({
@@ -15246,7 +15262,7 @@ function _check(fn, params) {
 	return ch;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/to-json-schema.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
 	for (const source of sources) for (const key of Reflect.ownKeys(source)) if (Object.prototype.propertyIsEnumerable.call(source, key)) assignProp(target, key, source[key]);
 	return target;
@@ -15693,7 +15709,7 @@ const createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params)
 	return finalize(ctx, schema);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/json-schema-processors.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/json-schema-processors.js
 const formatMap = {
 	guid: "uuid",
 	url: "uri",
@@ -16014,7 +16030,7 @@ const optionalProcessor = (schema, ctx, _json, params) => {
 	seen.ref = def.innerType;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/errors.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/errors.js
 const _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
 	Object.defineProperty(proto, key, {
@@ -16064,8 +16080,8 @@ const initializer = (inst, issues) => {
 };
 const ZodRealError = /*@__PURE__*/ $constructor("ZodError", initializer, void 0, { Parent: Error });
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/parse.js
-const parse = /* @__PURE__ */ _parse(ZodRealError);
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/parse.js
+const parse$1 = /* @__PURE__ */ _parse(ZodRealError);
 const parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 const safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
 const safeParseAsync = /* @__PURE__ */ _safeParseAsync(ZodRealError);
@@ -16078,7 +16094,7 @@ const safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 const safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 const safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 //#endregion
-//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/schemas.js
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
 	if (!globalConfig.localeError) config(en_default());
 }
@@ -16197,7 +16213,7 @@ const ZodType = /*@__PURE__*/ $constructor("ZodType", (inst, def) => {
 		own(this, "~standard", value);
 	},
 	parse: function _parse(data, params) {
-		return parse(this, data, params, { callee: _parse });
+		return parse$1(this, data, params, { callee: _parse });
 	},
 	parseAsync: async function _parseAsync(data, params) {
 		return await parseAsync(this, data, params, { callee: _parseAsync });
@@ -16875,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_628ff1d9f80989defbced4daf654782a/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16887,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_628ff1d9f80989defbced4daf654782a/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17209,20 +17225,21 @@ async function getConfig(options) {
 }
 //#endregion
 //#region src/constants.ts
-/** What the traced agent is for, per the coding-agent-v1 contract. */
-const LS_AGENT_PURPOSE = "coding";
-/** Identifies this plugin as the trace source. */
 const LS_INTEGRATION = "openai-codex";
-/** Display name of the harness the trace came from. */
-const LS_AGENT_RUNTIME = "Codex";
-/** Metadata contract the emitted runs conform to. */
-const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
 	"--version",
-	"-v"
+	"-v",
+	"--engine-worker"
 ]);
+const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+const ENGINE_WORKER_FLAG = "--engine-worker";
+const ENGINE_STORAGE_DIRECTORY = "langsmith_engine_v1";
+const TOOL_SNAPSHOT_EVENT_SUFFIX = ":native-tool";
+const TOOL_START_EVENT_SUFFIX = ":tool-start";
+const TOOL_COMPLETE_EVENT_SUFFIX = ":tool-complete";
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
@@ -17239,11 +17256,17 @@ const STRING_ESCAPES = {
 	r: "\r"
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+const CHILD_SCOPE_RESET = {
+	approval_policy: void 0,
+	ls_is_error_interrupt: void 0,
+	ls_subagent_id: void 0,
+	ls_subagent_type: void 0
+};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_628ff1d9f80989defbced4daf654782a/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_628ff1d9f80989defbced4daf654782a/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17265,7 +17288,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_628ff1d9f80989defbced4daf654782a/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17322,9 +17345,6 @@ async function markTurnUploaded(rolloutFile, turnId) {
 //#endregion
 //#region src/metadata.ts
 const execFileAsync = promisify(execFile);
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
-}
 function parseRepository(url) {
 	const normalized = url?.trim();
 	if (!normalized) return {};
@@ -17398,39 +17418,550 @@ async function resolveGitInfo(cwd, sessionGit) {
 	}
 	return pending;
 }
-function codingAgentMetadata(ctx) {
-	const repo = parseRepository(ctx.git?.repository_url);
-	return stripUndefined({
-		ls_agent_purpose: LS_AGENT_PURPOSE,
-		ls_agent_type: ctx.agentType,
-		ls_integration: LS_INTEGRATION,
-		ls_agent_runtime: LS_AGENT_RUNTIME,
-		thread_id: ctx.threadId,
-		ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
-		ls_integration_version: LS_INTEGRATION_VERSION,
-		ls_agent_runtime_version: ctx.cliVersion,
-		turn_id: ctx.turnId,
-		turn_number: ctx.turnNumber,
-		repository_url: repo.repository_url,
-		repository_provider: repo.repository_provider,
-		repository_name: repo.repository_name,
-		git_branch: ctx.git?.branch,
-		git_commit_sha: ctx.git?.commit_hash,
-		cwd: ctx.cwd,
-		sandbox_type: ctx.sandboxType
-	});
-}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/constants.js
+const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
+const CODING_AGENT_RUN_TYPES = [
+	"root",
+	"llm",
+	"tool",
+	"subagent",
+	"interrupted"
+];
+const CODING_AGENT_RUN_SCOPES = {
+	all: CODING_AGENT_RUN_TYPES,
+	rootInterrupted: ["root", "interrupted"],
+	subagent: ["subagent"],
+	tool: ["tool"],
+	llmTool: ["llm", "tool"],
+	chain: [
+		"root",
+		"subagent",
+		"interrupted"
+	]
+};
+const CODING_AGENT_SCHEMA_INTEGRATIONS = [
+	"claude-code",
+	"openai-codex",
+	"deepagents-code",
+	"cursor",
+	"pi"
+];
+const CODING_AGENT_CORE_INTEGRATIONS = [
+	"claude-code",
+	"cursor",
+	"openai-codex"
+];
+const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
+const CODING_AGENT_AGENT_TYPES = [
+	"root",
+	"subagent",
+	"middleware",
+	"compaction"
+];
+const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
+const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
+	requirement: "where_known",
+	requiredWhereKnown: true
+};
+const CODING_AGENT_FIELD_DEFAULTS = {
+	appliesTo: CODING_AGENT_RUN_TYPES,
+	type: "string",
+	allowedValues: null,
+	requirement: "contextual",
+	requiredWhereKnown: false,
+	metadataModeIntegrations: []
+};
+const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "structural"
+};
+const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
+	metadataSource: "provider",
+	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+};
+const CODING_AGENT_INTEGRATION_POLICIES = {
+	"claude-code": {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: false,
+		legacyAliases: true
+	},
+	cursor: {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: true,
+		legacyAliases: false
+	},
+	"openai-codex": {
+		fullModePrecedence: "structural-wins",
+		metadataModeUsesDirectMetadata: false,
+		metadataModePreservesToolName: false,
+		legacyAliases: false
+	}
+};
 const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-function withTrustedMetadata(untrusted, structural) {
-	const merged = {
-		...untrusted,
-		...structural
+const METADATA_MODE_STATUS_VALUES = [
+	"running",
+	"completed",
+	"error"
+];
+const METADATA_MODE_NAME = "metadata";
+const CODING_AGENT_METADATA_PROVENANCE_FIELDS = [
+	"integration",
+	"integrationVersion",
+	"runtimeVersion",
+	"threadId",
+	"turnId",
+	"turnNumber",
+	"agentType",
+	"runType",
+	"approvalPolicy",
+	"subagentId",
+	"subagentType",
+	"clearSubagent",
+	"toolName",
+	"runName",
+	"skillName",
+	"modelName",
+	"usageMetadata",
+	"providerMetadata",
+	"runSpecific",
+	"base"
+];
+const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
+	["integrationVersion", "ls_integration_version"],
+	["runtimeVersion", "ls_agent_runtime_version"],
+	["turnId", "turn_id"],
+	["turnNumber", "turn_number"],
+	["approvalPolicy", "approval_policy"],
+	["subagentId", "ls_subagent_id"],
+	["subagentType", "ls_subagent_type"],
+	["skillName", "ls_skill_name"],
+	["modelName", "ls_model_name"]
+];
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/contract.js
+function field(key, options = {}) {
+	return {
+		key,
+		...CODING_AGENT_FIELD_DEFAULTS,
+		...options
 	};
-	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
-	return merged;
+}
+const structural = (key, options = {}) => field(key, {
+	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
+	...options
+});
+const provider = (key, options = {}) => field(key, {
+	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
+	...options
+});
+const CODING_AGENT_V1_CONTRACT = {
+	schemaVersion: CODING_AGENT_SCHEMA_VERSION,
+	integrations: CODING_AGENT_SCHEMA_INTEGRATIONS,
+	runtimeNames: {
+		"claude-code": "Claude Code",
+		"openai-codex": "Codex",
+		"deepagents-code": "Deep Agents Code",
+		cursor: "Cursor",
+		pi: "Pi"
+	},
+	keys: [
+		structural("ls_agent_purpose", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: ["coding"]
+		}),
+		structural("ls_integration", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
+		}),
+		structural("ls_agent_runtime", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [
+				"Claude Code",
+				"Codex",
+				"Deep Agents Code",
+				"Cursor",
+				"Pi"
+			]
+		}),
+		structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS),
+		structural("ls_trace_schema_version", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [CODING_AGENT_SCHEMA_VERSION]
+		}),
+		structural("ls_agent_type", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_AGENT_TYPES
+		}),
+		structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_number", {
+			...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
+			type: "integer"
+		}),
+		field("repository_url", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("repository_provider", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("repository_name", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("git_branch", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("git_commit_sha", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("ls_skill_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field("ls_attribution_identifier"),
+		field("user_id"),
+		field("local_username"),
+		field("user_email"),
+		field("sandbox_type"),
+		field("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }),
+		field("ls_subagent_id", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field("ls_subagent_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field("ls_tool_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		provider("ls_provider", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_model_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_message_format", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("codex_cli_version", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_raw_aggregated_usage", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.chain,
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_invocation_params", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			type: "object"
+		}),
+		field("usage_metadata", {
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		}),
+		field("ls_model_name", {
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		})
+	],
+	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
+};
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/validation.js
+function isRecord$4(value) {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function metadataFieldTypeIssue(field, value) {
+	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isRecord$4(value))) return "type";
+}
+function metadataFieldValueIssue(field, value) {
+	const typeIssue = metadataFieldTypeIssue(field, value);
+	if (typeIssue) return typeIssue;
+	if (field.allowedValues && !field.allowedValues.includes(value)) return "value";
+}
+function validateProviderMetadata(value, integration, runType) {
+	if (!isRecord$4(value)) return [{
+		key: "",
+		reason: "type"
+	}];
+	const issues = [];
+	for (const [key, entry] of Object.entries(value)) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((candidate) => candidate.key === key);
+		if (field?.metadataSource !== "provider") {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		if (!field.providerIntegrations?.includes(integration)) {
+			issues.push({
+				key,
+				reason: "integration"
+			});
+			continue;
+		}
+		if (!field.appliesTo.includes(runType)) {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		const reason = metadataFieldValueIssue(field, entry);
+		if (reason) issues.push({
+			key,
+			reason
+		});
+	}
+	return issues;
+}
+function normalizeProviderMetadata(value, integration, runType) {
+	if (!isRecord$4(value)) return {};
+	const issues = new Map(validateProviderMetadata(value, integration, runType).map((issue) => [issue.key, issue]));
+	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/builder.js
+function buildCodingAgentMetadata(options) {
+	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
+	const identity = {
+		ls_agent_purpose: "coding",
+		ls_integration: options.integration,
+		ls_agent_runtime: CODING_AGENT_V1_CONTRACT.runtimeNames[options.integration],
+		ls_trace_schema_version: CODING_AGENT_SCHEMA_VERSION,
+		ls_agent_type: options.agentType,
+		thread_id: options.threadId
+	};
+	if (options.integrationVersion) identity.ls_integration_version = options.integrationVersion;
+	if (options.runtimeVersion) identity.ls_agent_runtime_version = options.runtimeVersion;
+	if (options.turnId) identity.turn_id = options.turnId;
+	if (typeof options.turnNumber === "number") identity.turn_number = options.turnNumber;
+	if (options.approvalPolicy) identity.approval_policy = options.approvalPolicy;
+	if (options.clearSubagent) {
+		identity.ls_subagent_id = void 0;
+		identity.ls_subagent_type = void 0;
+	} else {
+		if (options.subagentId) identity.ls_subagent_id = options.subagentId;
+		if (options.subagentType) identity.ls_subagent_type = options.subagentType;
+	}
+	if (options.toolName) {
+		if (policy.legacyAliases) identity.tool_name = options.toolName;
+		if (options.runName && options.toolName !== options.runName) identity.ls_tool_name = options.toolName;
+	}
+	if (options.skillName) identity.ls_skill_name = options.skillName;
+	if (policy.legacyAliases && options.subagentId) identity.agent_id = options.subagentId;
+	if (policy.legacyAliases && options.subagentType) identity.agent_type = options.subagentType;
+	const explicit = {};
+	if (options.modelName !== void 0) explicit.ls_model_name = options.modelName;
+	if (options.usageMetadata !== void 0) explicit.usage_metadata = options.usageMetadata;
+	const provider = normalizeProviderMetadata(options.providerMetadata, options.integration, options.runType);
+	const trusted = {
+		...identity,
+		...explicit,
+		...provider
+	};
+	if (policy.metadataModePreservesToolName && options.toolName) trusted.ls_tool_name = options.toolName;
+	const pieces = [
+		identity,
+		explicit,
+		provider,
+		options.runSpecific,
+		options.base
+	];
+	const full = policy.fullModePrecedence === "custom-wins" ? pieces : pieces.toReversed();
+	const result = {};
+	for (const piece of full) if (piece) Object.assign(result, piece);
+	Object.defineProperty(result, TRUSTED_METADATA, { value: trusted });
+	return result;
 }
 function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/constants.js
+const CAPTURE_DIRECTORY = "capture-v1";
+const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
+const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
+const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
+const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
+const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/utils/serialization.js
+function canonicalJson(value) {
+	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
+	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
+	return result;
+}
+function canonicalValue(value, seen) {
+	if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (Array.isArray(value)) {
+		if (seen.has(value)) throw new TypeError("Cyclic data cannot be captured");
+		seen.add(value);
+		const descriptors = Object.getOwnPropertyDescriptors(value);
+		if (Reflect.ownKeys(descriptors).some((key) => typeof key === "symbol" || key !== "length" && (!JSON_ARRAY_INDEX_KEY.test(key) || Number(key) >= value.length))) throw new TypeError("Array properties cannot be captured");
+		if (Object.keys(descriptors).length - 1 < value.length) throw new TypeError("Sparse arrays cannot be captured");
+		const result = [];
+		for (let index = 0; index < value.length; index += 1) {
+			const descriptor = descriptors[index];
+			if (!descriptor?.enumerable || !("value" in descriptor)) throw new TypeError("Sparse arrays cannot be captured");
+			result.push(canonicalValue(descriptor.value, seen));
+		}
+		seen.delete(value);
+		return result;
+	}
+	if (typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) throw new TypeError("Capture data must contain only JSON values");
+	if (seen.has(value)) throw new TypeError("Cyclic data cannot be captured");
+	seen.add(value);
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	if (Reflect.ownKeys(descriptors).some((key) => typeof key === "symbol")) throw new TypeError("Symbol keys cannot be captured");
+	const result = Object.create(null);
+	for (const key of Object.keys(descriptors).toSorted()) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) throw new TypeError("Capture data must use enumerable data fields");
+		result[key] = canonicalValue(descriptor.value, seen);
+	}
+	seen.delete(value);
+	return result;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/validation/objects.js
+function isPlainRecord(value) {
+	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+function requirePlainRecord(value, name) {
+	if (!isPlainRecord(value)) throw new TypeError(`${name} must be a plain object`);
+	return value;
+}
+function ownDataField(source, key) {
+	const descriptor = Object.getOwnPropertyDescriptor(source, key);
+	if (!descriptor?.enumerable || !("value" in descriptor)) return { present: false };
+	return {
+		present: true,
+		value: descriptor.value
+	};
+}
+function requireOwnDataField(source, key) {
+	const field = ownDataField(source, key);
+	if (!field.present) throw new TypeError(`${key} is required`);
+	return field.value;
+}
+function canonicalJsonValue(value) {
+	return canonicalValue(value, /* @__PURE__ */ new Set());
+}
+function canonicalJsonObject(value, name) {
+	return canonicalValue(requirePlainRecord(value, name), /* @__PURE__ */ new Set());
+}
+function canonicalJsonArray(value, name) {
+	if (!Array.isArray(value)) throw new TypeError(`${name} must be an array`);
+	return canonicalValue(value, /* @__PURE__ */ new Set());
+}
+function requireNonBlankString(value, name) {
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError(`${name} is required`);
+	return value;
+}
+function requireString(value, name) {
+	if (typeof value !== "string") throw new TypeError(`${name} must be a string`);
+	return value;
+}
+function requireBoolean(value, name) {
+	if (typeof value !== "boolean") throw new TypeError(`${name} must be a boolean`);
+	return value;
+}
+function requireStringArray(value, name) {
+	const values = canonicalJsonArray(value, name);
+	if (!values.every((entry) => typeof entry === "string")) throw new TypeError(`${name} must contain strings`);
+	return values;
+}
+function requireTimestamp(value) {
+	if (typeof value === "number" && Number.isFinite(value) && Number.isFinite(new Date(value).getTime())) return value;
+	if (typeof value === "string" && value.trim().length > 0 && Number.isFinite(new Date(value).getTime())) return value;
+	throw new TypeError("Run timestamp must be a valid date or millisecond time");
+}
+function requireSafeEpochMilliseconds(value, name) {
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || !Number.isFinite(new Date(value).getTime())) throw new TypeError(`${name} must be a valid millisecond timestamp`);
+	return value;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/privacy.js
+function projectCodingAgentMetadata(metadata, integration, status) {
+	const safe = {};
+	for (const [key, value] of Object.entries(metadata ?? {})) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((entry) => entry.key === key);
+		if (!field?.metadataModeIntegrations.includes(integration) || value === void 0 || metadataFieldTypeIssue(field, value) !== void 0) continue;
+		safe[key] = value;
+	}
+	safe.status = METADATA_MODE_STATUS_VALUES.includes(status) ? status : "running";
+	safe.ls_tracing_mode = METADATA_MODE_NAME;
+	return safe;
+}
+function metadataForMode$1(metadata, integration, mode = "full", status) {
+	if (mode === "full") return metadata;
+	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/provenance.js
+function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
+	const source = requirePlainRecord(value, "Run metadata");
+	const declaredIntegration = ownDataField(source, "integration");
+	if (declaredIntegration.present && declaredIntegration.value !== integration) throw new TypeError("Run metadata integration does not match the lifecycle bridge");
+	const selected = {};
+	for (const key of CODING_AGENT_METADATA_PROVENANCE_FIELDS) {
+		const field = ownDataField(source, key);
+		if (field.present && field.value !== void 0) selected[key] = field.value;
+	}
+	selected["integration"] = integration;
+	const threadId = selected["threadId"];
+	if (typeof threadId !== "string" || threadId.trim().length === 0) return { status: "deferred" };
+	const agentType = selected["agentType"];
+	if (typeof agentType !== "string" || !CODING_AGENT_AGENT_TYPES.includes(agentType)) throw new TypeError("Run metadata has an invalid agent type");
+	const runType = selected["runType"];
+	if (typeof runType !== "string" || !CODING_AGENT_RUN_TYPES.includes(runType)) throw new TypeError("Run metadata has an invalid run type");
+	for (const key of [
+		"usageMetadata",
+		"providerMetadata",
+		"runSpecific",
+		"base"
+	]) if (selected[key] !== void 0) selected[key] = canonicalJsonObject(selected[key], `Run metadata ${key}`);
+	selected["providerMetadata"] = normalizeProviderMetadata(selected["providerMetadata"], integration, runType);
+	if (mode === "metadata") {
+		delete selected["base"];
+		delete selected["runSpecific"];
+	}
+	const options = selected;
+	return {
+		status: "ready",
+		value: mode === "metadata" ? projectMetadataProvenance(options, integration, status) : options
+	};
+}
+function projectMetadataProvenance(options, integration, status) {
+	const projection = metadataForMode$1(buildCodingAgentMetadata(options), integration, "metadata", status) ?? {};
+	const safe = {
+		integration,
+		threadId: projectedString(projection, "thread_id"),
+		agentType: projectedString(projection, "ls_agent_type"),
+		runType: options.runType
+	};
+	for (const [optionKey, metadataKey] of CODING_AGENT_METADATA_PROJECTION_FIELDS) if (Object.hasOwn(projection, metadataKey)) safe[optionKey] = projection[metadataKey];
+	if (options.clearSubagent === true) safe["clearSubagent"] = true;
+	if (typeof options.toolName === "string" && (projection["ls_tool_name"] === options.toolName || projection["tool_name"] === options.toolName)) {
+		safe["toolName"] = options.toolName;
+		if (typeof options.runName === "string") safe["runName"] = options.runName;
+	}
+	if (Object.hasOwn(projection, "usage_metadata")) safe["usageMetadata"] = projection["usage_metadata"];
+	const provider = normalizeProviderMetadata(options.providerMetadata, integration, options.runType);
+	const allowedProvider = Object.fromEntries(Object.entries(provider).filter(([key]) => Object.hasOwn(projection, key)));
+	if (Object.keys(allowedProvider).length > 0) safe["providerMetadata"] = allowedProvider;
+	return safe;
+}
+function projectedString(source, key) {
+	const value = source[key];
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError(`Metadata projection ${key} is required`);
+	return value;
 }
 //#endregion
 //#region src/skills.ts
@@ -17467,56 +17998,37 @@ function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
-//#region src/privacy.ts
-const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
-const METADATA_KEYS = /* @__PURE__ */ new Set([
-	"thread_id",
-	"turn_number",
-	"turn_id",
-	"status",
-	"ls_tracing_mode",
-	"ls_agent_purpose",
-	"ls_agent_type",
-	"ls_agent_runtime",
-	"ls_agent_runtime_version",
-	"ls_integration",
-	"ls_integration_version",
-	"ls_trace_schema_version",
-	"ls_model_name",
-	"ls_provider",
-	"ls_model_type",
-	"ls_message_format",
-	"codex_cli_version",
-	"ls_raw_aggregated_usage",
-	"ls_tool_name",
-	"ls_skill_name",
-	"usage_metadata",
-	"ls_subagent_id",
-	"ls_subagent_type"
-]);
-/** Usage metadata is extensible; validate only its outer object shape. */
-function usageForMetadata(value) {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return void 0;
-	return value;
+//#region src/utils/objects.ts
+function stripUndefined(value) {
+	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
-function projectMetadata(metadata, status) {
-	const safe = {};
-	for (const [key, value] of Object.entries(metadata ?? {})) {
-		if (!METADATA_KEYS.has(key)) continue;
-		if (key === "usage_metadata" || key === "ls_raw_aggregated_usage") {
-			const usage = usageForMetadata(value);
-			if (usage) safe[key] = usage;
-		} else if (key === "turn_number") {
-			if (typeof value === "number" && Number.isSafeInteger(value) && value >= 1) safe[key] = value;
-		} else if (typeof value === "string" && value.length) safe[key] = value;
+function stripUndefinedDeep(value) {
+	return stripNestedUndefined(value, /* @__PURE__ */ new WeakMap());
+}
+function stripNestedUndefined(value, copies) {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) return value;
+	const previous = copies.get(value);
+	if (previous) return previous;
+	const copy = Object.create(prototype);
+	copies.set(value, copy);
+	for (const key of Reflect.ownKeys(value)) {
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor) continue;
+		if (typeof key === "string" && descriptor.enumerable && "value" in descriptor && descriptor.value === void 0) continue;
+		Object.defineProperty(copy, key, "value" in descriptor ? {
+			...descriptor,
+			value: stripNestedUndefined(descriptor.value, copies)
+		} : descriptor);
 	}
-	safe.status = status === "error" || status === "completed" ? status : "running";
-	safe.ls_tracing_mode = "metadata";
-	return safe;
+	return copy;
 }
+//#endregion
+//#region src/privacy.ts
+const MUTED_TRACE_CONTENT$1 = "[LangSmith system notice: content omitted because tracing is muted.]";
 function metadataForMode(metadata, mode = "full", status) {
-	if (mode === "full") return metadata;
-	return projectMetadata(trustedCodingAgentMetadata(metadata), status);
+	return metadataForMode$1(metadata, LS_INTEGRATION, mode === "full" ? "full" : "metadata", status);
 }
 function sanitizeReplica(replica, mode) {
 	if (mode === "full" || !replica || typeof replica !== "object") return replica;
@@ -17544,16 +18056,16 @@ function runConfigForMode(config, mode = "full") {
 	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
 	safe.inputs = { messages: [{
 		role: "user",
-		content: MUTED_TRACE_CONTENT
+		content: MUTED_TRACE_CONTENT$1
 	}] };
 	safe.outputs = { messages: [{
 		role: "assistant",
-		content: MUTED_TRACE_CONTENT
+		content: MUTED_TRACE_CONTENT$1
 	}] };
 	safe.extra = {
 		metadata: metadataForMode(extra?.metadata, mode, status),
 		toJSON() {
-			return { metadata: projectMetadata(this.metadata, typeof this.metadata?.status === "string" ? this.metadata.status : status) };
+			return { metadata: projectCodingAgentMetadata(this.metadata, LS_INTEGRATION, typeof this.metadata?.status === "string" ? this.metadata.status : status) };
 		}
 	};
 	return safe;
@@ -17572,6 +18084,2915 @@ function createRunTree(config, mode = "full", parent) {
 		if (run.replicas) run.replicas = run.replicas.map((replica) => sanitizeReplica(replica, mode));
 	}
 	return run;
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/regex.js
+var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/validate.js
+function validate(uuid) {
+	return typeof uuid === "string" && regex_default.test(uuid);
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/parse.js
+function parse(uuid) {
+	if (!validate(uuid)) throw TypeError("Invalid UUID");
+	let v;
+	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/stringify.js
+const byteToHex = [];
+for (let i = 0; i < 256; ++i) byteToHex.push((i + 256).toString(16).slice(1));
+function unsafeStringify(arr, offset = 0) {
+	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/v35.js
+function stringToBytes(str) {
+	str = unescape(encodeURIComponent(str));
+	const bytes = new Uint8Array(str.length);
+	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
+	return bytes;
+}
+const DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const URL$1 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+function v35(version, hash, value, namespace, buf, offset) {
+	const valueBytes = typeof value === "string" ? stringToBytes(value) : value;
+	const namespaceBytes = typeof namespace === "string" ? parse(namespace) : namespace;
+	if (typeof namespace === "string") namespace = parse(namespace);
+	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
+	let bytes = new Uint8Array(16 + valueBytes.length);
+	bytes.set(namespaceBytes);
+	bytes.set(valueBytes, namespaceBytes.length);
+	bytes = hash(bytes);
+	bytes[6] = bytes[6] & 15 | version;
+	bytes[8] = bytes[8] & 63 | 128;
+	if (buf) {
+		offset ??= 0;
+		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
+		return buf;
+	}
+	return unsafeStringify(bytes);
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/sha1.js
+function sha1(bytes) {
+	if (Array.isArray(bytes)) bytes = Buffer.from(bytes);
+	else if (typeof bytes === "string") bytes = Buffer.from(bytes, "utf8");
+	return createHash("sha1").update(bytes).digest();
+}
+//#endregion
+//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/v5.js
+function v5(value, namespace, buf, offset) {
+	return v35(80, sha1, value, namespace, buf, offset);
+}
+v5.DNS = DNS;
+v5.URL = URL$1;
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/constants.js
+const FILE_LOCK_CLAIM_EXTENSION = ".json";
+const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
+const FILE_LOCK_TEMP_SUFFIX = ".tmp";
+const FILE_LOCK_ENCODING = "utf-8";
+const FILE_LOCK_TIMEOUT_MESSAGE = "Timed out waiting for file lock";
+const FILE_LOCK_TICKET_LIMIT_MESSAGE = "File lock ticket limit reached";
+const FILE_LOCK_RELEASE_MESSAGE = "Could not release file lock claim";
+const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive number";
+const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
+const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/file-lock.js
+function isRecord$3(value) {
+	return typeof value === "object" && value !== null;
+}
+function parseClaim(value, id) {
+	if (!isRecord$3(value)) return void 0;
+	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
+	return value;
+}
+async function processIsAlive$1(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		if (error.code === "ESRCH") return false;
+		return;
+	}
+}
+async function removeFile$1(filePath) {
+	try {
+		await unlink(filePath);
+		return true;
+	} catch (error) {
+		if (error.code === "ENOENT") return true;
+		return false;
+	}
+}
+async function publishClaim(filePath, claim, create, deadline) {
+	const temporaryPath = join(dirname(filePath), `.${claim.id}.${randomUUID()}${FILE_LOCK_TEMP_SUFFIX}`);
+	try {
+		await writeFile(temporaryPath, JSON.stringify(claim), {
+			flag: "wx",
+			mode: 384
+		});
+		if (create) await link(temporaryPath, filePath);
+		else {
+			const replacementDeadline = deadline ?? performance$1.now() + 100;
+			for (;;) try {
+				await rename(temporaryPath, filePath);
+				break;
+			} catch (error) {
+				if (error.code !== "EPERM") throw error;
+				await waitForNextScan(replacementDeadline, filePath);
+			}
+		}
+	} finally {
+		await removeFile$1(temporaryPath);
+	}
+}
+async function createClaim(claimDirectory) {
+	for (;;) {
+		const id = randomUUID();
+		const claim = {
+			version: 1,
+			id,
+			pid: process.pid,
+			choosing: true,
+			ticket: 0
+		};
+		try {
+			await publishClaim(join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`), claim, true);
+			return claim;
+		} catch (error) {
+			if (error.code !== "EEXIST") throw error;
+		}
+	}
+}
+async function scanClaims(claimDirectory) {
+	const entries = await readdir(claimDirectory, { withFileTypes: true });
+	const claims = [];
+	for (const entry of entries) {
+		if (!entry.name.endsWith(".json")) continue;
+		const id = entry.name.slice(0, -5);
+		if (!entry.isFile()) return {
+			claims,
+			blocked: true
+		};
+		let value;
+		try {
+			value = JSON.parse(await readFile(join(claimDirectory, entry.name), FILE_LOCK_ENCODING));
+		} catch (error) {
+			if (error.code === "ENOENT") continue;
+			return {
+				claims,
+				blocked: true
+			};
+		}
+		const claim = parseClaim(value, id);
+		if (!claim) return {
+			claims,
+			blocked: true
+		};
+		const alive = await processIsAlive$1(claim.pid);
+		if (alive === false) {
+			if (!await removeFile$1(join(claimDirectory, entry.name))) return {
+				claims,
+				blocked: true
+			};
+			continue;
+		}
+		if (alive === void 0) return {
+			claims,
+			blocked: true
+		};
+		claims.push(claim);
+	}
+	return {
+		claims,
+		blocked: false
+	};
+}
+function claimPath(claimDirectory, id) {
+	return join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
+}
+function hasClaimState(claims, id, choosing, ticket) {
+	const claim = claims.find((peer) => peer.id === id);
+	return claim?.choosing === choosing && claim.ticket === ticket;
+}
+function makeHandle(claimDirectory, claim) {
+	let releasePromise;
+	return { release() {
+		releasePromise ??= removeFile$1(claimPath(claimDirectory, claim.id)).then((removed) => {
+			if (!removed) throw new Error(FILE_LOCK_RELEASE_MESSAGE);
+		});
+		return releasePromise;
+	} };
+}
+async function beginClaim(filePath) {
+	const claimDirectory = `${resolve(filePath)}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	await assertSafeClaimDirectory(claimDirectory);
+	await mkdir(claimDirectory, {
+		recursive: true,
+		mode: 448
+	});
+	await assertSafeClaimDirectory(claimDirectory);
+	await chmod(claimDirectory, 448);
+	return {
+		claimDirectory,
+		claim: await createClaim(claimDirectory)
+	};
+}
+async function assertSafeClaimDirectory(claimDirectory) {
+	let stat;
+	try {
+		stat = await lstat(claimDirectory);
+	} catch (error) {
+		if (error.code === "ENOENT") return;
+		throw error;
+	}
+	if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE);
+}
+async function acquireClaim(filePath, waitForPeers, deadline) {
+	const { claimDirectory, claim } = await beginClaim(filePath);
+	const ownPath = claimPath(claimDirectory, claim.id);
+	let ownedClaim;
+	try {
+		for (;;) {
+			const scan = await scanClaims(claimDirectory);
+			if (scan.blocked || !hasClaimState(scan.claims, claim.id, true, 0)) {
+				if (!await waitOrReleaseClaim(waitForPeers, deadline, filePath, claimDirectory, claim)) return void 0;
+				continue;
+			}
+			const peers = scan.claims.filter((peer) => peer.id !== claim.id);
+			if (!waitForPeers && peers.length > 0) {
+				await makeHandle(claimDirectory, claim).release();
+				return;
+			}
+			let maxTicket = 0;
+			for (const peer of scan.claims) maxTicket = Math.max(maxTicket, peer.ticket);
+			if (maxTicket >= Number.MAX_SAFE_INTEGER) throw new Error(FILE_LOCK_TICKET_LIMIT_MESSAGE);
+			ownedClaim = {
+				...claim,
+				choosing: false,
+				ticket: maxTicket + 1
+			};
+			await publishClaim(ownPath, ownedClaim, false, waitForPeers ? deadline : void 0);
+			break;
+		}
+		const ticketedClaim = ownedClaim;
+		if (!ticketedClaim) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
+		for (;;) {
+			const scan = await scanClaims(claimDirectory);
+			if (scan.blocked || !hasClaimState(scan.claims, claim.id, false, ticketedClaim.ticket)) {
+				if (!await waitOrReleaseClaim(waitForPeers, deadline, filePath, claimDirectory, claim)) return void 0;
+				continue;
+			}
+			const peers = scan.claims.filter((peer) => peer.id !== claim.id);
+			if (peers.length > 0 && (!waitForPeers || peers.some((peer) => precedes(peer, ticketedClaim)))) {
+				if (!await waitOrReleaseClaim(waitForPeers, deadline, filePath, claimDirectory, claim)) return void 0;
+				continue;
+			}
+			if (waitForPeers && performance$1.now() > deadline) throw timeoutError(filePath);
+			return {
+				claimDirectory,
+				claim: ticketedClaim
+			};
+		}
+	} catch (error) {
+		await makeHandle(claimDirectory, claim).release();
+		throw error;
+	}
+}
+async function tryAcquireFileLock(filePath) {
+	const acquired = await acquireClaim(filePath, false, 0);
+	if (!acquired) return void 0;
+	return makeHandle(acquired.claimDirectory, acquired.claim);
+}
+async function waitForFileLockClaim(filePath, pid, options) {
+	if (!Number.isSafeInteger(pid) || pid <= 0) throw new TypeError("Invalid file lock process ID");
+	const waitMs = timeoutMs(options);
+	const deadline = performance$1.now() + waitMs;
+	const claimDirectory = `${resolve(filePath)}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	for (;;) {
+		await assertSafeClaimDirectory(claimDirectory);
+		try {
+			if ((await scanClaims(claimDirectory)).claims.some((claim) => claim.pid === pid)) return true;
+		} catch (error) {
+			if (error.code !== "ENOENT") throw error;
+		}
+		if (await processIsAlive$1(pid) === false) return false;
+		const remaining = deadline - performance$1.now();
+		if (remaining <= 0) return false;
+		await new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
+	}
+}
+function precedes(left, right) {
+	return left.ticket < right.ticket || left.ticket === right.ticket && left.id < right.id;
+}
+function timeoutError(filePath) {
+	return /* @__PURE__ */ new Error(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(filePath)}`);
+}
+function timeoutMs(options) {
+	const value = options?.timeoutMs ?? 5e3;
+	if (!Number.isFinite(value) || value <= 0) throw new RangeError(FILE_LOCK_INVALID_TIMEOUT_MESSAGE);
+	return value;
+}
+function waitForNextScan(deadline, filePath) {
+	const remaining = deadline - performance$1.now();
+	if (remaining <= 0) return Promise.reject(timeoutError(filePath));
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
+}
+async function waitOrReleaseClaim(waitForPeers, deadline, filePath, claimDirectory, claim) {
+	if (!waitForPeers) {
+		await makeHandle(claimDirectory, claim).release();
+		return false;
+	}
+	await waitForNextScan(deadline, filePath);
+	return true;
+}
+async function withFileLock(filePath, callback, options) {
+	const waitMs = timeoutMs(options);
+	const acquired = await acquireClaim(filePath, true, performance$1.now() + waitMs);
+	if (!acquired) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
+	try {
+		return await callback();
+	} finally {
+		await makeHandle(acquired.claimDirectory, acquired.claim).release();
+	}
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/paths.js
+function validateIntegration(value) {
+	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
+}
+function validateIdentifier(value, name) {
+	if (value.length === 0 || Buffer.byteLength(value, "utf8") > 4096 || hasControlCharacter(value)) throw new TypeError(`Invalid ${name}`);
+}
+function hasControlCharacter(value) {
+	for (const character of value) {
+		const codePoint = character.codePointAt(0);
+		if (codePoint !== void 0 && (codePoint < 32 || codePoint === 127)) return true;
+	}
+	return false;
+}
+function identifierHash(value) {
+	return createHash("sha256").update(value).digest("hex");
+}
+function captureDirectory(root) {
+	return join(resolve(root), CAPTURE_DIRECTORY);
+}
+function eventPath(root, scope) {
+	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "events", `${identifierHash(scope.eventId)}.json`);
+}
+function receiptPath(root, scope, destination) {
+	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/utils/atomic-file.js
+async function ensurePrivateDirectory(root, segments) {
+	await mkdir(root, {
+		recursive: true,
+		mode: 448
+	});
+	const rootInfo = await lstat(root);
+	if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) throw new Error("Capture root must be a real directory");
+	let current = root;
+	for (const segment of segments) {
+		current = join(current, segment);
+		try {
+			await mkdir(current, { mode: 448 });
+		} catch (error) {
+			if (errorCode$2(error) !== "EEXIST") throw error;
+		}
+		const info = await lstat(current);
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Capture path contains a non-directory");
+		await chmod(current, 448);
+		const checked = await lstat(current);
+		if (!checked.isDirectory() || checked.isSymbolicLink()) throw new Error("Capture path changed during setup");
+	}
+	return current;
+}
+async function publishExclusive(path, contents, beforeCommit) {
+	const directory = dirname(path);
+	const stagingPath = join(directory, `.${randomUUID()}.tmp`);
+	const handle = await open(stagingPath, "wx", 384);
+	try {
+		await handle.writeFile(contents, "utf8");
+		await handle.chmod(384);
+		await handle.sync();
+	} finally {
+		await handle.close();
+	}
+	try {
+		beforeCommit?.();
+		await link(stagingPath, path);
+		await syncDirectory(directory);
+		return true;
+	} catch (error) {
+		if (errorCode$2(error) === "EEXIST") return false;
+		throw error;
+	} finally {
+		await unlink(stagingPath).catch((error) => {
+			if (errorCode$2(error) !== "ENOENT") throw error;
+		});
+	}
+}
+async function readPrivateFile(root, path) {
+	if (!await hasRealParentDirectories(root, path)) return void 0;
+	let handle;
+	try {
+		const info = await lstat(path);
+		if (!info.isFile() || info.isSymbolicLink()) throw new Error("Capture record must be a regular file");
+		handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+	} catch (error) {
+		if (errorCode$2(error) === "ENOENT") return void 0;
+		throw error;
+	}
+	try {
+		if (!(await handle.stat()).isFile()) throw new Error("Capture record must be a regular file");
+		return await handle.readFile("utf8");
+	} finally {
+		await handle.close();
+	}
+}
+async function hasRealParentDirectories(root, path) {
+	const relativeDirectory = relative(root, dirname(path));
+	if (relativeDirectory === ".." || relativeDirectory.startsWith(`..${sep}`) || isAbsolute(relativeDirectory)) throw new Error("Capture path is outside storage root");
+	const directories = [root];
+	let current = root;
+	for (const segment of relativeDirectory.split(sep).filter(Boolean)) {
+		current = join(current, segment);
+		directories.push(current);
+	}
+	for (const directory of directories) {
+		let info;
+		try {
+			info = await lstat(directory);
+		} catch (error) {
+			if (errorCode$2(error) === "ENOENT") return false;
+			throw error;
+		}
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Capture path contains a non-directory");
+	}
+	return true;
+}
+async function syncDirectory(path) {
+	if (process.platform === "win32") return;
+	const handle = await open(path, constants.O_RDONLY | (constants.O_DIRECTORY ?? 0) | (constants.O_NOFOLLOW ?? 0));
+	try {
+		await handle.sync();
+	} finally {
+		await handle.close();
+	}
+}
+function errorCode$2(error) {
+	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/files/private-directory.js
+async function listPrivateDirectory(root, directory) {
+	const storageRoot = resolve(root);
+	const target = resolve(directory);
+	const relativePath = relative(storageRoot, target);
+	if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) throw new Error("Private directory is outside storage root");
+	let current = storageRoot;
+	for (const segment of ["", ...relativePath.split(sep).filter(Boolean)]) {
+		if (segment) current = join(current, segment);
+		const info = await lstatDirectory(current);
+		if (!info) return void 0;
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Private path contains a non-directory");
+	}
+	const entries = await readdir(target, { withFileTypes: true });
+	const finalInfo = await lstat(target);
+	if (!finalInfo.isDirectory() || finalInfo.isSymbolicLink()) throw new Error("Private path changed during enumeration");
+	return entries;
+}
+async function lstatDirectory(path) {
+	try {
+		return await lstat(path);
+	} catch (error) {
+		if (errorCode$1(error) === "ENOENT") return void 0;
+		throw error;
+	}
+}
+function errorCode$1(error) {
+	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/capture-store.js
+function createCaptureStore(root) {
+	const storageRoot = resolve(root);
+	return {
+		async capture(input) {
+			let record;
+			let contents;
+			try {
+				validateScope(input);
+				const dependencies = normalizeDependencies(input.dependencies, input);
+				validateIdentifier(input.runId, "run ID");
+				validateIdentifier(input.destinationFingerprint, "destination fingerprint");
+				validateIdentifier(input.eventKind, "event kind");
+				record = {
+					version: 2,
+					capturedAtMs: Date.now(),
+					integration: input.integration,
+					sessionId: input.sessionId,
+					turnId: input.turnId,
+					eventId: input.eventId,
+					runId: input.runId,
+					destinationFingerprint: input.destinationFingerprint,
+					eventKind: input.eventKind,
+					normalizedPayload: canonicalValue(input.normalizedPayload, /* @__PURE__ */ new Set()),
+					turnEvidence: canonicalValue(input.turnEvidence, /* @__PURE__ */ new Set()),
+					metadataProvenance: canonicalValue(input.metadataProvenance, /* @__PURE__ */ new Set()),
+					...input.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: requireSafeEpochMilliseconds(input.sourceAgeStartedAtMs, "Source age") },
+					...dependencies === void 0 ? {} : { dependencies }
+				};
+				contents = canonicalJson(record);
+			} catch (error) {
+				return failure("SERIALIZATION_FAILED", error);
+			}
+			try {
+				const path = eventPath(storageRoot, input);
+				await ensureDirectories(input.integration, input.sessionId, input.turnId, "events");
+				if (await publishExclusive(path, contents)) return {
+					status: "published",
+					record
+				};
+				const previous = await readRecord$1(storageRoot, path);
+				if (previous === void 0) return {
+					status: "failed",
+					code: "STORAGE_FAILED",
+					message: "Published event disappeared"
+				};
+				if (!sameScope(previous, input)) return { status: "conflict" };
+				return sameCapture(previous, record) ? {
+					status: "duplicate",
+					record: previous
+				} : { status: "conflict" };
+			} catch (error) {
+				return failure("STORAGE_FAILED", error);
+			}
+		},
+		async read(scope) {
+			validateScope(scope);
+			const record = await readRecord$1(storageRoot, eventPath(storageRoot, scope));
+			if (record === void 0) return void 0;
+			if (!sameScope(record, scope)) throw new Error("Capture namespace does not match");
+			return record;
+		},
+		async enumerate(integration, sessionId) {
+			validateIntegration(integration);
+			validateIdentifier(sessionId, "session ID");
+			const turnsDirectory = join(captureDirectory(storageRoot), "integrations", integration, "sessions", identifierHash(sessionId), "turns");
+			const turns = await listPrivateDirectory(storageRoot, turnsDirectory);
+			if (turns === void 0) return [];
+			const captures = [];
+			for (const turn of turns) {
+				if (!turn.isDirectory() || turn.isSymbolicLink() || !CAPTURE_HASH.test(turn.name)) throw new Error("Invalid capture turn directory");
+				const eventDirectory = join(turnsDirectory, turn.name, "events");
+				const events = await listPrivateDirectory(storageRoot, eventDirectory);
+				if (events === void 0) continue;
+				for (const event of events) {
+					if (event.isSymbolicLink() || !event.isFile()) throw new Error("Capture event must be a regular file");
+					if (CAPTURE_STAGING_FILE.test(event.name)) continue;
+					if (!CAPTURE_EVENT_FILE.test(event.name)) throw new Error("Invalid capture event path");
+					const path = join(eventDirectory, event.name);
+					const record = await readRecord$1(storageRoot, path);
+					if (record === void 0 || record.integration !== integration || record.sessionId !== sessionId || identifierHash(record.turnId) !== turn.name || `${identifierHash(record.eventId)}.json` !== event.name) throw new Error("Capture event namespace does not match");
+					const info = await lstat(path);
+					if (!info.isFile() || info.isSymbolicLink() || !Number.isFinite(info.mtimeMs)) throw new Error("Capture event must be a regular file");
+					captures.push({
+						record,
+						capturedAtMs: record.capturedAtMs
+					});
+				}
+			}
+			return captures.toSorted(compareCaptures$1);
+		},
+		async enumerateSessions(integration) {
+			validateIntegration(integration);
+			const sessionsDirectory = join(captureDirectory(storageRoot), "integrations", integration, "sessions");
+			const directories = await listPrivateDirectory(storageRoot, sessionsDirectory);
+			if (directories === void 0) return [];
+			const sessions = [];
+			for (const directory of directories) {
+				if (!directory.isDirectory() || directory.isSymbolicLink() || !CAPTURE_HASH.test(directory.name)) throw new Error("Invalid capture session directory");
+				const session = await enumerateSession(storageRoot, integration, directory.name);
+				if (session === void 0 || session.captures.length === 0) continue;
+				sessions.push(session);
+			}
+			return sessions.toSorted((left, right) => left.sessionId === right.sessionId ? 0 : left.sessionId < right.sessionId ? -1 : 1);
+		},
+		async recordOutcome(input) {
+			try {
+				validateScope(input);
+				validateIdentifier(input.destination, "destination");
+				if (input.outcome !== "delivered" && input.outcome !== "dropped") throw new TypeError("Invalid outcome");
+				if (input.reason !== void 0) validateIdentifier(input.reason, "outcome reason");
+				if (await this.read(input) === void 0) return { status: "missing-capture" };
+				const path = receiptPath(storageRoot, input, input.destination);
+				await ensureDirectories(input.integration, input.sessionId, input.turnId, "receipts", input.destination);
+				const comparable = receiptValue(input, (/* @__PURE__ */ new Date()).toISOString());
+				if (await publishExclusive(path, canonicalJson(comparable))) return {
+					status: "recorded",
+					receipt: comparable
+				};
+				const previous = await readReceipt(storageRoot, path);
+				if (previous === void 0) return {
+					status: "failed",
+					code: "STORAGE_FAILED",
+					message: "Published receipt disappeared"
+				};
+				return sameReceipt(previous, input) ? {
+					status: "duplicate",
+					receipt: previous
+				} : { status: "conflict" };
+			} catch (error) {
+				return failure("STORAGE_FAILED", error);
+			}
+		},
+		async readOutcome(scope, destination) {
+			try {
+				validateScope(scope);
+				validateIdentifier(destination, "destination");
+				if (await this.read(scope) === void 0) return { status: "missing-capture" };
+				const receipt = await readReceipt(storageRoot, receiptPath(storageRoot, scope, destination));
+				if (receipt === void 0) return { status: "pending" };
+				return sameScope(receipt, scope) && receipt.destination === destination ? {
+					status: "settled",
+					receipt
+				} : {
+					status: "failed",
+					code: "STORAGE_FAILED",
+					message: "Receipt namespace does not match"
+				};
+			} catch (error) {
+				return failure("STORAGE_FAILED", error);
+			}
+		}
+	};
+	async function ensureDirectories(integration, sessionId, turnId, collection, destination) {
+		const pathSegments = [
+			CAPTURE_DIRECTORY,
+			"integrations",
+			integration,
+			"sessions",
+			identifierHash(sessionId),
+			"turns",
+			identifierHash(turnId),
+			collection
+		];
+		if (destination !== void 0) pathSegments.push(identifierHash(destination));
+		await ensurePrivateDirectory(storageRoot, pathSegments);
+	}
+}
+function compareCaptures$1(left, right) {
+	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
+	if (left.record.eventId === right.record.eventId) return 0;
+	return left.record.eventId < right.record.eventId ? -1 : 1;
+}
+async function enumerateSession(root, integration, sessionHash) {
+	const turnsDirectory = join(captureDirectory(root), "integrations", integration, "sessions", sessionHash, "turns");
+	const turns = await listPrivateDirectory(root, turnsDirectory);
+	if (turns === void 0) return void 0;
+	const captures = [];
+	let sessionId;
+	for (const turn of turns) {
+		if (!turn.isDirectory() || turn.isSymbolicLink() || !CAPTURE_HASH.test(turn.name)) throw new Error("Invalid capture turn directory");
+		const eventDirectory = join(turnsDirectory, turn.name, "events");
+		const events = await listPrivateDirectory(root, eventDirectory);
+		if (events === void 0) continue;
+		for (const event of events) {
+			if (event.isSymbolicLink() || !event.isFile()) throw new Error("Capture event must be a regular file");
+			if (CAPTURE_STAGING_FILE.test(event.name)) continue;
+			if (!CAPTURE_EVENT_FILE.test(event.name)) throw new Error("Invalid capture event path");
+			const path = join(eventDirectory, event.name);
+			const record = await readRecord$1(root, path);
+			if (record === void 0 || record.integration !== integration || identifierHash(record.sessionId) !== sessionHash || identifierHash(record.turnId) !== turn.name || `${identifierHash(record.eventId)}.json` !== event.name || sessionId !== void 0 && record.sessionId !== sessionId) throw new Error("Capture event namespace does not match");
+			sessionId = record.sessionId;
+			const info = await lstat(path);
+			if (!info.isFile() || info.isSymbolicLink() || !Number.isFinite(info.mtimeMs)) throw new Error("Capture event must be a regular file");
+			captures.push({
+				record,
+				capturedAtMs: record.capturedAtMs
+			});
+		}
+	}
+	if (sessionId === void 0) return void 0;
+	return {
+		sessionId,
+		captures: captures.toSorted(compareCaptures$1)
+	};
+}
+function sameCapture(left, right) {
+	const leftContent = { ...left };
+	const rightContent = { ...right };
+	delete leftContent.capturedAtMs;
+	delete rightContent.capturedAtMs;
+	return canonicalJson(leftContent) === canonicalJson(rightContent);
+}
+function receiptValue(input, recordedAt) {
+	return {
+		version: 1,
+		integration: input.integration,
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		eventId: input.eventId,
+		destination: input.destination,
+		outcome: input.outcome,
+		...input.reason === void 0 ? {} : { reason: input.reason },
+		recordedAt
+	};
+}
+async function readRecord$1(root, path) {
+	const contents = await readPrivateFile(root, path);
+	if (contents === void 0) return void 0;
+	const value = parseObject$1(contents);
+	if (value.version !== 2 || typeof value.capturedAtMs !== "number" || !Number.isSafeInteger(value.capturedAtMs) || !Number.isFinite(new Date(value.capturedAtMs).getTime()) || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.runId !== "string" || typeof value.destinationFingerprint !== "string" || typeof value.eventKind !== "string" || !("normalizedPayload" in value) || !("turnEvidence" in value) || !("metadataProvenance" in value)) throw new Error("Unsupported capture record");
+	if ("sourceAgeStartedAtMs" in value) requireSafeEpochMilliseconds(value["sourceAgeStartedAtMs"], "Stored source age");
+	for (const [identifier, name] of [
+		[value.runId, "run ID"],
+		[value.destinationFingerprint, "destination fingerprint"],
+		[value.eventKind, "event kind"]
+	]) validateIdentifier(identifier, name);
+	const scope = {
+		integration: value.integration,
+		sessionId: value.sessionId,
+		turnId: value.turnId,
+		eventId: value.eventId
+	};
+	validateScope(scope);
+	const dependencies = normalizeDependencies(value.dependencies, scope);
+	return {
+		...value,
+		...dependencies === void 0 ? {} : { dependencies }
+	};
+}
+async function readReceipt(root, path) {
+	const contents = await readPrivateFile(root, path);
+	if (contents === void 0) return void 0;
+	const value = parseObject$1(contents);
+	if (value.version !== 1 || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.destination !== "string" || value.outcome !== "delivered" && value.outcome !== "dropped" || typeof value.recordedAt !== "string" || "reason" in value && typeof value.reason !== "string") throw new Error("Unsupported outcome receipt");
+	validateIdentifier(value.destination, "destination");
+	if ("reason" in value) validateIdentifier(value.reason, "outcome reason");
+	const recordedAt = new Date(value.recordedAt);
+	if (!Number.isFinite(recordedAt.getTime()) || recordedAt.toISOString() !== value.recordedAt) throw new Error("Unsupported outcome receipt");
+	return value;
+}
+function parseObject$1(contents) {
+	const value = JSON.parse(contents);
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid storage record");
+	return value;
+}
+function validateScope(scope) {
+	validateIntegration(scope.integration);
+	validateIdentifier(scope.sessionId, "session ID");
+	validateIdentifier(scope.turnId, "turn ID");
+	validateIdentifier(scope.eventId, "event ID");
+}
+function normalizeDependencies(value, dependent) {
+	if (value === void 0) return void 0;
+	if (!Array.isArray(value)) throw new TypeError("Invalid capture dependencies");
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => {
+		if (item === null || typeof item !== "object" || Array.isArray(item)) throw new TypeError("Invalid capture dependency");
+		const candidate = item;
+		if (typeof candidate.integration !== "string" || typeof candidate.sessionId !== "string" || typeof candidate.turnId !== "string" || typeof candidate.eventId !== "string") throw new TypeError("Invalid capture dependency");
+		const dependency = {
+			integration: candidate.integration,
+			sessionId: candidate.sessionId,
+			turnId: candidate.turnId,
+			eventId: candidate.eventId
+		};
+		validateScope(dependency);
+		if (dependency.integration !== dependent.integration) throw new TypeError("Capture dependencies must use the same integration");
+		if (sameScope(dependency, dependent)) throw new TypeError("Capture cannot depend on itself");
+		const key = canonicalJson(dependency);
+		if (seen.has(key)) throw new TypeError("Capture dependencies must be unique");
+		seen.add(key);
+		return dependency;
+	});
+}
+function sameScope(record, scope) {
+	return record.integration === scope.integration && record.sessionId === scope.sessionId && record.turnId === scope.turnId && record.eventId === scope.eventId;
+}
+function sameReceipt(receipt, input) {
+	return sameScope(receipt, input) && receipt.destination === input.destination && receipt.outcome === input.outcome && receipt.reason === input.reason;
+}
+function failure(code, error) {
+	return {
+		status: "failed",
+		code: errorCode(error) ?? code,
+		message: error instanceof Error ? error.message : String(error)
+	};
+}
+function errorCode(error) {
+	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/constants.js
+const DELIVERY_DIRECTORY = "delivery-v1";
+const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
+const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
+const DELIVERY_EXPIRED_REASON = "expired";
+const DELIVERY_CAPACITY_REASON = "capacity";
+const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
+const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/attempt-store.js
+function createDeliveryAttemptStore(root) {
+	const storageRoot = resolve(root);
+	return {
+		async count(scope, destination) {
+			validateAttemptScope(scope, destination);
+			const directory = attemptDirectory(storageRoot, scope, destination);
+			const entries = await listPrivateDirectory(storageRoot, directory);
+			if (entries === void 0) return 0;
+			const attempts = [];
+			for (const entry of entries) {
+				if (entry.isSymbolicLink() || !entry.isFile()) throw new Error("Delivery attempt must be a regular file");
+				if (DELIVERY_STAGING_FILE.test(entry.name)) continue;
+				const match = DELIVERY_ATTEMPT_FILE.exec(entry.name);
+				if (!match) throw new Error("Invalid delivery attempt path");
+				const attempt = Number(match[1]);
+				if (!Number.isSafeInteger(attempt) || String(attempt) !== match[1]) throw new Error("Invalid delivery attempt number");
+				const contents = await readPrivateFile(storageRoot, join(directory, entry.name));
+				if (contents === void 0) throw new Error("Delivery attempt disappeared");
+				if (!sameAttempt(parseAttempt$1(contents), scope, destination, attempt)) throw new Error("Delivery attempt namespace does not match");
+				attempts.push(attempt);
+			}
+			attempts.sort((left, right) => left - right);
+			for (let index = 0; index < attempts.length; index += 1) if (attempts[index] !== index + 1) throw new Error("Delivery attempt sequence has a gap");
+			return attempts.length;
+		},
+		async record(scope, destination, attempt, startedAt) {
+			validateAttemptScope(scope, destination);
+			if (!Number.isSafeInteger(attempt) || attempt <= 0) throw new TypeError("Invalid delivery attempt number");
+			validateTimestamp(startedAt);
+			const directory = attemptDirectory(storageRoot, scope, destination);
+			await ensurePrivateDirectory(storageRoot, attemptSegments(scope, destination));
+			const record = {
+				version: 1,
+				...scope,
+				destination,
+				attempt,
+				startedAt
+			};
+			if (!await publishExclusive(join(directory, `${attempt}.json`), JSON.stringify(record))) throw new Error("Delivery attempt already exists");
+		}
+	};
+}
+function attemptSegments(scope, destination) {
+	return [
+		DELIVERY_DIRECTORY,
+		"integrations",
+		scope.integration,
+		"sessions",
+		identifierHash(scope.sessionId),
+		"turns",
+		identifierHash(scope.turnId),
+		"events",
+		identifierHash(scope.eventId),
+		"destinations",
+		identifierHash(destination),
+		"attempts"
+	];
+}
+function attemptDirectory(root, scope, destination) {
+	return join(root, ...attemptSegments(scope, destination));
+}
+function validateAttemptScope(scope, destination) {
+	validateIntegration(scope.integration);
+	validateIdentifier(scope.sessionId, "session ID");
+	validateIdentifier(scope.turnId, "turn ID");
+	validateIdentifier(scope.eventId, "event ID");
+	validateIdentifier(destination, "destination");
+}
+function parseAttempt$1(contents) {
+	const value = JSON.parse(contents);
+	if (value === null || typeof value !== "object" || Array.isArray(value) || !("version" in value) || value.version !== 1 || !("integration" in value) || typeof value.integration !== "string" || !("sessionId" in value) || typeof value.sessionId !== "string" || !("turnId" in value) || typeof value.turnId !== "string" || !("eventId" in value) || typeof value.eventId !== "string" || !("destination" in value) || typeof value.destination !== "string" || !("attempt" in value) || typeof value.attempt !== "number" || !("startedAt" in value) || typeof value.startedAt !== "string") throw new Error("Unsupported delivery attempt");
+	const record = value;
+	validateAttemptScope(record, record.destination);
+	if (!Number.isSafeInteger(record.attempt) || record.attempt <= 0) throw new Error("Invalid delivery attempt number");
+	validateTimestamp(record.startedAt);
+	return record;
+}
+function sameAttempt(record, scope, destination, attempt) {
+	return record.integration === scope.integration && record.sessionId === scope.sessionId && record.turnId === scope.turnId && record.eventId === scope.eventId && record.destination === destination && record.attempt === attempt;
+}
+function validateTimestamp(value) {
+	const timestamp = new Date(value);
+	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/coordinator.js
+function createDeliveryCoordinator(options) {
+	const { integration, sessionId } = options;
+	validateIntegration(integration);
+	validateIdentifier(sessionId, "session ID");
+	const storageRoot = resolve(options.storageRoot);
+	const policy = resolvePolicy$1(options.policy);
+	const captureStore = createCaptureStore(storageRoot);
+	const attemptStore = createDeliveryAttemptStore(storageRoot);
+	return {
+		capture(input) {
+			const scoped = {
+				...input,
+				integration,
+				sessionId
+			};
+			return captureStore.capture(scoped);
+		},
+		async drain(request) {
+			const writer = snapshotWriter(request.writer);
+			const drainRequest = {
+				writer,
+				...request.now === void 0 ? {} : { now: request.now }
+			};
+			validateDrainRequest(drainRequest);
+			const sessionDirectory = await ensurePrivateDirectory(storageRoot, [
+				DELIVERY_DIRECTORY,
+				"integrations",
+				integration,
+				"sessions",
+				identifierHash(sessionId)
+			]);
+			const lock = await tryAcquireFileLock(join(sessionDirectory, "drain"));
+			if (!lock) return { status: "busy" };
+			const drainCache = createDrainCache(captureStore);
+			let counts;
+			try {
+				counts = await drainLocked(captureStore, attemptStore, integration, sessionId, policy, drainRequest, drainCache);
+			} finally {
+				await lock.release();
+			}
+			const captures = await captureStore.enumerate(integration, sessionId);
+			const eligible = captures.filter(({ record }) => record.destinationFingerprint === writer.accountFingerprint);
+			return {
+				status: "drained",
+				...counts,
+				pending: await countPending(drainCache, eligible, writer.destinations),
+				accountMismatch: captures.length - eligible.length
+			};
+		}
+	};
+}
+async function drainLocked(captureStore, attemptStore, integration, sessionId, policy, request, drainCache) {
+	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
+	for (const { record } of eligible) drainCache.rememberCapture(record);
+	let dropped = 0;
+	let failed = 0;
+	let delivered = 0;
+	const now = request.now ?? Date.now();
+	const candidates = await pendingCandidates(drainCache, eligible, request.writer.destinations);
+	for (const candidate of candidates) {
+		const pending = [];
+		for (const destination of candidate.pending) if (await dependenciesForDestination(drainCache, candidate.entry.record, destination.id) === "dropped") dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_DEPENDENCY_DROPPED_REASON);
+		else pending.push(destination);
+		candidate.pending = pending;
+	}
+	const active = candidates.filter((candidate) => candidate.pending.length > 0);
+	const expired = active.filter(({ entry }) => now - (entry.record.sourceAgeStartedAtMs ?? entry.capturedAtMs) >= policy.maxAgeMs);
+	for (const candidate of expired) dropped += await dropPending(drainCache, candidate, DELIVERY_EXPIRED_REASON);
+	const fresh = active.filter(({ entry }) => now - (entry.record.sourceAgeStartedAtMs ?? entry.capturedAtMs) < policy.maxAgeMs);
+	const overCapacity = Math.max(0, fresh.length - policy.maxEntries);
+	for (const candidate of fresh.slice(0, overCapacity)) dropped += await dropPending(drainCache, candidate, DELIVERY_CAPACITY_REASON);
+	const sendable = fresh.slice(overCapacity);
+	const attempted = /* @__PURE__ */ new Set();
+	let progressed;
+	do {
+		progressed = false;
+		for (const candidate of sendable) for (const destination of candidate.pending) {
+			const key = deliveryKey(candidate.scope, destination.id);
+			if (attempted.has(key)) continue;
+			const dependencyState = await dependenciesForDestination(drainCache, candidate.entry.record, destination.id);
+			if (dependencyState === "pending") continue;
+			attempted.add(key);
+			if (dependencyState === "dropped") {
+				dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_DEPENDENCY_DROPPED_REASON);
+				progressed = true;
+				continue;
+			}
+			const attemptCount = await attemptStore.count(candidate.scope, destination.id);
+			if (attemptCount >= policy.maxAttempts) {
+				dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_RETRY_EXHAUSTED_REASON);
+				progressed = true;
+				continue;
+			}
+			const attempt = attemptCount + 1;
+			await attemptStore.record(candidate.scope, destination.id, attempt, new Date(now).toISOString());
+			if (candidate.entry.record.destinationFingerprint !== request.writer.accountFingerprint) continue;
+			try {
+				await request.writer.send(structuredClone(candidate.entry.record), destination, request.writer.accountFingerprint);
+			} catch {
+				failed += 1;
+				if (attempt >= policy.maxAttempts) {
+					dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_RETRY_EXHAUSTED_REASON);
+					progressed = true;
+				}
+				continue;
+			}
+			await drainCache.recordOutcome({
+				...candidate.scope,
+				destination: destination.id,
+				outcome: "delivered"
+			});
+			delivered += 1;
+			progressed = true;
+		}
+	} while (progressed);
+	return {
+		delivered,
+		dropped,
+		failed
+	};
+}
+async function pendingCandidates(drainCache, entries, destinations) {
+	const candidates = [];
+	for (const entry of entries) {
+		const scope = scopeOf$1(entry.record);
+		const pending = [];
+		for (const destination of destinations) if ((await requireOutcome(drainCache, scope, destination.id)).status === "pending") pending.push(destination);
+		if (pending.length > 0) candidates.push({
+			entry,
+			scope,
+			pending
+		});
+	}
+	return candidates;
+}
+async function dependenciesForDestination(drainCache, dependent, destination) {
+	let pending = false;
+	for (const dependency of dependent.dependencies ?? []) {
+		const prerequisite = await drainCache.read(dependency);
+		if (prerequisite === void 0) {
+			pending = true;
+			continue;
+		}
+		if (prerequisite.destinationFingerprint !== dependent.destinationFingerprint) {
+			pending = true;
+			continue;
+		}
+		const outcome = await drainCache.readOutcome(dependency, destination);
+		if (outcome.status === "failed") throw new Error(`Could not read prerequisite receipt: ${outcome.status}`);
+		if (outcome.status === "pending" || outcome.status === "missing-capture") {
+			pending = true;
+			continue;
+		}
+		if (outcome.receipt.outcome === "dropped") return "dropped";
+	}
+	return pending ? "pending" : "ready";
+}
+function deliveryKey(scope, destination) {
+	return JSON.stringify([
+		scope.integration,
+		scope.sessionId,
+		scope.turnId,
+		scope.eventId,
+		destination
+	]);
+}
+async function dropPending(drainCache, candidate, reason) {
+	let dropped = 0;
+	for (const destination of candidate.pending) dropped += await recordDropped(drainCache, candidate.scope, destination.id, reason);
+	return dropped;
+}
+async function recordDropped(drainCache, scope, destination, reason) {
+	await drainCache.recordOutcome({
+		...scope,
+		destination,
+		outcome: "dropped",
+		reason
+	});
+	return 1;
+}
+function createDrainCache(store) {
+	const captures = /* @__PURE__ */ new Map();
+	const outcomes = /* @__PURE__ */ new Map();
+	return {
+		read(scope) {
+			const key = captureKey(scope);
+			let record = captures.get(key);
+			if (record === void 0) {
+				record = store.read(scope);
+				captures.set(key, record);
+			}
+			return record;
+		},
+		readOutcome(scope, destination) {
+			const key = deliveryKey(scope, destination);
+			let outcome = outcomes.get(key);
+			if (outcome === void 0) {
+				outcome = store.readOutcome(scope, destination);
+				outcomes.set(key, outcome);
+			}
+			return outcome;
+		},
+		async recordOutcome(input) {
+			const result = await store.recordOutcome(input);
+			if (result.status !== "recorded" && result.status !== "duplicate") throw new Error(`Could not persist ${input.outcome} delivery receipt: ${result.status}`);
+			outcomes.set(deliveryKey(input, input.destination), Promise.resolve({
+				status: "settled",
+				receipt: result.receipt
+			}));
+			return result.receipt;
+		},
+		rememberCapture(record) {
+			captures.set(captureKey(record), Promise.resolve(record));
+		}
+	};
+}
+function captureKey(scope) {
+	return JSON.stringify([
+		scope.integration,
+		scope.sessionId,
+		scope.turnId,
+		scope.eventId
+	]);
+}
+async function requireOutcome(drainCache, scope, destination) {
+	const result = await drainCache.readOutcome(scope, destination);
+	if (result.status === "failed" || result.status === "missing-capture") throw new Error(`Could not read delivery receipt: ${result.status}`);
+	return result;
+}
+async function countPending(drainCache, entries, destinations) {
+	let count = 0;
+	for (const entry of entries) {
+		const scope = scopeOf$1(entry.record);
+		for (const destination of destinations) if ((await requireOutcome(drainCache, scope, destination.id)).status === "pending") count += 1;
+	}
+	return count;
+}
+function scopeOf$1(record) {
+	return {
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	};
+}
+function validateDrainRequest(request) {
+	if (request.writer === null || typeof request.writer !== "object") throw new TypeError("A delivery writer is required");
+	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
+	if (!Array.isArray(request.writer.destinations) || request.writer.destinations.length === 0) throw new TypeError("At least one delivery destination is required");
+	const ids = /* @__PURE__ */ new Set();
+	for (const destination of request.writer.destinations) {
+		validateIdentifier(destination.id, "destination");
+		if (ids.has(destination.id)) throw new TypeError("Delivery destinations must be unique");
+		ids.add(destination.id);
+	}
+	if (typeof request.writer.send !== "function") throw new TypeError("A delivery transport is required");
+	if (request.now !== void 0 && (!Number.isSafeInteger(request.now) || !Number.isFinite(new Date(request.now).getTime()))) throw new TypeError("Invalid delivery clock");
+}
+function snapshotWriter(writer) {
+	if (writer === null || typeof writer !== "object") throw new TypeError("A delivery writer is required");
+	const accountFingerprint = writer.accountFingerprint;
+	const sourceDestinations = writer.destinations;
+	const send = writer.send;
+	if (!Array.isArray(sourceDestinations) || sourceDestinations.length === 0) throw new TypeError("At least one delivery destination is required");
+	const destinations = sourceDestinations.map((destination) => {
+		if (destination === null || typeof destination !== "object") throw new TypeError("Invalid delivery destination");
+		return Object.freeze({ id: destination.id });
+	});
+	return Object.freeze({
+		accountFingerprint,
+		destinations: Object.freeze(destinations),
+		send: typeof send === "function" ? send.bind(writer) : send
+	});
+}
+function resolvePolicy$1(policy) {
+	const resolved = {
+		maxAttempts: policy?.maxAttempts ?? 5,
+		maxAgeMs: policy?.maxAgeMs ?? 864e5,
+		maxEntries: policy?.maxEntries ?? 500
+	};
+	if (!Number.isSafeInteger(resolved.maxAttempts) || resolved.maxAttempts <= 0 || !Number.isSafeInteger(resolved.maxAgeMs) || resolved.maxAgeMs <= 0 || !Number.isSafeInteger(resolved.maxEntries) || resolved.maxEntries <= 0) throw new TypeError("Invalid delivery policy");
+	return resolved;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/privacy/constants.js
+const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
+const METADATA_MODE_RUN_CONFIG_FIELDS = [
+	"client",
+	"id",
+	"name",
+	"run_type",
+	"project_name",
+	"start_time",
+	"end_time",
+	"parent_run",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"distributedParentId"
+];
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/privacy/run-tree.js
+function mutedContent(role) {
+	return { messages: [{
+		role,
+		content: MUTED_TRACE_CONTENT
+	}] };
+}
+function statusOfRun(run) {
+	const metadataStatus = run.extra?.metadata?.status;
+	if (run.error != null || metadataStatus === "error") return "error";
+	if (run.end_time != null || metadataStatus === "completed") return "completed";
+	return "running";
+}
+function projectReplica(replica) {
+	if (!replica || typeof replica !== "object") return replica;
+	if (Array.isArray(replica)) return { projectName: replica[0] };
+	const { updates: _updates, ...safe } = replica;
+	return safe;
+}
+function extraForMode(metadata, integration, status) {
+	return {
+		metadata,
+		toJSON() {
+			const currentStatus = this.metadata?.status;
+			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
+			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
+		}
+	};
+}
+function configForMetadataMode(config, integration, privacyContext) {
+	const source = config;
+	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
+	const originalExtra = source.extra;
+	const safe = {};
+	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
+	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
+	safe.inputs = mutedContent("user");
+	safe.outputs = mutedContent("assistant");
+	safe.extra = extraForMode(metadataForMode$1(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
+	return safe;
+}
+function sanitizeRunTree(run, integration) {
+	const status = statusOfRun(run);
+	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
+	run.inputs = mutedContent("user");
+	run.outputs = mutedContent("assistant");
+	delete run.error;
+	run.serialized = {};
+	delete run.tags;
+	delete run.reference_example_id;
+	delete run.attachments;
+	delete run.events;
+	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
+	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
+	run.extra = extraForMode(metadata, integration, status);
+}
+function protectRunTree(run, integration) {
+	sanitizeRunTree(run, integration);
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
+	const postRun = run.postRun.bind(run);
+	run.postRun = async (excludeChildRuns = true) => {
+		sanitizeRunTree(run, integration);
+		if (!excludeChildRuns) {
+			const childRuns = [...run.child_runs];
+			await postRun(true);
+			for (const childRun of childRuns) await childRun.postRun(false);
+			return;
+		}
+		return postRun(excludeChildRuns);
+	};
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => {
+		sanitizeRunTree(run, integration);
+		return patchRun({
+			excludeInputs: false,
+			...options
+		});
+	};
+	const end = run.end.bind(run);
+	run.end = (outputs, error, endTime, metadata) => {
+		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
+		const safeMetadata = metadataForMode$1(metadata, integration, "metadata", status) ?? { status };
+		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
+	};
+	const toJSON = run.toJSON.bind(run);
+	run.toJSON = () => {
+		sanitizeRunTree(run, integration);
+		return toJSON();
+	};
+	return run;
+}
+function preserveFullModePatchInputs(run) {
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => patchRun({
+		excludeInputs: false,
+		...options
+	});
+	return run;
+}
+function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
+	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
+	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
+}
+function survivingCodingAgentPatchFields(projectedRun, fields) {
+	return fields.filter((field) => {
+		const descriptor = Object.getOwnPropertyDescriptor(projectedRun, field);
+		return descriptor?.enumerable === true && "value" in descriptor && descriptor.value !== void 0;
+	});
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/constants.js
+const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
+const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
+const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
+const UPLOAD_API_URL_TRAILING_SLASH_PATTERN = /\/$/;
+const UPLOAD_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UPLOAD_REPLICA_UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UPLOAD_REPLICA_UUID_V5_NAMESPACE_BYTES = Buffer.from("6ba7b810-9dad-11d1-80b4-00c04fd430c8".replaceAll("-", ""), "hex");
+const UPLOAD_REPLICA_UUID_V5_DOMAIN = "langchain-upload-replica-v1";
+const UPLOAD_REPLICA_IDENTITY_UPDATE_FIELDS = /* @__PURE__ */ new Set([
+	"id",
+	"name",
+	"run_type",
+	"start_time",
+	"parent_run_id",
+	"session_id",
+	"session_name",
+	"trace_id",
+	"dotted_order"
+]);
+const UPLOAD_REPLICA_PATCH_UPDATE_FIELDS = /* @__PURE__ */ new Set([
+	"inputs",
+	"outputs",
+	"end_time",
+	"extra",
+	"tags",
+	"error",
+	"serialized",
+	"reference_example_id",
+	"events"
+]);
+const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
+	"inputs",
+	"outputs",
+	"end_time",
+	"error",
+	"tags",
+	"serialized",
+	"events",
+	"reference_example_id"
+]);
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/redaction.js
+function createUploadAnonymizer(enabled, extraRules) {
+	if (!enabled) return void 0;
+	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
+		pattern,
+		...replace === void 0 ? {} : { replace }
+	}));
+	return createSecretAnonymizer(normalizedRules === void 0 ? {} : { extraRules: normalizedRules });
+}
+function redactSdkOmittedFields(payload, anonymizer) {
+	if (!anonymizer) return;
+	if (payload["tags"] !== void 0) payload["tags"] = anonymizer(payload["tags"]);
+	if (payload["serialized"] !== void 0) payload["serialized"] = anonymizer(payload["serialized"]);
+	if (payload["events"] !== void 0) payload["events"] = anonymizer(payload["events"]);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/destinations.js
+function resolveUploadDestinations(options) {
+	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
+	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
+	if (typeof options.redact !== "boolean") throw new TypeError("A redaction setting is required");
+	const replicas = options.replicas ?? [];
+	if (replicas.length > 0 && options.destinations.length !== 1) throw new TypeError("A replica upload requires exactly one primary destination");
+	const primary = options.destinations[0];
+	const primaryProjectName = replicas.length === 0 || primary === void 0 ? void 0 : normalizeRequiredText(primary.projectName, "project name");
+	const destinations = replicas.length === 0 ? options.destinations.map((destination) => resolveDestination(destination, options)) : replicas.map((replica) => resolveReplicaDestination(replica, primary, primaryProjectName, options));
+	const ids = /* @__PURE__ */ new Set();
+	for (const destination of destinations) {
+		if (ids.has(destination.id)) throw new TypeError("Upload destinations must be unique");
+		ids.add(destination.id);
+	}
+	const fingerprints = destinations.map(({ id }) => id).toSorted();
+	return {
+		accountFingerprint: `${UPLOAD_ACCOUNT_FINGERPRINT_PREFIX}${fingerprint(JSON.stringify({
+			destinations: fingerprints,
+			redact: options.redact,
+			redactExtraRules: options.redactExtraRules ?? null
+		}))}`,
+		destinations
+	};
+}
+function resolveDestination(config, options, sourceProjectName, updates) {
+	if (!config || typeof config !== "object") throw new TypeError("Invalid upload destination");
+	if (typeof config.apiKey !== "string" || config.apiKey.trim().length === 0) throw new TypeError("An API key is required for each upload destination");
+	const apiUrl = normalizeApiUrl(config.apiUrl);
+	const projectName = normalizeRequiredText(config.projectName, "project name");
+	const workspaceId = config.workspaceId === void 0 ? void 0 : normalizeRequiredText(config.workspaceId, "workspace ID");
+	const identity = JSON.stringify({
+		apiKey: config.apiKey,
+		apiUrl,
+		projectName,
+		workspaceId: workspaceId ?? null,
+		...sourceProjectName === void 0 ? {} : {
+			sourceProjectName,
+			updates: updates ?? null
+		}
+	});
+	const id = `${UPLOAD_DESTINATION_ID_PREFIX}${fingerprint(identity)}`;
+	const anonymizer = createUploadAnonymizer(options.redact, options.redactExtraRules);
+	const client = new Client({
+		apiKey: config.apiKey,
+		apiUrl,
+		workspaceId: workspaceId ?? "",
+		autoBatchTracing: false,
+		tracingSamplingRate: 1,
+		disablePromptCache: true,
+		debug: false,
+		omitTracedRuntimeInfo: true,
+		tracingMode: "langsmith",
+		...anonymizer === void 0 ? {} : {
+			anonymizer,
+			hideMetadata: anonymizer
+		}
+	});
+	return {
+		id,
+		apiKey: config.apiKey,
+		apiUrl,
+		projectName,
+		...workspaceId === void 0 ? {} : { workspaceId },
+		...sourceProjectName === void 0 ? {} : { sourceProjectName },
+		...updates === void 0 ? {} : { updates },
+		...anonymizer === void 0 ? {} : { anonymizer },
+		client
+	};
+}
+function resolveReplicaDestination(replica, primary, primaryProjectName, options) {
+	if (!replica || typeof replica !== "object") throw new TypeError("Invalid upload replica");
+	const updates = snapshotReplicaUpdates(replica.updates);
+	const workspaceId = replica.workspaceId ?? primary.workspaceId;
+	return resolveDestination({
+		apiKey: replica.apiKey ?? primary.apiKey,
+		apiUrl: replica.apiUrl ?? primary.apiUrl,
+		projectName: replica.projectName ?? primary.projectName,
+		...workspaceId === void 0 ? {} : { workspaceId }
+	}, options, primaryProjectName, updates);
+}
+function snapshotReplicaUpdates(value) {
+	if (value === void 0) return void 0;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Replica updates must be an object");
+	let snapshot;
+	try {
+		snapshot = JSON.parse(JSON.stringify(value));
+	} catch {
+		throw new TypeError("Replica updates must be JSON serializable");
+	}
+	if (snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new TypeError("Replica updates must be an object");
+	const updates = snapshot;
+	for (const field of Object.keys(updates)) {
+		if (UPLOAD_REPLICA_IDENTITY_UPDATE_FIELDS.has(field)) throw new TypeError("Replica updates cannot override run identity");
+		if (!UPLOAD_REPLICA_PATCH_UPDATE_FIELDS.has(field)) throw new TypeError("Unsupported replica update field");
+		if (field === "extra" && (updates[field] === null || typeof updates[field] !== "object" || Array.isArray(updates[field]))) throw new TypeError("Replica extra updates must be an object");
+	}
+	return canonicalJsonObject(updates, "Replica updates");
+}
+function normalizeApiUrl(value) {
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError("An API endpoint is required for each upload destination");
+	let endpoint;
+	try {
+		endpoint = new URL(value);
+	} catch {
+		throw new TypeError("Invalid upload API endpoint");
+	}
+	if (endpoint.protocol !== "https:" && endpoint.protocol !== "http:" || endpoint.username.length > 0 || endpoint.password.length > 0 || endpoint.search.length > 0 || endpoint.hash.length > 0) throw new TypeError("Invalid upload API endpoint");
+	return endpoint.toString().replace(UPLOAD_API_URL_TRAILING_SLASH_PATTERN, "");
+}
+function normalizeRequiredText(value, name) {
+	if (typeof value !== "string" || value.trim().length === 0 || UPLOAD_CONTROL_CHARACTER_PATTERN.test(value)) throw new TypeError(`Invalid upload ${name}`);
+	return value.trim();
+}
+function fingerprint(value) {
+	return createHash("sha256").update(value).digest("hex").slice(0, 32);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/replica-identifiers.js
+function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
+	if (sourceProjectName === destinationProjectName) return context;
+	return {
+		...context,
+		id: remapReplicaRunId(context.id, destinationProjectName),
+		...context.parent_run_id === void 0 ? {} : { parent_run_id: remapReplicaRunId(context.parent_run_id, destinationProjectName) },
+		...context.trace_id === void 0 ? {} : { trace_id: remapReplicaRunId(context.trace_id, destinationProjectName) },
+		...context.dotted_order === void 0 ? {} : { dotted_order: remapReplicaDottedOrder(context.dotted_order, destinationProjectName) }
+	};
+}
+function remapReplicaRunId(runId, projectName) {
+	if (!UPLOAD_UUID_PATTERN.test(runId)) throw new TypeError("Replica run IDs must be UUIDs");
+	if (UPLOAD_REPLICA_UUID_V7_PATTERN.test(runId)) return computeRunIdForSecondaryReplica(runId, projectName);
+	const name = JSON.stringify([
+		UPLOAD_REPLICA_UUID_V5_DOMAIN,
+		projectName,
+		runId.toLowerCase()
+	]);
+	const hash = createHash("sha1").update(UPLOAD_REPLICA_UUID_V5_NAMESPACE_BYTES).update(name).digest();
+	hash[6] = hash[6] & 15 | 80;
+	hash[8] = hash[8] & 63 | 128;
+	const value = hash.subarray(0, 16).toString("hex");
+	return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+}
+function remapReplicaDottedOrder(dottedOrder, projectName) {
+	return dottedOrder.split(".").map((segment) => {
+		const id = segment.slice(-36);
+		return `${segment.slice(0, -36)}${remapReplicaRunId(id, projectName)}`;
+	}).join(".");
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/upload.js
+function createLangSmithUploadWriter(options) {
+	const resolved = resolveUploadDestinations(options);
+	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
+	const byId = new Map(resolved.destinations.map((destination) => [destination.id, destination]));
+	return Object.freeze({
+		accountFingerprint: resolved.accountFingerprint,
+		destinations: Object.freeze(destinations),
+		async send(submission, destinationId) {
+			const destination = byId.get(destinationId);
+			if (!destination) throw new TypeError("Unknown upload destination");
+			validateSubmission(submission);
+			const payload = submission.operation === "post" ? preparePostRunPayload(submission, destination) : preparePatchRunPayload(submission, destination);
+			if (submission.operation === "patch") applyReplicaPatchUpdates(payload, destination, submission.privacyMode);
+			redactSdkOmittedFields(payload, destination.anonymizer);
+			const clientOptions = {
+				apiKey: destination.apiKey,
+				apiUrl: destination.apiUrl,
+				...destination.workspaceId === void 0 ? {} : { workspaceId: destination.workspaceId }
+			};
+			try {
+				if (submission.operation === "post") {
+					await destination.client.createRun({
+						...payload,
+						project_name: destination.projectName
+					}, clientOptions);
+					return {
+						destinationId,
+						runId: submission.run.id,
+						operation: "posted"
+					};
+				}
+				await destination.client.updateRun(runIdForDestination(submission.run.id, destination), payload, clientOptions);
+				return {
+					destinationId,
+					runId: submission.run.id,
+					operation: "patched"
+				};
+			} catch {
+				throw new Error("LangSmith upload failed");
+			}
+		}
+	});
+}
+function runConfig(context, submission, destination) {
+	const metadata = buildCodingAgentMetadata(submission.metadata);
+	const destinationContext = contextForDestination(context, destination);
+	return {
+		id: destinationContext.id,
+		name: destinationContext.name,
+		run_type: destinationContext.run_type,
+		project_name: destination.projectName,
+		inputs: {},
+		extra: { metadata },
+		client: destination.client,
+		...destinationContext.start_time === void 0 ? {} : { start_time: destinationContext.start_time },
+		...destinationContext.parent_run_id === void 0 ? {} : { parent_run_id: destinationContext.parent_run_id },
+		...destinationContext.trace_id === void 0 ? {} : { trace_id: destinationContext.trace_id },
+		...destinationContext.dotted_order === void 0 ? {} : { dotted_order: destinationContext.dotted_order }
+	};
+}
+function contextForDestination(context, destination) {
+	if (destination.sourceProjectName === void 0) return context;
+	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
+}
+function runIdForDestination(runId, destination) {
+	if (destination.sourceProjectName === void 0 || destination.sourceProjectName === destination.projectName) return runId;
+	return remapReplicaRunId(runId, destination.projectName);
+}
+function applyReplicaPatchUpdates(payload, destination, privacyMode) {
+	if (privacyMode !== "full" || destination.updates === void 0) return;
+	const mutablePayload = payload;
+	for (const [field, value] of Object.entries(destination.updates)) {
+		if (field === "inputs" || field === "end_time" && payload.end_time === void 0) continue;
+		if (field === "extra") mutablePayload.extra = mergeReplicaExtra(mutablePayload.extra, value);
+		else mutablePayload[field] = structuredClone(value);
+	}
+}
+function mergeReplicaExtra(baseValue, updateValue) {
+	const baseExtra = isPlainRecord(baseValue) ? baseValue : {};
+	const updateExtra = isPlainRecord(updateValue) ? structuredClone(updateValue) : {};
+	const baseMetadata = isPlainRecord(baseExtra["metadata"]) ? baseExtra["metadata"] : {};
+	const updateMetadata = isPlainRecord(updateExtra["metadata"]) ? updateExtra["metadata"] : {};
+	return {
+		...baseExtra,
+		...updateExtra,
+		metadata: {
+			...updateMetadata,
+			...baseMetadata
+		}
+	};
+}
+function preparePostRunPayload(submission, destination) {
+	const source = submission.run;
+	const config = runConfig(source, submission, destination);
+	config.inputs = source.inputs;
+	if (source.end_time !== void 0) config.end_time = source.end_time;
+	if (source.outputs !== void 0) config.outputs = source.outputs;
+	if (source.tags !== void 0) config.tags = source.tags;
+	if (source.error !== void 0) config.error = source.error;
+	if (source.serialized !== void 0) config.serialized = source.serialized;
+	if (source.reference_example_id !== void 0) config.reference_example_id = source.reference_example_id;
+	const run = createCodingAgentRunTree(config, submission.integration, submission.privacyMode, submission.privacyContext);
+	if (source.events !== void 0) run.events = source.events;
+	return JSON.parse(JSON.stringify(run.toJSON()));
+}
+function preparePatchRunPayload(submission, destination) {
+	const config = runConfig(submission.run, submission, destination);
+	for (const field of submission.patch.fields) if (field === "inputs") config.inputs = submission.patch.values.inputs;
+	else if (field === "outputs") config.outputs = submission.patch.values.outputs;
+	else if (field === "end_time") config.end_time = submission.patch.values.end_time;
+	else if (field === "error") config.error = submission.patch.values.error;
+	else if (field === "tags") config.tags = submission.patch.values.tags;
+	else if (field === "serialized") config.serialized = submission.patch.values.serialized;
+	else if (field === "reference_example_id") config.reference_example_id = submission.patch.values.reference_example_id;
+	const run = createCodingAgentRunTree(config, submission.integration, submission.privacyMode, submission.privacyContext);
+	if (submission.patch.fields.includes("events")) run.events = submission.patch.values.events;
+	const snapshot = JSON.parse(JSON.stringify(run.toJSON()));
+	const update = {
+		extra: snapshot["extra"],
+		session_name: destination.projectName
+	};
+	for (const field of submission.patch.fields) {
+		const value = snapshot[field];
+		if (value === void 0) continue;
+		if (field === "inputs") update.inputs = value;
+		else if (field === "outputs") update.outputs = value;
+		else if (field === "end_time") update.end_time = value;
+		else if (field === "error") update.error = value;
+		else if (field === "tags") update.tags = value;
+		else if (field === "serialized") update.serialized = value;
+		else if (field === "events") update.events = value;
+		else if (field === "reference_example_id") update.reference_example_id = value;
+	}
+	return update;
+}
+function validateSubmission(submission) {
+	if (submission === null || typeof submission !== "object") throw new TypeError("A prepared run submission is required");
+	if (submission.operation !== "post" && submission.operation !== "patch") throw new TypeError("Invalid upload operation");
+	if (submission.metadata === null || typeof submission.metadata !== "object") throw new TypeError("Run metadata is required");
+	if (submission.integration !== submission.metadata.integration) throw new TypeError("Run metadata integration does not match the submission");
+	if (submission.run === null || typeof submission.run !== "object") throw new TypeError("Run data is required");
+	if (Object.hasOwn(submission.run, "child_runs")) throw new TypeError("Each upload submission must contain a single run");
+	if (typeof submission.run.id !== "string" || submission.run.id.trim().length === 0) throw new TypeError("A stable run ID is required");
+	if (submission.privacyMode !== "full" && submission.privacyMode !== "metadata") throw new TypeError("Invalid privacy mode");
+	if (submission.operation === "patch") validatePatch(submission);
+}
+function validatePatch(submission) {
+	if (submission.patch === null || typeof submission.patch !== "object" || !Array.isArray(submission.patch.fields) || submission.patch.values === null || typeof submission.patch.values !== "object") throw new TypeError("A patch field set and values are required");
+	if (typeof submission.run.name !== "string" || typeof submission.run.run_type !== "string") throw new TypeError("Patch run context must preserve its name and type");
+	const selected = /* @__PURE__ */ new Set();
+	for (const candidate of submission.patch.fields) {
+		if (typeof candidate !== "string" || !UPLOAD_PATCH_FIELDS.has(candidate)) throw new TypeError("Invalid patch field");
+		const field = candidate;
+		if (selected.has(field)) throw new TypeError("Patch fields must be unique");
+		if (!Object.hasOwn(submission.patch.values, field) || submission.patch.values[field] === void 0) throw new TypeError("Every selected patch field must have a value");
+		selected.add(field);
+	}
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/capture-wake-constants.js
+const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
+const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/capture-wake.js
+var CaptureWakeError = class extends Error {
+	captureResult;
+	constructor(captureResult, cause) {
+		super(`${CAPTURE_WAKE_FAILURE_MESSAGE}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+		this.name = CAPTURE_WAKE_ERROR_NAME;
+		this.captureResult = captureResult;
+	}
+};
+async function wakeCapturedWork(captureResult, wake) {
+	try {
+		await wake();
+	} catch (cause) {
+		throw new CaptureWakeError(captureResult, cause);
+	}
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/constants.js
+const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
+const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
+const LIFECYCLE_POST_EVENT_KIND = "run-post";
+const LIFECYCLE_PATCH_EVENT_KIND = "run-patch";
+const LIFECYCLE_SETTLEMENT_EVENT_KIND = "run-settlement-patch";
+const LIFECYCLE_ATTRIBUTION_READY_FIELD = "attributionReady";
+const LIFECYCLE_SETTLEMENT_LOCK_DIRECTORY = "lifecycle-settlement-v1";
+const LIFECYCLE_SETTLEMENT_LOCK_FILE = "drain";
+const LIFECYCLE_SETTLEMENT_LOCK_INTEGRATIONS_DIRECTORY = "integrations";
+const LIFECYCLE_SETTLEMENT_LOCK_SESSIONS_DIRECTORY = "sessions";
+const LIFECYCLE_SETTLEMENT_LOCK_ACCOUNTS_DIRECTORY = "accounts";
+const LIFECYCLE_TURN_CLOSURE_STATES = [
+	"open",
+	"provisional",
+	"authoritative"
+];
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/closure.js
+function deriveAttributionReadiness(value, integration) {
+	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
+	if (metadata.status === "deferred") return false;
+	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
+}
+function storedAttributionReadiness(record, integration) {
+	const readiness = ownDataField(requirePlainRecord(record.turnEvidence, "Stored turn evidence"), LIFECYCLE_ATTRIBUTION_READY_FIELD);
+	if (readiness.present) return requireBoolean(readiness.value, `Stored turn evidence ${LIFECYCLE_ATTRIBUTION_READY_FIELD}`);
+	if (requireOwnDataField(requirePlainRecord(record.normalizedPayload, "Stored run payload"), "privacyMode") !== "full") return false;
+	const metadata = prepareCodingAgentMetadataProvenance(record.metadataProvenance, integration, "full");
+	if (metadata.status === "deferred") return false;
+	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
+}
+function indexCaptureSources(sources) {
+	return new Map(sources.map((source) => [captureScopeKey$1(captureScope$1(source)), source]));
+}
+function attributionMetadataReady(projected) {
+	return typeof projected["repository_name"] === "string" && projected["repository_name"].length > 0 && typeof projected["ls_attribution_identifier"] === "string" && projected["ls_attribution_identifier"].length > 0;
+}
+async function withholdUnresolvedEndTime(input) {
+	const { record, submission, sourceSnapshot, sourceByScope, integration, destinations, readOutcome } = input;
+	if (record.eventKind !== "run-post" && record.eventKind !== "run-patch") return submission;
+	const evidence = requirePlainRecord(record.turnEvidence, "Stored turn evidence");
+	const attributionReady = storedAttributionReadiness(record, integration);
+	const closureState = requireOwnDataField(evidence, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Stored turn evidence has an invalid closure state");
+	const runType = submission.metadata.runType;
+	if (runType !== "tool" && runType !== "root") return submission;
+	if (!((submission.operation === "post" ? submission.run.end_time !== void 0 : submission.patch.fields.includes("end_time")) || hasPriorEndTime(record, sourceByScope)) || attributionReady) return submission;
+	if (runType === "root" && !await hasMissingChildReceipts(record, evidence, sourceSnapshot, destinations, readOutcome)) return submission;
+	return removeOutgoingEndTime(submission);
+}
+function hasPriorEndTime(record, sourceByScope) {
+	const pending = [...record.dependencies ?? []];
+	const visited = /* @__PURE__ */ new Set();
+	while (pending.length > 0) {
+		const key = captureScopeKey$1(pending.pop());
+		if (visited.has(key)) continue;
+		visited.add(key);
+		const previous = sourceByScope.get(key);
+		if (previous === void 0) continue;
+		if (previous.runId === record.runId && (previous.eventKind === "run-post" || previous.eventKind === "run-patch") && recordHasEndTime(previous)) return true;
+		pending.push(...previous.dependencies ?? []);
+	}
+	return false;
+}
+function recordHasEndTime(record) {
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored run payload");
+	if (payload["operation"] === "post") {
+		const endTime = ownDataField(requirePlainRecord(requireOwnDataField(payload, "run"), "Stored run snapshot"), "end_time");
+		return endTime.present && endTime.value !== void 0;
+	}
+	if (payload["operation"] !== "patch") return false;
+	const patch = requirePlainRecord(requireOwnDataField(payload, "patch"), "Stored run patch");
+	if (!requireStringArray(requireOwnDataField(patch, "fields"), "Patch fields").includes("end_time")) return false;
+	const endTime = ownDataField(requirePlainRecord(requireOwnDataField(patch, "values"), "Patch values"), "end_time");
+	return endTime.present && endTime.value !== void 0;
+}
+async function hasMissingChildReceipts(record, evidence, sourceSnapshot, destinations, readOutcome) {
+	const children = requireStringArray(requireOwnDataField(evidence, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID")).filter((runId) => runId !== record.runId);
+	if (children.length === 0) return false;
+	for (const childRunId of children) {
+		const child = sourceSnapshot.find((source) => source.turnId === record.turnId && source.runId === childRunId && source.destinationFingerprint === record.destinationFingerprint && source.eventKind === "run-post");
+		if (child === void 0) return true;
+		const scope = captureScope$1(child);
+		for (const destination of destinations) {
+			const outcome = await readOutcome(scope, destination.id);
+			if (outcome.status === "failed") throw new Error(`Could not read child delivery receipt: ${outcome.code}`);
+			if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") return true;
+		}
+	}
+	return false;
+}
+function removeOutgoingEndTime(submission) {
+	const privacyContext = submission.privacyMode !== "metadata" ? void 0 : submission.operation === "post" ? { status: submission.run.error !== void 0 || submission.privacyContext?.status === "error" ? "error" : "running" } : { status: submission.privacyContext.status === "error" ? "error" : "running" };
+	if (submission.operation === "post") {
+		const run = { ...submission.run };
+		delete run.end_time;
+		return {
+			...submission,
+			run,
+			...privacyContext === void 0 ? {} : { privacyContext }
+		};
+	}
+	const fields = submission.patch.fields.filter((field) => field !== "end_time");
+	const values = { ...submission.patch.values };
+	delete values.end_time;
+	return {
+		...submission,
+		patch: {
+			fields,
+			values
+		},
+		...privacyContext === void 0 ? {} : { privacyContext }
+	};
+}
+function captureScope$1(record) {
+	return {
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	};
+}
+function captureScopeKey$1(scope) {
+	return JSON.stringify([
+		scope.integration,
+		scope.sessionId,
+		scope.turnId,
+		scope.eventId
+	]);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/identity.js
+function createRunIdentity(input) {
+	const id = requireNonBlankString(input.id, "Run ID");
+	const start_time = requireTimestamp(input.start_time);
+	const segment = dottedOrderSegment(start_time, id);
+	if (input.parent === void 0) return {
+		id,
+		start_time,
+		trace_id: id,
+		dotted_order: segment
+	};
+	const parent = canonicalParent(input.parent);
+	return {
+		id,
+		start_time,
+		parent_run_id: parent.id,
+		trace_id: parent.trace_id,
+		dotted_order: `${parent.dotted_order}.${segment}`
+	};
+}
+function canonicalParent(parent) {
+	const id = requireNonBlankString(parent.id, "Parent run ID");
+	const trace_id = requireNonBlankString(parent.trace_id, "Parent trace ID");
+	const dotted_order = requireNonBlankString(parent.dotted_order, "Parent dotted order");
+	const parent_run_id = parent.parent_run_id === void 0 ? void 0 : requireNonBlankString(parent.parent_run_id, "Parent run's parent ID");
+	const segments = dotted_order.split(".").map(parseDottedOrderSegment);
+	const runIds = segments.map((segment) => segment.runId);
+	const lastSegment = segments.at(-1);
+	const start_time = parent.start_time === void 0 ? void 0 : requireTimestamp(parent.start_time);
+	if (lastSegment?.runId !== id || runIds[0] !== trace_id || parent_run_id !== void 0 && (runIds.length < 2 || runIds.at(-2) !== parent_run_id) || start_time !== void 0 && lastSegment.timestamp.slice(0, 18) !== dottedOrderTimePrefix(start_time)) throw new TypeError("Parent run identity is not canonical");
+	return {
+		id,
+		...parent_run_id === void 0 ? {} : { parent_run_id },
+		trace_id,
+		dotted_order,
+		...start_time === void 0 ? {} : { start_time }
+	};
+}
+function parseDottedOrderSegment(segment) {
+	const match = DOTTED_ORDER_SEGMENT_PATTERN.exec(segment);
+	if (match === null || !isValidDottedOrderTime(match[1])) throw new TypeError("Parent run identity is not canonical");
+	return {
+		timestamp: match[1],
+		runId: match[2]
+	};
+}
+function isValidDottedOrderTime(value) {
+	const time = value.slice(0, 18);
+	const iso = `${time.slice(0, 4)}-${time.slice(4, 6)}-${time.slice(6, 8)}T${time.slice(9, 11)}:${time.slice(11, 13)}:${time.slice(13, 15)}.${time.slice(15, 18)}Z`;
+	const parsed = new Date(iso);
+	return Number.isFinite(parsed.getTime()) && parsed.toISOString() === iso;
+}
+function dottedOrderTimePrefix(startTime) {
+	return new Date(startTime).toISOString().slice(0, -1).replace(DOTTED_ORDER_STRIP_PATTERN, "");
+}
+function dottedOrderSegment(startTime, runId) {
+	const epoch = new Date(startTime).getTime();
+	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/projection.js
+function projectSubmission(value, integration, priorIdentity) {
+	const source = requirePlainRecord(value, "Prepared run submission");
+	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
+	const privacyMode = requireOwnDataField(source, "privacyMode");
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError("Invalid privacy mode");
+	const operation = requireOwnDataField(source, "operation");
+	if (operation !== "post" && operation !== "patch") throw new TypeError("Invalid run operation");
+	if (operation === "post") {
+		const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
+		const suppliedPrivacyContext = ownDataField(source, "privacyContext");
+		const status = run.error !== void 0 ? "error" : suppliedPrivacyContext.present ? privacyStatus(suppliedPrivacyContext.value).status : statusForPost(run);
+		const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, status);
+		if (metadata.status === "deferred") return metadata;
+		return {
+			status: "ready",
+			value: {
+				payload: {
+					operation,
+					integration,
+					privacyMode,
+					...privacyMode === "metadata" ? { privacyContext: { status } } : {},
+					run: privacyMode === "metadata" ? projectPost(run, metadata.value, status) : run
+				},
+				metadata: metadata.value
+			}
+		};
+	}
+	const run = canonicalIdentity(normalizedRunContext(requireOwnDataField(source, "run")), priorIdentity, true);
+	const patch = normalizedPatch(requireOwnDataField(source, "patch"));
+	const privacyContext = privacyStatus(requireOwnDataField(source, "privacyContext"));
+	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, privacyContext.status);
+	if (metadata.status === "deferred") return metadata;
+	return {
+		status: "ready",
+		value: {
+			payload: {
+				operation,
+				integration,
+				privacyMode,
+				run,
+				privacyContext,
+				patch: privacyMode === "metadata" ? projectPatch(run, patch, integration, metadata.value, privacyContext) : patch
+			},
+			metadata: metadata.value
+		}
+	};
+}
+function projectPost(run, metadata, status) {
+	const tree = createCodingAgentRunTree({
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		...run.start_time === void 0 ? {} : { start_time: run.start_time },
+		inputs: run.inputs,
+		extra: { metadata: buildCodingAgentMetadata(metadata) },
+		...run.end_time === void 0 ? {} : { end_time: run.end_time },
+		...run.outputs === void 0 ? {} : { outputs: run.outputs },
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		...run.trace_id === void 0 ? {} : { trace_id: run.trace_id },
+		...run.dotted_order === void 0 ? {} : { dotted_order: run.dotted_order },
+		...run.error === void 0 ? {} : { error: run.error },
+		...run.tags === void 0 ? {} : { tags: run.tags },
+		...run.serialized === void 0 ? {} : { serialized: run.serialized },
+		...run.reference_example_id === void 0 ? {} : { reference_example_id: run.reference_example_id }
+	}, metadata.integration, "metadata", { status });
+	if (run.events !== void 0) tree.events = run.events;
+	const projected = tree.toJSON();
+	return {
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		start_time: requireTimestamp(run.start_time),
+		inputs: canonicalJsonObject(projected["inputs"], "Projected run inputs"),
+		outputs: canonicalJsonObject(projected["outputs"], "Projected run outputs"),
+		...run.end_time === void 0 ? {} : { end_time: run.end_time },
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		...run.trace_id === void 0 ? {} : { trace_id: run.trace_id },
+		...run.dotted_order === void 0 ? {} : { dotted_order: run.dotted_order }
+	};
+}
+function projectPatch(context, patch, integration, metadata, privacyContext) {
+	const tree = createCodingAgentRunTree({
+		id: context.id,
+		name: context.name,
+		run_type: context.run_type,
+		...context.start_time === void 0 ? {} : { start_time: context.start_time },
+		inputs: patch.values.inputs ?? {},
+		outputs: patch.values.outputs ?? {},
+		extra: { metadata: buildCodingAgentMetadata(metadata) },
+		...context.parent_run_id === void 0 ? {} : { parent_run_id: context.parent_run_id },
+		...context.trace_id === void 0 ? {} : { trace_id: context.trace_id },
+		...context.dotted_order === void 0 ? {} : { dotted_order: context.dotted_order },
+		...patch.values.end_time === void 0 ? {} : { end_time: patch.values.end_time },
+		...patch.values.error === void 0 ? {} : { error: patch.values.error },
+		...patch.values.tags === void 0 ? {} : { tags: patch.values.tags },
+		...patch.values.serialized === void 0 ? {} : { serialized: patch.values.serialized },
+		...patch.values.reference_example_id === void 0 ? {} : { reference_example_id: patch.values.reference_example_id }
+	}, integration, "metadata", privacyContext);
+	if (patch.values.events !== void 0) tree.events = patch.values.events;
+	const projected = tree.toJSON();
+	const fields = survivingCodingAgentPatchFields(projected, patch.fields);
+	const values = {};
+	for (const field of fields) {
+		const value = ownDataField(projected, field);
+		if (!value.present) continue;
+		values[field] = field === "inputs" || field === "outputs" ? canonicalJsonObject(value.value, `Projected patch ${field}`) : field === "tags" ? requireStringArray(value.value, `Projected patch ${field}`) : field === "events" ? canonicalJsonArray(value.value, `Projected patch ${field}`) : field === "error" || field === "reference_example_id" ? requireString(value.value, `Projected patch ${field}`) : field === "end_time" ? requireTimestamp(value.value) : canonicalJsonObject(value.value, `Projected patch ${field}`);
+	}
+	return {
+		fields: fields.filter((field) => Object.hasOwn(values, field)),
+		values
+	};
+}
+function normalizedRunSnapshot(value) {
+	const source = requirePlainRecord(value, "Normalized run snapshot");
+	const run = {
+		id: requiredText(source, "id", "Run ID"),
+		name: requiredText(source, "name", "Run name"),
+		run_type: requiredText(source, "run_type", "Run type"),
+		inputs: canonicalJsonObject(requireOwnDataField(source, "inputs"), "Run inputs")
+	};
+	copyRunContext(source, run);
+	const endTime = ownDataField(source, "end_time");
+	if (endTime.present && endTime.value !== void 0) run.end_time = requireTimestamp(endTime.value);
+	const outputs = ownDataField(source, "outputs");
+	if (outputs.present && outputs.value !== void 0) run.outputs = canonicalJsonObject(outputs.value, "Run outputs");
+	const tags = ownDataField(source, "tags");
+	if (tags.present && tags.value !== void 0) run.tags = requireStringArray(tags.value, "Run tags");
+	const error = ownDataField(source, "error");
+	if (error.present && error.value !== void 0) run.error = requireString(error.value, "Run error");
+	const serialized = ownDataField(source, "serialized");
+	if (serialized.present && serialized.value !== void 0) run.serialized = canonicalJsonObject(serialized.value, "Serialized run data");
+	const events = ownDataField(source, "events");
+	if (events.present && events.value !== void 0) run.events = canonicalJsonArray(events.value, "Run events");
+	const example = ownDataField(source, "reference_example_id");
+	if (example.present && example.value !== void 0) run.reference_example_id = requireNonBlankString(example.value, "Reference example ID");
+	return run;
+}
+function normalizedRunContext(value) {
+	const source = requirePlainRecord(value, "Normalized run context");
+	const run = {
+		id: requiredText(source, "id", "Run ID"),
+		name: requiredText(source, "name", "Run name"),
+		run_type: requiredText(source, "run_type", "Run type")
+	};
+	copyRunContext(source, run);
+	return run;
+}
+function copyRunContext(source, run) {
+	const start = ownDataField(source, "start_time");
+	if (start.present && start.value !== void 0) run.start_time = requireTimestamp(start.value);
+	for (const [key, name] of [
+		["parent_run_id", "Parent run ID"],
+		["trace_id", "Trace ID"],
+		["dotted_order", "Dotted order"]
+	]) {
+		const field = ownDataField(source, key);
+		if (field.present && field.value !== void 0) run[key] = requireNonBlankString(field.value, name);
+	}
+}
+function canonicalIdentity(run, prior, requireStableIdentity = false) {
+	const reusable = prior?.id === run.id && prior.parent_run_id === run.parent_run_id ? prior : void 0;
+	if (reusable !== void 0 && (run.start_time !== void 0 && run.start_time !== reusable.start_time || run.trace_id !== void 0 && run.trace_id !== reusable.trace_id || run.dotted_order !== void 0 && run.dotted_order !== reusable.dotted_order)) throw new TypeError("Run identity changed for a persisted capture");
+	const knownStartTime = run.start_time ?? reusable?.start_time;
+	if (knownStartTime === void 0 && requireStableIdentity) throw new TypeError("Patch run context must preserve its canonical start time");
+	const startTime = knownStartTime ?? Date.now();
+	const result = {
+		...run,
+		start_time: startTime
+	};
+	const canGenerateRootIdentity = !requireStableIdentity && result.parent_run_id === void 0;
+	const generatedOrder = canGenerateRootIdentity && result.dotted_order === void 0 && reusable?.dotted_order === void 0 ? createRunIdentity({
+		id: result.id,
+		start_time: startTime
+	}).dotted_order : void 0;
+	const traceId = result.trace_id ?? reusable?.trace_id ?? (canGenerateRootIdentity ? result.id : void 0);
+	const order = result.dotted_order ?? reusable?.dotted_order ?? generatedOrder;
+	if (traceId === void 0 || order === void 0) throw new TypeError("Run context must preserve its canonical trace ID and dotted order");
+	result.trace_id = traceId;
+	result.dotted_order = order;
+	return result;
+}
+function normalizedPatch(value) {
+	const source = requirePlainRecord(value, "Normalized run patch");
+	const candidates = canonicalJsonArray(requireOwnDataField(source, "fields"), "Patch field mask");
+	const sourceValues = requirePlainRecord(requireOwnDataField(source, "values"), "Patch values");
+	const seen = /* @__PURE__ */ new Set();
+	const fields = [];
+	const values = {};
+	for (const candidate of candidates) {
+		if (typeof candidate !== "string" || !UPLOAD_PATCH_FIELDS.has(candidate)) throw new TypeError("Invalid patch field");
+		const field = candidate;
+		if (seen.has(field)) throw new TypeError("Patch fields must be unique");
+		const selected = ownDataField(sourceValues, field);
+		if (!selected.present || selected.value === void 0) throw new TypeError("Every selected patch field must have a value");
+		seen.add(field);
+		fields.push(field);
+		values[field] = field === "inputs" || field === "outputs" ? canonicalJsonObject(selected.value, `Patch ${field}`) : field === "end_time" ? requireTimestamp(selected.value) : field === "error" ? requireString(selected.value, "Patch error") : field === "reference_example_id" ? requireNonBlankString(selected.value, "Patch reference example ID") : field === "tags" ? requireStringArray(selected.value, "Patch tags") : field === "events" ? canonicalJsonArray(selected.value, "Patch events") : canonicalJsonObject(selected.value, `Patch ${field}`);
+	}
+	return {
+		fields,
+		values
+	};
+}
+function privacyStatus(value) {
+	const status = requireOwnDataField(requirePlainRecord(value, "Patch privacy context"), "status");
+	if (status !== "running" && status !== "completed" && status !== "error") throw new TypeError("Invalid patch privacy status");
+	return { status };
+}
+function statusForPost(run) {
+	if (run.error !== void 0) return "error";
+	if (run.end_time !== void 0) return "completed";
+	return "running";
+}
+function requiredText(source, key, name) {
+	return requireNonBlankString(requireOwnDataField(source, key), name);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/constants.js
+const REPOSITORY_METADATA_KEYS = [...[
+	"repository_name",
+	"repository_provider",
+	"repository_url",
+	"git_branch",
+	"git_commit_sha"
+], "ls_attribution_identifier"];
+const REPOSITORY_NAME_KEY = "repository_name";
+const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
+const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/settlement.js
+function attributionOf(metadata) {
+	const carried = {};
+	for (const key of REPOSITORY_METADATA_KEYS) {
+		const value = metadata?.[key];
+		if (typeof value === "string" && value.length > 0) carried[key] = value;
+	}
+	return carried;
+}
+const namesARepository = (carried) => carried[REPOSITORY_NAME_KEY] !== void 0;
+function turnAttribution(record) {
+	const root = attributionOf(record.root?.metadata);
+	const inToolCallOrder = [...record.children].sort((left, right) => left.dotted_order < right.dotted_order ? -1 : 1).map((child) => attributionOf(child.metadata));
+	const source = namesARepository(root) ? root : inToolCallOrder.find((carried) => namesARepository(carried));
+	const knowsWhoWorkedInSource = (carried) => carried["ls_attribution_identifier"] !== void 0 && carried["repository_name"] === source?.["repository_name"];
+	const author = root["ls_attribution_identifier"] ?? source?.["ls_attribution_identifier"] ?? inToolCallOrder.find(knowsWhoWorkedInSource)?.["ls_attribution_identifier"];
+	const filled = { ...source };
+	if (author !== void 0) filled[ATTRIBUTION_IDENTIFIER_KEY] = author;
+	return Object.keys(filled).length > 0 ? filled : void 0;
+}
+function metadataAfterFill(run, filled) {
+	const carried = attributionOf(run.metadata);
+	if (namesARepository(carried) && carried["repository_name"] !== filled["repository_name"]) return void 0;
+	const missing = Object.entries(filled).filter(([key]) => carried[key] === void 0);
+	if (missing.length === 0) return void 0;
+	return {
+		...run.metadata,
+		...Object.fromEntries(missing)
+	};
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/pass.js
+async function settleCapturedTurns(options) {
+	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
+	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
+	const generatedRecords = options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && record.eventKind === "run-settlement-patch");
+	const projected = /* @__PURE__ */ new Map();
+	for (const record of sourceRecords) {
+		const capture = projectCapture(record, options.integration);
+		if (capture === void 0) continue;
+		const turn = projected.get(record.turnId) ?? [];
+		turn.push(capture);
+		projected.set(record.turnId, turn);
+	}
+	const generatedByTurn = groupByTurn(generatedRecords);
+	const turns = [.../* @__PURE__ */ new Set([...projected.keys(), ...generatedByTurn.keys()])].toSorted();
+	const reports = [];
+	const patches = [];
+	let captured = 0;
+	for (const turnId of turns) {
+		const result = await settleOneTurn(turnId, projected.get(turnId) ?? [], generatedByTurn.get(turnId) ?? [], options);
+		reports.push(result.report);
+		patches.push(...result.patches);
+		captured += result.captured;
+	}
+	return {
+		progress: {
+			captured,
+			turns: reports
+		},
+		patches
+	};
+}
+async function refreshSettlementProgress(work, destinations, readOutcome) {
+	const patchesByTurn = /* @__PURE__ */ new Map();
+	for (const patch of work.patches) {
+		const turn = patchesByTurn.get(patch.turnId) ?? [];
+		turn.push(patch);
+		patchesByTurn.set(patch.turnId, turn);
+	}
+	const turns = [];
+	for (const entry of work.progress.turns) {
+		const patches = patchesByTurn.get(entry.turnId) ?? [];
+		if (patches.length === 0 || entry.status !== "pending" && entry.status !== "settled") {
+			turns.push(entry);
+			continue;
+		}
+		const readiness = await captureReadiness(patches.map(({ scope }) => scope), destinations, readOutcome);
+		const { reason: previousReason, destinations: previousDestinations, ...unchanged } = entry;
+		const reason = readiness.status === "delivered" ? previousReason === "settlement-pending" ? void 0 : previousReason : readiness.status === "dropped" ? "settlement-dropped" : "settlement-pending";
+		const reportDestinations = readiness.destinations.length > 0 ? readiness.destinations : previousReason === "settlement-pending" ? void 0 : previousDestinations;
+		turns.push({
+			...unchanged,
+			status: readiness.status === "dropped" ? "blocked" : readiness.status === "pending" ? "pending" : "settled",
+			...reason === void 0 ? {} : { reason },
+			...reportDestinations === void 0 ? {} : { destinations: reportDestinations }
+		});
+	}
+	return {
+		captured: work.progress.captured,
+		turns
+	};
+}
+async function settleOneTurn(turnId, events, generated, options) {
+	const rootRunIds = /* @__PURE__ */ new Set();
+	const childRunIds = /* @__PURE__ */ new Set();
+	let closureState = "open";
+	for (const event of events) {
+		const evidence = parseEvidence(event.record.turnEvidence, event.attributionReady);
+		if (evidence.rootRunId !== void 0) rootRunIds.add(evidence.rootRunId);
+		for (const childRunId of evidence.childRunIds) childRunIds.add(childRunId);
+		if (closureRank(evidence.closureState) > closureRank(closureState)) closureState = evidence.closureState;
+	}
+	if (rootRunIds.size === 0) return {
+		report: report(turnId, "deferred", "missing-root"),
+		patches: [],
+		captured: 0
+	};
+	if (rootRunIds.size > 1) return {
+		report: report(turnId, "blocked", "conflicting-root", [...rootRunIds].toSorted()),
+		patches: [],
+		captured: 0
+	};
+	if (closureState !== "authoritative") return {
+		report: report(turnId, "deferred", closureState),
+		patches: [],
+		captured: 0
+	};
+	const rootRunId = [...rootRunIds][0];
+	childRunIds.delete(rootRunId);
+	const requiredRunIds = [rootRunId, ...[...childRunIds].toSorted()];
+	const byRunId = /* @__PURE__ */ new Map();
+	for (const event of events) {
+		const runEvents = byRunId.get(event.record.runId) ?? [];
+		runEvents.push(event);
+		byRunId.set(event.record.runId, runEvents);
+	}
+	for (const runId of requiredRunIds) if (!(byRunId.get(runId) ?? []).some(({ payload }) => payload.operation === "post")) return {
+		report: report(turnId, "deferred", "missing-run", [runId]),
+		patches: [],
+		captured: 0
+	};
+	const sourceScopes = uniqueScopes(events.map(({ record }) => captureScope(record)));
+	const sourceReadiness = await captureReadiness(sourceScopes, options.destinations, options.readOutcome);
+	if (sourceReadiness.status === "dropped") return {
+		report: report(turnId, "blocked", "source-dropped", requiredRunIds, sourceReadiness.destinations),
+		patches: [],
+		captured: 0
+	};
+	if (sourceReadiness.status === "pending") return {
+		report: report(turnId, "pending", "source-pending", requiredRunIds, sourceReadiness.destinations),
+		patches: [],
+		captured: 0
+	};
+	const runEvents = /* @__PURE__ */ new Map();
+	const recorded = /* @__PURE__ */ new Map();
+	for (const runId of requiredRunIds) {
+		const captures = byRunId.get(runId) ?? [];
+		runEvents.set(runId, captures);
+		recorded.set(runId, recordRun(captures));
+	}
+	const attribution = turnAttribution({
+		path: "",
+		origin: "capture",
+		root: recorded.get(rootRunId),
+		children: requiredRunIds.filter((runId) => runId !== rootRunId).map((runId) => recorded.get(runId)),
+		turnId,
+		closed: true,
+		delivered: new Set(requiredRunIds),
+		fixed: /* @__PURE__ */ new Set()
+	});
+	const dependencies = sourceScopes;
+	const patches = [];
+	let captured = 0;
+	for (const runId of requiredRunIds) {
+		const captureEvents = runEvents.get(runId);
+		const latest = captureEvents.at(-1);
+		const run = recorded.get(runId);
+		const merged = attribution === void 0 ? void 0 : metadataAfterFill(run, attribution);
+		const currentAttribution = attributionOf(run.metadata);
+		const added = Object.fromEntries(Object.entries(merged === void 0 ? {} : attribution ?? {}).filter(([key]) => currentAttribution[key] === void 0));
+		const endTime = retainedEndTime(captureEvents);
+		const restoreEndTime = endTime !== void 0 && captureEvents.some((event) => (event.metadata.runType === "tool" || event.metadata.runType === "root") && !event.attributionReady && capturedEndTime(event) !== void 0);
+		if (Object.keys(added).length === 0 && !restoreEndTime) continue;
+		const sourceMetadata = mergeMetadataOptions(captureEvents);
+		const metadata = Object.keys(added).length === 0 ? sourceMetadata : addAttribution(sourceMetadata, added);
+		const updatedMetadata = buildCodingAgentMetadata(metadata);
+		if (Object.entries(added).some(([key, value]) => updatedMetadata[key] !== value)) throw new Error("Settlement metadata could not preserve attribution");
+		const submission = patchPayload(latest, metadata, options.integration, restoreEndTime ? endTime : void 0, hasCausalRunError(captureEvents));
+		const eventId = settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, added);
+		const scope = {
+			integration: options.integration,
+			sessionId: options.sessionId,
+			turnId,
+			eventId
+		};
+		const previous = orderSourceCaptures(generated.filter((item) => item.runId === runId && item.eventId !== eventId)).at(-1);
+		const previousDependency = previous === void 0 ? [] : [captureScope(previous)];
+		if (previous !== void 0) {
+			const previousReadiness = await captureReadiness(previousDependency, options.destinations, options.readOutcome);
+			if (previousReadiness.status === "dropped") return {
+				report: report(turnId, "blocked", "settlement-dropped", [runId], previousReadiness.destinations),
+				patches,
+				captured
+			};
+		}
+		const result = await options.capture({
+			turnId,
+			eventId,
+			runId,
+			destinationFingerprint: options.destinationFingerprint,
+			eventKind: LIFECYCLE_SETTLEMENT_EVENT_KIND,
+			normalizedPayload: canonicalJsonValue(submission.payload),
+			metadataProvenance: canonicalJsonValue(submission.metadata),
+			turnEvidence: canonicalJsonValue({
+				rootRunId,
+				childRunIds: [...childRunIds].toSorted(),
+				closureState,
+				[LIFECYCLE_ATTRIBUTION_READY_FIELD]: latest.attributionReady
+			}),
+			dependencies: uniqueScopes([...dependencies, ...previousDependency])
+		});
+		if (result.status === "failed" || result.status === "conflict") throw new Error(`Could not capture settled run ${runId}: ${result.status}`);
+		if (result.status === "published") captured += 1;
+		patches.push({
+			turnId,
+			runId,
+			scope
+		});
+	}
+	return {
+		report: {
+			...report(turnId, patches.length === 0 ? "settled" : "pending", patches.length === 0 ? "no-change" : "settlement-pending", patches.map(({ runId }) => runId)),
+			patches: patches.length
+		},
+		patches,
+		captured
+	};
+}
+function projectCapture(record, integration) {
+	const submission = projectSubmission({
+		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
+		metadata: record.metadataProvenance
+	}, integration);
+	if (submission.status === "deferred") return void 0;
+	const expectedKind = submission.value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND;
+	if (record.eventKind !== expectedKind) throw new TypeError("Capture event kind does not match its operation");
+	const evidence = parseEvidence(record.turnEvidence, storedAttributionReadiness(record, integration));
+	return {
+		record,
+		payload: submission.value.payload,
+		metadata: submission.value.metadata,
+		open: captureIsOpen(submission.value.payload),
+		attributionReady: evidence.attributionReady
+	};
+}
+function captureIsOpen(payload) {
+	if (payload.operation === "post") return payload.run.end_time === void 0 && payload.run.error === void 0;
+	if (payload.privacyContext.status === "running") return true;
+	return false;
+}
+function recordRun(events) {
+	const latest = events.at(-1);
+	const run = latest.payload.run;
+	return {
+		run_id: latest.record.runId,
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		trace_id: requireNonBlankString(run.trace_id, "Trace ID"),
+		dotted_order: requireNonBlankString(run.dotted_order, "Dotted order"),
+		name: requireNonBlankString(run.name, "Run name"),
+		run_type: requireNonBlankString(run.run_type, "Run type"),
+		tracing: latest.payload.privacyMode,
+		open: latest.open,
+		metadata: buildCodingAgentMetadata(mergeMetadataOptions(events))
+	};
+}
+function mergeMetadataOptions(captures) {
+	const first = captures[0];
+	if (first === void 0) throw new Error("Run metadata is required for settlement");
+	let merged = first.metadata;
+	for (const { metadata } of captures.slice(1)) {
+		const base = mergeMetadataObject(merged.base, metadata.base);
+		const runSpecific = mergeMetadataObject(merged.runSpecific, metadata.runSpecific);
+		const providerMetadata = mergeMetadataObject(merged.providerMetadata, metadata.providerMetadata);
+		const usageMetadata = mergeMetadataObject(merged.usageMetadata, metadata.usageMetadata);
+		merged = {
+			...merged,
+			...metadata,
+			...base === void 0 ? {} : { base },
+			...runSpecific === void 0 ? {} : { runSpecific },
+			...providerMetadata === void 0 ? {} : { providerMetadata },
+			...usageMetadata === void 0 ? {} : { usageMetadata }
+		};
+	}
+	return merged;
+}
+function mergeMetadataObject(previous, current) {
+	if (previous === void 0 && current === void 0) return void 0;
+	return {
+		...previous,
+		...current
+	};
+}
+function patchPayload(source, metadata, integration, endTime, causalRunError = false) {
+	const context = source.payload.run;
+	const projected = projectSubmission({
+		operation: "patch",
+		integration,
+		privacyMode: source.payload.privacyMode,
+		metadata,
+		run: {
+			id: context.id,
+			name: context.name,
+			run_type: context.run_type,
+			...context.start_time === void 0 ? {} : { start_time: context.start_time },
+			...context.parent_run_id === void 0 ? {} : { parent_run_id: context.parent_run_id },
+			...context.trace_id === void 0 ? {} : { trace_id: context.trace_id },
+			...context.dotted_order === void 0 ? {} : { dotted_order: context.dotted_order }
+		},
+		privacyContext: source.payload.operation === "patch" ? {
+			...source.payload.privacyContext,
+			...causalRunError ? { status: "error" } : endTime !== void 0 && source.payload.privacyContext.status !== "error" ? { status: "completed" } : {}
+		} : { status: causalRunError || source.payload.run.error !== void 0 || source.payload.privacyContext?.status === "error" ? "error" : endTime !== void 0 || source.payload.run.end_time !== void 0 ? "completed" : source.payload.privacyContext?.status ?? "running" },
+		patch: endTime === void 0 ? {
+			fields: [],
+			values: {}
+		} : {
+			fields: ["end_time"],
+			values: { end_time: endTime }
+		}
+	}, integration);
+	if (projected.status === "deferred") throw new Error("Settlement patch lost thread identity");
+	return projected.value;
+}
+function hasCausalRunError(events) {
+	let hasError = false;
+	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
+	else if (payload.patch.fields.includes("error")) hasError = payload.patch.values.error !== void 0;
+	else if (payload.privacyContext.status === "error") hasError = true;
+	return hasError;
+}
+function addAttribution(metadata, attribution) {
+	const layer = CODING_AGENT_INTEGRATION_POLICIES[metadata.integration].fullModePrecedence === "custom-wins" ? "base" : "runSpecific";
+	const previous = metadata[layer] ?? {};
+	return {
+		...metadata,
+		[layer]: {
+			...previous,
+			...attribution
+		}
+	};
+}
+function parseEvidence(value, attributionReady) {
+	const source = requirePlainRecord(value, "Stored turn evidence");
+	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
+	const closureState = requireOwnDataField(source, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Stored turn evidence has an invalid closure state");
+	const result = {
+		childRunIds,
+		closureState,
+		attributionReady
+	};
+	const rootRunId = ownDataField(source, "rootRunId");
+	if (rootRunId.present && rootRunId.value !== void 0) result.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
+	return result;
+}
+function capturedEndTime(event) {
+	if (event.payload.operation === "post") return event.payload.run.end_time;
+	if (!event.payload.patch.fields.includes("end_time")) return void 0;
+	const value = event.payload.patch.values.end_time;
+	return value === void 0 ? void 0 : requireTimestamp(value);
+}
+function retainedEndTime(events) {
+	let endTime;
+	for (const event of events) {
+		const captured = capturedEndTime(event);
+		if (captured !== void 0) endTime = captured;
+	}
+	return endTime;
+}
+function closureRank(state) {
+	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
+}
+async function captureReadiness(scopes, destinations, readOutcome) {
+	const pending = /* @__PURE__ */ new Set();
+	const dropped = /* @__PURE__ */ new Set();
+	for (const scope of scopes) for (const destination of destinations) {
+		const outcome = await readOutcome(scope, destination.id);
+		if (outcome.status === "failed") throw new Error(`Could not read settlement receipt: ${outcome.code}`);
+		if (outcome.status === "settled") {
+			if (outcome.receipt.outcome === "dropped") dropped.add(destination.id);
+		} else pending.add(destination.id);
+	}
+	return dropped.size > 0 ? {
+		status: "dropped",
+		destinations: [...dropped].toSorted()
+	} : pending.size > 0 ? {
+		status: "pending",
+		destinations: [...pending].toSorted()
+	} : {
+		status: "delivered",
+		destinations: []
+	};
+}
+function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
+	const revision = createHash("sha256").update(JSON.stringify({
+		turnId,
+		runId,
+		rootRunId,
+		childRunIds: [...childRunIds].toSorted(),
+		dependencies: dependencies.toSorted(compareScopes),
+		attribution
+	})).digest("hex");
+	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
+}
+function uniqueScopes(scopes) {
+	const unique = /* @__PURE__ */ new Map();
+	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
+	return [...unique.values()].toSorted(compareScopes);
+}
+function captureScope(record) {
+	return {
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	};
+}
+function captureScopeKey(scope) {
+	return JSON.stringify([
+		scope.integration,
+		scope.sessionId,
+		scope.turnId,
+		scope.eventId
+	]);
+}
+function compareScopes(left, right) {
+	return JSON.stringify(left).localeCompare(JSON.stringify(right));
+}
+function compareCaptures(left, right) {
+	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs - right.capturedAtMs;
+	return left.eventId.localeCompare(right.eventId);
+}
+function orderSourceCaptures(records) {
+	const byScope = new Map(records.map((record) => [captureScopeKey(captureScope(record)), record]));
+	const dependents = new Map(records.map((record) => [captureScopeKey(captureScope(record)), []]));
+	const dependencyCounts = new Map(records.map((record) => [captureScopeKey(captureScope(record)), 0]));
+	for (const record of records) {
+		const recordKey = captureScopeKey(captureScope(record));
+		for (const dependency of record.dependencies ?? []) {
+			const prerequisite = byScope.get(captureScopeKey(dependency));
+			if (prerequisite === void 0) continue;
+			dependents.get(captureScopeKey(captureScope(prerequisite))).push(record);
+			dependencyCounts.set(recordKey, dependencyCounts.get(recordKey) + 1);
+		}
+	}
+	const ready = [];
+	for (const record of records) if (dependencyCounts.get(captureScopeKey(captureScope(record))) === 0) pushOrderedCapture(ready, record);
+	const ordered = [];
+	while (ready.length > 0) {
+		const record = popOrderedCapture(ready);
+		ordered.push(record);
+		for (const dependent of dependents.get(captureScopeKey(captureScope(record))) ?? []) {
+			const key = captureScopeKey(captureScope(dependent));
+			const count = dependencyCounts.get(key) - 1;
+			dependencyCounts.set(key, count);
+			if (count === 0) pushOrderedCapture(ready, dependent);
+		}
+	}
+	if (ordered.length !== records.length) throw new TypeError("Source capture dependencies contain a cycle");
+	return ordered;
+}
+function compareSourceCaptures(left, right) {
+	return compareCaptures(left, right) || compareScopes(captureScope(left), captureScope(right));
+}
+function pushOrderedCapture(heap, record) {
+	let index = heap.length;
+	heap.push(record);
+	while (index > 0) {
+		const parentIndex = Math.floor((index - 1) / 2);
+		const parent = heap[parentIndex];
+		if (compareSourceCaptures(parent, record) <= 0) break;
+		heap[index] = parent;
+		index = parentIndex;
+	}
+	heap[index] = record;
+}
+function popOrderedCapture(heap) {
+	const first = heap[0];
+	if (first === void 0) return void 0;
+	const last = heap.pop();
+	if (heap.length === 0) return first;
+	let index = 0;
+	while (index * 2 + 1 < heap.length) {
+		const leftIndex = index * 2 + 1;
+		const rightIndex = leftIndex + 1;
+		const childIndex = rightIndex < heap.length && compareSourceCaptures(heap[rightIndex], heap[leftIndex]) < 0 ? rightIndex : leftIndex;
+		const child = heap[childIndex];
+		if (compareSourceCaptures(last, child) <= 0) break;
+		heap[index] = child;
+		index = childIndex;
+	}
+	heap[index] = last;
+	return first;
+}
+function groupByTurn(records) {
+	const turns = /* @__PURE__ */ new Map();
+	for (const record of records) {
+		const captures = turns.get(record.turnId) ?? [];
+		captures.push(record);
+		turns.set(record.turnId, captures);
+	}
+	return turns;
+}
+function report(turnId, status, reason, runIds = [], destinations = []) {
+	return {
+		turnId,
+		status,
+		reason,
+		...runIds.length === 0 ? {} : { runIds },
+		...destinations.length === 0 ? {} : { destinations },
+		patches: 0
+	};
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/validation/snapshot.js
+function snapshotData(value) {
+	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
+}
+function copySnapshot(value, copies) {
+	if (value === null || typeof value !== "object") return value;
+	const previous = copies.get(value);
+	if (previous !== void 0) return previous;
+	const prototype = Object.getPrototypeOf(value);
+	if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) throw new TypeError("Snapshot input must contain plain objects and arrays");
+	let copy;
+	if (Array.isArray(value)) {
+		const array = [];
+		array.length = value.length;
+		copy = array;
+	} else copy = Object.create(prototype);
+	copies.set(value, copy);
+	for (const key of Reflect.ownKeys(value)) {
+		if (Array.isArray(value) && key === "length") continue;
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (descriptor === void 0 || !("value" in descriptor)) throw new TypeError("Snapshot input must use data properties");
+		Object.defineProperty(copy, key, {
+			value: copySnapshot(descriptor.value, copies),
+			enumerable: descriptor.enumerable === true,
+			configurable: true,
+			writable: true
+		});
+	}
+	return copy;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/bridge.js
+function createLifecycleBridge(options) {
+	const integration = options.integration;
+	const wake = options.wake;
+	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
+	const storageRoot = resolve(options.storageRoot);
+	const captureStore = createCaptureStore(storageRoot);
+	const coordinator = createDeliveryCoordinator({
+		storageRoot,
+		integration,
+		sessionId,
+		...options.policy === void 0 ? {} : { policy: options.policy }
+	});
+	const writer = createLangSmithUploadWriter(options.writer);
+	return Object.freeze({
+		accountFingerprint: writer.accountFingerprint,
+		async capture(input) {
+			const capture = requirePlainRecord(snapshotData(requirePlainRecord(input, "Lifecycle capture")), "Lifecycle capture");
+			const turnId = requireNonBlankString(capture["turnId"], "Turn ID");
+			const eventId = requireNonBlankString(capture["eventId"], "Event ID");
+			const sourceAge = ownDataField(capture, "sourceAgeStartedAtMs");
+			const sourceAgeStartedAtMs = sourceAge.present ? requireSafeEpochMilliseconds(sourceAge.value, "Source age") : void 0;
+			const scope = {
+				integration,
+				sessionId,
+				turnId,
+				eventId
+			};
+			const previous = await captureStore.read(scope);
+			const projected = projectSubmission(capture["submission"], integration, previous === void 0 ? void 0 : previousRunContext(previous));
+			if (projected.status === "deferred") return {
+				status: "deferred",
+				reason: "missing-thread-identity"
+			};
+			const turnEvidence = projectTurnEvidence(capture["turnEvidence"], projected.value.payload.privacyMode, deriveAttributionReadiness(capture["submission"], integration));
+			const dependencies = capture["dependencies"];
+			const identityPresence = projected.value.payload.operation === "post" ? suppliedRunIdentityFields(capture["submission"]) : void 0;
+			const captureProjected = (value) => coordinator.capture({
+				turnId,
+				eventId,
+				runId: value.payload.run.id,
+				destinationFingerprint: writer.accountFingerprint,
+				eventKind: value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND,
+				normalizedPayload: canonicalJsonValue(value.payload),
+				turnEvidence,
+				metadataProvenance: canonicalJsonValue(value.metadata),
+				...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
+				...dependencies === void 0 ? {} : { dependencies }
+			});
+			let result = await captureProjected(projected.value);
+			if (result.status === "conflict" && previous === void 0 && identityPresence !== void 0 && projected.value.payload.operation === "post") {
+				const winner = await captureStore.read(scope);
+				if (winner?.runId === projected.value.payload.run.id) {
+					const run = { ...projected.value.payload.run };
+					if (!identityPresence.startTime) delete run.start_time;
+					if (!identityPresence.traceId) delete run.trace_id;
+					if (!identityPresence.dottedOrder) delete run.dotted_order;
+					const retry = projectSubmission({
+						...projected.value.payload,
+						run,
+						metadata: projected.value.metadata
+					}, integration, previousRunContext(winner));
+					if (retry.status === "ready") result = await captureProjected(retry.value);
+				}
+			}
+			if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => wake?.());
+			return result;
+		},
+		async drain(input = {}) {
+			const settlementLockDirectory = await ensurePrivateDirectory(storageRoot, [
+				LIFECYCLE_SETTLEMENT_LOCK_DIRECTORY,
+				LIFECYCLE_SETTLEMENT_LOCK_INTEGRATIONS_DIRECTORY,
+				integration,
+				LIFECYCLE_SETTLEMENT_LOCK_SESSIONS_DIRECTORY,
+				identifierHash(sessionId),
+				LIFECYCLE_SETTLEMENT_LOCK_ACCOUNTS_DIRECTORY,
+				identifierHash(writer.accountFingerprint)
+			]);
+			const settlementLock = await tryAcquireFileLock(join(settlementLockDirectory, LIFECYCLE_SETTLEMENT_LOCK_FILE));
+			if (settlementLock === void 0) return {
+				status: "busy",
+				settlement: {
+					captured: 0,
+					turns: []
+				}
+			};
+			let drainResult;
+			try {
+				const drainOnce = async () => {
+					const sourceSnapshot = (await captureStore.enumerate(integration, sessionId)).map(({ record }) => record);
+					const sourceByScope = indexCaptureSources(sourceSnapshot);
+					return coordinator.drain({
+						writer: {
+							accountFingerprint: writer.accountFingerprint,
+							destinations: writer.destinations,
+							async send(record, destination, fingerprint) {
+								if (fingerprint !== writer.accountFingerprint) throw new Error("Upload account changed");
+								const outgoing = await withholdUnresolvedEndTime({
+									record,
+									submission: restoreSubmission(record, integration),
+									sourceSnapshot,
+									sourceByScope,
+									integration,
+									destinations: writer.destinations,
+									readOutcome: (scope, destinationId) => captureStore.readOutcome(scope, destinationId)
+								});
+								await writer.send(outgoing, destination.id);
+							}
+						},
+						...input.now === void 0 ? {} : { now: input.now }
+					});
+				};
+				const first = await drainOnce();
+				if (first.status === "busy") return {
+					status: "busy",
+					settlement: {
+						captured: 0,
+						turns: []
+					}
+				};
+				const readOutcome = (scope, destination) => captureStore.readOutcome(scope, destination);
+				const work = await settleCapturedTurns({
+					captures: await captureStore.enumerate(integration, sessionId),
+					integration,
+					sessionId,
+					destinationFingerprint: writer.accountFingerprint,
+					destinations: writer.destinations,
+					capture: (capture) => coordinator.capture(capture),
+					readOutcome
+				});
+				let result = first;
+				if (work.progress.captured > 0) {
+					const second = await drainOnce();
+					if (second.status === "drained") result = {
+						status: "drained",
+						delivered: first.delivered + second.delivered,
+						dropped: first.dropped + second.dropped,
+						failed: first.failed + second.failed,
+						pending: second.pending,
+						accountMismatch: second.accountMismatch
+					};
+				}
+				const settlement = await refreshSettlementProgress(work, writer.destinations, readOutcome);
+				drainResult = {
+					...result,
+					settlement
+				};
+			} finally {
+				await settlementLock.release();
+			}
+			if (drainResult.status === "drained" && drainResult.delivered + drainResult.dropped > 0) await wake?.();
+			return drainResult;
+		}
+	});
+}
+function suppliedRunIdentityFields(value) {
+	const run = requirePlainRecord(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "run"), "Normalized run snapshot");
+	const supplied = (key) => {
+		const field = ownDataField(run, key);
+		return field.present && field.value !== void 0;
+	};
+	return {
+		startTime: supplied("start_time"),
+		traceId: supplied("trace_id"),
+		dottedOrder: supplied("dotted_order")
+	};
+}
+function previousRunContext(record) {
+	const runField = ownDataField(requirePlainRecord(record.normalizedPayload, "Stored run payload"), "run");
+	if (!runField.present) throw new TypeError("Stored run context is required");
+	const run = requirePlainRecord(runField.value, "Stored run context");
+	const context = {
+		id: requireNonBlankString(run["id"], "Run ID"),
+		name: requireNonBlankString(run["name"], "Run name"),
+		run_type: requireNonBlankString(run["run_type"], "Run type")
+	};
+	const startTime = ownDataField(run, "start_time");
+	if (startTime.present && startTime.value !== void 0) context.start_time = requireTimestamp(startTime.value);
+	const parentRunId = ownDataField(run, "parent_run_id");
+	if (parentRunId.present && parentRunId.value !== void 0) context.parent_run_id = requireNonBlankString(parentRunId.value, "Parent run ID");
+	const traceId = ownDataField(run, "trace_id");
+	if (traceId.present && traceId.value !== void 0) context.trace_id = requireNonBlankString(traceId.value, "Trace ID");
+	const dottedOrder = ownDataField(run, "dotted_order");
+	if (dottedOrder.present && dottedOrder.value !== void 0) context.dotted_order = requireNonBlankString(dottedOrder.value, "Dotted order");
+	return context;
+}
+function projectTurnEvidence(value, mode, attributionReady) {
+	const source = requirePlainRecord(value, "Lifecycle turn evidence");
+	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
+	const closureState = requireOwnDataField(source, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Lifecycle turn evidence has an invalid closure state");
+	const persisted = {
+		childRunIds,
+		closureState,
+		[LIFECYCLE_ATTRIBUTION_READY_FIELD]: attributionReady
+	};
+	const rootRunId = ownDataField(source, "rootRunId");
+	if (rootRunId.present && rootRunId.value !== void 0) persisted.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
+	return canonicalJsonValue(mode === "metadata" ? persisted : {
+		...source,
+		...persisted
+	});
+}
+function restoreSubmission(record, integration) {
+	const payload = canonicalJsonObject(record.normalizedPayload, "Stored run payload");
+	if (payload["integration"] !== integration) throw new TypeError("Stored integration does not match the lifecycle bridge");
+	if (payload["run"] === null || typeof payload["run"] !== "object") throw new TypeError("Stored run data is required");
+	if (payload["run"]["id"] !== record.runId) throw new TypeError("Stored run ID does not match its capture");
+	const mode = payload["privacyMode"];
+	if (mode !== "full" && mode !== "metadata") throw new TypeError("Stored privacy mode is invalid");
+	const projected = projectSubmission({
+		...payload,
+		metadata: record.metadataProvenance
+	}, integration);
+	if (projected.status === "deferred") throw new TypeError("Stored capture is missing thread identity");
+	return {
+		...projected.value.payload,
+		metadata: projected.value.metadata
+	};
+}
+//#endregion
+//#region src/trace-delivery.ts
+function stableRunId(sessionId, rolloutFile, turnId, runKey) {
+	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnId}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
+}
+function stableEventId(runId, operation) {
+	return `${runId}:${operation}`;
+}
+function stableRunStartTime(turnId, fallback) {
+	const value = turnId.replaceAll("-", "");
+	if (!/^[0-9a-f]{12}7[0-9a-f]{19}$/i.test(value)) return fallback;
+	const timestamp = Number.parseInt(value.slice(0, 12), 16);
+	return Number.isSafeInteger(timestamp) && timestamp > 0 ? timestamp : fallback;
 }
 //#endregion
 //#region src/tracing-policy.ts
@@ -17763,14 +21184,14 @@ function extractSpawnedAgentId(output) {
 		if (typeof id === "string") return id;
 	}
 }
-function isRecord(value) {
+function isRecord$2(value) {
 	return value != null && typeof value === "object" && !Array.isArray(value);
 }
 function formatError(value) {
 	if (value == null) return void 0;
 	if (typeof value === "string") return value || void 0;
 	if (isPrimitive(value)) return String(value);
-	if (isRecord(value)) {
+	if (isRecord$2(value)) {
 		const message = typeof value.message === "string" ? value.message : void 0;
 		const details = typeof value.additional_details === "string" ? value.additional_details : void 0;
 		const info = value.codex_error_info;
@@ -17796,7 +21217,7 @@ function extractSubagentActivities(payload) {
 		});
 		return activities;
 	}
-	if (payload.type !== "item_completed" || !isRecord(payload.item)) return activities;
+	if (payload.type !== "item_completed" || !isRecord$2(payload.item)) return activities;
 	const item = payload.item;
 	const callId = typeof item.id === "string" ? item.id : void 0;
 	if (item.type === "SubAgentActivity" && item.kind === "started" && typeof item.agent_thread_id === "string") activities.push({
@@ -17809,7 +21230,7 @@ function extractSubagentActivities(payload) {
 			for (const id of item.receiver_thread_ids) if (typeof id === "string") ids.add(id);
 		}
 		if (Array.isArray(item.receiver_agents)) {
-			for (const agent of item.receiver_agents) if (isRecord(agent) && typeof agent.thread_id === "string") ids.add(agent.thread_id);
+			for (const agent of item.receiver_agents) if (isRecord$2(agent) && typeof agent.thread_id === "string") ids.add(agent.thread_id);
 		}
 		for (const threadId of ids) activities.push({
 			threadId,
@@ -18070,12 +21491,6 @@ function convertToStandardMessages(messages) {
 		};
 	});
 }
-const CHILD_SCOPE_RESET = {
-	approval_policy: void 0,
-	ls_is_error_interrupt: void 0,
-	ls_subagent_id: void 0,
-	ls_subagent_type: void 0
-};
 function getUsageMetadata(counts) {
 	if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) return;
 	return {
@@ -18094,7 +21509,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	for (const child of task.subagentThreads) try {
 		await inheritThreadMode(options?.privacyPath ?? defaultPrivacyPath(), child, mode);
 	} catch {}
-	if (mode === "off") return;
+	if (mode === "off") return "handled";
 	const fallbackTime = Date.now();
 	const getSystemMessage = (session, task) => {
 		if (session?.base_instructions == null || task?.turnId == null) return [];
@@ -18137,17 +21552,52 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 	const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : void 0;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
-	const base = codingAgentMetadata({
+	if (typeof conversationThreadId !== "string" || !conversationThreadId.trim()) return "deferred";
+	const nativeTurnId = task.turnId?.id ?? privacyTurnId;
+	if (!nativeTurnId) return "deferred";
+	const parentRunId = stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, "root");
+	const stableParentStartTime = stableRunStartTime(nativeTurnId, parentStartTime);
+	const base = {
+		integration: LS_INTEGRATION,
+		integrationVersion: LS_INTEGRATION_VERSION,
 		agentType: isSubagent ? "subagent" : "root",
 		threadId: conversationThreadId,
 		turnId: task.turnId?.id,
 		turnNumber: task.turnNumber,
-		cliVersion: sessionMeta?.cli_version,
+		runtimeVersion: sessionMeta?.cli_version
+	};
+	const workspace = stripUndefined({
+		...parseRepository(git?.repository_url),
+		git_branch: git?.branch,
+		git_commit_sha: git?.commit_hash,
 		cwd,
-		git,
-		sandboxType
+		sandbox_type: sandboxType
 	});
+	const parentMetadata = {
+		...base,
+		runType: isSubagent ? "subagent" : task.isErrorInterrupt ? "interrupted" : "root",
+		approvalPolicy: isSubagent ? void 0 : approvalPolicy,
+		subagentId: isSubagent ? sessionMeta?.session_id : void 0,
+		subagentType: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
+		providerMetadata: {
+			codex_cli_version: sessionMeta?.cli_version,
+			ls_message_format: "anthropic",
+			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
+		},
+		runSpecific: {
+			...workspace,
+			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {},
+			approval_policy: isSubagent ? void 0 : approvalPolicy,
+			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
+			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0
+		},
+		base: {
+			...options?.metadata,
+			...task.context
+		}
+	};
 	const parent = createRunTree({
+		id: parentRunId,
 		name: "openai.codex",
 		client: options?.client,
 		project_name: options?.projectName,
@@ -18156,23 +21606,19 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
 		error: task.error,
-		start_time: parentStartTime,
+		start_time: stableParentStartTime,
 		end_time: parentEndTime,
-		extra: { metadata: withTrustedMetadata({
-			...options?.metadata,
-			...task.context
-		}, {
-			...base,
-			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {},
-			approval_policy: isSubagent ? void 0 : approvalPolicy,
-			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
-			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
-			codex_cli_version: sessionMeta?.cli_version,
-			ls_message_format: "anthropic",
-			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
-		}) }
+		extra: { metadata: buildCodingAgentMetadata(parentMetadata) }
 	}, mode, options?.parentRunTree);
-	PROMISE_QUEUE.push(parent.postRun());
+	const runsToCapture = [];
+	function postRun(run, metadata) {
+		if (options?.captureRun) runsToCapture.push({
+			run,
+			metadata
+		});
+		else PROMISE_QUEUE.push(run.postRun());
+	}
+	postRun(parent, parentMetadata);
 	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
 	const outputs = fullMessages.reduce((acc, item, idx) => {
 		if (item.message.role === "ai") acc.push(idx);
@@ -18209,7 +21655,9 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			replayHistory: true
 		});
 	}
+	let outputIndex = 0;
 	for (const output of outputs) {
+		const thisOutputIndex = outputIndex++;
 		const inputMessages = fullMessages.slice(0, output.start);
 		const aiMessage = fullMessages.slice(output.start, output.start + 1);
 		const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -18217,24 +21665,33 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 		const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 		const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 		const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
-		const llmChild = createRunTree({
+		const llmMetadata = {
+			...base,
+			runType: "llm",
+			clearSubagent: true,
+			modelName: task.context?.model,
+			usageMetadata: getUsageMetadata(tokenCounts),
+			providerMetadata: {
+				ls_model_type: "chat",
+				ls_provider: sessionMeta?.model_provider,
+				ls_invocation_params: task.context
+			},
+			runSpecific: {
+				...workspace,
+				...CHILD_SCOPE_RESET
+			},
+			base: options?.metadata
+		};
+		postRun(createRunTree({
+			id: stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, `llm:${thisOutputIndex}`),
 			name: "openai.codex.turn",
 			run_type: "llm",
 			start_time: outputStartTime,
 			end_time: outputEndTime,
 			inputs: { messages: inputMessages.map((i) => i.message) },
 			outputs: { messages: aiMessage.map((i) => i.message) },
-			extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-				...base,
-				...CHILD_SCOPE_RESET,
-				ls_model_type: "chat",
-				ls_provider: sessionMeta?.model_provider,
-				ls_model_name: task.context?.model,
-				ls_invocation_params: task.context,
-				usage_metadata: getUsageMetadata(tokenCounts)
-			}) }
-		}, mode, parent);
-		PROMISE_QUEUE.push(llmChild.postRun());
+			extra: { metadata: buildCodingAgentMetadata(llmMetadata) }
+		}, mode, parent), llmMetadata);
 		for (const toolMessage of toolMessages) {
 			if (toolMessage.message.role !== "tool") continue;
 			const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -18251,7 +21708,27 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 			const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 			const runName = nativeToolName ?? "openai.codex.tool";
 			const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
-			const toolRun = createRunTree({
+			const toolMetadata = {
+				...base,
+				runType: "tool",
+				clearSubagent: true,
+				toolName: nativeToolName,
+				runName,
+				modelName: task.context?.model,
+				usageMetadata: getUsageMetadata(toolMessage.tokenCount),
+				providerMetadata: {
+					ls_model_type: "chat",
+					ls_provider: sessionMeta?.model_provider,
+					ls_invocation_params: task.context
+				},
+				runSpecific: {
+					...workspace,
+					...CHILD_SCOPE_RESET
+				},
+				base: options?.metadata
+			};
+			if (!options?.capturedToolIds?.has(toolCallId)) postRun(createRunTree({
+				id: stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, `tool:${toolCallId}`),
 				name: runName,
 				run_type: "tool",
 				start_time: min,
@@ -18262,20 +21739,23 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 					messages: [toolMessage.message]
 				},
 				error: toolCall.error,
-				extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-					...base,
-					...CHILD_SCOPE_RESET,
-					ls_model_type: "chat",
-					ls_provider: sessionMeta?.model_provider,
-					ls_model_name: task.context?.model,
-					ls_invocation_params: task.context,
-					usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-					...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
-				}) }
-			}, mode, parent);
-			PROMISE_QUEUE.push(toolRun.postRun());
+				extra: { metadata: buildCodingAgentMetadata(toolMetadata) }
+			}, mode, parent), toolMetadata);
 			for (const skillName of skillNames) {
-				const skillRun = createRunTree({
+				const skillMetadata = {
+					...base,
+					runType: "tool",
+					clearSubagent: true,
+					skillName,
+					runSpecific: {
+						...workspace,
+						...CHILD_SCOPE_RESET,
+						usage_metadata: void 0
+					},
+					base: options?.metadata
+				};
+				postRun(createRunTree({
+					id: stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, `skill:${toolCallId}:${skillName}`),
 					name: "Skill",
 					run_type: "tool",
 					start_time: min,
@@ -18285,19 +21765,36 @@ async function postTurn(task, sessionMeta, privacyTurnId, { rolloutFile, options
 						commandName: skillName,
 						success: toolCall.error == null
 					} },
-					extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-						...base,
-						...CHILD_SCOPE_RESET,
-						usage_metadata: void 0,
-						ls_skill_name: skillName
-					}) }
-				}, mode, parent);
-				PROMISE_QUEUE.push(skillRun.postRun());
+					extra: { metadata: buildCodingAgentMetadata(skillMetadata) }
+				}, mode, parent), skillMetadata);
 			}
 		}
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(subagentThread);
 	}
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(subagentThread);
+	if (options?.captureRun) {
+		const childRunIds = /* @__PURE__ */ new Set();
+		const collectChildren = (run) => {
+			for (const child of run.child_runs ?? []) {
+				if (childRunIds.has(child.id)) continue;
+				childRunIds.add(child.id);
+				collectChildren(child);
+			}
+		};
+		collectChildren(parent);
+		for (const toolId of options.capturedToolIds ?? []) childRunIds.add(stableRunId(sessionMeta?.session_id, rolloutFile, nativeTurnId, `tool:${toolId}`));
+		const lastRun = runsToCapture.at(-1)?.run;
+		for (const item of runsToCapture) await options.captureRun(item.run, {
+			childRunIds: [...childRunIds],
+			closureState: item.run === lastRun ? "authoritative" : "open",
+			metadata: item.metadata,
+			mode,
+			rolloutFile,
+			rootRunId: parent.id,
+			turnId: nativeTurnId
+		});
+	}
+	return "handled";
 }
 async function convertToRunTree(input, options) {
 	let sessionMeta;
@@ -18451,11 +21948,12 @@ async function convertToRunTree(input, options) {
 				}
 				const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
 				const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-				if (!alreadyUploaded && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
+				let postStatus = "handled";
+				if (!alreadyUploaded && !isBacklog) postStatus = await postTurn(task, sessionMeta, privacyTurnId, {
 					rolloutFile: input.transcript_path,
 					options
 				});
-				if (completedTurnId != null && !alreadyUploaded) {
+				if (completedTurnId != null && !alreadyUploaded && postStatus === "handled") {
 					uploadedTurnIds.add(completedTurnId);
 					await markTurnUploaded(input.transcript_path, completedTurnId);
 				}
@@ -18495,6 +21993,1688 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 	}
 }
 //#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/constants.js
+const BACKGROUND_WORKER_DIRECTORY = "background-worker";
+const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
+const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
+const BACKGROUND_WORKER_ACCOUNTS_DIRECTORY = "accounts";
+const BACKGROUND_WORKER_LOCK_FILE = "worker";
+const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
+const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
+const BACKGROUND_WORKER_LAUNCHING_FILE = "wake.launching";
+const BACKGROUND_WORKER_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
+const BACKGROUND_WORKER_MARKER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const BACKGROUND_WORKER_ACTIVE_MARKER_NAME = /^wake\.active\.([0-9a-f-]{36})\.json$/u;
+const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\.([1-9]\d*)\.json$/u;
+const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
+const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/paths.js
+function validateWorkerScope(scope) {
+	validateIntegration(scope.integration);
+	validateIdentifier(scope.sessionId, "session ID");
+	validateIdentifier(scope.accountFingerprint, "account fingerprint");
+}
+function workerDirectory(storageRoot, scope) {
+	validateWorkerScope(scope);
+	return join(resolve(storageRoot), BACKGROUND_WORKER_DIRECTORY, BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY, scope.integration, BACKGROUND_WORKER_SESSIONS_DIRECTORY, identifierHash(scope.sessionId), BACKGROUND_WORKER_ACCOUNTS_DIRECTORY, identifierHash(scope.accountFingerprint));
+}
+function workerLockPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LOCK_FILE);
+}
+function workerPendingPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_PENDING_FILE);
+}
+function workerActivePath(storageRoot, scope, markerId) {
+	return join(workerDirectory(storageRoot, scope), `${BACKGROUND_WORKER_ACTIVE_PREFIX}${markerId}.json`);
+}
+function workerAttemptPath(storageRoot, scope, markerId, attempt) {
+	return join(workerDirectory(storageRoot, scope), `${BACKGROUND_WORKER_ACTIVE_PREFIX}${markerId}.attempt.${attempt}.json`);
+}
+function workerLaunchPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/worker.js
+function createBackgroundWorker(options) {
+	validateOptions(options);
+	const storageRoot = resolve(options.storageRoot);
+	const scope = Object.freeze({ ...options.scope });
+	const retryPolicy = {
+		maxAttempts: options.retryPolicy?.maxAttempts ?? 3,
+		retryDelayMs: options.retryPolicy?.retryDelayMs ?? 100
+	};
+	const config = {
+		...options,
+		storageRoot,
+		scope,
+		retryPolicy
+	};
+	const directory = workerDirectory(storageRoot, scope);
+	const lockPath = workerLockPath(storageRoot, scope);
+	const directorySegments = [
+		BACKGROUND_WORKER_DIRECTORY,
+		BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY,
+		scope.integration,
+		BACKGROUND_WORKER_SESSIONS_DIRECTORY,
+		identifierHash(scope.sessionId),
+		BACKGROUND_WORKER_ACCOUNTS_DIRECTORY,
+		identifierHash(scope.accountFingerprint)
+	];
+	return {
+		async wake() {
+			await ensurePrivateDirectory(storageRoot, directorySegments);
+			const marker = makeMarker(randomUUID());
+			await publishExclusive(workerPendingPath(storageRoot, scope), JSON.stringify(marker));
+			const lock = await tryAcquireFileLock(lockPath);
+			if (!lock) return "queued";
+			try {
+				const existingLaunch = await readLaunch(storageRoot, scope);
+				if (existingLaunch && existingLaunch.expiresAtMs > Date.now() && await processIsAlive(existingLaunch.pid)) return "queued";
+				if (existingLaunch) await removeFile(workerLaunchPath(storageRoot, scope));
+				const pid = await config.launchWorker();
+				if (!Number.isSafeInteger(pid) || pid <= 0 || pid === process.pid) throw new TypeError("Background worker launcher must return a child process ID");
+				const createdAtMs = Date.now();
+				const launch = {
+					version: 1,
+					pid,
+					createdAtMs,
+					expiresAtMs: createdAtMs + Math.max(BACKGROUND_WORKER_LAUNCH_LEASE_MS, config.startupWaitMs ?? 0)
+				};
+				if (!await publishExclusive(workerLaunchPath(storageRoot, scope), JSON.stringify(launch))) throw new Error("Background worker launch is already pending");
+				if (!await waitForFileLockClaim(lockPath, pid, { timeoutMs: config.startupWaitMs ?? 2e3 })) throw new Error("Background worker did not claim its lock before timeout");
+				return "launched";
+			} finally {
+				await lock.release();
+			}
+		},
+		async run() {
+			await ensurePrivateDirectory(storageRoot, directorySegments);
+			let processed = false;
+			let retryExhausted = false;
+			let failures = 0;
+			for (;;) {
+				const result = await withFileLock(lockPath, async () => {
+					for (;;) {
+						if (!await matchesScope(config.resolveScope, scope)) return "scope-mismatch";
+						const pass = await (async () => {
+							if (!await matchesScope(config.resolveScope, scope)) return {
+								scopeMismatch: true,
+								processed: false,
+								retryExhausted: false,
+								retryPending: false,
+								retryAttempted: false
+							};
+							await clearOwnedLaunch(storageRoot, scope);
+							return processLocked(storageRoot, directory, scope, config, retryPolicy);
+						})();
+						if (pass.scopeMismatch) return "scope-mismatch";
+						processed ||= pass.processed;
+						retryExhausted ||= pass.retryExhausted;
+						if (pass.retryAttempted) failures += 1;
+						if (failures >= retryPolicy.maxAttempts && pass.retryAttempted) return "retry-exhausted";
+						if (pass.retryPending && retryPolicy.retryDelayMs > 0) await setTimeout$1(retryPolicy.retryDelayMs);
+						if (!await hasPendingWork(storageRoot, directory)) return retryExhausted ? "retry-exhausted" : processed ? "completed" : "idle";
+					}
+				}, { timeoutMs: BACKGROUND_WORKER_OWNER_WAIT_MS });
+				if (result === "scope-mismatch") return result;
+				if (failures >= retryPolicy.maxAttempts) return "retry-exhausted";
+				if (!await hasPendingWork(storageRoot, directory)) return result;
+			}
+		}
+	};
+}
+function validateOptions(options) {
+	const policy = options.retryPolicy;
+	if (policy?.maxAttempts !== void 0 && (!Number.isSafeInteger(policy.maxAttempts) || policy.maxAttempts < 1)) throw new RangeError("Background worker max attempts must be a positive integer");
+	if (policy?.retryDelayMs !== void 0 && (!Number.isFinite(policy.retryDelayMs) || policy.retryDelayMs < 0)) throw new RangeError("Background worker retry delay must be non-negative");
+	if (options.startupWaitMs !== void 0 && (!Number.isSafeInteger(options.startupWaitMs) || options.startupWaitMs <= 0)) throw new RangeError("Background worker startup wait must be a positive integer");
+}
+function makeMarker(id) {
+	return {
+		version: 1,
+		id,
+		sourcePid: process.pid
+	};
+}
+async function matchesScope(resolveScope, expected) {
+	const actual = await resolveScope();
+	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
+}
+async function processLocked(storageRoot, directory, scope, options, retryPolicy) {
+	const state = await readWorkerState(storageRoot, directory);
+	for (const attempt of state.orphanedAttempts) await removeFile(workerAttemptPath(storageRoot, scope, attempt.markerId, attempt.attempt));
+	let marker = state.active;
+	if (!marker && state.pending) {
+		marker = state.pending;
+		if (!await publishExclusive(workerActivePath(storageRoot, scope, marker.id), JSON.stringify(marker))) throw new Error("Background worker active marker already exists");
+		await removeFile(workerPendingPath(storageRoot, scope));
+	} else if (marker && state.pending?.id === marker.id) await removeFile(workerPendingPath(storageRoot, scope));
+	if (!marker) return {
+		scopeMismatch: false,
+		processed: false,
+		retryExhausted: false,
+		retryPending: false,
+		retryAttempted: false
+	};
+	let attempts = state.attempts;
+	if (attempts.length >= retryPolicy.maxAttempts) {
+		await removeActiveMarker(storageRoot, scope, marker, attempts);
+		return {
+			scopeMismatch: false,
+			processed: true,
+			retryExhausted: true,
+			retryPending: false,
+			retryAttempted: false
+		};
+	}
+	for (;;) {
+		if (!await matchesScope(options.resolveScope, scope)) return {
+			scopeMismatch: true,
+			processed: false,
+			retryExhausted: false,
+			retryPending: false,
+			retryAttempted: false
+		};
+		const result = await runTasks(options, scope);
+		if (result === "scope-mismatch" || !await matchesScope(options.resolveScope, scope)) return {
+			scopeMismatch: true,
+			processed: false,
+			retryExhausted: false,
+			retryPending: false,
+			retryAttempted: false
+		};
+		if (result === "progressed") continue;
+		if (result === "idle") {
+			await removeActiveMarker(storageRoot, scope, marker, attempts);
+			return {
+				scopeMismatch: false,
+				processed: true,
+				retryExhausted: false,
+				retryPending: false,
+				retryAttempted: false
+			};
+		}
+		const attemptNumber = attempts.length + 1;
+		const attempt = {
+			version: 1,
+			markerId: marker.id,
+			attempt: attemptNumber
+		};
+		if (!await publishExclusive(workerAttemptPath(storageRoot, scope, marker.id, attemptNumber), JSON.stringify(attempt))) throw new Error("Background worker retry attempt already exists");
+		attempts = [...attempts, attempt];
+		if (attempts.length >= retryPolicy.maxAttempts) {
+			await removeActiveMarker(storageRoot, scope, marker, attempts);
+			return {
+				scopeMismatch: false,
+				processed: true,
+				retryExhausted: true,
+				retryPending: false,
+				retryAttempted: true
+			};
+		}
+		return {
+			scopeMismatch: false,
+			processed: true,
+			retryExhausted: false,
+			retryPending: true,
+			retryAttempted: true
+		};
+	}
+}
+async function runTasks(options, scope) {
+	let progressed = false;
+	if (options.reconstructPending) {
+		let result;
+		try {
+			result = await options.reconstructPending();
+		} catch {
+			return "retryable-failure";
+		}
+		if (!await matchesScope(options.resolveScope, scope)) return "scope-mismatch";
+		if (result === "retryable-failure") return result;
+		progressed ||= result === "progressed";
+	}
+	let result;
+	try {
+		result = await options.drainPending();
+	} catch {
+		return "retryable-failure";
+	}
+	if (result === "retryable-failure") return result;
+	progressed ||= result === "progressed";
+	return progressed ? "progressed" : "idle";
+}
+async function readWorkerState(storageRoot, directory) {
+	const entries = await listPrivateDirectory(storageRoot, directory);
+	let pending;
+	let active;
+	const attemptsByMarker = /* @__PURE__ */ new Map();
+	if (!entries) return {
+		attempts: [],
+		orphanedAttempts: []
+	};
+	const claimsDirectory = `${BACKGROUND_WORKER_LOCK_FILE}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	for (const entry of entries) {
+		if (entry.name === claimsDirectory) {
+			if (!entry.isDirectory() || entry.isSymbolicLink()) throw new Error("Unsafe background worker lock directory");
+			continue;
+		}
+		if (entry.name === "wake.pending") {
+			if (!entry.isFile() || entry.isSymbolicLink()) throw new Error("Unsafe background worker pending marker");
+			pending = parseMarker(await readRequired(storageRoot, join(directory, entry.name)));
+			continue;
+		}
+		const activeMatch = BACKGROUND_WORKER_ACTIVE_MARKER_NAME.exec(entry.name);
+		if (activeMatch) {
+			if (!entry.isFile() || entry.isSymbolicLink()) throw new Error("Unsafe background worker active marker");
+			const markerId = activeMatch[1];
+			if (markerId === void 0 || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(markerId)) throw new Error("Invalid background worker active path");
+			if (active) throw new Error("Multiple background worker active markers");
+			active = parseMarker(await readRequired(storageRoot, join(directory, entry.name)));
+			if (active.id !== markerId) throw new Error("Background worker active marker path mismatch");
+			continue;
+		}
+		const attemptMatch = BACKGROUND_WORKER_ATTEMPT_NAME.exec(entry.name);
+		if (attemptMatch) {
+			if (!entry.isFile() || entry.isSymbolicLink()) throw new Error("Unsafe background worker retry attempt");
+			const markerId = attemptMatch[1];
+			const attemptNumber = Number(attemptMatch[2]);
+			if (markerId === void 0 || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(markerId) || !Number.isSafeInteger(attemptNumber)) throw new Error("Invalid background worker attempt path");
+			const attempt = parseAttempt(await readRequired(storageRoot, join(directory, entry.name)), markerId, attemptNumber);
+			const markerAttempts = attemptsByMarker.get(markerId) ?? [];
+			markerAttempts.push(attempt);
+			attemptsByMarker.set(markerId, markerAttempts);
+			continue;
+		}
+		if (BACKGROUND_WORKER_STAGING_FILE.test(entry.name)) {
+			if (!entry.isFile() || entry.isSymbolicLink()) throw new Error("Unsafe background worker staging file");
+			continue;
+		}
+		if (entry.name === "wake.launching") {
+			if (!entry.isFile() || entry.isSymbolicLink()) throw new Error("Unsafe background worker launch marker");
+			continue;
+		}
+		throw new Error("Unexpected background worker state path");
+	}
+	const attempts = active ? attemptsByMarker.get(active.id) ?? [] : [];
+	attempts.sort((left, right) => left.attempt - right.attempt);
+	for (let index = 0; index < attempts.length; index += 1) if (attempts[index]?.attempt !== index + 1) throw new Error("Background worker retry sequence has a gap");
+	const orphanedAttempts = [...attemptsByMarker.entries()].filter(([markerId]) => active?.id !== markerId).flatMap(([, markerAttempts]) => markerAttempts);
+	return {
+		...pending ? { pending } : {},
+		...active ? { active } : {},
+		attempts,
+		orphanedAttempts
+	};
+}
+async function hasPendingWork(storageRoot, directory) {
+	return (await listPrivateDirectory(storageRoot, directory))?.some((entry) => entry.name === "wake.pending" || BACKGROUND_WORKER_ACTIVE_MARKER_NAME.test(entry.name)) ?? false;
+}
+async function removeActiveMarker(storageRoot, scope, marker, attempts) {
+	await removeFile(workerActivePath(storageRoot, scope, marker.id));
+	for (const attempt of attempts) await removeFile(workerAttemptPath(storageRoot, scope, marker.id, attempt.attempt));
+}
+async function clearOwnedLaunch(storageRoot, scope) {
+	if ((await readLaunch(storageRoot, scope))?.pid === process.pid) await removeFile(workerLaunchPath(storageRoot, scope));
+}
+async function readLaunch(storageRoot, scope) {
+	const contents = await readPrivateFile(storageRoot, workerLaunchPath(storageRoot, scope));
+	if (contents === void 0) return void 0;
+	const value = parseObject(contents);
+	if (value.version !== 1 || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.createdAtMs !== "number" || !Number.isSafeInteger(value.createdAtMs) || typeof value.expiresAtMs !== "number" || !Number.isSafeInteger(value.expiresAtMs) || value.expiresAtMs <= value.createdAtMs) throw new Error("Invalid background worker launch marker");
+	return value;
+}
+async function processIsAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		if (error.code === "ESRCH") return false;
+		return true;
+	}
+}
+async function readRequired(storageRoot, path) {
+	const contents = await readPrivateFile(storageRoot, path);
+	if (contents === void 0) throw new Error("Background worker state disappeared");
+	return contents;
+}
+async function removeFile(path) {
+	try {
+		await unlink(path);
+	} catch (error) {
+		if (error.code !== "ENOENT") throw error;
+	}
+}
+function parseMarker(contents) {
+	const value = parseObject(contents);
+	if (value.version !== 1 || typeof value.id !== "string" || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(value.id) || typeof value.sourcePid !== "number" || !Number.isSafeInteger(value.sourcePid) || value.sourcePid <= 0) throw new Error("Invalid background worker marker");
+	return value;
+}
+function parseAttempt(contents, markerId, attempt) {
+	const value = parseObject(contents);
+	if (value.version !== 1 || value.markerId !== markerId || value.attempt !== attempt) throw new Error("Invalid background worker retry attempt");
+	return value;
+}
+function parseObject(contents) {
+	const value = JSON.parse(contents);
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid background worker state");
+	return value;
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/reconstruction/constants.js
+const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
+const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
+const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
+const RECONSTRUCTION_DRAIN_LOCK = "drain";
+const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
+const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
+const RECONSTRUCTION_JOB_KIND = "reconstruction-job-v1";
+const RECONSTRUCTION_MAPPING_KIND = "reconstruction-map-v1";
+const RECONSTRUCTION_CLOSURE_STATES = [
+	"open",
+	"provisional",
+	"authoritative"
+];
+const RECONSTRUCTION_JOB_INPUT_KEYS = [
+	"eventId",
+	"privacyMode",
+	"sourceRefs",
+	"turnEvidence",
+	"turnId"
+];
+const RECONSTRUCTION_JOB_OPTIONAL_INPUT_KEYS = ["sourceAgeStartedAtMs", "sourceSnapshots"];
+const RECONSTRUCTION_SOURCE_SNAPSHOT_KEYS = [
+	"sourceAgeStartedAtMs",
+	"sourceRef",
+	"submission"
+];
+const RECONSTRUCTION_SOURCE_SNAPSHOT_OPTIONAL_KEYS = ["attributionContext"];
+const RECONSTRUCTION_STORED_JOB_KEYS = [
+	"privacyMode",
+	"recordVersion",
+	"sourceRefs"
+];
+const RECONSTRUCTION_STORED_JOB_OPTIONAL_KEYS = ["sourceAgeStartedAtMs", "sourceSnapshots"];
+const RECONSTRUCTION_ATTRIBUTION_CONTEXT_KEYS = ["toolOrigin"];
+const RECONSTRUCTION_ATTRIBUTION_CONTEXT_OPTIONAL_KEYS = ["pinnedRepositoryKeys"];
+const RECONSTRUCTION_TOOL_ORIGIN_KEYS = ["namedAPath"];
+const RECONSTRUCTION_TOOL_ORIGIN_OPTIONAL_KEYS = ["cwd", "path"];
+const RECONSTRUCTION_OUTPUT_KEYS = ["eventId", "submission"];
+const RECONSTRUCTION_OUTPUT_OPTIONAL_KEYS = ["dependencies", "sourceRef"];
+const RECONSTRUCTION_TURN_EVIDENCE_KEYS = ["childRunIds", "closureState"];
+const RECONSTRUCTION_TURN_EVIDENCE_KEYS_WITH_ROOT = [
+	"childRunIds",
+	"closureState",
+	"rootRunId"
+];
+const RECONSTRUCTION_DEPENDENCY_KEYS = [
+	"eventId",
+	"integration",
+	"sessionId",
+	"turnId"
+];
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/reconstruction/worker.js
+function createReconstructionWorker(options) {
+	const integration = options.integration;
+	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
+	const accountFingerprint = requireNonBlankString(options.bridge.accountFingerprint, "Account fingerprint");
+	const bridge = Object.freeze({
+		accountFingerprint,
+		capture: options.bridge.capture
+	});
+	const reconstruct = options.reconstruct;
+	if (typeof bridge.capture !== "function" || typeof reconstruct !== "function") throw new TypeError("Reconstruction callbacks are required");
+	validateIntegration(integration);
+	validateIdentifier(sessionId, "session ID");
+	validateIdentifier(accountFingerprint, "account fingerprint");
+	const policy = resolvePolicy(options.policy);
+	const storageRoot = join(resolve(options.storageRoot), RECONSTRUCTION_DIRECTORY);
+	const captureStore = createCaptureStore(storageRoot);
+	const attemptStore = createDeliveryAttemptStore(storageRoot);
+	return {
+		async enqueue(input) {
+			const job = validateJobInput(input, integration, sessionId, accountFingerprint);
+			return captureStore.capture(jobRecord(job));
+		},
+		async drain(request = {}) {
+			const now = request.now ?? Date.now();
+			if (!Number.isFinite(now)) throw new RangeError("Drain time must be finite");
+			const lockDirectory = await ensurePrivateDirectory(storageRoot, [
+				RECONSTRUCTION_WORKER_DIRECTORY,
+				integration,
+				RECONSTRUCTION_SESSIONS_DIRECTORY,
+				identifierHash(sessionId)
+			]);
+			const lock = await tryAcquireFileLock(join(lockDirectory, RECONSTRUCTION_DRAIN_LOCK));
+			if (!lock) return { status: "busy" };
+			const counts = {
+				captured: 0,
+				deferred: 0,
+				failed: 0,
+				dropped: 0
+			};
+			try {
+				const entries = await captureStore.enumerate(integration, sessionId);
+				const candidates = [];
+				for (const entry of entries) {
+					if (entry.record.eventKind === "reconstruction-map-v1") {
+						readMapping(entry.record);
+						continue;
+					}
+					if (entry.record.eventKind !== "reconstruction-job-v1") throw new Error("Unsupported reconstruction record");
+					const job = readJob(entry.record, integration);
+					const scope = scopeOf(entry.record);
+					const outcome = await captureStore.readOutcome(scope, job.accountFingerprint);
+					if (outcome.status === "failed") throw new Error(outcome.message);
+					if (outcome.status === "missing-capture") throw new Error("Reconstruction job disappeared");
+					if (outcome.status === "settled") continue;
+					if (job.accountFingerprint !== accountFingerprint) continue;
+					if (now - jobAgeStartedAtMs(job, entry.capturedAtMs) >= policy.maxAgeMs) {
+						counts.dropped += Number(await recordTerminal(captureStore, scope, job.accountFingerprint, "dropped", DELIVERY_EXPIRED_REASON));
+						continue;
+					}
+					candidates.push({
+						entry,
+						job,
+						scope
+					});
+				}
+				const overCapacity = Math.max(0, candidates.length - policy.maxEntries);
+				for (const candidate of candidates.slice(0, overCapacity)) counts.dropped += Number(await recordTerminal(captureStore, candidate.scope, candidate.job.accountFingerprint, "dropped", DELIVERY_CAPACITY_REASON));
+				for (const candidate of candidates.slice(overCapacity)) if (await processJob(candidate.job, candidate.entry.capturedAtMs, candidate.scope, reconstruct, bridge, captureStore, attemptStore, policy.maxAttempts, counts) === "deferred") counts.deferred += 1;
+			} finally {
+				await lock.release();
+			}
+			const finalEntries = await captureStore.enumerate(integration, sessionId);
+			let pending = 0;
+			let accountMismatch = 0;
+			for (const entry of finalEntries) {
+				if (entry.record.eventKind !== "reconstruction-job-v1") continue;
+				const job = readJob(entry.record, integration);
+				const outcome = await captureStore.readOutcome(scopeOf(entry.record), job.accountFingerprint);
+				if (outcome.status === "failed") throw new Error(outcome.message);
+				if (outcome.status !== "settled") {
+					pending += 1;
+					if (job.accountFingerprint !== accountFingerprint) accountMismatch += 1;
+				}
+			}
+			return {
+				status: "drained",
+				...counts,
+				pending,
+				accountMismatch
+			};
+		}
+	};
+}
+async function processJob(job, jobCapturedAtMs, scope, reconstruct, bridge, store, attempts, maxAttempts, counts) {
+	if (await attempts.count(scope, job.accountFingerprint) >= maxAttempts) {
+		counts.dropped += Number(await recordTerminal(store, scope, job.accountFingerprint, "dropped", DELIVERY_RETRY_EXHAUSTED_REASON));
+		return "complete";
+	}
+	let interpretation;
+	try {
+		const result = requirePlainRecord(await reconstruct(snapshotJob(job)), "Reconstruction result");
+		const status = requireOwnDataField(result, "status");
+		if (status === "deferred") {
+			if (requireOwnDataField(result, "reason") !== "missing-thread-identity") throw new TypeError("Invalid reconstruction deferral reason");
+			return "deferred";
+		}
+		if (status !== "ready") throw new TypeError("Invalid reconstruction result status");
+		interpretation = {
+			status,
+			outputs: requireOwnDataField(result, "outputs")
+		};
+	} catch {
+		await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+		return "complete";
+	}
+	let outputs;
+	try {
+		outputs = validateOutputs(interpretation.outputs, job, jobCapturedAtMs);
+		if (outputs.length === 0) throw new TypeError("Reconstruction produced no captures");
+	} catch {
+		await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+		return "complete";
+	}
+	const mappingInput = mappingRecord(job, outputs);
+	const mappingResult = await store.capture(mappingInput);
+	if (mappingResult.status !== "published" && mappingResult.status !== "duplicate") {
+		await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+		return "complete";
+	}
+	const storedMapping = readMapping(mappingResult.record);
+	if (storedMapping.jobEventId !== job.eventId || !sameOutputMapping(storedMapping, outputs)) {
+		await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+		return "complete";
+	}
+	for (const output of outputs) {
+		const turnEvidence = {
+			...job.turnEvidence.rootRunId === void 0 ? {} : { rootRunId: job.turnEvidence.rootRunId },
+			childRunIds: [...job.turnEvidence.childRunIds],
+			closureState: job.turnEvidence.closureState
+		};
+		const captureInput = {
+			turnId: job.turnId,
+			eventId: output.eventId,
+			submission: output.submission,
+			turnEvidence,
+			...output.dependencies === void 0 ? {} : { dependencies: output.dependencies },
+			...output.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: output.sourceAgeStartedAtMs }
+		};
+		let captureStatus;
+		try {
+			captureStatus = requireOwnDataField(requirePlainRecord(await bridge.capture(captureInput), "Lifecycle capture result"), "status");
+		} catch {
+			await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+			return "complete";
+		}
+		if (captureStatus === "deferred") return "deferred";
+		if (captureStatus !== "published" && captureStatus !== "duplicate") {
+			await recordFailure(store, attempts, scope, job.accountFingerprint, maxAttempts, counts);
+			return "complete";
+		}
+		if (captureStatus === "published") counts.captured += 1;
+	}
+	await recordTerminal(store, scope, job.accountFingerprint, "delivered");
+	return "complete";
+}
+async function recordFailure(store, attempts, scope, accountFingerprint, maxAttempts, counts) {
+	const nextAttempt = await attempts.count(scope, accountFingerprint) + 1;
+	await attempts.record(scope, accountFingerprint, nextAttempt, (/* @__PURE__ */ new Date()).toISOString());
+	counts.failed += 1;
+	if (nextAttempt >= maxAttempts) counts.dropped += Number(await recordTerminal(store, scope, accountFingerprint, "dropped", DELIVERY_RETRY_EXHAUSTED_REASON));
+}
+async function recordTerminal(store, scope, accountFingerprint, outcome, reason) {
+	const result = await store.recordOutcome({
+		...scope,
+		destination: accountFingerprint,
+		outcome,
+		...outcome === "dropped" ? { reason: reason ?? "retry-exhausted" } : {}
+	});
+	if (result.status !== "recorded" && result.status !== "duplicate") throw new Error(`Could not record terminal reconstruction outcome: ${result.status}`);
+	return result.status === "recorded";
+}
+function snapshotJob(job) {
+	return Object.freeze({
+		...job,
+		sourceRefs: Object.freeze([...job.sourceRefs]),
+		...job.sourceSnapshots === void 0 ? {} : { sourceSnapshots: Object.freeze(job.sourceSnapshots.map((snapshot) => Object.freeze({
+			...snapshot,
+			submission: snapshotData(snapshot.submission),
+			...snapshot.attributionContext === void 0 ? {} : { attributionContext: Object.freeze({
+				toolOrigin: Object.freeze({ ...snapshot.attributionContext.toolOrigin }),
+				...snapshot.attributionContext.pinnedRepositoryKeys === void 0 ? {} : { pinnedRepositoryKeys: Object.freeze([...snapshot.attributionContext.pinnedRepositoryKeys]) }
+			}) }
+		}))) },
+		turnEvidence: Object.freeze({
+			...job.turnEvidence.rootRunId === void 0 ? {} : { rootRunId: job.turnEvidence.rootRunId },
+			childRunIds: Object.freeze([...job.turnEvidence.childRunIds]),
+			closureState: job.turnEvidence.closureState
+		})
+	});
+}
+function jobAgeStartedAtMs(job, capturedAtMs) {
+	if (job.sourceSnapshots !== void 0) return Math.max(...job.sourceSnapshots.map(({ sourceAgeStartedAtMs }) => sourceAgeStartedAtMs));
+	return job.sourceAgeStartedAtMs ?? capturedAtMs;
+}
+function resolvePolicy(policy) {
+	const resolved = {
+		maxAttempts: policy?.maxAttempts ?? 5,
+		maxAgeMs: policy?.maxAgeMs ?? 864e5,
+		maxEntries: policy?.maxEntries ?? 500
+	};
+	if (!Number.isSafeInteger(resolved.maxAttempts) || resolved.maxAttempts <= 0 || !Number.isSafeInteger(resolved.maxAgeMs) || resolved.maxAgeMs <= 0 || !Number.isSafeInteger(resolved.maxEntries) || resolved.maxEntries <= 0) throw new TypeError("Invalid delivery policy");
+	return resolved;
+}
+function validateOutputs(value, job, jobCapturedAtMs) {
+	if (!Array.isArray(value)) throw new TypeError("Reconstruction outputs must be an array");
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => {
+		const output = requirePlainRecord(item, "Reconstruction output");
+		const outputKeys = Object.keys(output).toSorted();
+		if (RECONSTRUCTION_OUTPUT_KEYS.some((key) => !outputKeys.includes(key)) || outputKeys.some((key) => !RECONSTRUCTION_OUTPUT_KEYS.includes(key) && !RECONSTRUCTION_OUTPUT_OPTIONAL_KEYS.includes(key))) throw new TypeError("Reconstruction output has unsupported fields");
+		const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), "Event ID");
+		validateIdentifier(eventId, "event ID");
+		if (seen.has(eventId)) throw new TypeError("Reconstruction event IDs must be unique");
+		seen.add(eventId);
+		const submissionValue = canonicalJsonObject(requirePlainRecord(requireOwnDataField(output, "submission"), "Reconstruction submission"), "Reconstruction submission");
+		if (requireNonBlankString(requireOwnDataField(submissionValue, "integration"), "Integration") !== job.integration) throw new TypeError("Reconstruction integration changed");
+		const privacyMode = requireOwnDataField(submissionValue, "privacyMode");
+		if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError("Reconstruction privacy mode is invalid");
+		if (job.privacyMode === "metadata" && privacyMode === "full") throw new TypeError("Metadata reconstruction cannot emit full-mode captures");
+		const runId = requireNonBlankString(requireOwnDataField(requirePlainRecord(requireOwnDataField(submissionValue, "run"), "Run"), "id"), "Run ID");
+		validateIdentifier(runId, "run ID");
+		const dependenciesValue = ownDataField(output, "dependencies");
+		let dependencies;
+		if (dependenciesValue.present) {
+			if (!Array.isArray(dependenciesValue.value)) throw new TypeError("Reconstruction dependencies must be an array");
+			dependencies = validateDependencies(dependenciesValue.value, job, eventId);
+		}
+		const sourceRefField = ownDataField(output, "sourceRef");
+		let sourceRef;
+		let sourceAgeStartedAtMs;
+		if (sourceRefField.present) {
+			sourceRef = requireNonBlankString(sourceRefField.value, "Source ref");
+			validateIdentifier(sourceRef, "source ref");
+		}
+		if (job.sourceSnapshots !== void 0) {
+			if (sourceRef === void 0) throw new TypeError("Snapshot outputs require a source ref");
+			const snapshot = job.sourceSnapshots.find((candidate) => candidate.sourceRef === sourceRef);
+			if (snapshot === void 0) throw new TypeError("Output source ref has no snapshot");
+			sourceAgeStartedAtMs = snapshot.sourceAgeStartedAtMs;
+		} else if (sourceRef !== void 0) {
+			if (!job.sourceRefs.includes(sourceRef)) throw new TypeError("Output source ref is not in the reconstruction job");
+			sourceAgeStartedAtMs = job.sourceAgeStartedAtMs ?? jobCapturedAtMs;
+		} else sourceAgeStartedAtMs = job.sourceAgeStartedAtMs ?? jobCapturedAtMs;
+		return {
+			eventId,
+			runId,
+			submission: submissionValue,
+			...sourceRef === void 0 ? {} : { sourceRef },
+			...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
+			...dependencies === void 0 ? {} : { dependencies }
+		};
+	});
+}
+function validateDependencies(value, job, eventId) {
+	if (!Array.isArray(value)) throw new TypeError("Reconstruction dependencies must be an array");
+	const dependent = {
+		...scopeOf(job),
+		eventId
+	};
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => {
+		const source = requirePlainRecord(item, "Reconstruction dependency");
+		if (canonicalJson(Object.keys(source).toSorted()) !== canonicalJson(RECONSTRUCTION_DEPENDENCY_KEYS)) throw new TypeError("Reconstruction dependencies must contain only capture scopes");
+		const integration = requireNonBlankString(requireOwnDataField(source, "integration"), "Dependency integration");
+		if (integration !== job.integration) throw new TypeError("Reconstruction dependencies must use the same integration");
+		const scope = {
+			integration,
+			sessionId: requireNonBlankString(requireOwnDataField(source, "sessionId"), "Dependency session ID"),
+			turnId: requireNonBlankString(requireOwnDataField(source, "turnId"), "Dependency turn ID"),
+			eventId: requireNonBlankString(requireOwnDataField(source, "eventId"), "Dependency event ID")
+		};
+		validateIdentifier(scope.sessionId, "dependency session ID");
+		validateIdentifier(scope.turnId, "dependency turn ID");
+		validateIdentifier(scope.eventId, "dependency event ID");
+		if (scope.sessionId === dependent.sessionId && scope.turnId === dependent.turnId && scope.eventId === dependent.eventId) throw new TypeError("Reconstruction captures cannot depend on themselves");
+		const key = canonicalJson(scope);
+		if (seen.has(key)) throw new TypeError("Reconstruction dependencies must be unique");
+		seen.add(key);
+		return scope;
+	});
+}
+function validateJobInput(value, integration, sessionId, accountFingerprint) {
+	const input = requirePlainRecord(snapshotData(requirePlainRecord(value, "Reconstruction job")), "Reconstruction job");
+	const keys = Object.keys(input).toSorted();
+	if (RECONSTRUCTION_JOB_INPUT_KEYS.some((key) => !keys.includes(key)) || keys.some((key) => !RECONSTRUCTION_JOB_INPUT_KEYS.includes(key) && !RECONSTRUCTION_JOB_OPTIONAL_INPUT_KEYS.includes(key))) throw new TypeError("Reconstruction job has unsupported fields");
+	const turnId = requireNonBlankString(requireOwnDataField(input, "turnId"), "Turn ID");
+	const eventId = requireNonBlankString(requireOwnDataField(input, "eventId"), "Event ID");
+	validateIdentifier(turnId, "turn ID");
+	validateIdentifier(eventId, "event ID");
+	const privacyMode = requireOwnDataField(input, "privacyMode");
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError("Reconstruction privacy mode is invalid");
+	const sourceRefs = requireStringArray(requireOwnDataField(input, "sourceRefs"), "Source refs");
+	if (sourceRefs.length === 0) throw new TypeError("Reconstruction source refs are required");
+	if (new Set(sourceRefs).size !== sourceRefs.length) throw new TypeError("Reconstruction source refs must be unique");
+	for (const ref of sourceRefs) {
+		requireNonBlankString(ref, "Source ref");
+		validateIdentifier(ref, "source ref");
+	}
+	const turnEvidence = validateTurnEvidence(requireOwnDataField(input, "turnEvidence"));
+	const sourceSnapshotsField = ownDataField(input, "sourceSnapshots");
+	const sourceAgeField = ownDataField(input, "sourceAgeStartedAtMs");
+	if (sourceSnapshotsField.present && sourceAgeField.present) throw new TypeError("Reconstruction jobs cannot combine snapshots with a job-level source age");
+	const sourceAgeStartedAtMs = sourceAgeField.present ? requireSafeEpochMilliseconds(sourceAgeField.value, "Source age") : void 0;
+	const sourceSnapshots = sourceSnapshotsField.present ? validateSourceSnapshots(sourceSnapshotsField.value, integration, privacyMode, sourceRefs) : void 0;
+	return {
+		integration,
+		sessionId,
+		turnId,
+		eventId,
+		accountFingerprint,
+		sourceRefs,
+		privacyMode,
+		turnEvidence,
+		...sourceSnapshots === void 0 ? {} : { sourceSnapshots },
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs }
+	};
+}
+function validateSourceSnapshots(value, integration, privacyMode, sourceRefs) {
+	if (!Array.isArray(value) || value.length === 0) throw new TypeError("Reconstruction source snapshots must be a nonempty array");
+	for (const ref of sourceRefs) validatePathlessSourceRef(ref);
+	const seen = /* @__PURE__ */ new Set();
+	const snapshots = value.map((item) => {
+		const source = requirePlainRecord(item, "Reconstruction source snapshot");
+		const keys = Object.keys(source).toSorted();
+		if (RECONSTRUCTION_SOURCE_SNAPSHOT_KEYS.some((key) => !keys.includes(key)) || keys.some((key) => !RECONSTRUCTION_SOURCE_SNAPSHOT_KEYS.includes(key) && !RECONSTRUCTION_SOURCE_SNAPSHOT_OPTIONAL_KEYS.includes(key))) throw new TypeError("Reconstruction source snapshot has unsupported fields");
+		const sourceRef = requireNonBlankString(requireOwnDataField(source, "sourceRef"), "Source ref");
+		validatePathlessSourceRef(sourceRef);
+		if (!sourceRefs.includes(sourceRef)) throw new TypeError("Reconstruction snapshot ref must belong to the job");
+		if (seen.has(sourceRef)) throw new TypeError("Reconstruction snapshot refs must be unique");
+		seen.add(sourceRef);
+		const sourceAgeStartedAtMs = requireSafeEpochMilliseconds(requireOwnDataField(source, "sourceAgeStartedAtMs"), "Source age");
+		const submission = canonicalJsonObject(requirePlainRecord(requireOwnDataField(source, "submission"), "Prepared submission"), "Prepared submission");
+		if (requireOwnDataField(submission, "privacyMode") !== privacyMode) throw new TypeError("Snapshot privacy mode must match the reconstruction job");
+		if (submission["operation"] === "post") {
+			if (!ownDataField(requirePlainRecord(requireOwnDataField(submission, "run"), "Prepared run"), "start_time").present) throw new TypeError("Source snapshot posts must preserve their start time");
+		}
+		const projected = projectSubmission(submission, integration);
+		if (projected.status !== "ready") throw new TypeError("Reconstruction snapshots must be ready for shared projection");
+		const projectedSubmission = canonicalJsonObject({
+			...projected.value.payload,
+			metadata: projected.value.metadata
+		}, "Projected submission");
+		const attributionField = ownDataField(source, "attributionContext");
+		const attributionContext = attributionField.present ? validateAttributionContext(attributionField.value, privacyMode) : void 0;
+		return {
+			sourceRef,
+			submission: projectedSubmission,
+			sourceAgeStartedAtMs,
+			...attributionContext === void 0 ? {} : { attributionContext }
+		};
+	});
+	if (snapshots.length !== sourceRefs.length) throw new TypeError("Source snapshots must cover every reconstruction source ref");
+	return snapshots;
+}
+function validatePathlessSourceRef(sourceRef) {
+	validateIdentifier(sourceRef, "source ref");
+	if (sourceRef.includes("/") || sourceRef.includes("\\")) throw new TypeError("Snapshot source refs must be pathless identifiers");
+}
+function validateAttributionContext(value, privacyMode) {
+	const context = requirePlainRecord(value, "Attribution context");
+	const keys = Object.keys(context).toSorted();
+	if (RECONSTRUCTION_ATTRIBUTION_CONTEXT_KEYS.some((key) => !keys.includes(key)) || keys.some((key) => !RECONSTRUCTION_ATTRIBUTION_CONTEXT_KEYS.includes(key) && !RECONSTRUCTION_ATTRIBUTION_CONTEXT_OPTIONAL_KEYS.includes(key))) throw new TypeError("Attribution context has unsupported fields");
+	const origin = requirePlainRecord(requireOwnDataField(context, "toolOrigin"), "Tool origin");
+	const originKeys = Object.keys(origin).toSorted();
+	if (RECONSTRUCTION_TOOL_ORIGIN_KEYS.some((key) => !originKeys.includes(key)) || originKeys.some((key) => !RECONSTRUCTION_TOOL_ORIGIN_KEYS.includes(key) && !RECONSTRUCTION_TOOL_ORIGIN_OPTIONAL_KEYS.includes(key))) throw new TypeError("Tool origin has unsupported fields");
+	const namedAPath = requireBoolean(requireOwnDataField(origin, "namedAPath"), "namedAPath");
+	const pathField = ownDataField(origin, "path");
+	const cwdField = ownDataField(origin, "cwd");
+	const pinnedField = ownDataField(context, "pinnedRepositoryKeys");
+	const toolOrigin = privacyMode === "metadata" ? { namedAPath } : {
+		...pathField.present ? { path: requireNonBlankString(pathField.value, "Tool path") } : {},
+		...cwdField.present ? { cwd: requireNonBlankString(cwdField.value, "Tool cwd") } : {},
+		namedAPath
+	};
+	let pinnedRepositoryKeys;
+	if (privacyMode === "full" && pinnedField.present) {
+		pinnedRepositoryKeys = requireStringArray(pinnedField.value, "Pinned repository keys");
+		if (pinnedRepositoryKeys.some((key) => key.trim().length === 0)) throw new TypeError("Pinned repository keys must be nonblank");
+		if (new Set(pinnedRepositoryKeys).size !== pinnedRepositoryKeys.length) throw new TypeError("Pinned repository keys must be unique");
+	}
+	return {
+		toolOrigin,
+		...pinnedRepositoryKeys === void 0 ? {} : { pinnedRepositoryKeys }
+	};
+}
+function validateTurnEvidence(value) {
+	const evidence = requirePlainRecord(value, "Turn evidence");
+	canonicalJson(evidence);
+	const keys = Object.keys(evidence).toSorted();
+	if (RECONSTRUCTION_TURN_EVIDENCE_KEYS.some((key) => !keys.includes(key)) || keys.some((key) => !RECONSTRUCTION_TURN_EVIDENCE_KEYS_WITH_ROOT.includes(key))) throw new TypeError("Reconstruction turn evidence must be structural only");
+	const childRunIds = requireStringArray(requireOwnDataField(evidence, "childRunIds"), "Child run IDs");
+	for (const childRunId of childRunIds) {
+		requireNonBlankString(childRunId, "Child run ID");
+		validateIdentifier(childRunId, "child run ID");
+	}
+	const rootRunIdField = ownDataField(evidence, "rootRunId");
+	const rootRunId = rootRunIdField.present ? requireNonBlankString(rootRunIdField.value, "Root run ID") : void 0;
+	if (rootRunId !== void 0) validateIdentifier(rootRunId, "root run ID");
+	const closureState = requireOwnDataField(evidence, "closureState");
+	if (typeof closureState !== "string" || !RECONSTRUCTION_CLOSURE_STATES.includes(closureState)) throw new TypeError("Reconstruction turn evidence has an invalid closure state");
+	return {
+		...rootRunId === void 0 ? {} : { rootRunId },
+		childRunIds,
+		closureState
+	};
+}
+function jobRecord(job) {
+	const scope = scopeOf(job);
+	return {
+		...scope,
+		runId: `${RECONSTRUCTION_RUN_ID_PREFIX}${identifierHash(canonicalJson(scope))}`,
+		destinationFingerprint: job.accountFingerprint,
+		eventKind: RECONSTRUCTION_JOB_KIND,
+		normalizedPayload: canonicalValue({
+			recordVersion: 1,
+			privacyMode: job.privacyMode,
+			sourceRefs: [...job.sourceRefs],
+			...job.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: job.sourceAgeStartedAtMs },
+			...job.sourceSnapshots === void 0 ? {} : { sourceSnapshots: job.sourceSnapshots.map((snapshot) => ({
+				sourceRef: snapshot.sourceRef,
+				submission: snapshot.submission,
+				sourceAgeStartedAtMs: snapshot.sourceAgeStartedAtMs,
+				...snapshot.attributionContext === void 0 ? {} : { attributionContext: snapshot.attributionContext }
+			})) }
+		}, /* @__PURE__ */ new Set()),
+		turnEvidence: canonicalValue(job.turnEvidence, /* @__PURE__ */ new Set()),
+		metadataProvenance: {}
+	};
+}
+function mappingRecord(job, outputs) {
+	const scope = mappingScope(job);
+	return {
+		...scope,
+		runId: scope.eventId,
+		destinationFingerprint: job.accountFingerprint,
+		eventKind: RECONSTRUCTION_MAPPING_KIND,
+		normalizedPayload: {
+			recordVersion: 1,
+			jobEventId: job.eventId,
+			outputs: outputs.map(({ eventId, runId, dependencies, sourceRef }) => ({
+				eventId,
+				runId,
+				...sourceRef === void 0 ? {} : { sourceRef },
+				...dependencies === void 0 ? {} : { dependencies: dependencies.map((dependency) => ({
+					integration: dependency.integration,
+					sessionId: dependency.sessionId,
+					turnId: dependency.turnId,
+					eventId: dependency.eventId
+				})) }
+			}))
+		},
+		turnEvidence: canonicalValue(job.turnEvidence, /* @__PURE__ */ new Set()),
+		metadataProvenance: {}
+	};
+}
+function readJob(record, integration) {
+	if (record.integration !== integration || record.eventKind !== "reconstruction-job-v1") throw new Error("Stored reconstruction job namespace does not match");
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored reconstruction job");
+	if (payload["recordVersion"] !== 1) throw new Error("Unsupported reconstruction job");
+	const payloadKeys = Object.keys(payload).toSorted();
+	if (RECONSTRUCTION_STORED_JOB_KEYS.some((key) => !payloadKeys.includes(key)) || payloadKeys.some((key) => !RECONSTRUCTION_STORED_JOB_KEYS.includes(key) && !RECONSTRUCTION_STORED_JOB_OPTIONAL_KEYS.includes(key))) throw new Error("Stored reconstruction job has unsupported fields");
+	const privacyMode = payload["privacyMode"];
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new Error("Invalid stored reconstruction privacy mode");
+	const sourceRefs = requireStringArray(payload["sourceRefs"], "Stored source refs");
+	if (sourceRefs.length === 0) throw new Error("Stored reconstruction source refs are empty");
+	if (new Set(sourceRefs).size !== sourceRefs.length) throw new Error("Stored reconstruction source refs are not unique");
+	for (const ref of sourceRefs) {
+		requireNonBlankString(ref, "Stored source ref");
+		validateIdentifier(ref, "source ref");
+	}
+	const sourceSnapshotsField = ownDataField(payload, "sourceSnapshots");
+	const sourceAgeField = ownDataField(payload, "sourceAgeStartedAtMs");
+	if (sourceSnapshotsField.present && sourceAgeField.present) throw new Error("Stored reconstruction job combines snapshots with a job-level source age");
+	const sourceAgeStartedAtMs = sourceAgeField.present ? requireSafeEpochMilliseconds(sourceAgeField.value, "Stored source age") : void 0;
+	const sourceSnapshots = sourceSnapshotsField.present ? validateSourceSnapshots(sourceSnapshotsField.value, integration, privacyMode, sourceRefs) : void 0;
+	const turnEvidence = validateTurnEvidence(record.turnEvidence);
+	if (Object.keys(requirePlainRecord(record.metadataProvenance, "Stored metadata provenance")).length > 0) throw new Error("Reconstruction jobs cannot store metadata provenance");
+	if (record.dependencies !== void 0) throw new Error("Reconstruction jobs cannot have capture dependencies");
+	return {
+		integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId,
+		accountFingerprint: record.destinationFingerprint,
+		sourceRefs,
+		privacyMode,
+		turnEvidence,
+		...sourceSnapshots === void 0 ? {} : { sourceSnapshots },
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs }
+	};
+}
+function readMapping(record) {
+	if (record.eventKind !== "reconstruction-map-v1") throw new Error("Unsupported reconstruction mapping");
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored reconstruction mapping");
+	if (payload["recordVersion"] !== 1) throw new Error("Unsupported reconstruction mapping");
+	const jobEventId = requireNonBlankString(payload["jobEventId"], "Job event ID");
+	const outputs = payload["outputs"];
+	if (!Array.isArray(outputs) || outputs.length === 0) throw new Error("Stored reconstruction mapping has no outputs");
+	const seen = /* @__PURE__ */ new Set();
+	return {
+		recordVersion: 1,
+		jobEventId,
+		outputs: outputs.map((value) => {
+			const output = requirePlainRecord(value, "Stored reconstruction output");
+			const eventId = requireNonBlankString(output["eventId"], "Output event ID");
+			const runId = requireNonBlankString(output["runId"], "Output run ID");
+			validateIdentifier(eventId, "output event ID");
+			validateIdentifier(runId, "output run ID");
+			if (seen.has(eventId)) throw new Error("Stored reconstruction event IDs are not unique");
+			seen.add(eventId);
+			const dependenciesField = ownDataField(output, "dependencies");
+			const sourceRefField = ownDataField(output, "sourceRef");
+			let sourceRef;
+			if (sourceRefField.present) {
+				sourceRef = requireNonBlankString(sourceRefField.value, "Output source ref");
+				validateIdentifier(sourceRef, "output source ref");
+			}
+			let dependencies;
+			if (dependenciesField.present) {
+				if (!Array.isArray(dependenciesField.value)) throw new Error("Stored reconstruction dependencies are invalid");
+				dependencies = dependenciesField.value;
+			}
+			return {
+				eventId,
+				runId,
+				...sourceRef === void 0 ? {} : { sourceRef },
+				...dependencies === void 0 ? {} : { dependencies }
+			};
+		})
+	};
+}
+function sameOutputMapping(mapping, outputs) {
+	return canonicalJson(mapping.outputs) === canonicalJson(outputs.map(({ eventId, runId, dependencies, sourceRef }) => ({
+		eventId,
+		runId,
+		...sourceRef === void 0 ? {} : { sourceRef },
+		...dependencies === void 0 ? {} : { dependencies }
+	})));
+}
+function scopeOf(value) {
+	return {
+		integration: value.integration,
+		sessionId: value.sessionId,
+		turnId: value.turnId,
+		eventId: value.eventId
+	};
+}
+function mappingScope(job) {
+	const eventId = `${RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX}${identifierHash(canonicalJson(scopeOf(job)))}`;
+	return {
+		...scopeOf(job),
+		eventId
+	};
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/pass-results.js
+function reconstructionPassResult(result) {
+	if (result.status === "busy") return "retryable-failure";
+	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
+}
+function lifecyclePassResult(result) {
+	if (result.status === "busy") return "retryable-failure";
+	return result.settlement.captured > 0 || result.delivered > 0 || result.dropped > 0 || result.failed > 0 ? "progressed" : "idle";
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/options.js
+function snapshotEngineOptions(options) {
+	return Object.freeze({
+		...options,
+		storageRoot: resolve(options.storageRoot),
+		writer: snapshotWriterOptions(options.writer),
+		...options.policy === void 0 ? {} : { policy: snapshotPolicy(options.policy) }
+	});
+}
+function snapshotSessionOptions(options) {
+	return Object.freeze({
+		...options,
+		...options.retryPolicy === void 0 ? {} : { retryPolicy: Object.freeze({ ...options.retryPolicy }) }
+	});
+}
+function snapshotWriterOptions(options) {
+	return Object.freeze({
+		...options,
+		destinations: Object.freeze(options.destinations.map((destination) => Object.freeze({ ...destination }))),
+		...options.replicas === void 0 ? {} : { replicas: Object.freeze(options.replicas.map((replica) => Object.freeze({
+			...replica,
+			...replica.updates === void 0 ? {} : { updates: structuredClone(replica.updates) }
+		}))) },
+		...options.redactExtraRules === void 0 ? {} : { redactExtraRules: Object.freeze(options.redactExtraRules.map((rule) => Object.freeze({ ...rule }))) }
+	});
+}
+function snapshotPolicy(policy) {
+	return Object.freeze({ ...policy });
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/recovery.js
+async function recoverTracingSessions(runtime, request) {
+	const now = request.now ?? Date.now();
+	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
+	const minimumForeignAgeMs = request.minimumForeignAgeMs ?? 72e5;
+	if (!Number.isSafeInteger(minimumForeignAgeMs) || minimumForeignAgeMs < 0) throw new RangeError("Minimum foreign session age must be a non-negative integer");
+	if (typeof request.optionsForSession !== "function") throw new TypeError("Session recovery options callback is required");
+	const optionsForSession = request.optionsForSession;
+	const lifecycleStore = createCaptureStore(runtime.storageRoot);
+	const reconstructionStore = createCaptureStore(join(runtime.storageRoot, RECONSTRUCTION_DIRECTORY));
+	const [lifecycleSessions, reconstructionSessions] = await Promise.all([lifecycleStore.enumerateSessions(runtime.integration), reconstructionStore.enumerateSessions(runtime.integration)]);
+	const writer = createLangSmithUploadWriter(runtime.writer);
+	if (writer.accountFingerprint !== runtime.accountFingerprint) throw new Error("Recovery account fingerprint does not match the active session");
+	const destinationIds = writer.destinations.map((destination) => destination.id);
+	const lifecycleBySession = new Map(lifecycleSessions.map((entry) => [entry.sessionId, entry.captures]));
+	const reconstructionBySession = new Map(reconstructionSessions.map((entry) => [entry.sessionId, entry.captures]));
+	const sessionIds = /* @__PURE__ */ new Set([
+		...lifecycleBySession.keys(),
+		...reconstructionBySession.keys(),
+		runtime.currentSessionId
+	]);
+	const scheduled = [];
+	const failed = [];
+	for (const sessionId of [...sessionIds].toSorted()) try {
+		const lifecycleEntries = lifecycleBySession.get(sessionId) ?? [];
+		const reconstructionEntries = reconstructionBySession.get(sessionId) ?? [];
+		let hasLifecycleRecord = false;
+		let hasPendingWork = false;
+		let oldestPendingAtMs = Number.POSITIVE_INFINITY;
+		let lastActivityAtMs = 0;
+		for (const entry of lifecycleEntries) {
+			const record = entry.record;
+			if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
+			hasLifecycleRecord = true;
+			lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
+			let pending = false;
+			for (const destinationId of destinationIds) {
+				const outcome = await lifecycleStore.readOutcome({
+					integration: record.integration,
+					sessionId: record.sessionId,
+					turnId: record.turnId,
+					eventId: record.eventId
+				}, destinationId);
+				if (outcome.status === "failed") throw new Error(outcome.message);
+				if (outcome.status === "missing-capture") throw new Error("Recovery capture disappeared");
+				if (outcome.status === "pending") pending = true;
+				else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
+			}
+			if (pending) {
+				hasPendingWork = true;
+				oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
+			}
+		}
+		for (const entry of reconstructionEntries) {
+			const record = entry.record;
+			if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
+			lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
+			if (record.eventKind !== "reconstruction-job-v1") continue;
+			const outcome = await reconstructionStore.readOutcome({
+				integration: record.integration,
+				sessionId: record.sessionId,
+				turnId: record.turnId,
+				eventId: record.eventId
+			}, runtime.accountFingerprint);
+			if (outcome.status === "failed") throw new Error(outcome.message);
+			if (outcome.status === "missing-capture") throw new Error("Recovery reconstruction job disappeared");
+			if (outcome.status === "pending") {
+				hasPendingWork = true;
+				oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
+			} else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
+		}
+		const isCurrentSession = sessionId === runtime.currentSessionId;
+		if (!hasLifecycleRecord && !hasPendingWork) continue;
+		if (!isCurrentSession && now - oldestPendingAtMs < minimumForeignAgeMs && now - lastActivityAtMs < minimumForeignAgeMs) continue;
+		if (isCurrentSession) {
+			scheduled.push({
+				sessionId,
+				status: await runtime.wakeCurrent()
+			});
+			continue;
+		}
+		const callbacks = await optionsForSession(sessionId);
+		if (callbacks === null || typeof callbacks !== "object") throw new TypeError("Session recovery options must be an object");
+		const sessionOptions = {
+			...callbacks,
+			sessionId
+		};
+		const target = runtime.createSession(sessionOptions);
+		scheduled.push({
+			sessionId,
+			status: await target.wake()
+		});
+	} catch (error) {
+		failed.push({
+			sessionId,
+			message: error instanceof Error ? error.message : String(error)
+		});
+	}
+	return {
+		scheduled,
+		failed
+	};
+}
+//#endregion
+//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/engine.js
+function createTracingEngine(options) {
+	const config = snapshotEngineOptions(options);
+	function forSession(sessionOptions) {
+		return createSession(snapshotSessionOptions(sessionOptions));
+	}
+	function createSession(session) {
+		let backgroundWorker;
+		const lifecycleBridge = createLifecycleBridge({
+			storageRoot: config.storageRoot,
+			integration: config.integration,
+			sessionId: session.sessionId,
+			writer: config.writer,
+			...config.policy === void 0 ? {} : { policy: config.policy },
+			wake: async () => backgroundWorker?.wake()
+		});
+		const reconstructionWorker = createReconstructionWorker({
+			storageRoot: config.storageRoot,
+			integration: config.integration,
+			sessionId: session.sessionId,
+			bridge: lifecycleBridge,
+			reconstruct: session.reconstruct,
+			...config.policy === void 0 ? {} : { policy: config.policy }
+		});
+		const scope = Object.freeze({
+			integration: config.integration,
+			sessionId: session.sessionId,
+			accountFingerprint: lifecycleBridge.accountFingerprint
+		});
+		backgroundWorker = createBackgroundWorker({
+			storageRoot: config.storageRoot,
+			scope,
+			resolveScope: () => session.resolveScope(scope),
+			launchWorker: session.scheduleWake,
+			...session.startupWaitMs === void 0 ? {} : { startupWaitMs: session.startupWaitMs },
+			...session.retryPolicy === void 0 ? {} : { retryPolicy: session.retryPolicy },
+			reconstructPending: async () => reconstructionPassResult(await reconstructionWorker.drain()),
+			drainPending: async () => lifecyclePassResult(await lifecycleBridge.drain())
+		});
+		return Object.freeze({
+			async capture(input) {
+				return lifecycleBridge.capture(input);
+			},
+			async queueReconstruction(input) {
+				const result = await reconstructionWorker.enqueue(input);
+				if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => backgroundWorker?.wake());
+				return result;
+			},
+			async wake() {
+				return backgroundWorker.wake();
+			},
+			async drain() {
+				return backgroundWorker.run();
+			},
+			async recoverSessions(request) {
+				return recoverTracingSessions({
+					storageRoot: config.storageRoot,
+					integration: config.integration,
+					accountFingerprint: lifecycleBridge.accountFingerprint,
+					writer: config.writer,
+					currentSessionId: session.sessionId,
+					wakeCurrent: () => backgroundWorker.wake(),
+					createSession: (sessionOptions) => createSession(snapshotSessionOptions(sessionOptions))
+				}, request);
+			}
+		});
+	}
+	return Object.freeze({ forSession });
+}
+//#endregion
+//#region src/tool-capture-constants.ts
+const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
+const TOOL_CAPTURE_START_SUFFIX = ".start.json";
+const TOOL_CAPTURE_END_SUFFIX = ".end.json";
+const TOOL_CAPTURE_FILE_PATTERN = /^[a-f0-9]{64}\.(start|end)\.json$/;
+//#endregion
+//#region src/tool-capture.ts
+function turnCaptureDirectory(transcript, turn) {
+	return `${transcript}${TURN_CAPTURE_SUFFIX}${createHash("sha256").update(turn).digest("hex")}`;
+}
+async function recordToolHook(input, mode, redact) {
+	if (mode === "off" || !input.tool_use_id || !input.tool_name) return void 0;
+	const directory = turnCaptureDirectory(input.transcript_path, input.turn_id);
+	const key = createHash("sha256").update(input.tool_use_id).digest("hex");
+	const startFile = nodePath.join(directory, `${key}${TOOL_CAPTURE_START_SUFFIX}`);
+	const endFile = nodePath.join(directory, `${key}${TOOL_CAPTURE_END_SUFFIX}`);
+	let start = await readRecord(startFile);
+	if (!start) {
+		const values = {
+			id: input.tool_use_id,
+			name: input.tool_name,
+			startedAt: Date.now(),
+			mode,
+			...mode === "full" ? { input: input.tool_input } : {}
+		};
+		start = await writeFirst(startFile, redact && mode === "full" ? redact(values) : values);
+	}
+	if (input.hook_event_name === "PostToolUse") {
+		let end = await readRecord(endFile);
+		if (!end) {
+			const values = {
+				id: input.tool_use_id,
+				name: input.tool_name,
+				startedAt: start.startedAt,
+				endedAt: Date.now(),
+				mode: start.mode,
+				...start.mode === "full" ? {
+					input: start.input ?? input.tool_input,
+					output: input.tool_response
+				} : {}
+			};
+			end = await writeFirst(endFile, redact && start.mode === "full" ? redact(values) : values);
+		}
+		return {
+			...start,
+			...end,
+			startedAt: start.startedAt,
+			endedAt: end.endedAt
+		};
+	}
+	return start;
+}
+async function readCapturedTools(transcript, turn) {
+	const directory = turnCaptureDirectory(transcript, turn);
+	const files = await nodeFsPromises.readdir(directory).catch((error) => {
+		if (isMissing(error)) return [];
+		throw error;
+	});
+	const records = /* @__PURE__ */ new Map();
+	for (const file of files.filter((name) => TOOL_CAPTURE_FILE_PATTERN.test(name)).sort()) {
+		const value = await readRecord(nodePath.join(directory, file));
+		if (!value) continue;
+		const existing = records.get(value.id);
+		records.set(value.id, existing ? {
+			...existing,
+			...value,
+			startedAt: existing.startedAt
+		} : value);
+	}
+	return [...records.values()].sort((left, right) => left.startedAt - right.startedAt);
+}
+async function clearTurnCapture(transcript, turn) {
+	const directory = turnCaptureDirectory(transcript, turn);
+	const files = await nodeFsPromises.readdir(directory).catch((error) => {
+		if (isMissing(error)) return [];
+		throw error;
+	});
+	for (const file of files.filter((name) => TOOL_CAPTURE_FILE_PATTERN.test(name))) await nodeFsPromises.unlink(nodePath.join(directory, file));
+	await nodeFsPromises.rmdir(directory).catch((error) => {
+		if (!isMissing(error) && !isNotEmpty(error)) throw error;
+	});
+}
+async function writeFirst(file, value) {
+	await nodeFsPromises.mkdir(nodePath.dirname(file), {
+		recursive: true,
+		mode: 448
+	});
+	const temporary = `${file}.${randomUUID()}.tmp`;
+	try {
+		const handle = await nodeFsPromises.open(temporary, "wx", 384);
+		try {
+			await handle.writeFile(JSON.stringify(value));
+			await handle.sync();
+		} finally {
+			await handle.close();
+		}
+		try {
+			await nodeFsPromises.link(temporary, file);
+		} catch (error) {
+			if (!isExists(error)) throw error;
+		}
+	} finally {
+		await nodeFsPromises.unlink(temporary).catch(() => void 0);
+	}
+	const saved = await readRecord(file);
+	if (!saved) throw new Error("Tool capture was not saved");
+	return saved;
+}
+async function readRecord(file) {
+	try {
+		const value = JSON.parse(await nodeFsPromises.readFile(file, "utf8"));
+		if (!isRecord$1(value) || typeof value.id !== "string" || typeof value.name !== "string" || !Number.isFinite(value.startedAt ?? value.endedAt)) throw new Error("Invalid tool capture");
+		return value;
+	} catch (error) {
+		if (isMissing(error)) return void 0;
+		throw error;
+	}
+}
+function isRecord$1(value) {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function isMissing(error) {
+	return isSystemError(error, "ENOENT");
+}
+function isExists(error) {
+	return isSystemError(error, "EEXIST");
+}
+function isNotEmpty(error) {
+	return isSystemError(error, "ENOTEMPTY");
+}
+function isSystemError(error, code) {
+	return isRecord$1(error) && error.code === code;
+}
+//#endregion
+//#region src/tracing-engine.ts
+function createCodexTracingSession(config, sessionId, cwd, home = process.env.HOME ?? os.homedir(), launchWorker) {
+	const writer = writerOptions(config);
+	if (!writer) return void 0;
+	const storageRoot = nodePath.join(home, ".codex", ENGINE_STORAGE_DIRECTORY);
+	const writerInstance = createLangSmithUploadWriter(writer);
+	const engine = createTracingEngine({
+		storageRoot,
+		integration: LS_INTEGRATION,
+		writer
+	});
+	const captureStore = createCaptureStore(storageRoot);
+	const session = engine.forSession({
+		sessionId,
+		reconstruct: reconstructCodexTool,
+		scheduleWake: launchWorker ?? (() => launchEngineWorker(sessionId, cwd)),
+		resolveScope: async (expected) => {
+			const currentWriter = writerOptions(await getConfig({
+				home,
+				cwd,
+				env: process.env
+			}));
+			return {
+				...expected,
+				accountFingerprint: currentWriter ? createLangSmithUploadWriter(currentWriter).accountFingerprint : "unavailable"
+			};
+		}
+	});
+	return {
+		accountFingerprint: writerInstance.accountFingerprint,
+		captureStore,
+		destinations: writerInstance.destinations,
+		session,
+		sessionId,
+		storageRoot
+	};
+}
+async function captureCodexRun(context, run, capture) {
+	const submission = {
+		operation: "post",
+		integration: LS_INTEGRATION,
+		privacyMode: capture.mode === "full" ? "full" : "metadata",
+		metadata: stripUndefinedDeep(capture.metadata),
+		privacyContext: { status: runStatus(run) },
+		run: normalizedSnapshot(run.toJSON())
+	};
+	const eventId = stableEventId(run.id, "post");
+	const input = {
+		turnId: capture.turnId,
+		eventId,
+		submission,
+		turnEvidence: {
+			rootRunId: capture.rootRunId,
+			childRunIds: capture.childRunIds,
+			closureState: capture.closureState
+		},
+		...safeEpoch(run.start_time) === void 0 ? {} : { sourceAgeStartedAtMs: safeEpoch(run.start_time) },
+		...parentDependency(run) === void 0 ? {} : { dependencies: [parentDependency(run)] }
+	};
+	try {
+		const result = await context.session.capture(input);
+		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Shared trace capture failed: ${result.status}`);
+	} catch (error) {
+		if (!isSavedCaptureWake(error, context, input)) throw error;
+		console.error(`Shared trace capture was saved but its worker wake failed: ${error}`);
+	}
+}
+async function handleCodexToolHook(input, config, redact, home = process.env.HOME ?? os.homedir(), launchWorker) {
+	if (!config.enabled || !input.tool_use_id || !input.tool_name) return;
+	const mode = savedTurnMode(defaultPrivacyPath(), input.session_id, input.turn_id);
+	if (mode === "off") return;
+	const context = createCodexTracingSession(config, input.session_id, input.cwd, home, launchWorker);
+	if (!context) return;
+	const tool = await recordToolHook(input, mode, redact);
+	if (!tool) return;
+	const effectiveMode = tool.mode;
+	const rootRunId = stableRunId(input.session_id, input.transcript_path, input.turn_id, "root");
+	const toolRunId = stableRunId(input.session_id, input.transcript_path, input.turn_id, `tool:${input.tool_use_id}`);
+	const startEventId = `${toolRunId}${TOOL_START_EVENT_SUFFIX}`;
+	const startScope = {
+		integration: LS_INTEGRATION,
+		sessionId: input.session_id,
+		turnId: input.turn_id,
+		eventId: startEventId
+	};
+	const storedStart = await context.captureStore.read(startScope);
+	if (storedStart && storedStart.destinationFingerprint !== context.accountFingerprint) return;
+	if (!storedStart) await captureToolStart(context, input, config, effectiveMode, tool, rootRunId, toolRunId, startEventId);
+	if (input.hook_event_name !== "PostToolUse") return;
+	await queueCodexToolCompletion(context, input, config, effectiveMode, tool, rootRunId, toolRunId);
+}
+async function queueCodexToolCompletion(context, input, config, mode, tool, rootRunId, toolRunId) {
+	const eventId = `${toolRunId}${TOOL_COMPLETE_EVENT_SUFFIX}`;
+	const sourceRef = `${toolRunId}${TOOL_SNAPSHOT_EVENT_SUFFIX}`;
+	const scope = {
+		integration: LS_INTEGRATION,
+		sessionId: input.session_id,
+		turnId: input.turn_id,
+		eventId
+	};
+	const existing = await createCaptureStore(nodePath.join(context.storageRoot, "reconstruction-v1")).read(scope);
+	if (existing) {
+		if (existing.destinationFingerprint !== context.accountFingerprint) return;
+		try {
+			await context.session.wake();
+		} catch (error) {
+			console.error(`Saved Codex tool ${tool.id} could not wake its worker: ${error}`);
+		}
+		return;
+	}
+	const parent = createRunIdentity({
+		id: rootRunId,
+		start_time: stableRunStartTime(input.turn_id, tool.startedAt)
+	});
+	const identity = createRunIdentity({
+		id: toolRunId,
+		start_time: tool.startedAt,
+		parent
+	});
+	const metadata = toolMetadata(config, input, tool.name, mode);
+	const submission = {
+		operation: "patch",
+		integration: LS_INTEGRATION,
+		privacyMode: mode === "full" ? "full" : "metadata",
+		metadata,
+		privacyContext: { status: "completed" },
+		run: {
+			...identity,
+			name: tool.name,
+			run_type: "tool"
+		},
+		patch: {
+			fields: ["outputs", "end_time"],
+			values: {
+				outputs: { output: tool.output ?? null },
+				end_time: tool.endedAt ?? Date.now()
+			}
+		}
+	};
+	const reconstruction = {
+		turnId: input.turn_id,
+		eventId,
+		sourceRefs: [sourceRef],
+		privacyMode: mode === "full" ? "full" : "metadata",
+		turnEvidence: {
+			rootRunId,
+			childRunIds: [toolRunId],
+			closureState: "open"
+		},
+		sourceSnapshots: [{
+			sourceRef,
+			sourceAgeStartedAtMs: tool.startedAt,
+			submission
+		}]
+	};
+	try {
+		const result = await context.session.queueReconstruction(reconstruction);
+		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Could not save completed Codex tool ${tool.id}: ${result.status}`);
+	} catch (error) {
+		if (!isSavedReconstructionWake(error, context, reconstruction)) throw error;
+		console.error(`Completed Codex tool ${tool.id} was saved but its worker wake failed: ${error}`);
+	}
+}
+async function runCodexEngineWorker(sessionId, cwd) {
+	const context = createCodexTracingSession(await getConfig({
+		home: process.env.HOME ?? os.homedir(),
+		cwd,
+		env: process.env
+	}), sessionId, cwd);
+	if (!context) throw new Error("Shared Codex trace worker configuration is unavailable");
+	const result = await context.session.drain();
+	if (result === "retry-exhausted" || result === "scope-mismatch") throw new Error(`Shared Codex trace worker stopped with ${result}`);
+}
+async function clearCodexToolCapture(transcript, turnId) {
+	await clearTurnCapture(transcript, turnId);
+}
+function writerOptions(config) {
+	if (!config.api_key?.trim() && !config.replicas?.length) return void 0;
+	const replicas = toSdkReplicas(config.replicas);
+	return {
+		destinations: [{
+			apiKey: config.api_key ?? "",
+			apiUrl: config.api_url ?? "https://api.smith.langchain.com",
+			projectName: config.project ?? "codex"
+		}],
+		...replicas?.length ? { replicas } : {},
+		redact: config.redact,
+		...config.redact_extra_rules === void 0 ? {} : { redactExtraRules: config.redact_extra_rules }
+	};
+}
+async function reconstructCodexTool(job) {
+	if (job.sourceRefs.length !== 1 || job.sourceSnapshots?.length !== 1) throw new Error("Codex tool reconstruction needs one source snapshot");
+	const [sourceRef] = job.sourceRefs;
+	const snapshot = job.sourceSnapshots[0];
+	const submission = snapshot.submission;
+	if (snapshot.sourceRef !== sourceRef || submission.operation !== "patch" || submission.integration !== "openai-codex" || submission.privacyMode !== job.privacyMode || sourceRef !== `${submission.run.id}:native-tool` || job.eventId !== `${submission.run.id}:tool-complete` || job.turnEvidence.rootRunId === void 0 || !job.turnEvidence.childRunIds.includes(submission.run.id)) throw new Error("Codex tool snapshot does not match its reconstruction job");
+	const dependencies = [{
+		integration: LS_INTEGRATION,
+		sessionId: job.sessionId,
+		turnId: job.turnId,
+		eventId: `${submission.run.id}${TOOL_START_EVENT_SUFFIX}`
+	}];
+	return {
+		status: "ready",
+		outputs: [{
+			eventId: job.eventId,
+			sourceRef,
+			submission,
+			dependencies
+		}]
+	};
+}
+async function captureToolStart(context, input, config, mode, tool, rootRunId, toolRunId, eventId) {
+	const parent = createRunIdentity({
+		id: rootRunId,
+		start_time: stableRunStartTime(input.turn_id, tool.startedAt)
+	});
+	const identity = createRunIdentity({
+		id: toolRunId,
+		start_time: tool.startedAt,
+		parent
+	});
+	const submission = {
+		operation: "post",
+		integration: LS_INTEGRATION,
+		privacyMode: mode === "full" ? "full" : "metadata",
+		metadata: toolMetadata(config, input, tool.name, mode),
+		privacyContext: { status: "running" },
+		run: {
+			...identity,
+			name: tool.name,
+			run_type: "tool",
+			inputs: { input: tool.input ?? null }
+		}
+	};
+	const capture = {
+		turnId: input.turn_id,
+		eventId,
+		submission,
+		turnEvidence: {
+			rootRunId,
+			childRunIds: [toolRunId],
+			closureState: "open"
+		},
+		sourceAgeStartedAtMs: tool.startedAt
+	};
+	try {
+		const result = await context.session.capture(capture);
+		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Could not save Codex tool start ${tool.id}: ${result.status}`);
+	} catch (error) {
+		if (!isSavedCaptureWake(error, context, capture)) throw error;
+		console.error(`Codex tool start ${tool.id} was saved but its worker wake failed: ${error}`);
+	}
+}
+function toolMetadata(config, input, toolName, mode) {
+	return {
+		integration: LS_INTEGRATION,
+		integrationVersion: LS_INTEGRATION_VERSION,
+		threadId: input.session_id,
+		turnId: input.turn_id,
+		agentType: "root",
+		runType: "tool",
+		toolName,
+		runName: toolName,
+		...mode === "full" && config.metadata ? { base: config.metadata } : {}
+	};
+}
+function parentDependency(run) {
+	const parent = run.parent_run;
+	if (!parent) return void 0;
+	const metadata = parent.extra?.metadata;
+	const sessionId = metadata?.thread_id;
+	const turnId = metadata?.turn_id;
+	if (typeof sessionId !== "string" || typeof turnId !== "string") return void 0;
+	return {
+		integration: LS_INTEGRATION,
+		sessionId,
+		turnId,
+		eventId: stableEventId(parent.id, "post")
+	};
+}
+function normalizedSnapshot(payload) {
+	if (typeof payload.id !== "string" || typeof payload.name !== "string" || typeof payload.run_type !== "string") throw new Error("Codex run identity is unavailable");
+	return {
+		id: payload.id,
+		name: payload.name,
+		run_type: payload.run_type,
+		inputs: isRecord(payload.inputs) ? payload.inputs : {},
+		...isTimestamp(payload.start_time) ? { start_time: payload.start_time } : {},
+		...isTimestamp(payload.end_time) ? { end_time: payload.end_time } : {},
+		...isRecord(payload.outputs) ? { outputs: payload.outputs } : {},
+		...typeof payload.parent_run_id === "string" ? { parent_run_id: payload.parent_run_id } : {},
+		...typeof payload.trace_id === "string" ? { trace_id: payload.trace_id } : {},
+		...typeof payload.dotted_order === "string" ? { dotted_order: payload.dotted_order } : {},
+		...Array.isArray(payload.tags) ? { tags: payload.tags } : {},
+		...typeof payload.error === "string" ? { error: payload.error } : {},
+		...isRecord(payload.serialized) ? { serialized: payload.serialized } : {},
+		...Array.isArray(payload.events) ? { events: payload.events } : {},
+		...typeof payload.reference_example_id === "string" ? { reference_example_id: payload.reference_example_id } : {}
+	};
+}
+function runStatus(run) {
+	if (run.error != null) return "error";
+	return run.end_time == null ? "running" : "completed";
+}
+function safeEpoch(value) {
+	const timestamp = typeof value === "number" ? value : typeof value === "string" ? Date.parse(value) : NaN;
+	return Number.isSafeInteger(timestamp) && timestamp >= 0 ? timestamp : void 0;
+}
+function isSavedCaptureWake(error, context, input) {
+	if (!(error instanceof CaptureWakeError)) return false;
+	const record = error.captureResult.record;
+	return record.integration === "openai-codex" && record.sessionId === context.sessionId && record.turnId === input.turnId && record.eventId === input.eventId && record.runId === input.submission.run.id && record.destinationFingerprint === context.accountFingerprint;
+}
+function isSavedReconstructionWake(error, context, input) {
+	if (!(error instanceof CaptureWakeError)) return false;
+	const record = error.captureResult.record;
+	const payload = isRecord(record.normalizedPayload) ? record.normalizedPayload : void 0;
+	const sourceRefs = payload?.sourceRefs;
+	return record.integration === "openai-codex" && record.sessionId === context.sessionId && record.turnId === input.turnId && record.eventId === input.eventId && record.destinationFingerprint === context.accountFingerprint && payload?.privacyMode === input.privacyMode && Array.isArray(sourceRefs) && sourceRefs.length === input.sourceRefs.length && sourceRefs.every((sourceRef, index) => sourceRef === input.sourceRefs[index]);
+}
+function launchEngineWorker(sessionId, cwd) {
+	const entry = process.argv[1];
+	const args = [
+		...typeof entry === "string" && /\.(?:mjs|cjs|js)$/i.test(entry) ? [entry] : [],
+		ENGINE_WORKER_FLAG,
+		sessionId,
+		cwd
+	];
+	const child = spawn(process.execPath, args, {
+		cwd: process.cwd(),
+		env: process.env,
+		detached: true,
+		stdio: "ignore"
+	});
+	child.unref();
+	if (!child.pid) throw new Error("Shared Codex trace worker failed to start");
+	return child.pid;
+}
+function isTimestamp(value) {
+	return typeof value === "number" || typeof value === "string";
+}
+function isRecord(value) {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+//#endregion
 //#region src/utils/argv.ts
 function wasInvokedWith(argv, flag) {
 	return argv.includes(flag);
@@ -18529,6 +23709,15 @@ async function runHook() {
 		if (result) console.log(JSON.stringify(result));
 		return;
 	}
+	if (content.hook_event_name === "PreToolUse" || content.hook_event_name === "PostToolUse") {
+		const config = await getConfig({
+			home: process.env.HOME,
+			cwd: content.cwd,
+			env: process.env
+		});
+		await handleCodexToolHook(content, config, config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0);
+		return;
+	}
 	if (content.hook_event_name !== "Stop") return;
 	const config = await getConfig({
 		home: process.env.HOME,
@@ -18547,13 +23736,20 @@ async function runHook() {
 		client,
 		project_name: config.project
 	}) : void 0;
+	const engine = createCodexTracingSession(config, content.session_id, content.cwd);
+	const capturedTools = await readCapturedTools(content.transcript_path, content.turn_id);
 	await convertToRunTree(content, {
 		client,
 		projectName: config.project,
 		metadata: config.metadata,
 		replicas: toSdkReplicas(config.replicas),
-		parentRunTree
+		parentRunTree,
+		...engine ? {
+			captureRun: (run, capture) => captureCodexRun(engine, run, capture),
+			capturedToolIds: new Set(capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id))
+		} : {}
 	});
+	if (engine) await clearCodexToolCapture(content.transcript_path, content.turn_id);
 }
 const invocationArguments = process.argv.slice(1);
 const invoked = (flag) => wasInvokedWith(invocationArguments, flag);
@@ -18561,7 +23757,18 @@ const USAGE = usage(binary.target.executableName);
 const unrecognised = unknownFlags(invocationArguments);
 if (invoked("--help") || invoked("-h")) console.log(USAGE);
 else if (invoked("--version") || invoked("-v")) console.log("0.2.0");
-else if (unrecognised.length > 0) {
+else if (invoked("--engine-worker")) {
+	const flagIndex = process.argv.indexOf("--engine-worker");
+	const sessionId = process.argv[flagIndex + 1];
+	const cwd = process.argv[flagIndex + 2];
+	if (!sessionId || !cwd) {
+		console.error("shared trace worker needs a session ID and working directory");
+		process.exitCode = 1;
+	} else runCodexEngineWorker(sessionId, cwd).catch((error) => {
+		console.error(tracingFailed(error));
+		process.exitCode = 1;
+	});
+} else if (unrecognised.length > 0) {
 	console.error(`unknown option: ${unrecognised[0]}`);
 	console.error(USAGE);
 	process.exitCode = 1;

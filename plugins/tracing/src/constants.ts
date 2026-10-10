@@ -1,18 +1,15 @@
-// Frozen literals for the Codex integration (see validator.json).
-
-/** What the traced agent is for, per the coding-agent-v1 contract. */
-export const LS_AGENT_PURPOSE = "coding";
-
-/** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
 
-/** Display name of the harness the trace came from. */
-export const LS_AGENT_RUNTIME = "Codex";
+export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v", "--engine-worker"]);
 
-/** Metadata contract the emitted runs conform to. */
-export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
-
-export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
+export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+export const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+export const ENGINE_WORKER_FLAG = "--engine-worker";
+export const ENGINE_STORAGE_DIRECTORY = "langsmith_engine_v1";
+export const TOOL_SNAPSHOT_EVENT_SUFFIX = ":native-tool";
+export const TOOL_RECONSTRUCTION_EVENT_SUFFIX = ":reconstruct-tool";
+export const TOOL_START_EVENT_SUFFIX = ":tool-start";
+export const TOOL_COMPLETE_EVENT_SUFFIX = ":tool-complete";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.
@@ -53,3 +50,12 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+
+// Null run-type-scoped keys on llm/tool runs to override langsmith's
+// parent->child metadata inheritance (serialization drops undefined).
+export const CHILD_SCOPE_RESET = {
+  approval_policy: undefined,
+  ls_is_error_interrupt: undefined,
+  ls_subagent_id: undefined,
+  ls_subagent_type: undefined,
+} as const;

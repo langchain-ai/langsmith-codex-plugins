@@ -1,27 +1,7 @@
-// Shared coding-agent-v1 trace-metadata contract for the Codex plugin.
-// Spec: Coding-Agent Trace Metadata Standard (coding-agent-v1) / LSEN-277.
-
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { GitInfo } from "./types.js";
-import {
-  LS_AGENT_PURPOSE,
-  LS_AGENT_RUNTIME,
-  LS_INTEGRATION,
-  LS_INTEGRATION_VERSION,
-  LS_TRACE_SCHEMA_VERSION,
-} from "./constants.js";
-
 const execFileAsync = promisify(execFile);
-
-/** The role a run plays within a coding-agent trace. */
-export type LSAgentType = "root" | "subagent" | "middleware" | "compaction";
-
-function stripUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as Partial<T>;
-}
 
 // Derive repository_provider/repository_name from an https or scp git remote URL.
 export function parseRepository(url: string | undefined): {
@@ -121,76 +101,4 @@ export async function resolveGitInfo(
     gitInfoCache.set(cwd, pending);
   }
   return pending;
-}
-
-export interface CodingAgentContext {
-  /** Role of these runs within the coding agent trace → `ls_agent_type`. */
-  agentType: LSAgentType;
-  /** Stable conversation/thread id used to group turns (Codex `thread_id`/session id). */
-  threadId?: string;
-  /** Stable per-turn id (Codex `turn_id`). */
-  turnId?: string;
-  /** 1-based native turn index within the thread. */
-  turnNumber?: number;
-  /** Codex CLI runtime version. */
-  cliVersion?: string;
-  /** Working directory for the turn. */
-  cwd?: string;
-  /** Resolved git info for the workspace. */
-  git?: GitInfo;
-  /** Sandbox / runtime isolation provider. */
-  sandboxType?: string;
-}
-
-// Base contract merged onto every run; run-type-scoped keys are added at call
-// sites. Unknown values are omitted.
-export function codingAgentMetadata(ctx: CodingAgentContext): Record<string, unknown> {
-  const repo = parseRepository(ctx.git?.repository_url);
-
-  return stripUndefined({
-    // Identity & grouping — required on every run.
-    ls_agent_purpose: LS_AGENT_PURPOSE,
-    ls_agent_type: ctx.agentType,
-    ls_integration: LS_INTEGRATION,
-    ls_agent_runtime: LS_AGENT_RUNTIME,
-    thread_id: ctx.threadId,
-    ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
-
-    // Versions & turn.
-    ls_integration_version: LS_INTEGRATION_VERSION,
-    ls_agent_runtime_version: ctx.cliVersion,
-    turn_id: ctx.turnId,
-    turn_number: ctx.turnNumber,
-
-    // Git & workspace.
-    repository_url: repo.repository_url,
-    repository_provider: repo.repository_provider,
-    repository_name: repo.repository_name,
-    git_branch: ctx.git?.branch,
-    git_commit_sha: ctx.git?.commit_hash,
-    cwd: ctx.cwd,
-
-    // Environment.
-    sandbox_type: ctx.sandboxType,
-  });
-}
-
-// Private, non-serializable provenance: custom metadata cannot impersonate
-// safe structural fields. Pass the merged result directly to privacy helpers;
-// spreading/JSON-cloning metadata itself loses provenance.
-const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-export function withTrustedMetadata(
-  untrusted: Record<string, unknown>,
-  structural: Record<string, unknown>,
-): Record<string, unknown> {
-  const merged = { ...untrusted, ...structural };
-  Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
-  return merged;
-}
-export function trustedCodingAgentMetadata(
-  metadata: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  return (metadata as { [TRUSTED_METADATA]?: Record<string, unknown> } | undefined)?.[
-    TRUSTED_METADATA
-  ];
 }

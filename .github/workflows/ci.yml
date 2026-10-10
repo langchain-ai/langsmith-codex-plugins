@@ -94,6 +94,9 @@ jobs:
       - name: Test the hook command on this platform
         run: pnpm run test:hooks
 
+      - name: Test tracing capture and recovery on this platform
+        run: pnpm exec vitest run plugins/tracing/test/hook.test.ts plugins/tracing/test/config-wire.test.ts
+
   shellcheck:
     name: Shellcheck
     runs-on: ubuntu-latest

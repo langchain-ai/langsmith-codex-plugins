@@ -3,12 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
-import { codingAgentMetadata } from "../src/metadata.js";
+import {
+  buildCodingAgentMetadata,
+  CODING_AGENT_V1_CONTRACT,
+  type CodingAgentMetadataField,
+} from "@langchain/plugins-base/metadata";
 import { convertToRunTree } from "../src/trace.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
 
-// Fixture transcripts live in memfs; validator.json is read via the real fs.
 vi.mock("node:fs/promises", async () => {
   const { fs } = await import("memfs");
   return fs.promises;
@@ -375,19 +378,6 @@ describe("coding-agent-v1 contract", () => {
   });
 
   it("emits the required contract keys on every run type", async () => {
-    const realFs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-    const validator = JSON.parse(
-      await realFs.readFile(path.join(__dirname, "fixtures", "validator.json"), "utf-8"),
-    ) as {
-      keys: Array<{
-        key: string;
-        appliesTo: RunType[];
-        type: "string" | "integer";
-        allowedValues: string[] | null;
-        requirement: "always" | "where_known" | "contextual";
-      }>;
-    };
-
     const byType = await buildRuns();
 
     // Sanity: the fixture exercises all four run types.
@@ -398,7 +388,7 @@ describe("coding-agent-v1 contract", () => {
 
     const checkKey = (
       meta: Record<string, unknown>,
-      def: (typeof validator.keys)[number],
+      def: CodingAgentMetadataField,
       label: string,
     ) => {
       const value = meta[def.key];
@@ -414,7 +404,7 @@ describe("coding-agent-v1 contract", () => {
     };
 
     // The fixture provides every where_known value, so all must be present.
-    const requiredDefs = validator.keys.filter(
+    const requiredDefs = CODING_AGENT_V1_CONTRACT.keys.filter(
       (k) => k.requirement === "always" || k.requirement === "where_known",
     );
 
@@ -510,7 +500,14 @@ describe("coding-agent-v1 contract", () => {
   it.each(["root", "subagent", "middleware", "compaction"] as const)(
     "supports ls_agent_type='%s'",
     (agentType) => {
-      expect(codingAgentMetadata({ agentType }).ls_agent_type).toBe(agentType);
+      expect(
+        buildCodingAgentMetadata({
+          integration: "openai-codex",
+          threadId: PARENT_THREAD,
+          agentType,
+          runType: "root",
+        }).ls_agent_type,
+      ).toBe(agentType);
     },
   );
 
