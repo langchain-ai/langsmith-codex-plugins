@@ -18,8 +18,8 @@ import type {
   Task,
   StandardMessage,
   TurnPostStatus,
-  TurnMetadataOptions,
 } from "./types.js";
+import type { TurnMetadataOptions } from "./models/metadata.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { stripUndefined } from "./utils/objects.js";
 import { createRunTree } from "./privacy.js";

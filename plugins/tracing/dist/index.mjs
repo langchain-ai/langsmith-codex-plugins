@@ -16891,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16903,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17265,10 +17265,10 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_type: void 0
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17290,7 +17290,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17421,8 +17421,9 @@ async function resolveGitInfo(cwd, sessionGit) {
 	return pending;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
+const CODING_AGENT_PURPOSE = "coding";
 const CODING_AGENT_RUN_TYPES = [
 	"root",
 	"llm",
@@ -17543,7 +17544,7 @@ const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
 	["modelName", "ls_model_name"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field(key, options = {}) {
 	return {
 		key,
@@ -17572,7 +17573,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	keys: [
 		structural("ls_agent_purpose", {
 			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: ["coding"]
+			allowedValues: [CODING_AGENT_PURPOSE]
 		}),
 		structural("ls_integration", {
 			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
@@ -17672,7 +17673,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function isRecord$4(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -17727,11 +17728,11 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
-		ls_agent_purpose: "coding",
+		ls_agent_purpose: CODING_AGENT_PURPOSE,
 		ls_integration: options.integration,
 		ls_agent_runtime: CODING_AGENT_V1_CONTRACT.runtimeNames[options.integration],
 		ls_trace_schema_version: CODING_AGENT_SCHEMA_VERSION,
@@ -17784,7 +17785,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_DIRECTORY = "capture-v1";
 const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
 const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
@@ -17792,7 +17793,7 @@ const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
 const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
 const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -17831,7 +17832,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -17893,7 +17894,7 @@ function requireNonNegativeInteger(value, name) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -17910,7 +17911,7 @@ function metadataForMode$1(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -18034,16 +18035,143 @@ function stripNestedUndefined(value, copies) {
 	return copy;
 }
 //#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
+const METADATA_MODE_RUN_CONFIG_FIELDS = [
+	"client",
+	"id",
+	"name",
+	"run_type",
+	"project_name",
+	"start_time",
+	"end_time",
+	"parent_run",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"distributedParentId"
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+function mutedContent(role) {
+	return { messages: [{
+		role,
+		content: MUTED_TRACE_CONTENT
+	}] };
+}
+function statusOfRun(run) {
+	const metadataStatus = run.extra?.metadata?.status;
+	if (run.error != null || metadataStatus === "error") return "error";
+	if (run.end_time != null || metadataStatus === "completed") return "completed";
+	return "running";
+}
+function projectReplica(replica) {
+	if (!replica || typeof replica !== "object") return replica;
+	if (Array.isArray(replica)) return { projectName: replica[0] };
+	const { updates: _updates, ...safe } = replica;
+	return safe;
+}
+function extraForMode(metadata, integration, status) {
+	return {
+		metadata,
+		toJSON() {
+			const currentStatus = this.metadata?.status;
+			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
+			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
+		}
+	};
+}
+function configForMetadataMode(config, integration, privacyContext) {
+	const source = config;
+	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
+	const originalExtra = source.extra;
+	const safe = {};
+	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
+	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
+	safe.inputs = mutedContent("user");
+	safe.outputs = mutedContent("assistant");
+	safe.extra = extraForMode(metadataForMode$1(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
+	return safe;
+}
+function sanitizeRunTree(run, integration) {
+	const status = statusOfRun(run);
+	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
+	run.inputs = mutedContent("user");
+	run.outputs = mutedContent("assistant");
+	delete run.error;
+	run.serialized = {};
+	delete run.tags;
+	delete run.reference_example_id;
+	delete run.attachments;
+	delete run.events;
+	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
+	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
+	run.extra = extraForMode(metadata, integration, status);
+}
+function protectRunTree(run, integration) {
+	sanitizeRunTree(run, integration);
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
+	const postRun = run.postRun.bind(run);
+	run.postRun = async (excludeChildRuns = true) => {
+		sanitizeRunTree(run, integration);
+		if (!excludeChildRuns) {
+			const childRuns = [...run.child_runs];
+			await postRun(true);
+			for (const childRun of childRuns) await childRun.postRun(false);
+			return;
+		}
+		return postRun(excludeChildRuns);
+	};
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => {
+		sanitizeRunTree(run, integration);
+		return patchRun({
+			excludeInputs: false,
+			...options
+		});
+	};
+	const end = run.end.bind(run);
+	run.end = (outputs, error, endTime, metadata) => {
+		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
+		const safeMetadata = metadataForMode$1(metadata, integration, "metadata", status) ?? { status };
+		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
+	};
+	const toJSON = run.toJSON.bind(run);
+	run.toJSON = () => {
+		sanitizeRunTree(run, integration);
+		return toJSON();
+	};
+	return run;
+}
+function preserveFullModePatchInputs(run) {
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => patchRun({
+		excludeInputs: false,
+		...options
+	});
+	return run;
+}
+function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
+	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
+	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
+}
+function survivingCodingAgentPatchFields(projectedRun, fields) {
+	return fields.filter((field) => {
+		const descriptor = Object.getOwnPropertyDescriptor(projectedRun, field);
+		return descriptor?.enumerable === true && "value" in descriptor && descriptor.value !== void 0;
+	});
+}
+//#endregion
 //#region src/privacy.ts
-const MUTED_TRACE_CONTENT$1 = "[LangSmith system notice: content omitted because tracing is muted.]";
 function metadataForMode(metadata, mode = "full", status) {
 	return metadataForMode$1(metadata, LS_INTEGRATION, mode === "full" ? "full" : "metadata", status);
 }
 function sanitizeReplica(replica, mode) {
-	if (mode === "full" || !replica || typeof replica !== "object") return replica;
-	if (Array.isArray(replica)) return { projectName: replica[0] };
-	const { updates: _updates, ...safe } = replica;
-	return safe;
+	if (mode === "full") return replica;
+	return projectReplica(replica);
 }
 function runConfigForMode(config, mode = "full") {
 	if (mode === "full") return config;
@@ -18065,11 +18193,11 @@ function runConfigForMode(config, mode = "full") {
 	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
 	safe.inputs = { messages: [{
 		role: "user",
-		content: MUTED_TRACE_CONTENT$1
+		content: MUTED_TRACE_CONTENT
 	}] };
 	safe.outputs = { messages: [{
 		role: "assistant",
-		content: MUTED_TRACE_CONTENT$1
+		content: MUTED_TRACE_CONTENT
 	}] };
 	safe.extra = {
 		metadata: metadataForMode(extra?.metadata, mode, status),
@@ -18160,7 +18288,7 @@ function v5(value, namespace, buf, offset) {
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -18178,7 +18306,7 @@ const FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE = "Could not release the lega
 const FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE = "Could not release compatible file lock";
 const FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE = "Legacy file lock gate changed before release";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	constructor(filePath) {
 		super(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(filePath)}`);
@@ -18186,7 +18314,7 @@ var FileLockTimeoutError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function isRecord$3(value) {
 	return typeof value === "object" && value !== null;
 }
@@ -18530,7 +18658,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -18557,7 +18685,7 @@ function receiptPath(root, scope, destination) {
 	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	await mkdir(root, {
 		recursive: true,
@@ -18658,7 +18786,7 @@ function errorCode$2(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -18688,7 +18816,7 @@ function errorCode$1(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -19036,7 +19164,7 @@ function errorCode(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
 const DELIVERY_DIRECTORY = "delivery-v1";
 const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
 const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
@@ -19045,7 +19173,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
 function createDeliveryAttemptStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -19131,7 +19259,7 @@ function validateTimestamp(value) {
 	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 function createDeliveryCoordinator(options) {
 	const { integration, sessionId } = options;
 	validateIntegration(integration);
@@ -19417,137 +19545,7 @@ function resolvePolicy$1(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/privacy/constants.js
-const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
-const METADATA_MODE_RUN_CONFIG_FIELDS = [
-	"client",
-	"id",
-	"name",
-	"run_type",
-	"project_name",
-	"start_time",
-	"end_time",
-	"parent_run",
-	"parent_run_id",
-	"trace_id",
-	"dotted_order",
-	"distributedParentId"
-];
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
-function mutedContent(role) {
-	return { messages: [{
-		role,
-		content: MUTED_TRACE_CONTENT
-	}] };
-}
-function statusOfRun(run) {
-	const metadataStatus = run.extra?.metadata?.status;
-	if (run.error != null || metadataStatus === "error") return "error";
-	if (run.end_time != null || metadataStatus === "completed") return "completed";
-	return "running";
-}
-function projectReplica(replica) {
-	if (!replica || typeof replica !== "object") return replica;
-	if (Array.isArray(replica)) return { projectName: replica[0] };
-	const { updates: _updates, ...safe } = replica;
-	return safe;
-}
-function extraForMode(metadata, integration, status) {
-	return {
-		metadata,
-		toJSON() {
-			const currentStatus = this.metadata?.status;
-			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
-			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
-		}
-	};
-}
-function configForMetadataMode(config, integration, privacyContext) {
-	const source = config;
-	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
-	const originalExtra = source.extra;
-	const safe = {};
-	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
-	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
-	safe.inputs = mutedContent("user");
-	safe.outputs = mutedContent("assistant");
-	safe.extra = extraForMode(metadataForMode$1(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
-	return safe;
-}
-function sanitizeRunTree(run, integration) {
-	const status = statusOfRun(run);
-	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
-	run.inputs = mutedContent("user");
-	run.outputs = mutedContent("assistant");
-	delete run.error;
-	run.serialized = {};
-	delete run.tags;
-	delete run.reference_example_id;
-	delete run.attachments;
-	delete run.events;
-	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
-	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
-	run.extra = extraForMode(metadata, integration, status);
-}
-function protectRunTree(run, integration) {
-	sanitizeRunTree(run, integration);
-	const createChild = run.createChild.bind(run);
-	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
-	const postRun = run.postRun.bind(run);
-	run.postRun = async (excludeChildRuns = true) => {
-		sanitizeRunTree(run, integration);
-		if (!excludeChildRuns) {
-			const childRuns = [...run.child_runs];
-			await postRun(true);
-			for (const childRun of childRuns) await childRun.postRun(false);
-			return;
-		}
-		return postRun(excludeChildRuns);
-	};
-	const patchRun = run.patchRun.bind(run);
-	run.patchRun = (options) => {
-		sanitizeRunTree(run, integration);
-		return patchRun({
-			excludeInputs: false,
-			...options
-		});
-	};
-	const end = run.end.bind(run);
-	run.end = (outputs, error, endTime, metadata) => {
-		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
-		const safeMetadata = metadataForMode$1(metadata, integration, "metadata", status) ?? { status };
-		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
-	};
-	const toJSON = run.toJSON.bind(run);
-	run.toJSON = () => {
-		sanitizeRunTree(run, integration);
-		return toJSON();
-	};
-	return run;
-}
-function preserveFullModePatchInputs(run) {
-	const createChild = run.createChild.bind(run);
-	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
-	const patchRun = run.patchRun.bind(run);
-	run.patchRun = (options) => patchRun({
-		excludeInputs: false,
-		...options
-	});
-	return run;
-}
-function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
-	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
-	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
-}
-function survivingCodingAgentPatchFields(projectedRun, fields) {
-	return fields.filter((field) => {
-		const descriptor = Object.getOwnPropertyDescriptor(projectedRun, field);
-		return descriptor?.enumerable === true && "value" in descriptor && descriptor.value !== void 0;
-	});
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
 	return new Client({
@@ -19569,7 +19567,7 @@ function createUploadClient(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -19612,7 +19610,7 @@ const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
 ]);
 const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -19711,7 +19709,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -19732,7 +19730,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -19755,7 +19753,7 @@ function resolveUploadDestinations(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
 	if (sourceProjectName === destinationProjectName) return context;
 	return {
@@ -19787,7 +19785,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -19959,11 +19957,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -19993,7 +19991,7 @@ async function readSavedCaptureWake(error, options) {
 	return saved !== void 0 && canonicalJson(saved) === canonicalJson(record) ? result : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -20023,7 +20021,7 @@ const LIFECYCLE_TURN_CLOSURE_STATES = [
 	"authoritative"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -20139,7 +20137,7 @@ function captureScopeKey$1(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -20199,7 +20197,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectSubmission(value, integration, priorIdentity) {
 	const source = requirePlainRecord(value, "Prepared run submission");
 	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
@@ -20441,7 +20439,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_METADATA_KEYS = [...[
 	"repository_name",
 	"repository_provider",
@@ -20454,7 +20452,7 @@ const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_EVENT_ID_PATTERN = /^turn-settlement-[0-9a-f]{64}$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	for (const key of REPOSITORY_METADATA_KEYS) {
@@ -20485,7 +20483,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -20982,7 +20980,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -21013,7 +21011,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
 async function captureLifecycleSnapshot(options, input) {
 	const captureInput = snapshotData(requirePlainRecord(input, "Lifecycle snapshot capture"));
 	const snapshot = requirePlainRecord(captureInput, "Lifecycle snapshot capture");
@@ -21273,7 +21271,7 @@ function sameCanonical(left, right) {
 	return JSON.stringify(canonicalJsonValue(left)) === JSON.stringify(canonicalJsonValue(right));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const integration = options.integration;
 	const wake = options.wake;
@@ -22507,7 +22505,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath(), con
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_DIRECTORY = "background-worker";
 const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
 const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
@@ -22523,7 +22521,7 @@ const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\
 const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
 const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -22549,13 +22547,13 @@ function workerLaunchPath(storageRoot, scope) {
 	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const storageRoot = resolve(options.storageRoot);
@@ -22878,7 +22876,7 @@ function parseObject(contents) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
 const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
 const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
@@ -22935,7 +22933,7 @@ const RECONSTRUCTION_DEPENDENCY_KEYS = [
 	"turnId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -23530,12 +23528,12 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
@@ -23557,7 +23555,7 @@ const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR = "Background rec
 const TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR = "Minimum foreign session age must be a non-negative integer";
 const TRACING_ENGINE_BACKGROUND_RECOVERY_COOLDOWN_RANGE_ERROR = "Background recovery cooldown must be a positive integer";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	return Object.freeze({
 		...options,
@@ -23594,7 +23592,7 @@ function snapshotPolicy(policy) {
 	return Object.freeze({ ...policy });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	const missingSettlementCapture = Symbol();
 	try {
@@ -23634,7 +23632,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 async function recoverTracingSessions(runtime, request, scopeGuard) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
@@ -23753,7 +23751,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
 function backgroundRecoveryPathSegments(scope) {
 	return [
 		TRACING_ENGINE_BACKGROUND_RECOVERY_DIRECTORY,
@@ -23772,7 +23770,7 @@ function backgroundRecoveryPaths(storageRoot, scope) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	const cooldownMs = options.cooldownMs ?? 3e5;
 	const minimumForeignAgeMs = options.minimumForeignAgeMs ?? 72e5;
@@ -23892,7 +23890,7 @@ async function writeMarker(path, marker) {
 	if (!await publishExclusive(path, JSON.stringify(marker))) throw new Error(TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_EXISTS_ERROR);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_ae919612afedc25e57b303c1b0e1e6d1/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	function forSession(sessionOptions) {

@@ -1,5 +1,3 @@
-import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
-
 /**
  * Plain TypeScript types for legacy rollout JSONL lines from codex-rs/protocol
  * `RolloutLine`.
@@ -1130,4 +1128,4 @@ export type StandardMessage = {
 
 export type TurnPostStatus = "handled" | "deferred";
 
-export type TurnMetadataOptions = Omit<CodingAgentMetadataOptions, "runType">;
+export type { TurnMetadataOptions } from "./models/metadata.js";
