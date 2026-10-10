@@ -46,7 +46,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@langchain/plugins-base": "github:langchain-ai/langsmith-plugin-binary#336ecc347acb0e7c2839ca065ea69862b43ceb66",
+    "@langchain/plugins-base": "github:langchain-ai/langsmith-plugin-binary#22bb8158d3337e8d78c4142e06bba189477cc2ec",
     "@types/node": "^26.4.0",
     "memfs": "^4.68.2",
     "oxfmt": "^0.65.0",

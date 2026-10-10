@@ -16891,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16903,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17265,10 +17265,10 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_type: void 0
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17290,7 +17290,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17421,7 +17421,7 @@ async function resolveGitInfo(cwd, sessionGit) {
 	return pending;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const CODING_AGENT_RUN_TYPES = [
@@ -17544,7 +17544,7 @@ const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
 	["modelName", "ls_model_name"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field(key, options = {}) {
 	return {
 		key,
@@ -17673,7 +17673,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function isRecord$4(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -17728,7 +17728,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -17785,15 +17785,17 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_DIRECTORY = "capture-v1";
+const CAPTURE_RECONSTRUCTION_JOB_KIND = "reconstruction-job-v1";
+const CAPTURE_RECORD_LOCK_DIRECTORY = "record-lock-v1";
 const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
 const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
 const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
 const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
 const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -17832,7 +17834,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -17894,7 +17896,7 @@ function requireNonNegativeInteger(value, name) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -17911,7 +17913,7 @@ function metadataForMode$1(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -18035,7 +18037,7 @@ function stripNestedUndefined(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -18052,7 +18054,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -18288,7 +18290,7 @@ function v5(value, namespace, buf, offset) {
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -18306,7 +18308,7 @@ const FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE = "Could not release the lega
 const FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE = "Could not release compatible file lock";
 const FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE = "Legacy file lock gate changed before release";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	constructor(filePath) {
 		super(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(filePath)}`);
@@ -18314,7 +18316,7 @@ var FileLockTimeoutError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function isRecord$3(value) {
 	return typeof value === "object" && value !== null;
 }
@@ -18527,6 +18529,7 @@ async function acquireLegacyDirectoryGate(filePath, deadline) {
 		recursive: true,
 		mode: 448
 	});
+	let retriedMissingPermission = false;
 	for (;;) {
 		if (performance$1.now() >= deadline) throw timeoutError(filePath);
 		try {
@@ -18541,18 +18544,27 @@ async function acquireLegacyDirectoryGate(filePath, deadline) {
 			};
 		} catch (error) {
 			const code = error.code;
-			if (code !== "EEXIST" && !FILE_LOCK_WINDOWS_DIRECTORY_CONTENTION_CODES.some((candidate) => candidate === code)) throw error;
+			const permissionDenied = FILE_LOCK_WINDOWS_DIRECTORY_CONTENTION_CODES.some((candidate) => candidate === code);
+			if (code !== "EEXIST" && !permissionDenied) throw error;
 			let isDirectory = false;
 			try {
 				isDirectory = (await lstat(gatePath)).isDirectory();
 			} catch (statError) {
-				if (code === "EEXIST" && statError.code === "ENOENT") {
-					await waitForNextScan(deadline, filePath);
-					continue;
+				if (statError.code === "ENOENT") {
+					if (code === "EEXIST") {
+						retriedMissingPermission = false;
+						await waitForNextScan(deadline, filePath);
+						continue;
+					}
+					if (permissionDenied && !retriedMissingPermission) {
+						retriedMissingPermission = true;
+						continue;
+					}
 				}
 				throw error;
 			}
 			if (!isDirectory) throw error;
+			retriedMissingPermission = false;
 			await waitForNextScan(deadline, filePath);
 		}
 	}
@@ -18658,7 +18670,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -18685,7 +18697,7 @@ function receiptPath(root, scope, destination) {
 	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	await mkdir(root, {
 		recursive: true,
@@ -18733,6 +18745,51 @@ async function publishExclusive(path, contents, beforeCommit) {
 			if (errorCode$2(error) !== "ENOENT") throw error;
 		});
 	}
+}
+async function replacePrivateFile(root, path, contents) {
+	if (!await hasRealParentDirectories(root, path)) throw new Error("Capture record parent directory is missing");
+	const original = await lstat(path);
+	if (!original.isFile() || original.isSymbolicLink() || !hasPrivateFileMode(original.mode)) throw new Error("Capture record must be a private regular file");
+	const directory = dirname(path);
+	const stagingPath = join(directory, `.${randomUUID()}.tmp`);
+	let handle;
+	let stagingCreated = false;
+	let operationFailed = false;
+	let operationError;
+	try {
+		handle = await open(stagingPath, "wx", 384);
+		stagingCreated = true;
+		await handle.writeFile(contents, "utf8");
+		await handle.chmod(384);
+		await handle.sync();
+		await handle.close();
+		handle = void 0;
+		const current = await lstat(path);
+		if (!current.isFile() || current.isSymbolicLink() || current.dev !== original.dev || current.ino !== original.ino || !hasPrivateFileMode(current.mode)) throw new Error("Capture record changed during replacement");
+		await rename(stagingPath, path);
+		await syncDirectory(directory);
+	} catch (error) {
+		operationFailed = true;
+		operationError = error;
+	}
+	const cleanupErrors = [];
+	if (handle !== void 0) try {
+		await handle.close();
+	} catch (error) {
+		cleanupErrors.push(error);
+	}
+	if (stagingCreated) try {
+		await unlink(stagingPath);
+	} catch (error) {
+		if (errorCode$2(error) !== "ENOENT") cleanupErrors.push(error);
+	}
+	if (operationFailed && cleanupErrors.length > 0) throw new AggregateError([operationError, ...cleanupErrors], "Capture replacement failed");
+	if (operationFailed) throw operationError;
+	if (cleanupErrors.length === 1) throw cleanupErrors[0];
+	if (cleanupErrors.length > 1) throw new AggregateError(cleanupErrors, "Capture replacement cleanup failed");
+}
+function hasPrivateFileMode(mode) {
+	return process.platform === "win32" || (mode & 63) === 0;
 }
 async function readPrivateFile(root, path) {
 	if (!await hasRealParentDirectories(root, path)) return void 0;
@@ -18786,7 +18843,155 @@ function errorCode$2(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/compaction.js
+function captureContentDigest(record) {
+	if ("compaction" in record && record.compaction !== void 0) return record.compaction.originalContentDigest;
+	if ("sourceSnapshotCleanup" in record && record.sourceSnapshotCleanup !== void 0) return record.sourceSnapshotCleanup.originalContentDigest;
+	const content = { ...record };
+	delete content.version;
+	delete content.capturedAtMs;
+	delete content.compaction;
+	delete content.sourceSnapshotCleanup;
+	return createHash("sha256").update(canonicalJson(content)).digest("hex");
+}
+function compactCaptureRecord(record, originalContentDigest) {
+	const normalizedPayload = compactPayload(record);
+	if (normalizedPayload === void 0) return void 0;
+	return {
+		...record,
+		version: 3,
+		normalizedPayload: normalizedPayload.value,
+		compaction: {
+			version: 1,
+			originalContentDigest,
+			fields: normalizedPayload.fields
+		}
+	};
+}
+function compactReconstructionJobRecord(record, originalContentDigest) {
+	if (record.eventKind !== "reconstruction-job-v1") return void 0;
+	const payload = canonicalValue(record.normalizedPayload, /* @__PURE__ */ new Set());
+	if (!isJsonObject(payload) || !Object.hasOwn(payload, "sourceSnapshots")) return void 0;
+	delete payload.sourceSnapshots;
+	return {
+		...record,
+		normalizedPayload: payload,
+		sourceSnapshotCleanup: {
+			version: 1,
+			originalContentDigest
+		}
+	};
+}
+function validateSourceSnapshotCleanup(value, eventKind, normalizedPayload) {
+	if (eventKind !== "reconstruction-job-v1" || !isObjectRecord(value) || !hasExactKeys(value, ["version", "originalContentDigest"]) || value.version !== 1 || typeof value.originalContentDigest !== "string" || !CAPTURE_HASH.test(value.originalContentDigest) || !isJsonObject(normalizedPayload) || Object.hasOwn(normalizedPayload, "sourceSnapshots")) throw new Error("Invalid reconstruction source snapshot cleanup marker");
+	return {
+		version: 1,
+		originalContentDigest: value.originalContentDigest
+	};
+}
+function validateCompactionMarker(value, eventKind, normalizedPayload) {
+	if (!isObjectRecord(value) || !hasExactKeys(value, [
+		"version",
+		"originalContentDigest",
+		"fields"
+	])) throw new Error("Invalid compacted capture marker");
+	if (value.version !== 1 || typeof value.originalContentDigest !== "string" || !CAPTURE_HASH.test(value.originalContentDigest) || !isObjectRecord(value.fields) || !hasExactKeys(value.fields, ["inputs", "outputs"])) throw new Error("Invalid compacted capture marker");
+	const payload = isJsonObject(normalizedPayload) ? normalizedPayload : void 0;
+	if (payload === void 0) throw new Error("Invalid compacted capture payload");
+	let target;
+	let patchFields;
+	if (eventKind === "run-post" && payload.operation === "post" && isJsonObject(payload.run)) target = payload.run;
+	else if (eventKind === "run-patch" && payload.operation === "patch" && isJsonObject(payload.patch) && isJsonObject(payload.patch.values) && Array.isArray(payload.patch.fields) && payload.patch.fields.every((field) => typeof field === "string")) {
+		target = payload.patch.values;
+		patchFields = payload.patch.fields;
+	} else throw new Error("Invalid compacted capture payload");
+	const fields = {
+		inputs: readCompactedField(value.fields.inputs),
+		outputs: readCompactedField(value.fields.outputs)
+	};
+	if (![fields.inputs, fields.outputs].some((field) => field.state === "value")) throw new Error("Compacted capture marker has no removed fields");
+	for (const field of ["inputs", "outputs"]) {
+		const state = fields[field];
+		const present = Object.hasOwn(target, field);
+		const included = patchFields?.includes(field);
+		if ((state.state === "preserve" ? !present : present) || included !== void 0 && state.state === "preserve" !== included) throw new Error("Compacted capture field does not match its marker");
+	}
+	return {
+		version: 1,
+		originalContentDigest: value.originalContentDigest,
+		fields
+	};
+}
+function compactPayload(record) {
+	if (record.eventKind !== "run-post" && record.eventKind !== "run-patch") return void 0;
+	const payloadValue = canonicalValue(record.normalizedPayload, /* @__PURE__ */ new Set());
+	if (!isJsonObject(payloadValue)) return void 0;
+	const fields = {
+		inputs: { state: "absent" },
+		outputs: { state: "absent" }
+	};
+	let compactedAny = false;
+	if (record.eventKind === "run-post") {
+		if (payloadValue.operation !== "post" || !isJsonObject(payloadValue.run)) return void 0;
+		for (const field of ["inputs", "outputs"]) if (Object.hasOwn(payloadValue.run, field)) {
+			fields[field] = {
+				state: "value",
+				digest: valueDigest(payloadValue.run[field])
+			};
+			delete payloadValue.run[field];
+			compactedAny = true;
+		}
+	} else {
+		if (payloadValue.operation !== "patch" || !isJsonObject(payloadValue.patch)) return void 0;
+		if (!Array.isArray(payloadValue.patch.fields) || !isJsonObject(payloadValue.patch.values)) return void 0;
+		const patchFields = payloadValue.patch.fields;
+		if (patchFields.some((field) => typeof field !== "string") || new Set(patchFields).size !== patchFields.length) return;
+		for (const field of ["inputs", "outputs"]) {
+			const included = patchFields.includes(field);
+			const present = Object.hasOwn(payloadValue.patch.values, field);
+			if (included !== present) return void 0;
+			if (present) {
+				fields[field] = {
+					state: "value",
+					digest: valueDigest(payloadValue.patch.values[field])
+				};
+				delete payloadValue.patch.values[field];
+				compactedAny = true;
+			}
+		}
+		payloadValue.patch.fields = patchFields.filter((field) => field !== "inputs" && field !== "outputs");
+	}
+	return compactedAny ? {
+		value: payloadValue,
+		fields
+	} : void 0;
+}
+function readCompactedField(value) {
+	if (!isObjectRecord(value) || typeof value.state !== "string") throw new Error("Invalid compacted capture field");
+	if (value.state === "preserve" && hasExactKeys(value, ["state"])) return { state: "preserve" };
+	if (value.state === "absent" && hasExactKeys(value, ["state"])) return { state: "absent" };
+	if (value.state === "value" && hasExactKeys(value, ["state", "digest"]) && typeof value.digest === "string" && CAPTURE_HASH.test(value.digest)) return {
+		state: "value",
+		digest: value.digest
+	};
+	throw new Error("Invalid compacted capture field");
+}
+function isJsonObject(value) {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function isObjectRecord(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasExactKeys(value, keys) {
+	if (Object.keys(value).length !== keys.length) return false;
+	const expected = new Set(keys);
+	return Object.keys(value).every((key) => expected.has(key));
+}
+function valueDigest(value) {
+	return createHash("sha256").update(canonicalJson(value)).digest("hex");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -18816,7 +19021,7 @@ function errorCode$1(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -18852,22 +19057,24 @@ function createCaptureStore(root) {
 			}
 			try {
 				const path = eventPath(storageRoot, input);
-				await ensureDirectories(input.integration, input.sessionId, input.turnId, "events");
-				if (await publishExclusive(path, contents)) return {
-					status: "published",
-					record
-				};
-				const previous = await readRecord$1(storageRoot, path);
-				if (previous === void 0) return {
-					status: "failed",
-					code: "STORAGE_FAILED",
-					message: "Published event disappeared"
-				};
-				if (!sameScope(previous, input)) return { status: "conflict" };
-				return sameCapture(previous, record) ? {
-					status: "duplicate",
-					record: previous
-				} : { status: "conflict" };
+				return await withRecordLock(storageRoot, input, async () => {
+					await ensureDirectories(input.integration, input.sessionId, input.turnId, "events");
+					if (await publishExclusive(path, contents)) return {
+						status: "published",
+						record
+					};
+					const previous = await readRecord$1(storageRoot, path);
+					if (previous === void 0) return {
+						status: "failed",
+						code: "STORAGE_FAILED",
+						message: "Published event disappeared"
+					};
+					if (!sameScope(previous, input)) return { status: "conflict" };
+					return sameCapture(previous, record) ? {
+						status: "duplicate",
+						record: previous
+					} : { status: "conflict" };
+				});
 			} catch (error) {
 				return failure("STORAGE_FAILED", error);
 			}
@@ -18878,6 +19085,67 @@ function createCaptureStore(root) {
 			if (record === void 0) return void 0;
 			if (!sameScope(record, scope)) throw new Error("Capture namespace does not match");
 			return record;
+		},
+		async compact(scope, expected) {
+			try {
+				validateScope(scope);
+				if (!sameScope(expected, scope)) throw new TypeError("Capture namespace does not match");
+				const expectedOriginalContentDigest = expected.compaction?.originalContentDigest ?? captureContentDigest(expected);
+				if (!CAPTURE_HASH.test(expectedOriginalContentDigest)) throw new TypeError("Invalid original capture digest");
+				return await withRecordLock(storageRoot, scope, async () => {
+					const path = eventPath(storageRoot, scope);
+					const previous = await readRecord$1(storageRoot, path);
+					if (previous === void 0) return { status: "missing-capture" };
+					const originalContentDigest = previous.compaction?.originalContentDigest ?? captureContentDigest(previous);
+					if (originalContentDigest !== expectedOriginalContentDigest) return { status: "changed" };
+					if (previous.compaction !== void 0) return {
+						status: "already-compacted",
+						record: previous
+					};
+					const record = compactCaptureRecord(previous, originalContentDigest);
+					if (record === void 0) return { status: "changed" };
+					await replacePrivateFile(storageRoot, path, canonicalJson(record));
+					return {
+						status: "compacted",
+						record
+					};
+				});
+			} catch (error) {
+				return failure("STORAGE_FAILED", error);
+			}
+		},
+		async compactReconstructionJob(scope, expected, destination) {
+			try {
+				validateScope(scope);
+				validateIdentifier(destination, "destination");
+				if (!sameScope(expected, scope) || expected.eventKind !== "reconstruction-job-v1") throw new TypeError("Capture is not the expected reconstruction job");
+				if (destination !== expected.destinationFingerprint) throw new TypeError("Reconstruction job destination does not match");
+				const expectedOriginalContentDigest = captureContentDigest(expected);
+				if (!CAPTURE_HASH.test(expectedOriginalContentDigest)) throw new TypeError("Invalid original reconstruction job digest");
+				return await withRecordLock(storageRoot, scope, async () => {
+					const path = eventPath(storageRoot, scope);
+					const previous = await readRecord$1(storageRoot, path);
+					if (previous === void 0) return { status: "missing-capture" };
+					if (captureContentDigest(previous) !== expectedOriginalContentDigest) return { status: "changed" };
+					if (previous.sourceSnapshotCleanup !== void 0) return {
+						status: "already-compacted",
+						record: previous
+					};
+					const payload = previous.normalizedPayload;
+					if (payload === null || typeof payload !== "object" || Array.isArray(payload) || !Object.hasOwn(payload, "sourceSnapshots")) return { status: "unchanged" };
+					const receipt = await readReceipt(storageRoot, receiptPath(storageRoot, scope, destination));
+					if (receipt?.outcome !== "delivered" || receipt.destination !== destination || !sameScope(receipt, scope)) return { status: "not-delivered" };
+					const compacted = compactReconstructionJobRecord(previous, expectedOriginalContentDigest);
+					if (compacted === void 0) return { status: "changed" };
+					await replacePrivateFile(storageRoot, path, canonicalJson(compacted));
+					return {
+						status: "compacted",
+						record: compacted
+					};
+				});
+			} catch (error) {
+				return failure("STORAGE_FAILED", error);
+			}
 		},
 		async enumerate(integration, sessionId) {
 			validateIntegration(integration);
@@ -18931,24 +19199,26 @@ function createCaptureStore(root) {
 				validateIdentifier(input.destination, "destination");
 				if (input.outcome !== "delivered" && input.outcome !== "dropped") throw new TypeError("Invalid outcome");
 				if (input.reason !== void 0) validateIdentifier(input.reason, "outcome reason");
-				if (await this.read(input) === void 0) return { status: "missing-capture" };
-				const path = receiptPath(storageRoot, input, input.destination);
-				await ensureDirectories(input.integration, input.sessionId, input.turnId, "receipts", input.destination);
-				const comparable = receiptValue(input, (/* @__PURE__ */ new Date()).toISOString());
-				if (await publishExclusive(path, canonicalJson(comparable))) return {
-					status: "recorded",
-					receipt: comparable
-				};
-				const previous = await readReceipt(storageRoot, path);
-				if (previous === void 0) return {
-					status: "failed",
-					code: "STORAGE_FAILED",
-					message: "Published receipt disappeared"
-				};
-				return sameReceipt(previous, input) ? {
-					status: "duplicate",
-					receipt: previous
-				} : { status: "conflict" };
+				return await withRecordLock(storageRoot, input, async () => {
+					if (await readRecord$1(storageRoot, eventPath(storageRoot, input)) === void 0) return { status: "missing-capture" };
+					const path = receiptPath(storageRoot, input, input.destination);
+					await ensureDirectories(input.integration, input.sessionId, input.turnId, "receipts", input.destination);
+					const comparable = receiptValue(input, (/* @__PURE__ */ new Date()).toISOString());
+					if (await publishExclusive(path, canonicalJson(comparable))) return {
+						status: "recorded",
+						receipt: comparable
+					};
+					const previous = await readReceipt(storageRoot, path);
+					if (previous === void 0) return {
+						status: "failed",
+						code: "STORAGE_FAILED",
+						message: "Published receipt disappeared"
+					};
+					return sameReceipt(previous, input) ? {
+						status: "duplicate",
+						receipt: previous
+					} : { status: "conflict" };
+				});
 			} catch (error) {
 				return failure("STORAGE_FAILED", error);
 			}
@@ -18957,7 +19227,7 @@ function createCaptureStore(root) {
 			try {
 				validateScope(scope);
 				validateIdentifier(destination, "destination");
-				if (await this.read(scope) === void 0) return { status: "missing-capture" };
+				if (await readRecord$1(storageRoot, eventPath(storageRoot, scope)) === void 0) return { status: "missing-capture" };
 				const receipt = await readReceipt(storageRoot, receiptPath(storageRoot, scope, destination));
 				if (receipt === void 0) return { status: "pending" };
 				return sameScope(receipt, scope) && receipt.destination === destination ? {
@@ -19057,12 +19327,30 @@ async function enumerateSession(root, integration, sessionHash) {
 		captures: captures.toSorted(compareCaptures$1)
 	};
 }
+async function withRecordLock(root, scope, operation) {
+	validateScope(scope);
+	return withRecordLockByHashes(root, scope.integration, identifierHash(scope.sessionId), identifierHash(scope.turnId), identifierHash(scope.eventId), operation);
+}
+async function withRecordLockByHashes(root, integration, sessionHash, turnHash, eventHash, operation) {
+	if (![
+		sessionHash,
+		turnHash,
+		eventHash
+	].every((value) => CAPTURE_HASH.test(value))) throw new TypeError("Invalid capture record lock path");
+	const directory = await ensurePrivateDirectory(root, [
+		CAPTURE_RECORD_LOCK_DIRECTORY,
+		"integrations",
+		integration,
+		"sessions",
+		sessionHash,
+		"turns",
+		turnHash,
+		"events"
+	]);
+	return withFileLock(join(directory, `${eventHash}.lock`), operation);
+}
 function sameCapture(left, right) {
-	const leftContent = { ...left };
-	const rightContent = { ...right };
-	delete leftContent.capturedAtMs;
-	delete rightContent.capturedAtMs;
-	return canonicalJson(leftContent) === canonicalJson(rightContent);
+	return (left.compaction?.originalContentDigest ?? captureContentDigest(left)) === captureContentDigest(right);
 }
 function receiptValue(input, recordedAt) {
 	return {
@@ -19081,7 +19369,7 @@ async function readRecord$1(root, path) {
 	const contents = await readPrivateFile(root, path);
 	if (contents === void 0) return void 0;
 	const value = parseObject$1(contents);
-	if (value.version !== 2 || typeof value.capturedAtMs !== "number" || !Number.isSafeInteger(value.capturedAtMs) || !Number.isFinite(new Date(value.capturedAtMs).getTime()) || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.runId !== "string" || typeof value.destinationFingerprint !== "string" || typeof value.eventKind !== "string" || !("normalizedPayload" in value) || !("turnEvidence" in value) || !("metadataProvenance" in value)) throw new Error("Unsupported capture record");
+	if (value.version !== 2 && value.version !== 3 || typeof value.capturedAtMs !== "number" || !Number.isSafeInteger(value.capturedAtMs) || !Number.isFinite(new Date(value.capturedAtMs).getTime()) || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.runId !== "string" || typeof value.destinationFingerprint !== "string" || typeof value.eventKind !== "string" || !("normalizedPayload" in value) || !("turnEvidence" in value) || !("metadataProvenance" in value)) throw new Error("Unsupported capture record");
 	if ("sourceAgeStartedAtMs" in value) requireSafeEpochMilliseconds(value["sourceAgeStartedAtMs"], "Stored source age");
 	if ("priorDeliveryAttempts" in value) requireNonNegativeInteger(value["priorDeliveryAttempts"], "Stored prior delivery attempts");
 	for (const [identifier, name] of [
@@ -19097,9 +19385,17 @@ async function readRecord$1(root, path) {
 	};
 	validateScope(scope);
 	const dependencies = normalizeDependencies(value.dependencies, scope);
+	const normalizedPayload = canonicalValue(value.normalizedPayload, /* @__PURE__ */ new Set());
+	const compaction = value.version === 3 ? validateCompactionMarker(value.compaction, value.eventKind, normalizedPayload) : void 0;
+	if (value.version === 2 && "compaction" in value) throw new Error("Invalid compacted capture marker");
+	if (value.version === 3 && "sourceSnapshotCleanup" in value) throw new Error("Invalid reconstruction source snapshot cleanup marker");
+	const sourceSnapshotCleanup = "sourceSnapshotCleanup" in value ? validateSourceSnapshotCleanup(value.sourceSnapshotCleanup, value.eventKind, normalizedPayload) : void 0;
 	return {
 		...value,
-		...dependencies === void 0 ? {} : { dependencies }
+		normalizedPayload,
+		...dependencies === void 0 ? {} : { dependencies },
+		...compaction === void 0 ? {} : { compaction },
+		...sourceSnapshotCleanup === void 0 ? {} : { sourceSnapshotCleanup }
 	};
 }
 async function readReceipt(root, path) {
@@ -19164,7 +19460,7 @@ function errorCode(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
 const DELIVERY_DIRECTORY = "delivery-v1";
 const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
 const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
@@ -19173,7 +19469,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
 function createDeliveryAttemptStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -19259,7 +19555,7 @@ function validateTimestamp(value) {
 	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 function createDeliveryCoordinator(options) {
 	const { integration, sessionId } = options;
 	validateIntegration(integration);
@@ -19301,18 +19597,31 @@ function createDeliveryCoordinator(options) {
 				await lock.release();
 			}
 			const captures = await captureStore.enumerate(integration, sessionId);
-			const eligible = captures.filter(({ record }) => record.destinationFingerprint === writer.accountFingerprint);
+			const accountEligible = captures.filter(({ record }) => record.destinationFingerprint === writer.accountFingerprint);
+			await requireDeliveredCompactionReceipts(captureStore, accountEligible, writer.destinations);
+			const eligible = accountEligible.filter(({ record }) => record.compaction === void 0);
 			return {
 				status: "drained",
 				...counts,
 				pending: await countPending(drainCache, eligible, writer.destinations),
-				accountMismatch: captures.length - eligible.length
+				accountMismatch: captures.length - accountEligible.length
 			};
 		}
 	};
 }
+async function requireDeliveredCompactionReceipts(captureStore, captures, destinations) {
+	for (const { record } of captures) {
+		if (record.compaction === void 0) continue;
+		const scope = scopeOf$1(record);
+		for (const destination of destinations) {
+			const outcome = await captureStore.readOutcome(scope, destination.id);
+			if (outcome.status === "failed") throw new Error(`Could not verify compacted capture receipt: ${outcome.code}`);
+			if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") throw new Error(`Compacted capture ${record.eventId} has no delivered receipt for destination ${destination.id}`);
+		}
+	}
+}
 async function drainLocked(captureStore, attemptStore, integration, sessionId, policy, request, drainCache) {
-	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
+	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint && record.compaction === void 0);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
 	let dropped = 0;
 	let failed = 0;
@@ -19545,7 +19854,7 @@ function resolvePolicy$1(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
 	return new Client({
@@ -19567,7 +19876,7 @@ function createUploadClient(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -19610,7 +19919,7 @@ const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
 ]);
 const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -19709,7 +20018,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -19730,7 +20039,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -19753,7 +20062,7 @@ function resolveUploadDestinations(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
 	if (sourceProjectName === destinationProjectName) return context;
 	return {
@@ -19785,7 +20094,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -19957,11 +20266,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -19988,10 +20297,27 @@ async function readSavedCaptureWake(error, options) {
 		turnId: record.turnId,
 		eventId: record.eventId
 	});
-	return saved !== void 0 && canonicalJson(saved) === canonicalJson(record) ? result : void 0;
+	return saved !== void 0 && matchesPersistedCapture(saved, record) ? {
+		...result,
+		record: saved
+	} : void 0;
+}
+function matchesPersistedCapture(saved, reported) {
+	if (canonicalJson(saved) === canonicalJson(reported)) return true;
+	if (reported.version !== 2 || reported.compaction !== void 0 || reported.sourceSnapshotCleanup !== void 0 || saved.capturedAtMs !== reported.capturedAtMs) return false;
+	const originalContentDigest = captureContentDigest(reported);
+	if (saved.compaction !== void 0 && saved.compaction.originalContentDigest === originalContentDigest) {
+		const compacted = compactCaptureRecord(reported, originalContentDigest);
+		return compacted !== void 0 && canonicalJson(compacted) === canonicalJson(saved);
+	}
+	if (saved.sourceSnapshotCleanup !== void 0 && saved.sourceSnapshotCleanup.originalContentDigest === originalContentDigest) {
+		const cleaned = compactReconstructionJobRecord(reported, originalContentDigest);
+		return cleaned !== void 0 && canonicalJson(cleaned) === canonicalJson(saved);
+	}
+	return false;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -20021,7 +20347,7 @@ const LIFECYCLE_TURN_CLOSURE_STATES = [
 	"authoritative"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -20036,7 +20362,7 @@ function storedAttributionReadiness(record, integration) {
 	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
 }
 function indexCaptureSources(sources) {
-	return new Map(sources.map((source) => [captureScopeKey$1(captureScope$2(source)), source]));
+	return new Map(sources.map((source) => [captureScopeKey$1(captureScope$3(source)), source]));
 }
 function attributionMetadataReady(projected) {
 	return typeof projected["repository_name"] === "string" && projected["repository_name"].length > 0 && typeof projected["ls_attribution_identifier"] === "string" && projected["ls_attribution_identifier"].length > 0;
@@ -20087,7 +20413,7 @@ async function hasMissingChildReceipts(record, evidence, sourceSnapshot, destina
 		const childCaptures = sourceSnapshot.filter((source) => source.runId === childRunId && source.destinationFingerprint === record.destinationFingerprint && source.eventKind === "run-post");
 		if (childCaptures.length === 0) return true;
 		for (const child of childCaptures) {
-			const scope = captureScope$2(child);
+			const scope = captureScope$3(child);
 			for (const destination of destinations) {
 				const outcome = await readOutcome(scope, destination.id);
 				if (outcome.status === "failed") throw new Error(`Could not read child delivery receipt: ${outcome.code}`);
@@ -20120,7 +20446,7 @@ function removeOutgoingEndTime(submission) {
 		...privacyContext === void 0 ? {} : { privacyContext }
 	};
 }
-function captureScope$2(record) {
+function captureScope$3(record) {
 	return {
 		integration: record.integration,
 		sessionId: record.sessionId,
@@ -20137,7 +20463,7 @@ function captureScopeKey$1(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -20197,7 +20523,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectSubmission(value, integration, priorIdentity) {
 	const source = requirePlainRecord(value, "Prepared run submission");
 	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
@@ -20439,7 +20765,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_METADATA_KEYS = [...[
 	"repository_name",
 	"repository_provider",
@@ -20452,7 +20778,7 @@ const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_EVENT_ID_PATTERN = /^turn-settlement-[0-9a-f]{64}$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	for (const key of REPOSITORY_METADATA_KEYS) {
@@ -20483,7 +20809,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -20595,7 +20921,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}
 	const sourceEvents = [...events];
 	for (const childRunId of childRunIds) sourceEvents.push(...allByRunId.get(childRunId) ?? []);
-	const sourceScopes = uniqueScopes(sourceEvents.map(({ record }) => captureScope$1(record)));
+	const sourceScopes = uniqueScopes(sourceEvents.map(({ record }) => captureScope$2(record)));
 	const sourceReadiness = await captureReadiness(sourceScopes, options.destinations, options.readOutcome);
 	if (sourceReadiness.status === "dropped") return {
 		report: report(turnId, "blocked", "source-dropped", requiredRunIds, sourceReadiness.destinations),
@@ -20651,7 +20977,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 			eventId
 		};
 		const previous = orderSourceCaptures(generated.filter((item) => item.runId === runId && item.eventId !== eventId)).at(-1);
-		const previousDependency = previous === void 0 ? [] : [captureScope$1(previous)];
+		const previousDependency = previous === void 0 ? [] : [captureScope$2(previous)];
 		if (previous !== void 0) {
 			const previousReadiness = await captureReadiness(previousDependency, options.destinations, options.readOutcome);
 			if (previousReadiness.status === "dropped") return {
@@ -20694,8 +21020,13 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	};
 }
 function projectCapture(record, integration) {
+	const rawPayload = canonicalJsonObject(record.normalizedPayload, "Stored run payload");
+	if (record.compaction?.fields.inputs.state === "value") {
+		const run = requirePlainRecord(rawPayload["run"], "Stored compacted run");
+		if (!Object.hasOwn(run, "inputs")) run["inputs"] = {};
+	}
 	const submission = projectSubmission({
-		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
+		...rawPayload,
 		metadata: record.metadataProvenance
 	}, integration);
 	if (submission.status === "deferred") return void 0;
@@ -20875,7 +21206,7 @@ function uniqueScopes(scopes) {
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
 	return [...unique.values()].toSorted(compareScopes);
 }
-function captureScope$1(record) {
+function captureScope$2(record) {
 	return {
 		integration: record.integration,
 		sessionId: record.sessionId,
@@ -20899,26 +21230,26 @@ function compareCaptures(left, right) {
 	return left.eventId.localeCompare(right.eventId);
 }
 function orderSourceCaptures(records) {
-	const byScope = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), record]));
-	const dependents = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), []]));
-	const dependencyCounts = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), 0]));
+	const byScope = new Map(records.map((record) => [captureScopeKey(captureScope$2(record)), record]));
+	const dependents = new Map(records.map((record) => [captureScopeKey(captureScope$2(record)), []]));
+	const dependencyCounts = new Map(records.map((record) => [captureScopeKey(captureScope$2(record)), 0]));
 	for (const record of records) {
-		const recordKey = captureScopeKey(captureScope$1(record));
+		const recordKey = captureScopeKey(captureScope$2(record));
 		for (const dependency of record.dependencies ?? []) {
 			const prerequisite = byScope.get(captureScopeKey(dependency));
 			if (prerequisite === void 0) continue;
-			dependents.get(captureScopeKey(captureScope$1(prerequisite))).push(record);
+			dependents.get(captureScopeKey(captureScope$2(prerequisite))).push(record);
 			dependencyCounts.set(recordKey, dependencyCounts.get(recordKey) + 1);
 		}
 	}
 	const ready = [];
-	for (const record of records) if (dependencyCounts.get(captureScopeKey(captureScope$1(record))) === 0) pushOrderedCapture(ready, record);
+	for (const record of records) if (dependencyCounts.get(captureScopeKey(captureScope$2(record))) === 0) pushOrderedCapture(ready, record);
 	const ordered = [];
 	while (ready.length > 0) {
 		const record = popOrderedCapture(ready);
 		ordered.push(record);
-		for (const dependent of dependents.get(captureScopeKey(captureScope$1(record))) ?? []) {
-			const key = captureScopeKey(captureScope$1(dependent));
+		for (const dependent of dependents.get(captureScopeKey(captureScope$2(record))) ?? []) {
+			const key = captureScopeKey(captureScope$2(dependent));
 			const count = dependencyCounts.get(key) - 1;
 			dependencyCounts.set(key, count);
 			if (count === 0) pushOrderedCapture(ready, dependent);
@@ -20928,7 +21259,7 @@ function orderSourceCaptures(records) {
 	return ordered;
 }
 function compareSourceCaptures(left, right) {
-	return compareCaptures(left, right) || compareScopes(captureScope$1(left), captureScope$1(right));
+	return compareCaptures(left, right) || compareScopes(captureScope$2(left), captureScope$2(right));
 }
 function pushOrderedCapture(heap, record) {
 	let index = heap.length;
@@ -20980,7 +21311,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -21011,7 +21342,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
 async function captureLifecycleSnapshot(options, input) {
 	const captureInput = snapshotData(requirePlainRecord(input, "Lifecycle snapshot capture"));
 	const snapshot = requirePlainRecord(captureInput, "Lifecycle snapshot capture");
@@ -21026,18 +21357,7 @@ async function captureLifecycleSnapshot(options, input) {
 	validateIdentifier(runId, "run ID");
 	const streamHash = identifierHash(`${options.integration}\0${options.sessionId}\0${turnId}\0${runId}`);
 	const revisionPrefix = `${LIFECYCLE_SNAPSHOT_REVISION_EVENT_ID_PREFIX}${streamHash}:`;
-	const lockDirectory = await ensurePrivateDirectory(options.storageRoot, [
-		LIFECYCLE_SNAPSHOT_LOCK_DIRECTORY,
-		"integrations",
-		options.integration,
-		"sessions",
-		identifierHash(options.sessionId),
-		"turns",
-		identifierHash(turnId),
-		"runs",
-		identifierHash(runId)
-	]);
-	return withFileLock(join(lockDirectory, LIFECYCLE_SNAPSHOT_LOCK_FILE), async () => {
+	return withLifecycleSnapshotLock(options, turnId, runId, async () => {
 		const records = (await options.store.enumerateTurn(options.integration, options.sessionId, turnId)).map(({ record }) => record).filter((record) => record.runId === runId);
 		const state = readSnapshotState(records, options.destinationFingerprint, revisionPrefix);
 		if (state === "conflict") return { status: "conflict" };
@@ -21058,8 +21378,8 @@ async function captureLifecycleSnapshot(options, input) {
 		const privacyStatus = state.privacyMode === "metadata" ? projected.value.privacyStatus : runPrivacyStatus(candidateRun);
 		const evidence = projectTurnEvidence(snapshot["turnEvidence"], state.privacyMode, deriveAttributionReadiness(snapshot["submission"], options.integration));
 		const metadata = canonicalJsonValue(projected.value.metadata);
-		const changedFields = snapshotPatchFields(state.run, candidateRun);
-		const newDependencies = (captureInput.dependencies ?? []).some((dependency) => !sameCanonical(dependency, captureScope(state.head)) && !state.snapshotDependencies.some((persisted) => sameCanonical(dependency, persisted)));
+		const changedFields = snapshotPatchFields(state.run, candidateRun, state.inputOutputStates, sourceRun);
+		const newDependencies = (captureInput.dependencies ?? []).some((dependency) => !sameCanonical(dependency, captureScope$1(state.head)) && !state.snapshotDependencies.some((persisted) => sameCanonical(dependency, persisted)));
 		if (changedFields.length === 0 && sameCanonical(state.metadataProvenance, metadata) && sameCanonical(state.turnEvidence, evidence) && state.privacyStatus === privacyStatus && !newDependencies) {
 			const result = {
 				status: "duplicate",
@@ -21093,11 +21413,27 @@ async function captureLifecycleSnapshot(options, input) {
 			eventId: `${revisionPrefix}${String(nextRevision).padStart(12, "0")}`,
 			submission: patch,
 			turnEvidence: captureInput.turnEvidence,
-			dependencies: [captureScope(state.head), ...(captureInput.dependencies ?? []).filter((dependency) => !sameCanonical(dependency, captureScope(state.head)))],
+			dependencies: [captureScope$1(state.head), ...(captureInput.dependencies ?? []).filter((dependency) => !sameCanonical(dependency, captureScope$1(state.head)))],
 			sourceAgeStartedAtMs: state.post.sourceAgeStartedAtMs ?? state.post.capturedAtMs
 		};
 		return options.capture(revisionInput);
 	});
+}
+async function withLifecycleSnapshotLock(options, turnId, runId, operation) {
+	validateIdentifier(turnId, "turn ID");
+	validateIdentifier(runId, "run ID");
+	const lockDirectory = await ensurePrivateDirectory(options.storageRoot, [
+		LIFECYCLE_SNAPSHOT_LOCK_DIRECTORY,
+		"integrations",
+		options.integration,
+		"sessions",
+		identifierHash(options.sessionId),
+		"turns",
+		identifierHash(turnId),
+		"runs",
+		identifierHash(runId)
+	]);
+	return withFileLock(join(lockDirectory, LIFECYCLE_SNAPSHOT_LOCK_FILE), operation);
 }
 function readSnapshotState(records, destinationFingerprint, revisionPrefix) {
 	const posts = records.filter((record) => record.eventKind === LIFECYCLE_POST_EVENT_KIND);
@@ -21109,11 +21445,15 @@ function readSnapshotState(records, destinationFingerprint, revisionPrefix) {
 	const postPayload = payloadObject(post);
 	const privacyMode = readPrivacyMode(postPayload);
 	const run = storedRun(postPayload, post.runId);
+	const runFields = run;
+	const inputOutputStates = post.compaction?.fields ?? {
+		inputs: presentFieldState(runFields, "inputs"),
+		outputs: presentFieldState(runFields, "outputs")
+	};
 	const redactedFields = storedRedactedFields(postPayload);
 	let metadataProvenance = canonicalJsonValue(post.metadataProvenance);
 	let turnEvidence = canonicalJsonValue(post.turnEvidence);
 	let privacyStatus = storedPrivacyStatus(postPayload, run, privacyMode);
-	const runFields = run;
 	let head = post;
 	const orderedRevisions = revisionCandidates.toSorted((left, right) => left.eventId.localeCompare(right.eventId));
 	let expectedPrevious = post;
@@ -21135,6 +21475,13 @@ function readSnapshotState(records, destinationFingerprint, revisionPrefix) {
 			runFields[field] = value.value;
 			seen.add(field);
 		}
+		for (const field of ["inputs", "outputs"]) {
+			const compactedField = revision.compaction?.fields[field];
+			if (compactedField?.state === "value") {
+				delete runFields[field];
+				inputOutputStates[field] = compactedField;
+			} else if (fields.includes(field)) inputOutputStates[field] = { state: "preserve" };
+		}
 		if (!sameRunIdentity(run, requirePlainRecord(requireOwnDataField(payload, "run"), "Stored run context"))) return "conflict";
 		privacyStatus = readPrivacyStatus(requireOwnDataField(payload, "privacyContext"));
 		metadataProvenance = canonicalJsonValue(revision.metadataProvenance);
@@ -21155,6 +21502,7 @@ function readSnapshotState(records, destinationFingerprint, revisionPrefix) {
 		turnEvidence,
 		privacyMode,
 		redactedFields,
+		inputOutputStates,
 		privacyStatus,
 		revisionCount: orderedRevisions.length,
 		snapshotDependencies: snapshotChain.flatMap((record) => record.dependencies ?? [])
@@ -21182,7 +21530,7 @@ function validSettlementRecord(record, currentRun, privacyMode, redactedFields, 
 		if (!value.present || value.value === void 0) return false;
 		seen.add(field);
 	}
-	return (record.dependencies ?? []).some((dependency) => snapshotChain.some((source) => sameCanonical(dependency, captureScope(source))));
+	return (record.dependencies ?? []).some((dependency) => snapshotChain.some((source) => sameCanonical(dependency, captureScope$1(source))));
 }
 function readPrivacyMode(payload) {
 	const value = requireOwnDataField(payload, "privacyMode");
@@ -21227,15 +21575,34 @@ function applySnapshotOmissions(current, previous, sourceRun) {
 	}
 	return result;
 }
-function snapshotPatchFields(previous, current) {
+function snapshotPatchFields(previous, current, inputOutputStates, sourceRun) {
 	const previousFields = previous;
 	const currentFields = current;
 	return [...UPLOAD_PATCH_FIELDS].filter((field) => {
+		if (field === "inputs" || field === "outputs") {
+			const state = inputOutputStates[field];
+			const previousValue = ownDataField(previousFields, field);
+			const nextValue = ownDataField(currentFields, field);
+			if (state.state === "value") {
+				if (field === "outputs" && !ownDataField(sourceRun, field).present) return false;
+				if (!nextValue.present) return false;
+				return fieldDigest(nextValue.value) !== state.digest;
+			}
+			if (state.state === "absent") return nextValue.present;
+			if (previousValue.present !== nextValue.present) return true;
+			return previousValue.present && nextValue.present && !sameCanonical(previousValue.value, nextValue.value);
+		}
 		const oldValue = ownDataField(previousFields, field);
 		const nextValue = ownDataField(currentFields, field);
 		if (oldValue.present !== nextValue.present) return true;
 		return oldValue.present && nextValue.present && !sameCanonical(oldValue.value, nextValue.value);
 	});
+}
+function presentFieldState(value, field) {
+	return Object.hasOwn(value, field) ? { state: "preserve" } : { state: "absent" };
+}
+function fieldDigest(value) {
+	return createHash("sha256").update(JSON.stringify(canonicalJsonValue(value))).digest("hex");
 }
 function sameRunIdentity(left, right) {
 	return left.id === right.id && left.name === right.name && left.run_type === right.run_type && sameTimestamp(left.start_time, right.start_time) && left.parent_run_id === right.parent_run_id && left.trace_id === right.trace_id && left.dotted_order === right.dotted_order;
@@ -21257,9 +21624,9 @@ function runContext(record) {
 	};
 }
 function sameDependencies(record, previous) {
-	return (record.dependencies ?? []).some((dependency) => sameCanonical(dependency, captureScope(previous)));
+	return (record.dependencies ?? []).some((dependency) => sameCanonical(dependency, captureScope$1(previous)));
 }
-function captureScope(record) {
+function captureScope$1(record) {
 	return {
 		integration: record.integration,
 		sessionId: record.sessionId,
@@ -21271,7 +21638,71 @@ function sameCanonical(left, right) {
 	return JSON.stringify(canonicalJsonValue(left)) === JSON.stringify(canonicalJsonValue(right));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/retention.js
+async function compactSettledCaptures(options) {
+	const captures = options.eligibleCaptures;
+	const runs = /* @__PURE__ */ new Map();
+	for (const { record } of captures) {
+		if (record.destinationFingerprint !== options.destinationFingerprint || !isRunPayload(record)) continue;
+		const key = JSON.stringify([record.turnId, record.runId]);
+		const run = runs.get(key) ?? {
+			turnId: record.turnId,
+			runId: record.runId,
+			records: []
+		};
+		run.records.push(record);
+		runs.set(key, run);
+	}
+	for (const [key, run] of runs) if (run.records.every((record) => record.compaction !== void 0)) runs.delete(key);
+	if (runs.size === 0) return 0;
+	const settledTurns = new Set(options.settledTurnIds);
+	let compacted = 0;
+	for (const { turnId, runId, records } of runs.values()) {
+		if (!settledTurns.has(turnId)) continue;
+		await withLifecycleSnapshotLock(options, turnId, runId, async () => {
+			const currentRecords = (await options.store.enumerateTurn(options.integration, options.sessionId, turnId)).filter(({ record }) => record.turnId === turnId && record.runId === runId && record.destinationFingerprint === options.destinationFingerprint && isRunPayload(record)).map(({ record }) => record);
+			if (!sameRunRecords(records, currentRecords)) return;
+			for (const record of currentRecords) {
+				if (record.compaction !== void 0) continue;
+				if (!await hasDeliveredReceipts(record, options.destinations, options.readOutcome)) continue;
+				const result = await options.store.compact(captureScope(record), record);
+				if (result.status === "failed") throw new Error(`Capture compaction failed: ${result.code}`);
+				if (result.status === "compacted") compacted += 1;
+			}
+		});
+	}
+	return compacted;
+}
+function sameRunRecords(expected, current) {
+	if (expected.length !== current.length) return false;
+	const currentByEventId = new Map(current.map((record) => [record.eventId, record]));
+	return expected.every((record) => {
+		const found = currentByEventId.get(record.eventId);
+		return found !== void 0 && captureContentDigest(found) === captureContentDigest(record);
+	});
+}
+function isRunPayload(record) {
+	return record.eventKind === "run-post" || record.eventKind === "run-patch";
+}
+async function hasDeliveredReceipts(record, destinations, readOutcome) {
+	const scope = captureScope(record);
+	for (const destination of destinations) {
+		const outcome = await readOutcome(scope, destination.id);
+		if (outcome.status === "failed") throw new Error(`Could not read capture receipt: ${outcome.code}`);
+		if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") return false;
+	}
+	return true;
+}
+function captureScope(record) {
+	return {
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const integration = options.integration;
 	const wake = options.wake;
@@ -21407,8 +21838,9 @@ function createLifecycleBridge(options) {
 					}
 				};
 				const readOutcome = (scope, destination) => captureStore.readOutcome(scope, destination);
+				const settlementCaptures = await captureStore.enumerate(integration, sessionId);
 				const work = await settleCapturedTurns({
-					captures: await captureStore.enumerate(integration, sessionId),
+					captures: settlementCaptures,
 					integration,
 					sessionId,
 					destinationFingerprint: writer.accountFingerprint,
@@ -21429,6 +21861,17 @@ function createLifecycleBridge(options) {
 					};
 				}
 				const settlement = await refreshSettlementProgress(work, writer.destinations, readOutcome);
+				await compactSettledCaptures({
+					storageRoot,
+					integration,
+					sessionId,
+					destinationFingerprint: writer.accountFingerprint,
+					store: captureStore,
+					destinations: writer.destinations,
+					settledTurnIds: settlement.turns.filter((entry) => entry.status === "settled").map((entry) => entry.turnId),
+					eligibleCaptures: settlementCaptures,
+					readOutcome
+				});
 				drainResult = {
 					...result,
 					settlement
@@ -21473,6 +21916,7 @@ function previousRunContext(record) {
 	return context;
 }
 function restoreSubmission(record, integration) {
+	if (record.compaction !== void 0) throw new TypeError("Compacted capture data cannot be restored for delivery");
 	const payload = canonicalJsonObject(record.normalizedPayload, "Stored run payload");
 	if (payload["integration"] !== integration) throw new TypeError("Stored integration does not match the lifecycle bridge");
 	if (payload["run"] === null || typeof payload["run"] !== "object") throw new TypeError("Stored run data is required");
@@ -22505,7 +22949,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath(), con
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_DIRECTORY = "background-worker";
 const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
 const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
@@ -22521,7 +22965,7 @@ const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\
 const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
 const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -22547,13 +22991,13 @@ function workerLaunchPath(storageRoot, scope) {
 	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const storageRoot = resolve(options.storageRoot);
@@ -22876,14 +23320,14 @@ function parseObject(contents) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
 const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
 const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
 const RECONSTRUCTION_DRAIN_LOCK = "drain";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
-const RECONSTRUCTION_JOB_KIND = "reconstruction-job-v1";
+const RECONSTRUCTION_JOB_KIND = CAPTURE_RECONSTRUCTION_JOB_KIND;
 const RECONSTRUCTION_MAPPING_KIND = "reconstruction-map-v1";
 const RECONSTRUCTION_CLOSURE_STATES = [
 	"open",
@@ -22933,7 +23377,7 @@ const RECONSTRUCTION_DEPENDENCY_KEYS = [
 	"turnId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -22969,11 +23413,7 @@ function createReconstructionWorker(options) {
 				runId: expected.runId
 			});
 			if (saved === void 0) return void 0;
-			return canonicalJson(saved.record) === canonicalJson({
-				...expected,
-				version: saved.record.version,
-				capturedAtMs: saved.record.capturedAtMs
-			}) ? saved : void 0;
+			return captureContentDigest(saved.record) === captureContentDigest(expected) ? saved : void 0;
 		},
 		async drain(request = {}) {
 			const now = request.now ?? Date.now();
@@ -23000,14 +23440,24 @@ function createReconstructionWorker(options) {
 						readMapping(entry.record);
 						continue;
 					}
-					if (entry.record.eventKind !== "reconstruction-job-v1") throw new Error("Unsupported reconstruction record");
+					if (entry.record.eventKind !== RECONSTRUCTION_JOB_KIND) throw new Error("Unsupported reconstruction record");
 					const job = readJob(entry.record, integration);
 					const scope = scopeOf(entry.record);
 					const outcome = await captureStore.readOutcome(scope, job.accountFingerprint);
 					if (outcome.status === "failed") throw new Error(outcome.message);
 					if (outcome.status === "missing-capture") throw new Error("Reconstruction job disappeared");
-					if (outcome.status === "settled") continue;
+					if (outcome.status === "settled") {
+						if (job.accountFingerprint === accountFingerprint) {
+							if (entry.record.sourceSnapshotCleanup !== void 0 && outcome.receipt.outcome !== "delivered") throw new Error("Compacted reconstruction job has no delivered receipt");
+							if (job.sourceSnapshots !== void 0 && outcome.receipt.outcome === "delivered") {
+								const cleanup = await captureStore.compactReconstructionJob(scope, entry.record, job.accountFingerprint);
+								if (cleanup.status !== "compacted" && cleanup.status !== "already-compacted") throw new Error(`Could not compact delivered reconstruction job: ${cleanup.status}`);
+							}
+						}
+						continue;
+					}
 					if (job.accountFingerprint !== accountFingerprint) continue;
+					if (entry.record.sourceSnapshotCleanup !== void 0) throw new Error("Compacted reconstruction job has no delivered receipt");
 					if (now - jobAgeStartedAtMs(job, entry.capturedAtMs) >= policy.maxAgeMs) {
 						counts.dropped += Number(await recordTerminal(captureStore, scope, job.accountFingerprint, "dropped", DELIVERY_EXPIRED_REASON));
 						continue;
@@ -23020,7 +23470,7 @@ function createReconstructionWorker(options) {
 				}
 				const overCapacity = Math.max(0, candidates.length - policy.maxEntries);
 				for (const candidate of candidates.slice(0, overCapacity)) counts.dropped += Number(await recordTerminal(captureStore, candidate.scope, candidate.job.accountFingerprint, "dropped", DELIVERY_CAPACITY_REASON));
-				for (const candidate of candidates.slice(overCapacity)) if (await processJob(candidate.job, candidate.entry.capturedAtMs, candidate.scope, reconstruct, bridge, captureStore, attemptStore, policy.maxAttempts, counts) === "deferred") counts.deferred += 1;
+				for (const candidate of candidates.slice(overCapacity)) if (await processJob(candidate.job, candidate.entry.record, candidate.entry.capturedAtMs, candidate.scope, reconstruct, bridge, captureStore, attemptStore, policy.maxAttempts, counts) === "deferred") counts.deferred += 1;
 			} finally {
 				await lock.release();
 			}
@@ -23028,7 +23478,7 @@ function createReconstructionWorker(options) {
 			let pending = 0;
 			let accountMismatch = 0;
 			for (const entry of finalEntries) {
-				if (entry.record.eventKind !== "reconstruction-job-v1") continue;
+				if (entry.record.eventKind !== RECONSTRUCTION_JOB_KIND) continue;
 				const job = readJob(entry.record, integration);
 				const outcome = await captureStore.readOutcome(scopeOf(entry.record), job.accountFingerprint);
 				if (outcome.status === "failed") throw new Error(outcome.message);
@@ -23046,7 +23496,7 @@ function createReconstructionWorker(options) {
 		}
 	};
 }
-async function processJob(job, jobCapturedAtMs, scope, reconstruct, bridge, store, attempts, maxAttempts, counts) {
+async function processJob(job, storedJob, jobCapturedAtMs, scope, reconstruct, bridge, store, attempts, maxAttempts, counts) {
 	if (await attempts.count(scope, job.accountFingerprint) >= maxAttempts) {
 		counts.dropped += Number(await recordTerminal(store, scope, job.accountFingerprint, "dropped", DELIVERY_RETRY_EXHAUSTED_REASON));
 		return "complete";
@@ -23117,6 +23567,10 @@ async function processJob(job, jobCapturedAtMs, scope, reconstruct, bridge, stor
 		if (captureStatus === "published") counts.captured += 1;
 	}
 	await recordTerminal(store, scope, job.accountFingerprint, "delivered");
+	if (job.sourceSnapshots !== void 0) {
+		const cleanup = await store.compactReconstructionJob(scope, storedJob, job.accountFingerprint);
+		if (cleanup.status !== "compacted" && cleanup.status !== "already-compacted") throw new Error(`Could not compact delivered reconstruction job: ${cleanup.status}`);
+	}
 	return "complete";
 }
 async function recordFailure(store, attempts, scope, accountFingerprint, maxAttempts, counts) {
@@ -23425,7 +23879,7 @@ function mappingRecord(job, outputs) {
 	};
 }
 function readJob(record, integration) {
-	if (record.integration !== integration || record.eventKind !== "reconstruction-job-v1") throw new Error("Stored reconstruction job namespace does not match");
+	if (record.integration !== integration || record.eventKind !== RECONSTRUCTION_JOB_KIND) throw new Error("Stored reconstruction job namespace does not match");
 	const payload = requirePlainRecord(record.normalizedPayload, "Stored reconstruction job");
 	if (payload["recordVersion"] !== 1) throw new Error("Unsupported reconstruction job");
 	const payloadKeys = Object.keys(payload).toSorted();
@@ -23528,12 +23982,12 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
@@ -23555,7 +24009,7 @@ const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR = "Background rec
 const TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR = "Minimum foreign session age must be a non-negative integer";
 const TRACING_ENGINE_BACKGROUND_RECOVERY_COOLDOWN_RANGE_ERROR = "Background recovery cooldown must be a positive integer";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	return Object.freeze({
 		...options,
@@ -23592,7 +24046,7 @@ function snapshotPolicy(policy) {
 	return Object.freeze({ ...policy });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	const missingSettlementCapture = Symbol();
 	try {
@@ -23632,7 +24086,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 async function recoverTracingSessions(runtime, request, scopeGuard) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
@@ -23699,7 +24153,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 				const record = entry.record;
 				if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
 				lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
-				if (record.eventKind !== "reconstruction-job-v1") continue;
+				if (record.eventKind !== RECONSTRUCTION_JOB_KIND) continue;
 				const outcome = await reconstructionStore.readOutcome({
 					integration: record.integration,
 					sessionId: record.sessionId,
@@ -23751,7 +24205,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
 function backgroundRecoveryPathSegments(scope) {
 	return [
 		TRACING_ENGINE_BACKGROUND_RECOVERY_DIRECTORY,
@@ -23770,7 +24224,7 @@ function backgroundRecoveryPaths(storageRoot, scope) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	const cooldownMs = options.cooldownMs ?? 3e5;
 	const minimumForeignAgeMs = options.minimumForeignAgeMs ?? 72e5;
@@ -23890,7 +24344,7 @@ async function writeMarker(path, marker) {
 	if (!await publishExclusive(path, JSON.stringify(marker))) throw new Error(TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_EXISTS_ERROR);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_b3bb3ed1745270f11625f96eaf7a789f/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_fbf6aa01854a6283d46c7ec61bb767be/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	function forSession(sessionOptions) {
