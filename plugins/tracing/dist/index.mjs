@@ -35,22 +35,22 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/regex.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/regex.js
 var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/validate.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/validate.js
 function validate$1(uuid) {
 	return typeof uuid === "string" && regex_default$1.test(uuid);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/parse.js
 function parse$2(uuid) {
 	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/stringify.js
 /**
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -61,13 +61,13 @@ function unsafeStringify$1(arr, offset = 0) {
 	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/rng.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/rng.js
 const rnds8 = /* @__PURE__ */ new Uint8Array(16);
 function rng() {
 	return crypto.getRandomValues(rnds8);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v4.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v4.js
 function v4(options, buf, offset) {
 	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
 	return _v4(options, buf, offset);
@@ -87,7 +87,7 @@ function _v4(options, buf, offset) {
 	return unsafeStringify$1(rnds);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/sha1.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/sha1.js
 function f(s, x, y, z) {
 	switch (s) {
 		case 0: return x & y ^ ~x & z;
@@ -155,7 +155,7 @@ function sha1$1(bytes) {
 	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v35.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v35.js
 function stringToBytes$1(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
@@ -184,14 +184,14 @@ function v35$1(version, hash, value, namespace, buf, offset) {
 	return unsafeStringify$1(bytes);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v5.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v5.js
 function v5$1(value, namespace, buf, offset) {
 	return v35$1(80, sha1$1, value, namespace, buf, offset);
 }
 v5$1.DNS = DNS$1;
 v5$1.URL = URL$2;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/uuid/src/v7.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
 function v7(options, buf, offset) {
 	let bytes;
@@ -243,7 +243,7 @@ function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	return buf;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/experimental/otel/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/experimental/otel/constants.js
 const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
 const GEN_AI_SYSTEM = "gen_ai.system";
 const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
@@ -279,7 +279,7 @@ const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
 const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
 const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/env.js
 let globalEnv;
 const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
 const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
@@ -444,7 +444,7 @@ function resolveTracingMode(configValue) {
 	return "langsmith";
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/otel.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/otel.js
 var MockTracer = class {
 	constructor() {
 		Object.defineProperty(this, "hasWarned", {
@@ -545,7 +545,7 @@ function getDefaultOTLPTracerComponents() {
 	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/experimental/otel/translator.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/experimental/otel/translator.js
 const WELL_KNOWN_OPERATION_NAMES = {
 	llm: "chat",
 	tool: "execute_tool",
@@ -765,7 +765,7 @@ var LangSmithToOTELTranslator = class {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/is-network-error/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/is-network-error/index.js
 const objectToString = Object.prototype.toString;
 const isError = (value) => objectToString.call(value) === "[object Error]";
 const errorMessages = /* @__PURE__ */ new Set([
@@ -787,7 +787,7 @@ function isNetworkError(error) {
 	return errorMessages.has(message);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/p-retry/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/p-retry/index.js
 function validateRetries(retries) {
 	if (typeof retries === "number") {
 		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
@@ -923,7 +923,7 @@ async function pRetry(input, options = {}) {
 	throw new Error("Retry attempts exhausted without throwing an error.");
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/eventemitter3/index.js
+//#region ../../node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
 var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var has = Object.prototype.hasOwnProperty;
 	var prefix = "~";
@@ -1159,7 +1159,7 @@ var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => 
 	if ("undefined" !== typeof module) module.exports = EventEmitter;
 }));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-finally/index.js
+//#region ../../node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
 var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = (promise, onFinally) => {
 		onFinally = onFinally || (() => {});
@@ -1173,7 +1173,7 @@ var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	};
 }));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-timeout/index.js
+//#region ../../node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
 var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	const pFinally = require_p_finally();
 	var TimeoutError = class extends Error {
@@ -1211,7 +1211,7 @@ var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports.TimeoutError = TimeoutError;
 }));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-queue/dist/lower-bound.js
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
 var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	function lowerBound(array, value, comparator) {
@@ -1230,7 +1230,7 @@ var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = lowerBound;
 }));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/p-queue/dist/priority-queue.js
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
 var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const lower_bound_1 = require_lower_bound();
@@ -1265,7 +1265,7 @@ var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = PriorityQueue;
 }));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/p-queue.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/p-queue.js
 var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const EventEmitter = require_eventemitter3();
@@ -1515,7 +1515,7 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 })))(), 1);
 const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/async_caller.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/async_caller.js
 const STATUS_RETRYABLE = [
 	408,
 	425,
@@ -1622,7 +1622,7 @@ var AsyncCaller = class {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/messages.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/messages.js
 function isLangChainMessage(message) {
 	return typeof message?._getType === "function";
 }
@@ -1635,7 +1635,7 @@ function convertLangChainMessageToExample(message) {
 	return converted;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -1650,7 +1650,7 @@ let uuid4 = function() {
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/errors.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/errors.js
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -1673,7 +1673,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/error.js
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -1752,7 +1752,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -1785,13 +1785,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/version.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/version.js
 const VERSION = "0.0.1";
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -1906,7 +1906,7 @@ const getPlatformHeaders = () => {
 	return _platformHeaders ??= getPlatformProperties();
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/shims.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/shims.js
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -1946,7 +1946,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -1954,7 +1954,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -1962,7 +1962,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -2021,7 +2021,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -2197,12 +2197,12 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -2255,7 +2255,7 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/parse.js
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
@@ -2278,7 +2278,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
 var __classPrivateFieldSet$2 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2371,7 +2371,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/pagination.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/pagination.js
 var __classPrivateFieldSet$1 = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -2605,7 +2605,7 @@ var ItemsCursorGetPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -2626,7 +2626,7 @@ function getName(value) {
 }
 const isAsyncIterable = (value) => value != null && typeof value === "object" && typeof value[Symbol.asyncIterator] === "function";
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -2684,7 +2684,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/core/resource.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/core/resource.js
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -2697,7 +2697,7 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -2754,7 +2754,7 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/items.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/items.js
 var Items = class extends APIResource {
 	/**
 	* Add RUN or THREAD items to a single annotation queue. RUN items require run_id
@@ -2834,7 +2834,7 @@ var Items = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/runs.js
 var Runs$2 = class extends APIResource {
 	/**
 	* Add Runs To Annotation Queue
@@ -2907,7 +2907,7 @@ var Runs$2 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/annotation-queues.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/annotation-queues.js
 var AnnotationQueues = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3044,7 +3044,7 @@ var AnnotationQueues = class extends APIResource {
 AnnotationQueues.Runs = Runs$2;
 AnnotationQueues.Items = Items;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
 var ExperimentRuns = class extends APIResource {
 	/**
 	* Returns a paginated page of dataset examples with runs from the requested
@@ -3061,7 +3061,7 @@ var ExperimentRuns = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3075,7 +3075,7 @@ var Datasets = class extends APIResource {
 };
 Datasets.ExperimentRuns = ExperimentRuns;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/info.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/info.js
 var Info = class extends APIResource {
 	/**
 	* Returns information about the current LangSmith deployment: version, instance
@@ -3087,7 +3087,7 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/issues.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/issues.js
 var Issues = class extends APIResource {
 	/**
 	* **Beta:** This endpoint is in active development and may change without notice.
@@ -3111,7 +3111,7 @@ var Issues = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/headers.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/headers.js
 const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
 	if (!headers) return;
@@ -3171,7 +3171,7 @@ const buildHeaders = (newHeaders) => {
 	};
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -3248,7 +3248,7 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/public/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/public/runs.js
 var Runs$1 = class extends APIResource {
 	/**
 	* Returns one run within the trace identified by the share token. The request
@@ -3299,7 +3299,7 @@ var Runs$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/public/public.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/public/public.js
 var Public = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3313,7 +3313,7 @@ var Public = class extends APIResource {
 };
 Public.Runs = Runs$1;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/runs/share.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/runs/share.js
 var Share = class extends APIResource {
 	/**
 	* Creates or returns a share token for a run. Child runs share their trace root.
@@ -3355,7 +3355,7 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3448,7 +3448,7 @@ var Runs = class extends APIResource {
 };
 Runs.Share = Share;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -3543,7 +3543,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -3589,7 +3589,7 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
 var Snapshots = class extends APIResource {
 	/**
 	* Create a snapshot from a Docker image (async build).
@@ -3637,7 +3637,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -3665,7 +3665,7 @@ Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/threads.js
 var Threads = class extends APIResource {
 	/**
 	* Retrieve all traces belonging to a specific thread within a project.
@@ -3735,7 +3735,7 @@ var Threads = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/resources/traces.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/resources/traces.js
 var Traces = class extends APIResource {
 	/**
 	* Returns runs for a trace ID within min/max start time. Optional `filter`;
@@ -3791,7 +3791,7 @@ var Traces = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
 /**
 * Read an environment variable.
 *
@@ -3804,7 +3804,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/_openapi_client/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/_openapi_client/client.js
 var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -4453,7 +4453,7 @@ Langsmith.Info = Info;
 Langsmith.Issues = Issues;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/warn.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/warn.js
 const warnedMessages = {};
 function warnOnce(message, options) {
 	const key = options?.code ?? message;
@@ -4468,7 +4468,7 @@ function warnOnce(message, options) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/xxhash/xxhash.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/xxhash/xxhash.js
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -4737,7 +4737,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/_uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/_uuid.js
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -4851,7 +4851,7 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/v2_migration.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/v2_migration.js
 const QueryBackend = {
 	CLICKHOUSE_ONLY: "clickhouse_only",
 	SMITHDB_ONLY: "smithdb_only",
@@ -4867,7 +4867,7 @@ function getQueryBackend(instanceFlags) {
 	return QueryBackend.CLICKHOUSE_ONLY;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/error.js
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -4999,7 +4999,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/prompts.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/prompts.js
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -5027,7 +5027,7 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/fs.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/fs.js
 /**
 * File system abstraction (Node.js version).
 *
@@ -5087,7 +5087,7 @@ async function rmRecursive(filePath) {
 	});
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/prompt_cache/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/prompt_cache/index.js
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -5369,7 +5369,7 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/fetch.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/fetch.js
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
 const _shouldStreamForGlobalFetchImplementation = () => {
@@ -5391,7 +5391,7 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/profile-lock.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/profile-lock.js
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
@@ -5774,7 +5774,7 @@ function authHeaderFromProfile(profile) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -6024,7 +6024,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/worker_threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/worker_threads.js
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -6036,7 +6036,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/serialize_worker.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/serialize_worker.js
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -6360,7 +6360,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/client.js
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -10835,17 +10835,17 @@ function isExampleCreate(input) {
 	return "dataset_id" in input || "dataset_name" in input;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/env.js
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/constants.js
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/context_vars.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/context_vars.js
 /**
 * Get a context variable from a run tree instance
 */
@@ -10861,12 +10861,12 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/utils/project.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/utils/project.js
 const getDefaultProjectName = () => {
 	return getLangSmithEnvironmentVariable("PROJECT") ?? getEnvironmentVariable("LANGCHAIN_SESSION") ?? "default";
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/run_trees.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
 	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
@@ -11724,7 +11724,7 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/uuid.js
 /**
 * Compute the run ID used for a secondary tracing replica.
 *
@@ -11740,7 +11740,7 @@ function computeRunIdForSecondaryReplica(runId, projectName) {
 	return nonCryptographicUuid7Deterministic(normalizedRunId, projectName);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/singletons/traceable.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/singletons/traceable.js
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -11759,10 +11759,10 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/index.js
 const __version__ = "0.9.0";
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/langsmith/dist/anonymizer/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.9.0_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.215_8a7c0ec12f34448fb18ee3677c24f39e/node_modules/langsmith/dist/anonymizer/index.js
 function extractStringNodes(data, options) {
 	const parsedOptions = {
 		...options,
@@ -11999,7 +11999,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/util.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
 	return Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -12461,7 +12461,7 @@ function constantCatch(value) {
 	return fn;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/core.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/core.js
 var _a$1;
 const _zodDesc$1 = {
 	value: void 0,
@@ -12568,7 +12568,7 @@ function config(newConfig) {
 	return globalConfig;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/errors.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/errors.js
 function _getMessage() {
 	const internals = this._zod;
 	internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -12691,7 +12691,7 @@ function formatError$1(error, mapper = (issue) => issue.message) {
 	return fieldErrors;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/parse.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
 	return {
 		callee: params?.callee ?? callee,
@@ -12833,7 +12833,7 @@ const _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 	return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/regexes.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/regexes.js
 /**
 * @deprecated CUID v1 is deprecated by its authors due to information leakage
 * (timestamps embedded in the id). Use {@link cuid2} instead.
@@ -12908,7 +12908,7 @@ const boolean$1 = /^(?:true|false)$/i;
 const lowercase = /^[^A-Z]*$/;
 const uppercase = /^[^a-z]*$/;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/checks.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/checks.js
 const $ZodCheck = /*@__PURE__*/ $constructor("$ZodCheck", (inst, def) => {
 	var _a;
 	inst._zod ?? (inst._zod = {});
@@ -13126,7 +13126,7 @@ const $ZodCheckOverwrite = /*@__PURE__*/ $constructor("$ZodCheckOverwrite", (ins
 	};
 });
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/doc.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/doc.js
 var Doc = class {
 	constructor(args = [], closed = {}) {
 		this.content = [];
@@ -13157,14 +13157,14 @@ var Doc = class {
 	}
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/versions.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/versions.js
 const version = {
 	major: 4,
 	minor: 5,
 	patch: 4
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/schemas.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/schemas.js
 const $ZodType = /*@__PURE__*/ $constructor("$ZodType", (inst, def) => {
 	var _a;
 	inst ?? (inst = {});
@@ -14447,7 +14447,7 @@ function handleRefineResult(result, payload, input, inst) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/memoizer.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/memoizer.js
 var $ZodCyclicError = class extends Error {
 	constructor() {
 		super(`Cannot parse a reference cycle that closes through a transform`);
@@ -14666,7 +14666,7 @@ function isBackEdge(ctx, value) {
 	return backEdges !== void 0 && value !== null && typeof value === "object" && backEdges.has(value);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/locales/en.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/locales/en.js
 const error = () => {
 	const Sizable = {
 		string: {
@@ -14772,7 +14772,7 @@ function en_default() {
 	return { localeError: error() };
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/registries.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/registries.js
 var _a;
 var $ZodRegistry = class {
 	constructor() {
@@ -14819,7 +14819,7 @@ function registry() {
 (_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
 const globalRegistry = globalThis.__zod_globalRegistry;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/api.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class, params) {
 	return new Class({
@@ -15262,7 +15262,7 @@ function _check(fn, params) {
 	return ch;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/to-json-schema.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
 	for (const source of sources) for (const key of Reflect.ownKeys(source)) if (Object.prototype.propertyIsEnumerable.call(source, key)) assignProp(target, key, source[key]);
 	return target;
@@ -15709,7 +15709,7 @@ const createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params)
 	return finalize(ctx, schema);
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/core/json-schema-processors.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/core/json-schema-processors.js
 const formatMap = {
 	guid: "uuid",
 	url: "uri",
@@ -16030,7 +16030,7 @@ const optionalProcessor = (schema, ctx, _json, params) => {
 	seen.ref = def.innerType;
 };
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/errors.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/errors.js
 const _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
 	Object.defineProperty(proto, key, {
@@ -16080,7 +16080,7 @@ const initializer = (inst, issues) => {
 };
 const ZodRealError = /*@__PURE__*/ $constructor("ZodError", initializer, void 0, { Parent: Error });
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/parse.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/parse.js
 const parse$1 = /* @__PURE__ */ _parse(ZodRealError);
 const parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 const safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -16094,7 +16094,7 @@ const safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 const safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 const safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/zod/v4/classic/schemas.js
+//#region ../../node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
 	if (!globalConfig.localeError) config(en_default());
 }
@@ -16891,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16903,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17237,6 +17237,8 @@ const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
 const ENGINE_WORKER_FLAG = "--engine-worker";
 const ENGINE_STORAGE_DIRECTORY = "langsmith_engine_v1";
+const CODEX_SESSION_DISCOVERY_MAX_ENTRIES = 1e5;
+const CODEX_SESSION_UUID_PATTERN = /[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const TOOL_SNAPSHOT_EVENT_SUFFIX = ":native-tool";
 const TOOL_START_EVENT_SUFFIX = ":tool-start";
 const TOOL_COMPLETE_EVENT_SUFFIX = ":tool-complete";
@@ -17263,10 +17265,10 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_type: void 0
 };
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17288,7 +17290,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17419,7 +17421,7 @@ async function resolveGitInfo(cwd, sessionGit) {
 	return pending;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_RUN_TYPES = [
 	"root",
@@ -17541,7 +17543,7 @@ const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
 	["modelName", "ls_model_name"]
 ];
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field(key, options = {}) {
 	return {
 		key,
@@ -17670,7 +17672,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function isRecord$4(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -17725,7 +17727,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -17782,7 +17784,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_DIRECTORY = "capture-v1";
 const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
 const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
@@ -17790,7 +17792,7 @@ const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
 const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
 const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -17829,7 +17831,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -17886,8 +17888,12 @@ function requireSafeEpochMilliseconds(value, name) {
 	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || !Number.isFinite(new Date(value).getTime())) throw new TypeError(`${name} must be a valid millisecond timestamp`);
 	return value;
 }
+function requireNonNegativeInteger(value, name) {
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) throw new TypeError(`${name} must be a non-negative safe integer`);
+	return value;
+}
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -17904,7 +17910,7 @@ function metadataForMode$1(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -17999,6 +18005,9 @@ function isPrimitive(value) {
 }
 //#endregion
 //#region src/utils/objects.ts
+function asRecord(value) {
+	return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
 function stripUndefined(value) {
 	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
 }
@@ -18086,29 +18095,29 @@ function createRunTree(config, mode = "full", parent) {
 	return run;
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/regex.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/regex.js
 var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/validate.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/validate.js
 function validate(uuid) {
 	return typeof uuid === "string" && regex_default.test(uuid);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/parse.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/parse.js
 function parse(uuid) {
 	if (!validate(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/stringify.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/stringify.js
 const byteToHex = [];
 for (let i = 0; i < 256; ++i) byteToHex.push((i + 256).toString(16).slice(1));
 function unsafeStringify(arr, offset = 0) {
 	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/v35.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/v35.js
 function stringToBytes(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
@@ -18137,21 +18146,21 @@ function v35(version, hash, value, namespace, buf, offset) {
 	return unsafeStringify(bytes);
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/sha1.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/sha1.js
 function sha1(bytes) {
 	if (Array.isArray(bytes)) bytes = Buffer.from(bytes);
 	else if (typeof bytes === "string") bytes = Buffer.from(bytes, "utf8");
 	return createHash("sha1").update(bytes).digest();
 }
 //#endregion
-//#region ../../../../../../private/tmp/codex-metadata-test-prefix.1mQvpo/node_modules/uuid/dist-node/v5.js
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/v5.js
 function v5(value, namespace, buf, offset) {
 	return v35(80, sha1, value, namespace, buf, offset);
 }
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_TEMP_SUFFIX = ".tmp";
@@ -18163,7 +18172,7 @@ const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive n
 const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
 const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function isRecord$3(value) {
 	return typeof value === "object" && value !== null;
 }
@@ -18423,7 +18432,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -18450,7 +18459,7 @@ function receiptPath(root, scope, destination) {
 	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	await mkdir(root, {
 		recursive: true,
@@ -18551,7 +18560,7 @@ function errorCode$2(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -18581,7 +18590,7 @@ function errorCode$1(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -18608,6 +18617,7 @@ function createCaptureStore(root) {
 					turnEvidence: canonicalValue(input.turnEvidence, /* @__PURE__ */ new Set()),
 					metadataProvenance: canonicalValue(input.metadataProvenance, /* @__PURE__ */ new Set()),
 					...input.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: requireSafeEpochMilliseconds(input.sourceAgeStartedAtMs, "Source age") },
+					...input.priorDeliveryAttempts === void 0 ? {} : { priorDeliveryAttempts: requireNonNegativeInteger(input.priorDeliveryAttempts, "Prior delivery attempts") },
 					...dependencies === void 0 ? {} : { dependencies }
 				};
 				contents = canonicalJson(record);
@@ -18671,6 +18681,9 @@ function createCaptureStore(root) {
 				}
 			}
 			return captures.toSorted(compareCaptures$1);
+		},
+		async enumerateTurn(integration, sessionId, turnId) {
+			return enumerateTurnCaptures(storageRoot, integration, sessionId, turnId);
 		},
 		async enumerateSessions(integration) {
 			validateIntegration(integration);
@@ -18754,6 +18767,37 @@ function compareCaptures$1(left, right) {
 	if (left.record.eventId === right.record.eventId) return 0;
 	return left.record.eventId < right.record.eventId ? -1 : 1;
 }
+async function enumerateTurnCaptures(root, integration, sessionId, turnId) {
+	validateIntegration(integration);
+	validateIdentifier(sessionId, "session ID");
+	validateIdentifier(turnId, "turn ID");
+	const turnsDirectory = join(captureDirectory(root), "integrations", integration, "sessions", identifierHash(sessionId), "turns");
+	const turns = await listPrivateDirectory(root, turnsDirectory);
+	if (turns === void 0) return [];
+	const turnHash = identifierHash(turnId);
+	const turn = turns.find((entry) => entry.name === turnHash);
+	if (turn === void 0) return [];
+	if (!turn.isDirectory() || turn.isSymbolicLink()) throw new Error("Invalid capture turn directory");
+	const eventDirectory = join(turnsDirectory, turnHash, "events");
+	const events = await listPrivateDirectory(root, eventDirectory);
+	if (events === void 0) return [];
+	const captures = [];
+	for (const event of events) {
+		if (event.isSymbolicLink() || !event.isFile()) throw new Error("Capture event must be a regular file");
+		if (CAPTURE_STAGING_FILE.test(event.name)) continue;
+		if (!CAPTURE_EVENT_FILE.test(event.name)) throw new Error("Invalid capture event path");
+		const path = join(eventDirectory, event.name);
+		const record = await readRecord$1(root, path);
+		if (record === void 0 || record.integration !== integration || record.sessionId !== sessionId || record.turnId !== turnId || `${identifierHash(record.eventId)}.json` !== event.name) throw new Error("Capture event namespace does not match");
+		const info = await lstat(path);
+		if (!info.isFile() || info.isSymbolicLink() || !Number.isFinite(info.mtimeMs)) throw new Error("Capture event must be a regular file");
+		captures.push({
+			record,
+			capturedAtMs: record.capturedAtMs
+		});
+	}
+	return captures.toSorted(compareCaptures$1);
+}
 async function enumerateSession(root, integration, sessionHash) {
 	const turnsDirectory = join(captureDirectory(root), "integrations", integration, "sessions", sessionHash, "turns");
 	const turns = await listPrivateDirectory(root, turnsDirectory);
@@ -18813,6 +18857,7 @@ async function readRecord$1(root, path) {
 	const value = parseObject$1(contents);
 	if (value.version !== 2 || typeof value.capturedAtMs !== "number" || !Number.isSafeInteger(value.capturedAtMs) || !Number.isFinite(new Date(value.capturedAtMs).getTime()) || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.runId !== "string" || typeof value.destinationFingerprint !== "string" || typeof value.eventKind !== "string" || !("normalizedPayload" in value) || !("turnEvidence" in value) || !("metadataProvenance" in value)) throw new Error("Unsupported capture record");
 	if ("sourceAgeStartedAtMs" in value) requireSafeEpochMilliseconds(value["sourceAgeStartedAtMs"], "Stored source age");
+	if ("priorDeliveryAttempts" in value) requireNonNegativeInteger(value["priorDeliveryAttempts"], "Stored prior delivery attempts");
 	for (const [identifier, name] of [
 		[value.runId, "run ID"],
 		[value.destinationFingerprint, "destination fingerprint"],
@@ -18893,7 +18938,7 @@ function errorCode(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
 const DELIVERY_DIRECTORY = "delivery-v1";
 const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
 const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
@@ -18902,7 +18947,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/attempt-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
 function createDeliveryAttemptStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -18988,7 +19033,7 @@ function validateTimestamp(value) {
 	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 function createDeliveryCoordinator(options) {
 	const { integration, sessionId } = options;
 	validateIntegration(integration);
@@ -19077,7 +19122,8 @@ async function drainLocked(captureStore, attemptStore, integration, sessionId, p
 				continue;
 			}
 			const attemptCount = await attemptStore.count(candidate.scope, destination.id);
-			if (attemptCount >= policy.maxAttempts) {
+			const remainingAttempts = policy.maxAttempts - (candidate.entry.record.priorDeliveryAttempts ?? 0);
+			if (attemptCount >= remainingAttempts) {
 				dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_RETRY_EXHAUSTED_REASON);
 				progressed = true;
 				continue;
@@ -19089,7 +19135,7 @@ async function drainLocked(captureStore, attemptStore, integration, sessionId, p
 				await request.writer.send(structuredClone(candidate.entry.record), destination, request.writer.accountFingerprint);
 			} catch {
 				failed += 1;
-				if (attempt >= policy.maxAttempts) {
+				if (attempt >= remainingAttempts) {
 					dropped += await recordDropped(drainCache, candidate.scope, destination.id, DELIVERY_RETRY_EXHAUSTED_REASON);
 					progressed = true;
 				}
@@ -19273,7 +19319,7 @@ function resolvePolicy$1(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -19290,7 +19336,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -19403,7 +19449,29 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+function createUploadClient(options) {
+	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
+	return new Client({
+		apiKey,
+		apiUrl,
+		workspaceId: workspaceId ?? "",
+		autoBatchTracing: false,
+		tracingSamplingRate: 1,
+		disablePromptCache: true,
+		debug: false,
+		omitTracedRuntimeInfo: true,
+		tracingMode: "langsmith",
+		...anonymizer === void 0 ? {} : {
+			anonymizer,
+			hideMetadata: anonymizer
+		},
+		...redactedFields?.includes("inputs") ? { hideInputs: false } : {},
+		...redactedFields?.includes("outputs") ? { hideOutputs: false } : {}
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -19444,8 +19512,9 @@ const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
 	"events",
 	"reference_example_id"
 ]);
+const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -19460,8 +19529,13 @@ function redactSdkOmittedFields(payload, anonymizer) {
 	if (payload["serialized"] !== void 0) payload["serialized"] = anonymizer(payload["serialized"]);
 	if (payload["events"] !== void 0) payload["events"] = anonymizer(payload["events"]);
 }
+function normalizedRedactedFields(value) {
+	if (value === void 0) return [];
+	if (!Array.isArray(value) || value.some((field) => !UPLOAD_REDACTED_FIELDS.includes(field)) || new Set(value).size !== value.length) throw new TypeError("Redacted fields must be unique inputs or outputs");
+	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
+}
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -19504,20 +19578,11 @@ function resolveDestination(config, options, sourceProjectName, updates) {
 	});
 	const id = `${UPLOAD_DESTINATION_ID_PREFIX}${fingerprint(identity)}`;
 	const anonymizer = createUploadAnonymizer(options.redact, options.redactExtraRules);
-	const client = new Client({
+	const client = createUploadClient({
 		apiKey: config.apiKey,
 		apiUrl,
-		workspaceId: workspaceId ?? "",
-		autoBatchTracing: false,
-		tracingSamplingRate: 1,
-		disablePromptCache: true,
-		debug: false,
-		omitTracedRuntimeInfo: true,
-		tracingMode: "langsmith",
-		...anonymizer === void 0 ? {} : {
-			anonymizer,
-			hideMetadata: anonymizer
-		}
+		...workspaceId === void 0 ? {} : { workspaceId },
+		...anonymizer === void 0 ? {} : { anonymizer }
 	});
 	return {
 		id,
@@ -19579,7 +19644,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
 	if (sourceProjectName === destinationProjectName) return context;
 	return {
@@ -19611,11 +19676,12 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
 	const byId = new Map(resolved.destinations.map((destination) => [destination.id, destination]));
+	const redactedClients = /* @__PURE__ */ new Map();
 	return Object.freeze({
 		accountFingerprint: resolved.accountFingerprint,
 		destinations: Object.freeze(destinations),
@@ -19623,6 +19689,17 @@ function createLangSmithUploadWriter(options) {
 			const destination = byId.get(destinationId);
 			if (!destination) throw new TypeError("Unknown upload destination");
 			validateSubmission(submission);
+			const redactedFields = normalizedRedactedFields(submission.redactedFields).filter((field) => submission.privacyMode === "full" && !(submission.operation === "patch" && field === "outputs" && Object.hasOwn(destination.updates ?? {}, "outputs")));
+			let client = destination.client;
+			if (redactedFields.length > 0) {
+				const key = JSON.stringify([destinationId, redactedFields]);
+				const previous = redactedClients.get(key);
+				client = previous ?? createUploadClient({
+					...destination,
+					redactedFields
+				});
+				if (previous === void 0) redactedClients.set(key, client);
+			}
 			const payload = submission.operation === "post" ? preparePostRunPayload(submission, destination) : preparePatchRunPayload(submission, destination);
 			if (submission.operation === "patch") applyReplicaPatchUpdates(payload, destination, submission.privacyMode);
 			redactSdkOmittedFields(payload, destination.anonymizer);
@@ -19633,7 +19710,7 @@ function createLangSmithUploadWriter(options) {
 			};
 			try {
 				if (submission.operation === "post") {
-					await destination.client.createRun({
+					await client.createRun({
 						...payload,
 						project_name: destination.projectName
 					}, clientOptions);
@@ -19643,7 +19720,7 @@ function createLangSmithUploadWriter(options) {
 						operation: "posted"
 					};
 				}
-				await destination.client.updateRun(runIdForDestination(submission.run.id, destination), payload, clientOptions);
+				await client.updateRun(runIdForDestination(submission.run.id, destination), payload, clientOptions);
 				return {
 					destinationId,
 					runId: submission.run.id,
@@ -19771,11 +19848,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -19792,7 +19869,7 @@ async function wakeCapturedWork(captureResult, wake) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -19804,13 +19881,25 @@ const LIFECYCLE_SETTLEMENT_LOCK_FILE = "drain";
 const LIFECYCLE_SETTLEMENT_LOCK_INTEGRATIONS_DIRECTORY = "integrations";
 const LIFECYCLE_SETTLEMENT_LOCK_SESSIONS_DIRECTORY = "sessions";
 const LIFECYCLE_SETTLEMENT_LOCK_ACCOUNTS_DIRECTORY = "accounts";
+const LIFECYCLE_SNAPSHOT_LOCK_DIRECTORY = "lifecycle-snapshot-v1";
+const LIFECYCLE_SNAPSHOT_LOCK_FILE = "capture";
+const LIFECYCLE_SNAPSHOT_REVISION_EVENT_ID_PREFIX = "run-snapshot-v1:";
+const LIFECYCLE_SNAPSHOT_OPTIONAL_RUN_FIELDS = [
+	"outputs",
+	"end_time",
+	"error",
+	"tags",
+	"serialized",
+	"events",
+	"reference_example_id"
+];
 const LIFECYCLE_TURN_CLOSURE_STATES = [
 	"open",
 	"provisional",
 	"authoritative"
 ];
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -19825,7 +19914,7 @@ function storedAttributionReadiness(record, integration) {
 	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
 }
 function indexCaptureSources(sources) {
-	return new Map(sources.map((source) => [captureScopeKey$1(captureScope$1(source)), source]));
+	return new Map(sources.map((source) => [captureScopeKey$1(captureScope$2(source)), source]));
 }
 function attributionMetadataReady(projected) {
 	return typeof projected["repository_name"] === "string" && projected["repository_name"].length > 0 && typeof projected["ls_attribution_identifier"] === "string" && projected["ls_attribution_identifier"].length > 0;
@@ -19873,13 +19962,15 @@ async function hasMissingChildReceipts(record, evidence, sourceSnapshot, destina
 	const children = requireStringArray(requireOwnDataField(evidence, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID")).filter((runId) => runId !== record.runId);
 	if (children.length === 0) return false;
 	for (const childRunId of children) {
-		const child = sourceSnapshot.find((source) => source.turnId === record.turnId && source.runId === childRunId && source.destinationFingerprint === record.destinationFingerprint && source.eventKind === "run-post");
-		if (child === void 0) return true;
-		const scope = captureScope$1(child);
-		for (const destination of destinations) {
-			const outcome = await readOutcome(scope, destination.id);
-			if (outcome.status === "failed") throw new Error(`Could not read child delivery receipt: ${outcome.code}`);
-			if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") return true;
+		const childCaptures = sourceSnapshot.filter((source) => source.runId === childRunId && source.destinationFingerprint === record.destinationFingerprint && source.eventKind === "run-post");
+		if (childCaptures.length === 0) return true;
+		for (const child of childCaptures) {
+			const scope = captureScope$2(child);
+			for (const destination of destinations) {
+				const outcome = await readOutcome(scope, destination.id);
+				if (outcome.status === "failed") throw new Error(`Could not read child delivery receipt: ${outcome.code}`);
+				if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") return true;
+			}
 		}
 	}
 	return false;
@@ -19907,7 +19998,7 @@ function removeOutgoingEndTime(submission) {
 		...privacyContext === void 0 ? {} : { privacyContext }
 	};
 }
-function captureScope$1(record) {
+function captureScope$2(record) {
 	return {
 		integration: record.integration,
 		sessionId: record.sessionId,
@@ -19924,7 +20015,7 @@ function captureScopeKey$1(scope) {
 	]);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -19984,12 +20075,15 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectSubmission(value, integration, priorIdentity) {
 	const source = requirePlainRecord(value, "Prepared run submission");
 	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
 	const privacyMode = requireOwnDataField(source, "privacyMode");
 	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError("Invalid privacy mode");
+	const redactedField = ownDataField(source, "redactedFields");
+	const redactedFields = normalizedRedactedFields(redactedField.present ? redactedField.value : void 0);
+	const redaction = privacyMode === "full" && redactedFields.length > 0 ? { redactedFields } : {};
 	const operation = requireOwnDataField(source, "operation");
 	if (operation !== "post" && operation !== "patch") throw new TypeError("Invalid run operation");
 	if (operation === "post") {
@@ -20005,10 +20099,12 @@ function projectSubmission(value, integration, priorIdentity) {
 					operation,
 					integration,
 					privacyMode,
+					...redaction,
 					...privacyMode === "metadata" ? { privacyContext: { status } } : {},
 					run: privacyMode === "metadata" ? projectPost(run, metadata.value, status) : run
 				},
-				metadata: metadata.value
+				metadata: metadata.value,
+				privacyStatus: status
 			}
 		};
 	}
@@ -20024,13 +20120,32 @@ function projectSubmission(value, integration, priorIdentity) {
 				operation,
 				integration,
 				privacyMode,
+				...redaction,
 				run,
 				privacyContext,
 				patch: privacyMode === "metadata" ? projectPatch(run, patch, integration, metadata.value, privacyContext) : patch
 			},
-			metadata: metadata.value
+			metadata: metadata.value,
+			privacyStatus: privacyContext.status
 		}
 	};
+}
+function projectTurnEvidence(value, mode, attributionReady) {
+	const source = requirePlainRecord(value, "Lifecycle turn evidence");
+	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
+	const closureState = requireOwnDataField(source, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Lifecycle turn evidence has an invalid closure state");
+	const persisted = {
+		childRunIds,
+		closureState,
+		[LIFECYCLE_ATTRIBUTION_READY_FIELD]: attributionReady
+	};
+	const rootRunId = ownDataField(source, "rootRunId");
+	if (rootRunId.present && rootRunId.value !== void 0) persisted.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
+	return canonicalJsonValue(mode === "metadata" ? persisted : {
+		...source,
+		...persisted
+	});
 }
 function projectPost(run, metadata, status) {
 	const tree = createCodingAgentRunTree({
@@ -20202,7 +20317,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_METADATA_KEYS = [...[
 	"repository_name",
 	"repository_provider",
@@ -20213,8 +20328,9 @@ const REPOSITORY_METADATA_KEYS = [...[
 const REPOSITORY_NAME_KEY = "repository_name";
 const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
+const SETTLEMENT_EVENT_ID_PATTERN = /^turn-settlement-[0-9a-f]{64}$/u;
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	for (const key of REPOSITORY_METADATA_KEYS) {
@@ -20245,18 +20361,22 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
 	const generatedRecords = options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && record.eventKind === "run-settlement-patch");
 	const projected = /* @__PURE__ */ new Map();
+	const allByRunId = /* @__PURE__ */ new Map();
 	for (const record of sourceRecords) {
 		const capture = projectCapture(record, options.integration);
 		if (capture === void 0) continue;
 		const turn = projected.get(record.turnId) ?? [];
 		turn.push(capture);
 		projected.set(record.turnId, turn);
+		const runEvents = allByRunId.get(record.runId) ?? [];
+		runEvents.push(capture);
+		allByRunId.set(record.runId, runEvents);
 	}
 	const generatedByTurn = groupByTurn(generatedRecords);
 	const turns = [.../* @__PURE__ */ new Set([...projected.keys(), ...generatedByTurn.keys()])].toSorted();
@@ -20264,7 +20384,7 @@ async function settleCapturedTurns(options) {
 	const patches = [];
 	let captured = 0;
 	for (const turnId of turns) {
-		const result = await settleOneTurn(turnId, projected.get(turnId) ?? [], generatedByTurn.get(turnId) ?? [], options);
+		const result = await settleOneTurn(turnId, projected.get(turnId) ?? [], generatedByTurn.get(turnId) ?? [], allByRunId, options);
 		reports.push(result.report);
 		patches.push(...result.patches);
 		captured += result.captured;
@@ -20307,7 +20427,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 		turns
 	};
 }
-async function settleOneTurn(turnId, events, generated, options) {
+async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	const rootRunIds = /* @__PURE__ */ new Set();
 	const childRunIds = /* @__PURE__ */ new Set();
 	let closureState = "open";
@@ -20335,18 +20455,25 @@ async function settleOneTurn(turnId, events, generated, options) {
 	const rootRunId = [...rootRunIds][0];
 	childRunIds.delete(rootRunId);
 	const requiredRunIds = [rootRunId, ...[...childRunIds].toSorted()];
-	const byRunId = /* @__PURE__ */ new Map();
+	const currentByRunId = /* @__PURE__ */ new Map();
 	for (const event of events) {
-		const runEvents = byRunId.get(event.record.runId) ?? [];
+		const runEvents = currentByRunId.get(event.record.runId) ?? [];
 		runEvents.push(event);
-		byRunId.set(event.record.runId, runEvents);
+		currentByRunId.set(event.record.runId, runEvents);
 	}
-	for (const runId of requiredRunIds) if (!(byRunId.get(runId) ?? []).some(({ payload }) => payload.operation === "post")) return {
-		report: report(turnId, "deferred", "missing-run", [runId]),
-		patches: [],
-		captured: 0
-	};
-	const sourceScopes = uniqueScopes(events.map(({ record }) => captureScope(record)));
+	const byRunId = /* @__PURE__ */ new Map();
+	for (const runId of requiredRunIds) {
+		const runEvents = runId === rootRunId ? currentByRunId.get(runId) ?? [] : allByRunId.get(runId) ?? [];
+		byRunId.set(runId, runEvents);
+		if (!runEvents.some(({ payload }) => payload.operation === "post")) return {
+			report: report(turnId, "deferred", "missing-run", [runId]),
+			patches: [],
+			captured: 0
+		};
+	}
+	const sourceEvents = [...events];
+	for (const childRunId of childRunIds) sourceEvents.push(...allByRunId.get(childRunId) ?? []);
+	const sourceScopes = uniqueScopes(sourceEvents.map(({ record }) => captureScope$1(record)));
 	const sourceReadiness = await captureReadiness(sourceScopes, options.destinations, options.readOutcome);
 	if (sourceReadiness.status === "dropped") return {
 		report: report(turnId, "blocked", "source-dropped", requiredRunIds, sourceReadiness.destinations),
@@ -20379,6 +20506,7 @@ async function settleOneTurn(turnId, events, generated, options) {
 	const patches = [];
 	let captured = 0;
 	for (const runId of requiredRunIds) {
+		if (!currentByRunId.has(runId)) continue;
 		const captureEvents = runEvents.get(runId);
 		const latest = captureEvents.at(-1);
 		const run = recorded.get(runId);
@@ -20401,7 +20529,7 @@ async function settleOneTurn(turnId, events, generated, options) {
 			eventId
 		};
 		const previous = orderSourceCaptures(generated.filter((item) => item.runId === runId && item.eventId !== eventId)).at(-1);
-		const previousDependency = previous === void 0 ? [] : [captureScope(previous)];
+		const previousDependency = previous === void 0 ? [] : [captureScope$1(previous)];
 		if (previous !== void 0) {
 			const previousReadiness = await captureReadiness(previousDependency, options.destinations, options.readOutcome);
 			if (previousReadiness.status === "dropped") return {
@@ -20513,6 +20641,7 @@ function patchPayload(source, metadata, integration, endTime, causalRunError = f
 		operation: "patch",
 		integration,
 		privacyMode: source.payload.privacyMode,
+		...source.payload.redactedFields === void 0 ? {} : { redactedFields: source.payload.redactedFields },
 		metadata,
 		run: {
 			id: context.id,
@@ -20624,7 +20753,7 @@ function uniqueScopes(scopes) {
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
 	return [...unique.values()].toSorted(compareScopes);
 }
-function captureScope(record) {
+function captureScope$1(record) {
 	return {
 		integration: record.integration,
 		sessionId: record.sessionId,
@@ -20648,26 +20777,26 @@ function compareCaptures(left, right) {
 	return left.eventId.localeCompare(right.eventId);
 }
 function orderSourceCaptures(records) {
-	const byScope = new Map(records.map((record) => [captureScopeKey(captureScope(record)), record]));
-	const dependents = new Map(records.map((record) => [captureScopeKey(captureScope(record)), []]));
-	const dependencyCounts = new Map(records.map((record) => [captureScopeKey(captureScope(record)), 0]));
+	const byScope = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), record]));
+	const dependents = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), []]));
+	const dependencyCounts = new Map(records.map((record) => [captureScopeKey(captureScope$1(record)), 0]));
 	for (const record of records) {
-		const recordKey = captureScopeKey(captureScope(record));
+		const recordKey = captureScopeKey(captureScope$1(record));
 		for (const dependency of record.dependencies ?? []) {
 			const prerequisite = byScope.get(captureScopeKey(dependency));
 			if (prerequisite === void 0) continue;
-			dependents.get(captureScopeKey(captureScope(prerequisite))).push(record);
+			dependents.get(captureScopeKey(captureScope$1(prerequisite))).push(record);
 			dependencyCounts.set(recordKey, dependencyCounts.get(recordKey) + 1);
 		}
 	}
 	const ready = [];
-	for (const record of records) if (dependencyCounts.get(captureScopeKey(captureScope(record))) === 0) pushOrderedCapture(ready, record);
+	for (const record of records) if (dependencyCounts.get(captureScopeKey(captureScope$1(record))) === 0) pushOrderedCapture(ready, record);
 	const ordered = [];
 	while (ready.length > 0) {
 		const record = popOrderedCapture(ready);
 		ordered.push(record);
-		for (const dependent of dependents.get(captureScopeKey(captureScope(record))) ?? []) {
-			const key = captureScopeKey(captureScope(dependent));
+		for (const dependent of dependents.get(captureScopeKey(captureScope$1(record))) ?? []) {
+			const key = captureScopeKey(captureScope$1(dependent));
 			const count = dependencyCounts.get(key) - 1;
 			dependencyCounts.set(key, count);
 			if (count === 0) pushOrderedCapture(ready, dependent);
@@ -20677,7 +20806,7 @@ function orderSourceCaptures(records) {
 	return ordered;
 }
 function compareSourceCaptures(left, right) {
-	return compareCaptures(left, right) || compareScopes(captureScope(left), captureScope(right));
+	return compareCaptures(left, right) || compareScopes(captureScope$1(left), captureScope$1(right));
 }
 function pushOrderedCapture(heap, record) {
 	let index = heap.length;
@@ -20729,7 +20858,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -20760,7 +20889,267 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
+async function captureLifecycleSnapshot(options, input) {
+	const captureInput = snapshotData(requirePlainRecord(input, "Lifecycle snapshot capture"));
+	const snapshot = requirePlainRecord(captureInput, "Lifecycle snapshot capture");
+	const turnId = requireNonBlankString(snapshot["turnId"], "Turn ID");
+	const eventId = requireNonBlankString(snapshot["eventId"], "Event ID");
+	validateIdentifier(turnId, "turn ID");
+	validateIdentifier(eventId, "event ID");
+	const submission = requirePlainRecord(snapshot["submission"], "Prepared run snapshot");
+	if (submission["operation"] !== "post") throw new TypeError("A full run snapshot must be a POST");
+	const sourceRun = requirePlainRecord(requireOwnDataField(submission, "run"), "Run snapshot");
+	const runId = requireNonBlankString(requireOwnDataField(sourceRun, "id"), "Run ID");
+	validateIdentifier(runId, "run ID");
+	const streamHash = identifierHash(`${options.integration}\0${options.sessionId}\0${turnId}\0${runId}`);
+	const revisionPrefix = `${LIFECYCLE_SNAPSHOT_REVISION_EVENT_ID_PREFIX}${streamHash}:`;
+	const lockDirectory = await ensurePrivateDirectory(options.storageRoot, [
+		LIFECYCLE_SNAPSHOT_LOCK_DIRECTORY,
+		"integrations",
+		options.integration,
+		"sessions",
+		identifierHash(options.sessionId),
+		"turns",
+		identifierHash(turnId),
+		"runs",
+		identifierHash(runId)
+	]);
+	return withFileLock(join(lockDirectory, LIFECYCLE_SNAPSHOT_LOCK_FILE), async () => {
+		const records = (await options.store.enumerateTurn(options.integration, options.sessionId, turnId)).map(({ record }) => record).filter((record) => record.runId === runId);
+		const state = readSnapshotState(records, options.destinationFingerprint, revisionPrefix);
+		if (state === "conflict") return { status: "conflict" };
+		if (state === void 0) {
+			if (records.length > 0) return { status: "conflict" };
+			return options.capture(captureInput);
+		}
+		if (state.post.destinationFingerprint !== options.destinationFingerprint) return { status: "conflict" };
+		const projected = projectSubmission(snapshot["submission"], options.integration, runContext(state.post));
+		if (projected.status === "deferred") return {
+			status: "deferred",
+			reason: "missing-thread-identity"
+		};
+		if (projected.value.payload.operation !== "post") return { status: "conflict" };
+		if (projected.value.payload.privacyMode !== state.privacyMode || !sameCanonical(normalizedRedactedFields(projected.value.payload.redactedFields), state.redactedFields)) return { status: "conflict" };
+		const candidateRun = applySnapshotOmissions(projected.value.payload.run, state.run, sourceRun);
+		if (!sameRunIdentity(state.run, candidateRun)) return { status: "conflict" };
+		const privacyStatus = state.privacyMode === "metadata" ? projected.value.privacyStatus : runPrivacyStatus(candidateRun);
+		const evidence = projectTurnEvidence(snapshot["turnEvidence"], state.privacyMode, deriveAttributionReadiness(snapshot["submission"], options.integration));
+		const metadata = canonicalJsonValue(projected.value.metadata);
+		const changedFields = snapshotPatchFields(state.run, candidateRun);
+		const newDependencies = (captureInput.dependencies ?? []).some((dependency) => !sameCanonical(dependency, captureScope(state.head)) && !state.snapshotDependencies.some((persisted) => sameCanonical(dependency, persisted)));
+		if (changedFields.length === 0 && sameCanonical(state.metadataProvenance, metadata) && sameCanonical(state.turnEvidence, evidence) && state.privacyStatus === privacyStatus && !newDependencies) {
+			const result = {
+				status: "duplicate",
+				record: state.head
+			};
+			await wakeCapturedWork(result, options.wake);
+			return result;
+		}
+		const patchValues = {};
+		for (const field of changedFields) {
+			const value = ownDataField(sourceRun, field);
+			if (!value.present || value.value === void 0) return { status: "conflict" };
+			patchValues[field] = value.value;
+		}
+		const patch = {
+			operation: "patch",
+			integration: options.integration,
+			privacyMode: state.privacyMode,
+			...submission["redactedFields"] === void 0 ? {} : { redactedFields: normalizedRedactedFields(submission["redactedFields"]) },
+			metadata: captureInput.submission.metadata,
+			run: runContext(state.post),
+			privacyContext: { status: privacyStatus },
+			patch: {
+				fields: changedFields,
+				values: patchValues
+			}
+		};
+		const nextRevision = state.revisionCount + 1;
+		const revisionInput = {
+			turnId,
+			eventId: `${revisionPrefix}${String(nextRevision).padStart(12, "0")}`,
+			submission: patch,
+			turnEvidence: captureInput.turnEvidence,
+			dependencies: [captureScope(state.head), ...(captureInput.dependencies ?? []).filter((dependency) => !sameCanonical(dependency, captureScope(state.head)))],
+			sourceAgeStartedAtMs: state.post.sourceAgeStartedAtMs ?? state.post.capturedAtMs
+		};
+		return options.capture(revisionInput);
+	});
+}
+function readSnapshotState(records, destinationFingerprint, revisionPrefix) {
+	const posts = records.filter((record) => record.eventKind === LIFECYCLE_POST_EVENT_KIND);
+	const revisionCandidates = records.filter((record) => record.eventId.startsWith(revisionPrefix));
+	if (posts.length > 1) return "conflict";
+	const post = posts[0];
+	if (post === void 0) return records.length === 0 ? void 0 : "conflict";
+	if (post.destinationFingerprint !== destinationFingerprint || recordOperation(post) !== "post") return "conflict";
+	const postPayload = payloadObject(post);
+	const privacyMode = readPrivacyMode(postPayload);
+	const run = storedRun(postPayload, post.runId);
+	const redactedFields = storedRedactedFields(postPayload);
+	let metadataProvenance = canonicalJsonValue(post.metadataProvenance);
+	let turnEvidence = canonicalJsonValue(post.turnEvidence);
+	let privacyStatus = storedPrivacyStatus(postPayload, run, privacyMode);
+	const runFields = run;
+	let head = post;
+	const orderedRevisions = revisionCandidates.toSorted((left, right) => left.eventId.localeCompare(right.eventId));
+	let expectedPrevious = post;
+	for (let index = 0; index < orderedRevisions.length; index += 1) {
+		const revision = orderedRevisions[index];
+		const expectedId = `${revisionPrefix}${String(index + 1).padStart(12, "0")}`;
+		if (revision.eventId !== expectedId || revision.eventKind !== "run-patch" || revision.destinationFingerprint !== destinationFingerprint || !sameDependencies(revision, expectedPrevious)) return "conflict";
+		const payload = payloadObject(revision);
+		if (readPrivacyMode(payload) !== privacyMode) return "conflict";
+		if (!sameCanonical(storedRedactedFields(payload), redactedFields)) return "conflict";
+		const patch = requirePlainRecord(requireOwnDataField(payload, "patch"), "Stored run patch");
+		const values = requirePlainRecord(requireOwnDataField(patch, "values"), "Stored patch values");
+		const fields = requireStringArray(requireOwnDataField(patch, "fields"), "Stored patch fields");
+		const seen = /* @__PURE__ */ new Set();
+		for (const field of fields) {
+			if (!UPLOAD_PATCH_FIELDS.has(field) || seen.has(field)) return "conflict";
+			const value = ownDataField(values, field);
+			if (!value.present || value.value === void 0) return "conflict";
+			runFields[field] = value.value;
+			seen.add(field);
+		}
+		if (!sameRunIdentity(run, requirePlainRecord(requireOwnDataField(payload, "run"), "Stored run context"))) return "conflict";
+		privacyStatus = readPrivacyStatus(requireOwnDataField(payload, "privacyContext"));
+		metadataProvenance = canonicalJsonValue(revision.metadataProvenance);
+		turnEvidence = canonicalJsonValue(revision.turnEvidence);
+		head = revision;
+		expectedPrevious = revision;
+	}
+	const snapshotChain = [post, ...orderedRevisions];
+	for (const record of records) {
+		if (snapshotChain.includes(record)) continue;
+		if (record.eventKind !== "run-settlement-patch" || !SETTLEMENT_EVENT_ID_PATTERN.test(record.eventId) || record.destinationFingerprint !== destinationFingerprint || !validSettlementRecord(record, run, privacyMode, redactedFields, snapshotChain)) return "conflict";
+	}
+	return {
+		post,
+		head,
+		run,
+		metadataProvenance,
+		turnEvidence,
+		privacyMode,
+		redactedFields,
+		privacyStatus,
+		revisionCount: orderedRevisions.length,
+		snapshotDependencies: snapshotChain.flatMap((record) => record.dependencies ?? [])
+	};
+}
+function payloadObject(record) {
+	return requirePlainRecord(record.normalizedPayload, "Stored run payload");
+}
+function recordOperation(record) {
+	return payloadObject(record)["operation"];
+}
+function validSettlementRecord(record, currentRun, privacyMode, redactedFields, snapshotChain) {
+	const payload = payloadObject(record);
+	if (recordOperation(record) !== "patch" || readPrivacyMode(payload) !== privacyMode) return false;
+	if (!sameCanonical(storedRedactedFields(payload), redactedFields)) return false;
+	readPrivacyStatus(requireOwnDataField(payload, "privacyContext"));
+	if (!sameRunIdentity(currentRun, requirePlainRecord(requireOwnDataField(payload, "run"), "Settlement run context"))) return false;
+	const patch = requirePlainRecord(requireOwnDataField(payload, "patch"), "Settlement run patch");
+	const fields = requireStringArray(requireOwnDataField(patch, "fields"), "Settlement patch fields");
+	const values = requirePlainRecord(requireOwnDataField(patch, "values"), "Settlement patch values");
+	const seen = /* @__PURE__ */ new Set();
+	for (const field of fields) {
+		if (!UPLOAD_PATCH_FIELDS.has(field) || seen.has(field)) return false;
+		const value = ownDataField(values, field);
+		if (!value.present || value.value === void 0) return false;
+		seen.add(field);
+	}
+	return (record.dependencies ?? []).some((dependency) => snapshotChain.some((source) => sameCanonical(dependency, captureScope(source))));
+}
+function readPrivacyMode(payload) {
+	const value = requireOwnDataField(payload, "privacyMode");
+	if (value !== "full" && value !== "metadata") throw new TypeError("Stored privacy mode is invalid");
+	return value;
+}
+function storedRun(payload, runId) {
+	const source = requirePlainRecord(canonicalJsonValue(requireOwnDataField(payload, "run")), "Stored run snapshot");
+	if (source["id"] !== runId) throw new TypeError("Stored run ID does not match its capture");
+	requireNonBlankString(source["name"], "Run name");
+	requireNonBlankString(source["run_type"], "Run type");
+	return source;
+}
+function storedRedactedFields(payload) {
+	const field = ownDataField(payload, "redactedFields");
+	return normalizedRedactedFields(field.present ? field.value : void 0);
+}
+function storedPrivacyStatus(payload, run, privacyMode) {
+	if (privacyMode === "metadata") return readPrivacyStatus(requireOwnDataField(payload, "privacyContext"));
+	return runPrivacyStatus(run);
+}
+function readPrivacyStatus(value) {
+	const status = requireOwnDataField(requirePlainRecord(value, "Run privacy context"), "status");
+	if (status !== "running" && status !== "completed" && status !== "error") throw new TypeError("Invalid run privacy status");
+	return status;
+}
+function runPrivacyStatus(run) {
+	if (run.error !== void 0) return "error";
+	if (run.end_time !== void 0) return "completed";
+	return "running";
+}
+function applySnapshotOmissions(current, previous, sourceRun) {
+	const result = { ...current };
+	const resultFields = result;
+	const previousFields = previous;
+	for (const field of LIFECYCLE_SNAPSHOT_OPTIONAL_RUN_FIELDS) {
+		const supplied = ownDataField(sourceRun, field);
+		if (supplied.present && supplied.value !== void 0) continue;
+		const oldValue = ownDataField(previousFields, field);
+		if (oldValue.present) resultFields[field] = oldValue.value;
+		else delete resultFields[field];
+	}
+	return result;
+}
+function snapshotPatchFields(previous, current) {
+	const previousFields = previous;
+	const currentFields = current;
+	return [...UPLOAD_PATCH_FIELDS].filter((field) => {
+		const oldValue = ownDataField(previousFields, field);
+		const nextValue = ownDataField(currentFields, field);
+		if (oldValue.present !== nextValue.present) return true;
+		return oldValue.present && nextValue.present && !sameCanonical(oldValue.value, nextValue.value);
+	});
+}
+function sameRunIdentity(left, right) {
+	return left.id === right.id && left.name === right.name && left.run_type === right.run_type && sameTimestamp(left.start_time, right.start_time) && left.parent_run_id === right.parent_run_id && left.trace_id === right.trace_id && left.dotted_order === right.dotted_order;
+}
+function sameTimestamp(left, right) {
+	if (left === void 0 || right === void 0) return left === right;
+	return new Date(left).getTime() === new Date(right).getTime();
+}
+function runContext(record) {
+	const run = storedRun(payloadObject(record), record.runId);
+	return {
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		...run.start_time === void 0 ? {} : { start_time: run.start_time },
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		...run.trace_id === void 0 ? {} : { trace_id: run.trace_id },
+		...run.dotted_order === void 0 ? {} : { dotted_order: run.dotted_order }
+	};
+}
+function sameDependencies(record, previous) {
+	return (record.dependencies ?? []).some((dependency) => sameCanonical(dependency, captureScope(previous)));
+}
+function captureScope(record) {
+	return {
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	};
+}
+function sameCanonical(left, right) {
+	return JSON.stringify(canonicalJsonValue(left)) === JSON.stringify(canonicalJsonValue(right));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const integration = options.integration;
 	const wake = options.wake;
@@ -20774,59 +21163,74 @@ function createLifecycleBridge(options) {
 		...options.policy === void 0 ? {} : { policy: options.policy }
 	});
 	const writer = createLangSmithUploadWriter(options.writer);
+	const capture = async (input) => {
+		const captureRecord = requirePlainRecord(snapshotData(requirePlainRecord(input, "Lifecycle capture")), "Lifecycle capture");
+		const turnId = requireNonBlankString(captureRecord["turnId"], "Turn ID");
+		const eventId = requireNonBlankString(captureRecord["eventId"], "Event ID");
+		const sourceAge = ownDataField(captureRecord, "sourceAgeStartedAtMs");
+		const sourceAgeStartedAtMs = sourceAge.present ? requireSafeEpochMilliseconds(sourceAge.value, "Source age") : void 0;
+		const priorAttempts = ownDataField(captureRecord, "priorDeliveryAttempts");
+		const priorDeliveryAttempts = priorAttempts.present ? requireNonNegativeInteger(priorAttempts.value, "Prior delivery attempts") : void 0;
+		const scope = {
+			integration,
+			sessionId,
+			turnId,
+			eventId
+		};
+		const previous = await captureStore.read(scope);
+		const projected = projectSubmission(captureRecord["submission"], integration, previous === void 0 ? void 0 : previousRunContext(previous));
+		if (projected.status === "deferred") return {
+			status: "deferred",
+			reason: "missing-thread-identity"
+		};
+		const turnEvidence = projectTurnEvidence(captureRecord["turnEvidence"], projected.value.payload.privacyMode, deriveAttributionReadiness(captureRecord["submission"], integration));
+		const dependencies = captureRecord["dependencies"];
+		const identityPresence = projected.value.payload.operation === "post" ? suppliedRunIdentityFields(captureRecord["submission"]) : void 0;
+		const captureProjected = (value) => coordinator.capture({
+			turnId,
+			eventId,
+			runId: value.payload.run.id,
+			destinationFingerprint: writer.accountFingerprint,
+			eventKind: value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND,
+			normalizedPayload: canonicalJsonValue(value.payload),
+			turnEvidence,
+			metadataProvenance: canonicalJsonValue(value.metadata),
+			...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
+			...priorDeliveryAttempts === void 0 ? {} : { priorDeliveryAttempts },
+			...dependencies === void 0 ? {} : { dependencies }
+		});
+		let result = await captureProjected(projected.value);
+		if (result.status === "conflict" && previous === void 0 && identityPresence !== void 0 && projected.value.payload.operation === "post") {
+			const winner = await captureStore.read(scope);
+			if (winner?.runId === projected.value.payload.run.id) {
+				const run = { ...projected.value.payload.run };
+				if (!identityPresence.startTime) delete run.start_time;
+				if (!identityPresence.traceId) delete run.trace_id;
+				if (!identityPresence.dottedOrder) delete run.dotted_order;
+				const retry = projectSubmission({
+					...projected.value.payload,
+					run,
+					metadata: projected.value.metadata
+				}, integration, previousRunContext(winner));
+				if (retry.status === "ready") result = await captureProjected(retry.value);
+			}
+		}
+		if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => wake?.());
+		return result;
+	};
 	return Object.freeze({
 		accountFingerprint: writer.accountFingerprint,
-		async capture(input) {
-			const capture = requirePlainRecord(snapshotData(requirePlainRecord(input, "Lifecycle capture")), "Lifecycle capture");
-			const turnId = requireNonBlankString(capture["turnId"], "Turn ID");
-			const eventId = requireNonBlankString(capture["eventId"], "Event ID");
-			const sourceAge = ownDataField(capture, "sourceAgeStartedAtMs");
-			const sourceAgeStartedAtMs = sourceAge.present ? requireSafeEpochMilliseconds(sourceAge.value, "Source age") : void 0;
-			const scope = {
+		capture,
+		captureSnapshot(input) {
+			return captureLifecycleSnapshot({
+				storageRoot,
 				integration,
 				sessionId,
-				turnId,
-				eventId
-			};
-			const previous = await captureStore.read(scope);
-			const projected = projectSubmission(capture["submission"], integration, previous === void 0 ? void 0 : previousRunContext(previous));
-			if (projected.status === "deferred") return {
-				status: "deferred",
-				reason: "missing-thread-identity"
-			};
-			const turnEvidence = projectTurnEvidence(capture["turnEvidence"], projected.value.payload.privacyMode, deriveAttributionReadiness(capture["submission"], integration));
-			const dependencies = capture["dependencies"];
-			const identityPresence = projected.value.payload.operation === "post" ? suppliedRunIdentityFields(capture["submission"]) : void 0;
-			const captureProjected = (value) => coordinator.capture({
-				turnId,
-				eventId,
-				runId: value.payload.run.id,
 				destinationFingerprint: writer.accountFingerprint,
-				eventKind: value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND,
-				normalizedPayload: canonicalJsonValue(value.payload),
-				turnEvidence,
-				metadataProvenance: canonicalJsonValue(value.metadata),
-				...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
-				...dependencies === void 0 ? {} : { dependencies }
-			});
-			let result = await captureProjected(projected.value);
-			if (result.status === "conflict" && previous === void 0 && identityPresence !== void 0 && projected.value.payload.operation === "post") {
-				const winner = await captureStore.read(scope);
-				if (winner?.runId === projected.value.payload.run.id) {
-					const run = { ...projected.value.payload.run };
-					if (!identityPresence.startTime) delete run.start_time;
-					if (!identityPresence.traceId) delete run.trace_id;
-					if (!identityPresence.dottedOrder) delete run.dotted_order;
-					const retry = projectSubmission({
-						...projected.value.payload,
-						run,
-						metadata: projected.value.metadata
-					}, integration, previousRunContext(winner));
-					if (retry.status === "ready") result = await captureProjected(retry.value);
-				}
-			}
-			if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => wake?.());
-			return result;
+				store: captureStore,
+				capture,
+				wake: async () => wake?.()
+			}, input);
 		},
 		async drain(input = {}) {
 			const settlementLockDirectory = await ensurePrivateDirectory(storageRoot, [
@@ -20887,7 +21291,7 @@ function createLifecycleBridge(options) {
 					sessionId,
 					destinationFingerprint: writer.accountFingerprint,
 					destinations: writer.destinations,
-					capture: (capture) => coordinator.capture(capture),
+					capture: (captureInput) => coordinator.capture(captureInput),
 					readOutcome
 				});
 				let result = first;
@@ -20946,23 +21350,6 @@ function previousRunContext(record) {
 	if (dottedOrder.present && dottedOrder.value !== void 0) context.dotted_order = requireNonBlankString(dottedOrder.value, "Dotted order");
 	return context;
 }
-function projectTurnEvidence(value, mode, attributionReady) {
-	const source = requirePlainRecord(value, "Lifecycle turn evidence");
-	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
-	const closureState = requireOwnDataField(source, "closureState");
-	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Lifecycle turn evidence has an invalid closure state");
-	const persisted = {
-		childRunIds,
-		closureState,
-		[LIFECYCLE_ATTRIBUTION_READY_FIELD]: attributionReady
-	};
-	const rootRunId = ownDataField(source, "rootRunId");
-	if (rootRunId.present && rootRunId.value !== void 0) persisted.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
-	return canonicalJsonValue(mode === "metadata" ? persisted : {
-		...source,
-		...persisted
-	});
-}
 function restoreSubmission(record, integration) {
 	const payload = canonicalJsonObject(record.normalizedPayload, "Stored run payload");
 	if (payload["integration"] !== integration) throw new TypeError("Stored integration does not match the lifecycle bridge");
@@ -20985,8 +21372,8 @@ function restoreSubmission(record, integration) {
 function stableRunId(sessionId, rolloutFile, turnId, runKey) {
 	return v5(`${TRACE_RUN_ID_PREFIX}${sessionId ?? nodePath.resolve(rolloutFile)}:${turnId}:${runKey}`, TRACE_RUN_ID_NAMESPACE);
 }
-function stableEventId(runId, operation) {
-	return `${runId}:${operation}`;
+function stableEventId(runId, operation, revision) {
+	return `${runId}:${operation}${revision === void 0 ? "" : `:${revision}`}`;
 }
 function stableRunStartTime(turnId, fallback) {
 	const value = turnId.replaceAll("-", "");
@@ -21947,9 +22334,10 @@ async function convertToRunTree(input, options) {
 					task.turnNumber = turnNumber;
 				}
 				const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+				const reconcileCurrentTurn = options?.captureRun != null && completedTurnId === input.turn_id;
 				const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
 				let postStatus = "handled";
-				if (!alreadyUploaded && !isBacklog) postStatus = await postTurn(task, sessionMeta, privacyTurnId, {
+				if ((!alreadyUploaded || reconcileCurrentTurn) && !isBacklog) postStatus = await postTurn(task, sessionMeta, privacyTurnId, {
 					rolloutFile: input.transcript_path,
 					options
 				});
@@ -21965,10 +22353,10 @@ async function convertToRunTree(input, options) {
 }
 //#endregion
 //#region src/user-prompt-submit.ts
-async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
+async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath(), configOverride) {
 	const command = parseTracingCommand(input.prompt);
 	try {
-		const config = await getConfig({
+		const config = configOverride ?? await getConfig({
 			home: process.env.HOME,
 			cwd: input.cwd,
 			env: process.env
@@ -21993,7 +22381,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath()) {
 	}
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_DIRECTORY = "background-worker";
 const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
 const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
@@ -22009,7 +22397,7 @@ const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\
 const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
 const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -22035,7 +22423,7 @@ function workerLaunchPath(storageRoot, scope) {
 	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const storageRoot = resolve(options.storageRoot);
@@ -22362,7 +22750,7 @@ function parseObject(contents) {
 	return value;
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
 const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
 const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
@@ -22415,7 +22803,7 @@ const RECONSTRUCTION_DEPENDENCY_KEYS = [
 	"turnId"
 ];
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -22981,7 +23369,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
@@ -22991,7 +23379,7 @@ function lifecyclePassResult(result) {
 	return result.settlement.captured > 0 || result.delivered > 0 || result.dropped > 0 || result.failed > 0 ? "progressed" : "idle";
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	return Object.freeze({
 		...options,
@@ -23021,7 +23409,7 @@ function snapshotPolicy(policy) {
 	return Object.freeze({ ...policy });
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 async function recoverTracingSessions(runtime, request) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
@@ -23125,7 +23513,7 @@ async function recoverTracingSessions(runtime, request) {
 	};
 }
 //#endregion
-//#region ../../../../../../private/var/folders/6h/fhrp022s28s48z0lvybw1x_w0000gn/T/plugins-base-closure-fixed-candidate-onhp90q2/unpacked/package/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	function forSession(sessionOptions) {
@@ -23168,6 +23556,9 @@ function createTracingEngine(options) {
 			async capture(input) {
 				return lifecycleBridge.capture(input);
 			},
+			async captureSnapshot(input) {
+				return lifecycleBridge.captureSnapshot(input);
+			},
 			async queueReconstruction(input) {
 				const result = await reconstructionWorker.enqueue(input);
 				if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => backgroundWorker?.wake());
@@ -23195,6 +23586,90 @@ function createTracingEngine(options) {
 	return Object.freeze({ forSession });
 }
 //#endregion
+//#region src/session-discovery.ts
+function createCodexSessionCwdResolver(home, maximumEntries = CODEX_SESSION_DISCOVERY_MAX_ENTRIES) {
+	let rolloutPaths;
+	return async (sessionId) => {
+		rolloutPaths ??= indexCodexRollouts(nodePath.join(home, ".codex", "sessions"), maximumEntries);
+		const files = (await rolloutPaths).get(sessionId) ?? [];
+		const workingDirectories = /* @__PURE__ */ new Set();
+		for (const file of files) {
+			const cwd = await readCodexSessionCwd(file, sessionId);
+			if (cwd) workingDirectories.add(cwd);
+		}
+		if (workingDirectories.size > 1) throw new Error("Original Codex session working directory is ambiguous");
+		return workingDirectories.values().next().value;
+	};
+}
+async function indexCodexRollouts(root, maximumEntries) {
+	const paths = /* @__PURE__ */ new Map();
+	const directories = [root];
+	let scannedEntries = 0;
+	for (let index = 0; index < directories.length; index += 1) {
+		const directory = directories[index];
+		let handle;
+		try {
+			handle = await nodeFsPromises.opendir(directory);
+		} catch (error) {
+			if (hasErrorCode(error, "ENOENT")) continue;
+			throw error;
+		}
+		for await (const entry of handle) {
+			scannedEntries += 1;
+			if (scannedEntries > maximumEntries) throw new Error("Codex session directory exceeds the recovery entry limit");
+			if (entry.isDirectory()) {
+				directories.push(nodePath.join(directory, entry.name));
+				continue;
+			}
+			if (!entry.isFile() || !entry.name.startsWith("rollout-") || !entry.name.endsWith(".jsonl")) continue;
+			const identity = entry.name.slice(8, -6);
+			if (!identity) continue;
+			const file = nodePath.join(directory, entry.name);
+			const sessionId = identity.match(CODEX_SESSION_UUID_PATTERN)?.[0] ?? (identity.startsWith("subagents-") ? identity.slice(10) : identity);
+			const files = paths.get(sessionId) ?? [];
+			files.push(file);
+			paths.set(sessionId, files);
+		}
+	}
+	return paths;
+}
+async function readCodexSessionCwd(file, sessionId) {
+	let handle;
+	try {
+		handle = await nodeFsPromises.open(file, "r");
+	} catch (error) {
+		if (hasErrorCode(error, "ENOENT")) return void 0;
+		throw error;
+	}
+	try {
+		const buffer = Buffer.alloc(65537);
+		let length = 0;
+		let newline = -1;
+		while (length < buffer.length && newline < 0) {
+			const result = await handle.read(buffer, length, buffer.length - length, length);
+			if (result.bytesRead === 0) break;
+			length += result.bytesRead;
+			newline = buffer.subarray(0, length).indexOf(10);
+		}
+		if (newline < 0 && length > 65536) return void 0;
+		let event;
+		try {
+			event = JSON.parse(buffer.subarray(0, newline < 0 ? length : newline).toString("utf8"));
+		} catch {
+			return;
+		}
+		const record = asRecord(event);
+		if (record.type !== "session_meta") return void 0;
+		const payload = asRecord(record.payload);
+		return payload.id === sessionId && typeof payload.cwd === "string" && nodePath.isAbsolute(payload.cwd) ? payload.cwd : void 0;
+	} finally {
+		await handle.close();
+	}
+}
+function hasErrorCode(error, code) {
+	return asRecord(error).code === code;
+}
+//#endregion
 //#region src/tool-capture-constants.ts
 const TURN_CAPTURE_SUFFIX = ".langsmith-capture-";
 const TOOL_CAPTURE_START_SUFFIX = ".start.json";
@@ -23212,32 +23687,26 @@ async function recordToolHook(input, mode, redact) {
 	const startFile = nodePath.join(directory, `${key}${TOOL_CAPTURE_START_SUFFIX}`);
 	const endFile = nodePath.join(directory, `${key}${TOOL_CAPTURE_END_SUFFIX}`);
 	let start = await readRecord(startFile);
-	if (!start) {
-		const values = {
-			id: input.tool_use_id,
-			name: input.tool_name,
-			startedAt: Date.now(),
-			mode,
-			...mode === "full" ? { input: input.tool_input } : {}
-		};
-		start = await writeFirst(startFile, redact && mode === "full" ? redact(values) : values);
-	}
+	if (!start) start = await writeFirst(startFile, {
+		id: input.tool_use_id,
+		name: input.tool_name,
+		startedAt: Date.now(),
+		mode,
+		...mode === "full" ? { input: redact ? redact(input.tool_input) : input.tool_input } : {}
+	});
 	if (input.hook_event_name === "PostToolUse") {
 		let end = await readRecord(endFile);
-		if (!end) {
-			const values = {
-				id: input.tool_use_id,
-				name: input.tool_name,
-				startedAt: start.startedAt,
-				endedAt: Date.now(),
-				mode: start.mode,
-				...start.mode === "full" ? {
-					input: start.input ?? input.tool_input,
-					output: input.tool_response
-				} : {}
-			};
-			end = await writeFirst(endFile, redact && start.mode === "full" ? redact(values) : values);
-		}
+		if (!end) end = await writeFirst(endFile, {
+			id: input.tool_use_id,
+			name: input.tool_name,
+			startedAt: start.startedAt,
+			endedAt: Date.now(),
+			mode: start.mode,
+			...start.mode === "full" ? {
+				input: Object.hasOwn(start, "input") ? start.input : redact ? redact(input.tool_input) : input.tool_input,
+				output: redact ? redact(input.tool_response) : input.tool_response
+			} : {}
+		});
 		return {
 			...start,
 			...end,
@@ -23343,6 +23812,37 @@ function createCodexTracingSession(config, sessionId, cwd, home = process.env.HO
 	const captureStore = createCaptureStore(storageRoot);
 	const session = engine.forSession({
 		sessionId,
+		...codexSessionCallbacks(sessionId, cwd, home, launchWorker)
+	});
+	return {
+		accountFingerprint: writerInstance.accountFingerprint,
+		captureStore,
+		destinations: writerInstance.destinations,
+		session,
+		sessionId,
+		storageRoot
+	};
+}
+async function recoverCodexSessions(context, home = process.env.HOME ?? os.homedir()) {
+	const resolveCwd = createCodexSessionCwdResolver(home);
+	const report = await context.session.recoverSessions({ optionsForSession: async (sessionId) => {
+		const cwd = await resolveCwd(sessionId);
+		if (!cwd) throw new Error("Original Codex session working directory is unavailable");
+		const config = await getConfig({
+			home,
+			cwd,
+			env: process.env
+		});
+		if (!config.enabled) throw new Error("Original Codex session tracing is disabled");
+		const writer = writerOptions(config);
+		if (!writer) throw new Error("Original Codex session upload credentials are unavailable");
+		if (createLangSmithUploadWriter(writer).accountFingerprint !== context.accountFingerprint) throw new Error("Original Codex session account or project does not match");
+		return codexSessionCallbacks(sessionId, cwd, home);
+	} });
+	for (const failure of report.failed) console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
+}
+function codexSessionCallbacks(sessionId, cwd, home, launchWorker) {
+	return {
 		reconstruct: reconstructCodexTool,
 		scheduleWake: launchWorker ?? (() => launchEngineWorker(sessionId, cwd)),
 		resolveScope: async (expected) => {
@@ -23356,24 +23856,17 @@ function createCodexTracingSession(config, sessionId, cwd, home = process.env.HO
 				accountFingerprint: currentWriter ? createLangSmithUploadWriter(currentWriter).accountFingerprint : "unavailable"
 			};
 		}
-	});
-	return {
-		accountFingerprint: writerInstance.accountFingerprint,
-		captureStore,
-		destinations: writerInstance.destinations,
-		session,
-		sessionId,
-		storageRoot
 	};
 }
 async function captureCodexRun(context, run, capture) {
+	const snapshot = normalizedSnapshot(run.toJSON());
 	const submission = {
 		operation: "post",
 		integration: LS_INTEGRATION,
 		privacyMode: capture.mode === "full" ? "full" : "metadata",
 		metadata: stripUndefinedDeep(capture.metadata),
 		privacyContext: { status: runStatus(run) },
-		run: normalizedSnapshot(run.toJSON())
+		run: snapshot
 	};
 	const eventId = stableEventId(run.id, "post");
 	const input = {
@@ -23389,10 +23882,10 @@ async function captureCodexRun(context, run, capture) {
 		...parentDependency(run) === void 0 ? {} : { dependencies: [parentDependency(run)] }
 	};
 	try {
-		const result = await context.session.capture(input);
+		const result = await context.session.captureSnapshot(input);
 		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Shared trace capture failed: ${result.status}`);
 	} catch (error) {
-		if (!isSavedCaptureWake(error, context, input)) throw error;
+		if (!await isSavedCaptureWake(error, context, input, true)) throw error;
 		console.error(`Shared trace capture was saved but its worker wake failed: ${error}`);
 	}
 }
@@ -23453,6 +23946,7 @@ async function queueCodexToolCompletion(context, input, config, mode, tool, root
 		operation: "patch",
 		integration: LS_INTEGRATION,
 		privacyMode: mode === "full" ? "full" : "metadata",
+		...mode === "full" ? { redactedFields: ["outputs"] } : {},
 		metadata,
 		privacyContext: { status: "completed" },
 		run: {
@@ -23555,6 +24049,7 @@ async function captureToolStart(context, input, config, mode, tool, rootRunId, t
 		operation: "post",
 		integration: LS_INTEGRATION,
 		privacyMode: mode === "full" ? "full" : "metadata",
+		...mode === "full" ? { redactedFields: ["inputs"] } : {},
 		metadata: toolMetadata(config, input, tool.name, mode),
 		privacyContext: { status: "running" },
 		run: {
@@ -23579,7 +24074,7 @@ async function captureToolStart(context, input, config, mode, tool, rootRunId, t
 		const result = await context.session.capture(capture);
 		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Could not save Codex tool start ${tool.id}: ${result.status}`);
 	} catch (error) {
-		if (!isSavedCaptureWake(error, context, capture)) throw error;
+		if (!await isSavedCaptureWake(error, context, capture)) throw error;
 		console.error(`Codex tool start ${tool.id} was saved but its worker wake failed: ${error}`);
 	}
 }
@@ -23638,10 +24133,17 @@ function safeEpoch(value) {
 	const timestamp = typeof value === "number" ? value : typeof value === "string" ? Date.parse(value) : NaN;
 	return Number.isSafeInteger(timestamp) && timestamp >= 0 ? timestamp : void 0;
 }
-function isSavedCaptureWake(error, context, input) {
+async function isSavedCaptureWake(error, context, input, allowSnapshotRevision = false) {
 	if (!(error instanceof CaptureWakeError)) return false;
 	const record = error.captureResult.record;
-	return record.integration === "openai-codex" && record.sessionId === context.sessionId && record.turnId === input.turnId && record.eventId === input.eventId && record.runId === input.submission.run.id && record.destinationFingerprint === context.accountFingerprint;
+	if (record.integration !== "openai-codex" || record.sessionId !== context.sessionId || record.turnId !== input.turnId || !allowSnapshotRevision && record.eventId !== input.eventId || record.runId !== input.submission.run.id || record.destinationFingerprint !== context.accountFingerprint) return false;
+	const saved = await context.captureStore.read({
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	});
+	return saved?.eventId === record.eventId && saved.runId === record.runId && saved.destinationFingerprint === record.destinationFingerprint && saved.eventKind === record.eventKind && saved.capturedAtMs === record.capturedAtMs;
 }
 function isSavedReconstructionWake(error, context, input) {
 	if (!(error instanceof CaptureWakeError)) return false;
@@ -23705,7 +24207,21 @@ function readStdin() {
 async function runHook() {
 	const content = await readStdin();
 	if (content.hook_event_name === "UserPromptSubmit") {
-		const result = await handlePromptSubmit(content);
+		const home = process.env.HOME ?? process.env.USERPROFILE ?? os.homedir();
+		const config = await getConfig({
+			home,
+			cwd: content.cwd,
+			env: process.env
+		});
+		const result = await handlePromptSubmit(content, void 0, config);
+		if (!result && config.enabled) {
+			const context = createCodexTracingSession(config, content.session_id, content.cwd, home);
+			if (context) try {
+				await recoverCodexSessions(context, home);
+			} catch (error) {
+				console.error(`Codex session recovery failed: ${error}`);
+			}
+		}
 		if (result) console.log(JSON.stringify(result));
 		return;
 	}
@@ -23737,6 +24253,7 @@ async function runHook() {
 		project_name: config.project
 	}) : void 0;
 	const engine = createCodexTracingSession(config, content.session_id, content.cwd);
+	if (!engine) throw new Error("Shared Codex tracing is unavailable; refusing direct upload");
 	const capturedTools = await readCapturedTools(content.transcript_path, content.turn_id);
 	await convertToRunTree(content, {
 		client,
@@ -23744,12 +24261,10 @@ async function runHook() {
 		metadata: config.metadata,
 		replicas: toSdkReplicas(config.replicas),
 		parentRunTree,
-		...engine ? {
-			captureRun: (run, capture) => captureCodexRun(engine, run, capture),
-			capturedToolIds: new Set(capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id))
-		} : {}
+		captureRun: (run, capture) => captureCodexRun(engine, run, capture),
+		capturedToolIds: new Set(capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id))
 	});
-	if (engine) await clearCodexToolCapture(content.transcript_path, content.turn_id);
+	await clearCodexToolCapture(content.transcript_path, content.turn_id);
 }
 const invocationArguments = process.argv.slice(1);
 const invoked = (flag) => wasInvokedWith(invocationArguments, flag);

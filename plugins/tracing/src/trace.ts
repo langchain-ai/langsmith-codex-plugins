@@ -1152,9 +1152,11 @@ export async function convertToRunTree(
           task.turnNumber = turnNumber;
         }
         const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+        const reconcileCurrentTurn =
+          options?.captureRun != null && completedTurnId === input.turn_id;
         const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
         let postStatus: TurnPostStatus = "handled";
-        if (!alreadyUploaded && !isBacklog) {
+        if ((!alreadyUploaded || reconcileCurrentTurn) && !isBacklog) {
           postStatus = await postTurn(task, sessionMeta, privacyTurnId, {
             rolloutFile: input.transcript_path,
             options,

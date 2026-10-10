@@ -6,9 +6,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tryAcquireFileLock } from "@langchain/plugins-base/storage";
+import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { getConfig } from "../src/config.js";
 import { createCodexTracingSession } from "../src/tracing-engine.js";
+import { readCapturedTools } from "../src/tool-capture.js";
+import { stableRunId } from "../src/trace-delivery.js";
+import { TOOL_COMPLETE_EVENT_SUFFIX, TOOL_START_EVENT_SUFFIX } from "../src/constants.js";
 
 // Exercise the installed bundle, real file discovery, and real SDK. Only the
 // destination is local; no Client/RunTree/config or fetch mocks are involved.
@@ -19,6 +23,10 @@ let server: Server;
 let api: string;
 type Payload = Record<string, any>;
 let requests: { method: string; path: string; key?: string; body: Payload }[];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 beforeEach(async () => {
   dir = await fs.mkdtemp(join(tmpdir(), "codex-config-wire-"));
@@ -55,6 +63,19 @@ afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true });
 });
 
+function childEnvironment(env: Record<string, string> = {}) {
+  return {
+    PATH: process.env.PATH ?? "",
+    ...(process.env.SystemRoot === undefined ? {} : { SystemRoot: process.env.SystemRoot }),
+    HOME: home,
+    USERPROFILE: home,
+    TEMP: dir,
+    TMP: dir,
+    TMPDIR: dir,
+    ...env,
+  };
+}
+
 async function directoryContainsFiles(directory: string): Promise<boolean> {
   const entries = await fs.readdir(directory, { withFileTypes: true }).catch((error: unknown) => {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
@@ -69,18 +90,13 @@ async function directoryContainsFiles(directory: string): Promise<boolean> {
   return false;
 }
 
-async function hook(event: Record<string, unknown>, env: Record<string, string> = {}) {
-  const cleanEnv = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([key]) => !/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key),
-    ),
-  );
+async function runHookProcess(event: Record<string, unknown>, env: Record<string, string> = {}) {
   const child = spawn(
     process.execPath,
     [fileURLToPath(new URL("../dist/index.mjs", import.meta.url))],
     {
       cwd: dir, // Discovery must use the payload cwd, not the process/plugin cwd.
-      env: { ...cleanEnv, HOME: home, ...env },
+      env: childEnvironment(env),
     },
   );
   let stdout = "";
@@ -96,39 +112,12 @@ async function hook(event: Record<string, unknown>, env: Record<string, string> 
     child.on("error", reject);
     child.on("close", resolve);
   });
-  expect({ code, stdout, stderr }).toEqual({ code: 0, stdout: "", stderr: "" });
+  return { code, stdout, stderr };
 }
 
-async function runWorker() {
-  const cleanEnv = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([key]) => !/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key),
-    ),
-  );
-  const child = spawn(
-    process.execPath,
-    [
-      fileURLToPath(new URL("../dist/index.mjs", import.meta.url)),
-      "--engine-worker",
-      "thread",
-      cwd,
-    ],
-    { cwd: dir, env: { ...cleanEnv, HOME: home } },
-  );
-  let stdout = "";
-  let stderr = "";
-  child.stdout.on("data", (chunk) => {
-    stdout += chunk;
-  });
-  child.stderr.on("data", (chunk) => {
-    stderr += chunk;
-  });
-  child.stdin.end();
-  const code = await new Promise<number | null>((resolve, reject) => {
-    child.on("error", reject);
-    child.on("close", resolve);
-  });
-  return { code, stdout, stderr };
+async function hook(event: Record<string, unknown>, env: Record<string, string> = {}) {
+  const result = await runHookProcess(event, env);
+  expect(result).toEqual({ code: 0, stdout: "", stderr: "" });
 }
 
 async function upload(env: Record<string, string> = {}) {
@@ -190,7 +179,8 @@ it("saves PostToolUse output without its transcript while the worker is locked",
     JSON.stringify({
       enabled: true,
       defaultMuted: false,
-      redact: false,
+      redact: true,
+      redact_extra_rules: [{ pattern: "SENSITIVE", replace: "SENSITIVE-REDACTED" }],
       api_url: `${api}/primary`,
       api_key: "primary-key",
       project: "primary-project",
@@ -218,14 +208,83 @@ it("saves PostToolUse output without its transcript while the worker is locked",
   const lock = await tryAcquireFileLock(join(workerDirectory, "worker"));
   if (!lock) throw new Error("Could not hold the test worker lock");
   const transcript = join(cwd, "missing.jsonl");
+  const sessionDirectory = join(home, ".codex", "sessions", "2026", "10", "10");
+  await fs.mkdir(sessionDirectory, { recursive: true });
+  await fs.writeFile(
+    join(sessionDirectory, "rollout-thread.jsonl"),
+    JSON.stringify({ type: "session_meta", payload: { id: "thread", cwd } }),
+  );
+  const clockFile = join(dir, "test-clock.cjs");
+  const oldEnvironment = {
+    NODE_OPTIONS: `--require="${clockFile}"`,
+    CODEX_TEST_NOW: String(Date.now() - 3 * 60 * 60 * 1000),
+  };
+  await fs.writeFile(
+    clockFile,
+    "const value = Number(process.env.CODEX_TEST_NOW); if (Number.isSafeInteger(value)) Date.now = () => value;\n",
+  );
+  const tool = {
+    transcript_path: transcript,
+    tool_use_id: "call-1",
+    tool_name: "Bash",
+    tool_input: { cmd: "SENSITIVE" },
+  };
+  const completion = {
+    ...tool,
+    hook_event_name: "PostToolUse" as const,
+    tool_response: { stdout: "SENSITIVE" },
+  };
+  const toolRunId = stableRunId("thread", transcript, "turn", "tool:call-1");
+  let startedAt: number;
+  let endedAt: number;
   try {
-    await hook({
-      hook_event_name: "PostToolUse",
-      transcript_path: transcript,
-      tool_use_id: "call-1",
-      tool_name: "Bash",
-      tool_input: { cmd: "synthetic-command" },
-      tool_response: "synthetic-output",
+    await hook({ ...tool, hook_event_name: "PreToolUse" }, oldEnvironment);
+    startedAt = (await readCapturedTools(transcript, "turn"))[0]!.startedAt;
+    await hook({ ...tool, hook_event_name: "PreToolUse" }, oldEnvironment);
+    await expect(readCapturedTools(transcript, "turn")).resolves.toMatchObject([
+      { startedAt, input: { cmd: "SENSITIVE-REDACTED" } },
+    ]);
+    await hook(completion, oldEnvironment);
+    endedAt = (await readCapturedTools(transcript, "turn"))[0]!.endedAt!;
+    await hook(completion, oldEnvironment);
+    await expect(readCapturedTools(transcript, "turn")).resolves.toMatchObject([
+      {
+        startedAt,
+        endedAt,
+        input: { cmd: "SENSITIVE-REDACTED" },
+        output: { stdout: "SENSITIVE-REDACTED" },
+      },
+    ]);
+    const startScope = {
+      integration: "openai-codex",
+      sessionId: "thread",
+      turnId: "turn",
+      eventId: `${toolRunId}${TOOL_START_EVENT_SUFFIX}`,
+    };
+    const completionScope = {
+      integration: "openai-codex",
+      sessionId: "thread",
+      turnId: "turn",
+      eventId: `${toolRunId}${TOOL_COMPLETE_EVENT_SUFFIX}`,
+    };
+    const reconstructionStore = createCaptureStore(join(context!.storageRoot, "reconstruction-v1"));
+    await expect(context!.captureStore.read(startScope)).resolves.toMatchObject({
+      normalizedPayload: {
+        redactedFields: ["inputs"],
+        run: { inputs: { input: { cmd: "SENSITIVE-REDACTED" } } },
+      },
+    });
+    await expect(reconstructionStore.read(completionScope)).resolves.toMatchObject({
+      normalizedPayload: {
+        sourceSnapshots: [
+          {
+            submission: {
+              redactedFields: ["outputs"],
+              patch: { values: { outputs: { output: { stdout: "SENSITIVE-REDACTED" } } } },
+            },
+          },
+        ],
+      },
     });
     expect(await fs.stat(transcript).catch(() => undefined)).toBeUndefined();
     expect(requests).toEqual([]);
@@ -237,8 +296,32 @@ it("saves PostToolUse output without its transcript while the worker is locked",
   } finally {
     await lock.release();
   }
-  const worker = await runWorker();
-  expect(worker).toEqual({ code: 0, stdout: "", stderr: "" });
+  await hook(
+    {
+      hook_event_name: "UserPromptSubmit",
+      session_id: "wrong-account-thread",
+      turn_id: "new-turn",
+      cwd,
+      prompt: "work",
+    },
+    {
+      TRACE_TO_LANGSMITH: "true",
+      LANGSMITH_API_KEY: "wrong-account-key",
+      LANGSMITH_ENDPOINT: `${api}/wrong-account`,
+      LANGSMITH_PROJECT: "wrong-account-project",
+    },
+  );
+  expect(requests).toEqual([]);
+  await hook(
+    {
+      hook_event_name: "UserPromptSubmit",
+      session_id: "new-thread",
+      turn_id: "new-turn",
+      cwd,
+      prompt: "work",
+    },
+    { TRACE_TO_LANGSMITH: "true" },
+  );
   await vi.waitFor(
     () => {
       expect(requests.some(({ method }) => method === "POST")).toBe(true);
@@ -249,12 +332,191 @@ it("saves PostToolUse output without its transcript while the worker is locked",
     },
     { timeout: 5000, interval: 25 },
   );
-  expect(JSON.stringify(requests.filter(({ method }) => method === "POST"))).toContain(
-    "synthetic-command",
+  expect(requests.map(({ method }) => method).filter((method) => method !== "GET")).toEqual([
+    "POST",
+    "PATCH",
+  ]);
+  expect(
+    requests.every(({ key, path }) => key === "primary-key" && path.startsWith("/primary/")),
+  ).toBe(true);
+  const postedRuns = requests
+    .filter(({ method }) => method === "POST")
+    .flatMap(({ body }) => body.post ?? [body]);
+  expect(postedRuns).toHaveLength(1);
+  expect(postedRuns[0]).toMatchObject({
+    id: toolRunId,
+    parent_run_id: stableRunId("thread", transcript, "turn", "root"),
+    session_name: "primary-project",
+    inputs: { input: { cmd: "SENSITIVE-REDACTED" } },
+  });
+  const wire = JSON.stringify(requests.filter(({ method }) => method !== "GET"));
+  expect(wire.split("SENSITIVE-REDACTED").length - 1).toBe(2);
+  expect(wire).not.toContain("SENSITIVE-REDACTED-REDACTED");
+  const startScope = {
+    integration: "openai-codex",
+    sessionId: "thread",
+    turnId: "turn",
+    eventId: `${toolRunId}${TOOL_START_EVENT_SUFFIX}`,
+  };
+  const completionScope = {
+    integration: "openai-codex",
+    sessionId: "thread",
+    turnId: "turn",
+    eventId: `${toolRunId}${TOOL_COMPLETE_EVENT_SUFFIX}`,
+  };
+  const reconstructionStore = createCaptureStore(join(context!.storageRoot, "reconstruction-v1"));
+  await expect(
+    context!.captureStore.readOutcome(startScope, context!.destinations[0]!.id),
+  ).resolves.toMatchObject({ status: "settled", receipt: { outcome: "delivered" } });
+  await expect(
+    reconstructionStore.readOutcome(completionScope, context!.accountFingerprint),
+  ).resolves.toMatchObject({ status: "settled", receipt: { outcome: "delivered" } });
+  const writeCount = requests.length;
+  await hook(
+    {
+      hook_event_name: "UserPromptSubmit",
+      session_id: "new-thread",
+      turn_id: "next-turn",
+      cwd,
+      prompt: "work",
+    },
+    { TRACE_TO_LANGSMITH: "true" },
   );
-  expect(JSON.stringify(requests.filter(({ method }) => method === "PATCH"))).toContain(
-    "synthetic-output",
+  await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  expect(requests).toHaveLength(writeCount);
+});
+
+it("refuses direct Stop uploads when shared writer configuration is unavailable", async () => {
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({
+      enabled: true,
+      defaultMuted: false,
+      api_url: `${api}/fallback`,
+      project: "fallback-project",
+      replicas: [],
+      redact: false,
+    }),
   );
+  const timestamp = new Date().toISOString();
+  const event = (type: string, payload: Record<string, unknown>) => ({ timestamp, type, payload });
+  const transcript = join(cwd, "rollout.jsonl");
+  await fs.writeFile(
+    transcript,
+    [
+      event("session_meta", { id: "thread", source: "cli", model_provider: "test" }),
+      event("event_msg", { type: "task_started", turn_id: "turn" }),
+      event("turn_context", { turn_id: "turn", model: "test-model" }),
+      event("response_item", {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: "synthetic user prompt" }],
+      }),
+      event("response_item", {
+        type: "message",
+        role: "assistant",
+        content: [{ type: "output_text", text: "synthetic response" }],
+      }),
+      event("event_msg", { type: "turn_complete", turn_id: "turn" }),
+    ]
+      .map((line) => JSON.stringify(line))
+      .join("\n"),
+  );
+  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" });
+  const result = await runHookProcess(
+    { hook_event_name: "Stop", transcript_path: transcript },
+    { LANGCHAIN_API_KEY: "synthetic-fallback-key", LANGCHAIN_ENDPOINT: api },
+  );
+  await new Promise<void>((resolve) => setTimeout(resolve, 250));
+  expect(result).toMatchObject({ code: 0, stdout: "" });
+  expect(result.stderr).toContain("Shared Codex tracing is unavailable; refusing direct upload");
+  expect(requests).toEqual([]);
+});
+
+it("deduplicates an unchanged Stop and saves transcript changes as dependent patches", async () => {
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({
+      enabled: true,
+      defaultMuted: false,
+      redact: false,
+      api_url: `${api}/primary`,
+      api_key: "primary-key",
+      project: "primary-project",
+      replicas: [],
+    }),
+  );
+  await upload({ TRACE_TO_LANGSMITH: "true" });
+  const transcript = join(cwd, "rollout.jsonl");
+  const writes = () => requests.filter(({ method }) => method === "POST" || method === "PATCH");
+  const initialCount = writes().length;
+  await hook({ hook_event_name: "Stop", transcript_path: transcript });
+  await new Promise<void>((resolve) => setTimeout(resolve, 250));
+  expect(writes()).toHaveLength(initialCount);
+
+  const original = await fs.readFile(transcript, "utf8");
+  expect(original).toContain("PRIVATE_BODY ACME-456");
+  await fs.writeFile(transcript, original.replace("PRIVATE_BODY ACME-456", "updated response"));
+  const beforeRevision = writes().length;
+  await hook({ hook_event_name: "Stop", transcript_path: transcript });
+  await vi.waitFor(
+    () =>
+      expect(
+        directoryContainsFiles(join(home, ".codex/langsmith_engine_v1/background-worker")),
+      ).resolves.toBe(false),
+    { timeout: 5000, interval: 25 },
+  );
+  const revisionWrites = writes().slice(beforeRevision);
+  expect(revisionWrites.filter(({ method }) => method === "POST")).toHaveLength(0);
+  expect(revisionWrites.filter(({ method }) => method === "PATCH").length).toBeGreaterThan(0);
+  expect(JSON.stringify(revisionWrites)).toContain("updated response");
+
+  const beforeRevert = writes().length;
+  await fs.writeFile(transcript, original);
+  await hook({ hook_event_name: "Stop", transcript_path: transcript });
+  await vi.waitFor(
+    () =>
+      expect(
+        directoryContainsFiles(join(home, ".codex/langsmith_engine_v1/background-worker")),
+      ).resolves.toBe(false),
+    { timeout: 5000, interval: 25 },
+  );
+  const revertWrites = writes().slice(beforeRevert);
+  expect(revertWrites.filter(({ method }) => method === "POST")).toHaveLength(0);
+  expect(JSON.stringify(revertWrites)).toContain("PRIVATE_BODY ACME-456");
+
+  const config = await getConfig({ home, cwd, env: childEnvironment() });
+  const context = createCodexTracingSession(config, "thread", cwd, home);
+  expect(context).toBeDefined();
+  const captures = await context!.captureStore.enumerate("openai-codex", "thread");
+  const snapshots = captures
+    .map(({ record }) => record)
+    .filter((record) => record.eventKind === "run-post" || record.eventKind === "run-patch");
+  const patches = snapshots.filter((record) => record.eventKind === "run-patch");
+  expect(patches.length).toBeGreaterThan(0);
+  for (const record of patches) {
+    const previous = snapshots
+      .filter((candidate) => candidate.runId === record.runId && candidate.eventId < record.eventId)
+      .toSorted((left, right) => right.eventId.localeCompare(left.eventId))[0];
+    expect(previous).toBeDefined();
+    expect(record.dependencies).toContainEqual({
+      integration: "openai-codex",
+      sessionId: "thread",
+      turnId: "turn",
+      eventId: previous!.eventId,
+    });
+    await expect(
+      context!.captureStore.readOutcome(
+        {
+          integration: "openai-codex",
+          sessionId: "thread",
+          turnId: record.turnId,
+          eventId: record.eventId,
+        },
+        context!.destinations[0]!.id,
+      ),
+    ).resolves.toMatchObject({ status: "settled", receipt: { outcome: "delivered" } });
+  }
 });
 
 it.each([

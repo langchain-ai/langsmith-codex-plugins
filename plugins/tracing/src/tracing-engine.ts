@@ -1,12 +1,16 @@
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
 import { CaptureWakeError, createTracingEngine } from "@langchain/plugins-base/tracing";
+import type { TracingEngineSessionCallbacks } from "@langchain/plugins-base/tracing";
 import { createRunIdentity } from "@langchain/plugins-base/tracing/lifecycle";
+import type {
+  LifecycleCaptureInput,
+  LifecycleSnapshotCaptureInput,
+} from "@langchain/plugins-base/tracing/lifecycle";
 import type {
   ReconstructionJob,
   ReconstructionJobInput,
   ReconstructionResult,
 } from "@langchain/plugins-base/tracing/reconstruction";
-import type { LifecycleCaptureInput } from "@langchain/plugins-base/tracing/lifecycle";
 import { createLangSmithUploadWriter } from "@langchain/plugins-base/tracing/upload";
 import type {
   LangSmithUploadWriterOptions,
@@ -29,6 +33,7 @@ import {
   TOOL_START_EVENT_SUFFIX,
   TOOL_COMPLETE_EVENT_SUFFIX,
 } from "./constants.js";
+import { createCodexSessionCwdResolver } from "./session-discovery.js";
 import type { CodexRunCaptureContext, CodexTracingEngineContext } from "./models/tracing-engine.js";
 import type { TracingHookInput } from "./models/tracing-hook.js";
 import type { CapturedTool, CaptureRedactor } from "./models/tool-capture.js";
@@ -54,6 +59,49 @@ export function createCodexTracingSession(
   const captureStore = createCaptureStore(storageRoot);
   const session = engine.forSession({
     sessionId,
+    ...codexSessionCallbacks(sessionId, cwd, home, launchWorker),
+  });
+  return {
+    accountFingerprint: writerInstance.accountFingerprint,
+    captureStore,
+    destinations: writerInstance.destinations,
+    session,
+    sessionId,
+    storageRoot,
+  };
+}
+
+export async function recoverCodexSessions(
+  context: CodexTracingEngineContext,
+  home = process.env.HOME ?? os.homedir(),
+): Promise<void> {
+  const resolveCwd = createCodexSessionCwdResolver(home);
+  const report = await context.session.recoverSessions({
+    optionsForSession: async (sessionId) => {
+      const cwd = await resolveCwd(sessionId);
+      if (!cwd) throw new Error("Original Codex session working directory is unavailable");
+      const config = await getConfig({ home, cwd, env: process.env });
+      if (!config.enabled) throw new Error("Original Codex session tracing is disabled");
+      const writer = writerOptions(config);
+      if (!writer) throw new Error("Original Codex session upload credentials are unavailable");
+      if (createLangSmithUploadWriter(writer).accountFingerprint !== context.accountFingerprint) {
+        throw new Error("Original Codex session account or project does not match");
+      }
+      return codexSessionCallbacks(sessionId, cwd, home);
+    },
+  });
+  for (const failure of report.failed) {
+    console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
+  }
+}
+
+function codexSessionCallbacks(
+  sessionId: string,
+  cwd: string,
+  home: string,
+  launchWorker?: () => number | Promise<number>,
+): TracingEngineSessionCallbacks {
+  return {
     reconstruct: reconstructCodexTool,
     scheduleWake: launchWorker ?? (() => launchEngineWorker(sessionId, cwd)),
     resolveScope: async (expected) => {
@@ -66,14 +114,6 @@ export function createCodexTracingSession(
           : "unavailable",
       };
     },
-  });
-  return {
-    accountFingerprint: writerInstance.accountFingerprint,
-    captureStore,
-    destinations: writerInstance.destinations,
-    session,
-    sessionId,
-    storageRoot,
   };
 }
 
@@ -82,16 +122,17 @@ export async function captureCodexRun(
   run: RunTree,
   capture: CodexRunCaptureContext,
 ): Promise<void> {
-  const submission: PreparedRunSubmission = {
+  const snapshot = normalizedSnapshot(run.toJSON() as unknown as Record<string, unknown>);
+  const submission: LifecycleSnapshotCaptureInput["submission"] = {
     operation: "post",
     integration: LS_INTEGRATION,
     privacyMode: capture.mode === "full" ? "full" : "metadata",
     metadata: stripUndefinedDeep(capture.metadata),
     privacyContext: { status: runStatus(run) },
-    run: normalizedSnapshot(run.toJSON() as unknown as Record<string, unknown>),
+    run: snapshot,
   };
   const eventId = stableEventId(run.id, "post");
-  const input: LifecycleCaptureInput = {
+  const input: LifecycleSnapshotCaptureInput = {
     turnId: capture.turnId,
     eventId,
     submission,
@@ -106,12 +147,12 @@ export async function captureCodexRun(
     ...(parentDependency(run) === undefined ? {} : { dependencies: [parentDependency(run)!] }),
   };
   try {
-    const result = await context.session.capture(input);
+    const result = await context.session.captureSnapshot(input);
     if (result.status !== "published" && result.status !== "duplicate") {
       throw new Error(`Shared trace capture failed: ${result.status}`);
     }
   } catch (error) {
-    if (!isSavedCaptureWake(error, context, input)) throw error;
+    if (!(await isSavedCaptureWake(error, context, input, true))) throw error;
     console.error(`Shared trace capture was saved but its worker wake failed: ${error}`);
   }
 }
@@ -206,6 +247,7 @@ export async function queueCodexToolCompletion(
     operation: "patch",
     integration: LS_INTEGRATION,
     privacyMode: mode === "full" ? "full" : "metadata",
+    ...(mode === "full" ? { redactedFields: ["outputs"] as const } : {}),
     metadata,
     privacyContext: { status: "completed" },
     run: { ...identity, name: tool.name, run_type: "tool" },
@@ -323,6 +365,7 @@ async function captureToolStart(
     operation: "post",
     integration: LS_INTEGRATION,
     privacyMode: mode === "full" ? "full" : "metadata",
+    ...(mode === "full" ? { redactedFields: ["inputs"] as const } : {}),
     metadata: toolMetadata(config, input, tool.name, mode),
     privacyContext: { status: "running" },
     run: {
@@ -345,7 +388,7 @@ async function captureToolStart(
       throw new Error(`Could not save Codex tool start ${tool.id}: ${result.status}`);
     }
   } catch (error) {
-    if (!isSavedCaptureWake(error, context, capture)) throw error;
+    if (!(await isSavedCaptureWake(error, context, capture))) throw error;
     console.error(`Codex tool start ${tool.id} was saved but its worker wake failed: ${error}`);
   }
 }
@@ -424,20 +467,35 @@ function safeEpoch(value: number | string | undefined): number | undefined {
   return Number.isSafeInteger(timestamp) && timestamp >= 0 ? timestamp : undefined;
 }
 
-function isSavedCaptureWake(
+async function isSavedCaptureWake(
   error: unknown,
   context: CodexTracingEngineContext,
   input: LifecycleCaptureInput,
-): error is CaptureWakeError {
+  allowSnapshotRevision = false,
+): Promise<boolean> {
   if (!(error instanceof CaptureWakeError)) return false;
   const record = error.captureResult.record;
+  if (
+    record.integration !== LS_INTEGRATION ||
+    record.sessionId !== context.sessionId ||
+    record.turnId !== input.turnId ||
+    (!allowSnapshotRevision && record.eventId !== input.eventId) ||
+    record.runId !== input.submission.run.id ||
+    record.destinationFingerprint !== context.accountFingerprint
+  )
+    return false;
+  const saved = await context.captureStore.read({
+    integration: record.integration,
+    sessionId: record.sessionId,
+    turnId: record.turnId,
+    eventId: record.eventId,
+  });
   return (
-    record.integration === LS_INTEGRATION &&
-    record.sessionId === context.sessionId &&
-    record.turnId === input.turnId &&
-    record.eventId === input.eventId &&
-    record.runId === input.submission.run.id &&
-    record.destinationFingerprint === context.accountFingerprint
+    saved?.eventId === record.eventId &&
+    saved.runId === record.runId &&
+    saved.destinationFingerprint === record.destinationFingerprint &&
+    saved.eventKind === record.eventKind &&
+    saved.capturedAtMs === record.capturedAtMs
   );
 }
 

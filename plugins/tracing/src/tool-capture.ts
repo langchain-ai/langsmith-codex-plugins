@@ -32,10 +32,9 @@ export async function recordToolHook(
       name: input.tool_name,
       startedAt: Date.now(),
       mode,
-      ...(mode === "full" ? { input: input.tool_input } : {}),
+      ...(mode === "full" ? { input: redact ? redact(input.tool_input) : input.tool_input } : {}),
     };
-    const safe = redact && mode === "full" ? redact(values) : values;
-    start = await writeFirst(startFile, safe);
+    start = await writeFirst(startFile, values);
   }
   if (input.hook_event_name === "PostToolUse") {
     let end = await readRecord(endFile);
@@ -47,11 +46,17 @@ export async function recordToolHook(
         endedAt: Date.now(),
         mode: start.mode,
         ...(start.mode === "full"
-          ? { input: start.input ?? input.tool_input, output: input.tool_response }
+          ? {
+              input: Object.hasOwn(start, "input")
+                ? start.input
+                : redact
+                  ? redact(input.tool_input)
+                  : input.tool_input,
+              output: redact ? redact(input.tool_response) : input.tool_response,
+            }
           : {}),
       };
-      const safe = redact && start.mode === "full" ? redact(values) : values;
-      end = await writeFirst(endFile, safe);
+      end = await writeFirst(endFile, values);
     }
     return { ...start, ...end, startedAt: start.startedAt, endedAt: end.endedAt };
   }

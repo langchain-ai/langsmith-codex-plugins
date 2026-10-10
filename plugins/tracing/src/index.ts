@@ -5,6 +5,7 @@ import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
+import * as os from "node:os";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import {
@@ -12,6 +13,7 @@ import {
   clearCodexToolCapture,
   createCodexTracingSession,
   handleCodexToolHook,
+  recoverCodexSessions,
   runCodexEngineWorker,
 } from "./tracing-engine.js";
 import { readCapturedTools } from "./tool-capture.js";
@@ -23,7 +25,19 @@ async function runHook() {
   const content = await readStdin<TracingHookInput>();
 
   if (content.hook_event_name === "UserPromptSubmit") {
-    const result = await handlePromptSubmit(content);
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? os.homedir();
+    const config = await getConfig({ home, cwd: content.cwd, env: process.env });
+    const result = await handlePromptSubmit(content, undefined, config);
+    if (!result && config.enabled) {
+      const context = createCodexTracingSession(config, content.session_id, content.cwd, home);
+      if (context) {
+        try {
+          await recoverCodexSessions(context, home);
+        } catch (error) {
+          console.error(`Codex session recovery failed: ${error}`);
+        }
+      }
+    }
     if (result) console.log(JSON.stringify(result));
     return;
   }
@@ -67,6 +81,7 @@ async function runHook() {
     : undefined;
 
   const engine = createCodexTracingSession(config, content.session_id, content.cwd);
+  if (!engine) throw new Error("Shared Codex tracing is unavailable; refusing direct upload");
   const capturedTools = await readCapturedTools(content.transcript_path, content.turn_id);
   await convertToRunTree(content, {
     client,
@@ -74,16 +89,12 @@ async function runHook() {
     metadata: config.metadata,
     replicas: toSdkReplicas(config.replicas),
     parentRunTree,
-    ...(engine
-      ? {
-          captureRun: (run, capture) => captureCodexRun(engine, run, capture),
-          capturedToolIds: new Set(
-            capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id),
-          ),
-        }
-      : {}),
+    captureRun: (run, capture) => captureCodexRun(engine, run, capture),
+    capturedToolIds: new Set(
+      capturedTools.filter((tool) => tool.endedAt != null).map((tool) => tool.id),
+    ),
   });
-  if (engine) await clearCodexToolCapture(content.transcript_path, content.turn_id);
+  await clearCodexToolCapture(content.transcript_path, content.turn_id);
 }
 
 const invocationArguments = process.argv.slice(1);

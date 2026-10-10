@@ -15,8 +15,8 @@ export function stableRunId(
   );
 }
 
-export function stableEventId(runId: string, operation: "post" | "patch") {
-  return `${runId}:${operation}`;
+export function stableEventId(runId: string, operation: "post" | "patch", revision?: string) {
+  return `${runId}:${operation}${revision === undefined ? "" : `:${revision}`}`;
 }
 
 export function stableRunStartTime(turnId: string, fallback: number) {
