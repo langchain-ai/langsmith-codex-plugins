@@ -14,4 +14,11 @@ export default defineConfig({
   define: {
     __LS_INTEGRATION_VERSION__: JSON.stringify(pluginVersion),
   },
+  test: {
+    server: {
+      deps: {
+        inline: ["@langchain/plugins-base"],
+      },
+    },
+  },
 });

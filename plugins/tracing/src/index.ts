@@ -4,7 +4,7 @@ import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
-import { toSdkReplicas } from "./shared-config.js";
+import { toSdkReplicas } from "@langchain/plugins-base/settings";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { unknownFlags, wasInvokedWith } from "./utils/argv.js";

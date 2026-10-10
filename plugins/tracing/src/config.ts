@@ -7,7 +7,7 @@ import {
   mergeCommonConfig,
   readCommonConfigFile,
   type CommonConfigResult,
-} from "./shared-config.js";
+} from "@langchain/plugins-base/settings";
 
 const ReplicaSchema = z.preprocess(
   (value) => {
