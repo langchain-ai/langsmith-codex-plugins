@@ -1,9 +1,5 @@
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
-import {
-  CaptureWakeError,
-  createTracingEngine,
-  readSavedCaptureWake,
-} from "@langchain/plugins-base/tracing";
+import { createTracingEngine, readSavedCaptureWake } from "@langchain/plugins-base/tracing";
 import type {
   TracingEngineSessionCallbacks,
   TracingEngineBackgroundRecoveryOptions,
@@ -285,7 +281,7 @@ export async function queueCodexToolCompletion(
       throw new Error(`Could not save completed Codex tool ${tool.id}: ${result.status}`);
     }
   } catch (error) {
-    if (!isSavedReconstructionWake(error, context, reconstruction)) throw error;
+    if (!(await context.session.readSavedReconstructionWake(error, reconstruction))) throw error;
     console.error(`Completed Codex tool ${tool.id} was saved but its worker wake failed: ${error}`);
   }
 }
@@ -495,28 +491,6 @@ async function isSavedCaptureWake(
       runId: input.submission.run.id,
       ...(allowSnapshotRevision ? {} : { eventId: input.eventId }),
     })) !== undefined
-  );
-}
-
-function isSavedReconstructionWake(
-  error: unknown,
-  context: CodexTracingEngineContext,
-  input: ReconstructionJobInput,
-): error is CaptureWakeError {
-  if (!(error instanceof CaptureWakeError)) return false;
-  const record = error.captureResult.record;
-  const payload = isRecord(record.normalizedPayload) ? record.normalizedPayload : undefined;
-  const sourceRefs = payload?.sourceRefs;
-  return (
-    record.integration === LS_INTEGRATION &&
-    record.sessionId === context.sessionId &&
-    record.turnId === input.turnId &&
-    record.eventId === input.eventId &&
-    record.destinationFingerprint === context.accountFingerprint &&
-    payload?.privacyMode === input.privacyMode &&
-    Array.isArray(sourceRefs) &&
-    sourceRefs.length === input.sourceRefs.length &&
-    sourceRefs.every((sourceRef, index) => sourceRef === input.sourceRefs[index])
   );
 }
 

@@ -16891,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16903,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17266,10 +17266,10 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_type: void 0
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17291,7 +17291,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17422,7 +17422,7 @@ async function resolveGitInfo(cwd, sessionGit) {
 	return pending;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_RUN_TYPES = [
 	"root",
@@ -17544,7 +17544,7 @@ const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
 	["modelName", "ls_model_name"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field(key, options = {}) {
 	return {
 		key,
@@ -17673,7 +17673,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function isRecord$4(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -17728,7 +17728,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -17785,7 +17785,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_DIRECTORY = "capture-v1";
 const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
 const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
@@ -17793,7 +17793,7 @@ const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
 const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
 const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -17832,7 +17832,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -17894,7 +17894,7 @@ function requireNonNegativeInteger(value, name) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -17911,7 +17911,7 @@ function metadataForMode$1(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -18161,7 +18161,7 @@ function v5(value, namespace, buf, offset) {
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_TEMP_SUFFIX = ".tmp";
@@ -18173,7 +18173,7 @@ const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive n
 const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
 const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function isRecord$3(value) {
 	return typeof value === "object" && value !== null;
 }
@@ -18433,7 +18433,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -18460,7 +18460,7 @@ function receiptPath(root, scope, destination) {
 	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	await mkdir(root, {
 		recursive: true,
@@ -18561,7 +18561,7 @@ function errorCode$2(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -18591,7 +18591,7 @@ function errorCode$1(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -18939,7 +18939,7 @@ function errorCode(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
 const DELIVERY_DIRECTORY = "delivery-v1";
 const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
 const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
@@ -18948,7 +18948,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
 function createDeliveryAttemptStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -19034,7 +19034,7 @@ function validateTimestamp(value) {
 	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 function createDeliveryCoordinator(options) {
 	const { integration, sessionId } = options;
 	validateIntegration(integration);
@@ -19320,7 +19320,7 @@ function resolvePolicy$1(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -19337,7 +19337,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -19450,7 +19450,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
 	return new Client({
@@ -19472,7 +19472,7 @@ function createUploadClient(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -19515,7 +19515,7 @@ const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
 ]);
 const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -19536,7 +19536,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -19645,7 +19645,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
 	if (sourceProjectName === destinationProjectName) return context;
 	return {
@@ -19677,7 +19677,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -19849,11 +19849,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -19883,7 +19883,7 @@ async function readSavedCaptureWake(error, options) {
 	return saved !== void 0 && canonicalJson(saved) === canonicalJson(record) ? result : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -19913,7 +19913,7 @@ const LIFECYCLE_TURN_CLOSURE_STATES = [
 	"authoritative"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -20029,7 +20029,7 @@ function captureScopeKey$1(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -20089,7 +20089,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectSubmission(value, integration, priorIdentity) {
 	const source = requirePlainRecord(value, "Prepared run submission");
 	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
@@ -20331,7 +20331,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_METADATA_KEYS = [...[
 	"repository_name",
 	"repository_provider",
@@ -20344,7 +20344,7 @@ const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_EVENT_ID_PATTERN = /^turn-settlement-[0-9a-f]{64}$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	for (const key of REPOSITORY_METADATA_KEYS) {
@@ -20375,7 +20375,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -20872,7 +20872,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -20903,7 +20903,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
 async function captureLifecycleSnapshot(options, input) {
 	const captureInput = snapshotData(requirePlainRecord(input, "Lifecycle snapshot capture"));
 	const snapshot = requirePlainRecord(captureInput, "Lifecycle snapshot capture");
@@ -21163,7 +21163,7 @@ function sameCanonical(left, right) {
 	return JSON.stringify(canonicalJsonValue(left)) === JSON.stringify(canonicalJsonValue(right));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const integration = options.integration;
 	const wake = options.wake;
@@ -22404,7 +22404,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath(), con
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_DIRECTORY = "background-worker";
 const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
 const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
@@ -22420,7 +22420,7 @@ const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\
 const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
 const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -22446,13 +22446,13 @@ function workerLaunchPath(storageRoot, scope) {
 	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const storageRoot = resolve(options.storageRoot);
@@ -22775,7 +22775,7 @@ function parseObject(contents) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
 const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
 const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
@@ -22832,7 +22832,7 @@ const RECONSTRUCTION_DEPENDENCY_KEYS = [
 	"turnId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -22854,6 +22854,25 @@ function createReconstructionWorker(options) {
 		async enqueue(input) {
 			const job = validateJobInput(input, integration, sessionId, accountFingerprint);
 			return captureStore.capture(jobRecord(job));
+		},
+		async readSavedWake(error, input) {
+			const job = validateJobInput(input, integration, sessionId, accountFingerprint);
+			const expected = jobRecord(job);
+			const saved = await readSavedCaptureWake(error, {
+				store: captureStore,
+				integration,
+				sessionId,
+				turnId: job.turnId,
+				destinationFingerprint: accountFingerprint,
+				eventId: job.eventId,
+				runId: expected.runId
+			});
+			if (saved === void 0) return void 0;
+			return canonicalJson(saved.record) === canonicalJson({
+				...expected,
+				version: saved.record.version,
+				capturedAtMs: saved.record.capturedAtMs
+			}) ? saved : void 0;
 		},
 		async drain(request = {}) {
 			const now = request.now ?? Date.now();
@@ -23408,12 +23427,12 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
@@ -23435,7 +23454,7 @@ const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR = "Background rec
 const TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR = "Minimum foreign session age must be a non-negative integer";
 const TRACING_ENGINE_BACKGROUND_RECOVERY_COOLDOWN_RANGE_ERROR = "Background recovery cooldown must be a positive integer";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	return Object.freeze({
 		...options,
@@ -23472,7 +23491,7 @@ function snapshotPolicy(policy) {
 	return Object.freeze({ ...policy });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	const missingSettlementCapture = Symbol();
 	try {
@@ -23512,7 +23531,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 async function recoverTracingSessions(runtime, request, scopeGuard) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
@@ -23631,7 +23650,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
 function backgroundRecoveryPathSegments(scope) {
 	return [
 		TRACING_ENGINE_BACKGROUND_RECOVERY_DIRECTORY,
@@ -23650,7 +23669,7 @@ function backgroundRecoveryPaths(storageRoot, scope) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	const cooldownMs = options.cooldownMs ?? 3e5;
 	const minimumForeignAgeMs = options.minimumForeignAgeMs ?? 72e5;
@@ -23770,7 +23789,7 @@ async function writeMarker(path, marker) {
 	if (!await publishExclusive(path, JSON.stringify(marker))) throw new Error(TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_EXISTS_ERROR);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_a8375b0ea73cf45917f220306e9513c6/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_d5a8efaecfd07f599f5512c6bd25e5e5/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	function forSession(sessionOptions) {
@@ -23832,6 +23851,9 @@ function createTracingEngine(options) {
 				const result = await reconstructionWorker.enqueue(input);
 				if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => backgroundWorker?.wake());
 				return result;
+			},
+			async readSavedReconstructionWake(error, input) {
+				return reconstructionWorker.readSavedWake(error, input);
 			},
 			async wake() {
 				return backgroundWorker.wake();
@@ -24270,7 +24292,7 @@ async function queueCodexToolCompletion(context, input, config, mode, tool, root
 		const result = await context.session.queueReconstruction(reconstruction);
 		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Could not save completed Codex tool ${tool.id}: ${result.status}`);
 	} catch (error) {
-		if (!isSavedReconstructionWake(error, context, reconstruction)) throw error;
+		if (!await context.session.readSavedReconstructionWake(error, reconstruction)) throw error;
 		console.error(`Completed Codex tool ${tool.id} was saved but its worker wake failed: ${error}`);
 	}
 }
@@ -24431,13 +24453,6 @@ async function isSavedCaptureWake(error, context, input, allowSnapshotRevision =
 		runId: input.submission.run.id,
 		...allowSnapshotRevision ? {} : { eventId: input.eventId }
 	}) !== void 0;
-}
-function isSavedReconstructionWake(error, context, input) {
-	if (!(error instanceof CaptureWakeError)) return false;
-	const record = error.captureResult.record;
-	const payload = isRecord(record.normalizedPayload) ? record.normalizedPayload : void 0;
-	const sourceRefs = payload?.sourceRefs;
-	return record.integration === "openai-codex" && record.sessionId === context.sessionId && record.turnId === input.turnId && record.eventId === input.eventId && record.destinationFingerprint === context.accountFingerprint && payload?.privacyMode === input.privacyMode && Array.isArray(sourceRefs) && sourceRefs.length === input.sourceRefs.length && sourceRefs.every((sourceRef, index) => sourceRef === input.sourceRefs[index]);
 }
 function launchEngineWorker(sessionId, cwd) {
 	const entry = process.argv[1];

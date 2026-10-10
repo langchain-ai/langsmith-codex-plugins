@@ -269,6 +269,34 @@ it("saves a completed tool without its transcript while the shared worker lock i
   });
 
   await workerLock!.release();
+  let alteredPath: string | undefined;
+  let originalRecord: string | undefined;
+  const alterSavedJob = () => {
+    for (const [path, contents] of Object.entries(vol.toJSON())) {
+      if (typeof contents !== "string" || !contents.includes(completionScope.eventId)) continue;
+      const record = JSON.parse(contents);
+      if (record.eventId !== completionScope.eventId || !record.normalizedPayload) continue;
+      alteredPath = path;
+      originalRecord = contents;
+      record.turnEvidence.childRunIds = ["unexpected-child"];
+      fs.writeFileSync(path, JSON.stringify(record));
+      break;
+    }
+    throw new Error("synthetic changed saved job");
+  };
+  for (const [path, contents] of Object.entries(vol.toJSON())) {
+    if (typeof contents !== "string" || !contents.includes(completionScope.eventId)) continue;
+    const record = JSON.parse(contents);
+    if (record.eventId === completionScope.eventId && record.normalizedPayload) fs.unlinkSync(path);
+  }
+  try {
+    await expect(
+      handleCodexToolHook(completion, config, undefined, home, alterSavedJob),
+    ).rejects.toThrow("synthetic changed saved job");
+    expect(alteredPath).toBeDefined();
+  } finally {
+    if (alteredPath && originalRecord) fs.writeFileSync(alteredPath, originalRecord);
+  }
   await expect(
     handleCodexToolHook(completion, config, undefined, home, launchWorker),
   ).resolves.toBeUndefined();
