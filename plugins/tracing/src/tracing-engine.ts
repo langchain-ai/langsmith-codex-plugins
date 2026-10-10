@@ -1,6 +1,13 @@
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
-import { CaptureWakeError, createTracingEngine } from "@langchain/plugins-base/tracing";
-import type { TracingEngineSessionCallbacks } from "@langchain/plugins-base/tracing";
+import {
+  CaptureWakeError,
+  createTracingEngine,
+  readSavedCaptureWake,
+} from "@langchain/plugins-base/tracing";
+import type {
+  TracingEngineSessionCallbacks,
+  TracingEngineBackgroundRecoveryOptions,
+} from "@langchain/plugins-base/tracing";
 import { createRunIdentity } from "@langchain/plugins-base/tracing/lifecycle";
 import type {
   LifecycleCaptureInput,
@@ -60,6 +67,7 @@ export function createCodexTracingSession(
   const session = engine.forSession({
     sessionId,
     ...codexSessionCallbacks(sessionId, cwd, home, launchWorker),
+    backgroundRecovery: codexBackgroundRecovery(home, writerInstance.accountFingerprint),
   });
   return {
     accountFingerprint: writerInstance.accountFingerprint,
@@ -71,12 +79,12 @@ export function createCodexTracingSession(
   };
 }
 
-export async function recoverCodexSessions(
-  context: CodexTracingEngineContext,
-  home = process.env.HOME ?? os.homedir(),
-): Promise<void> {
+function codexBackgroundRecovery(
+  home: string,
+  accountFingerprint: string,
+): TracingEngineBackgroundRecoveryOptions {
   const resolveCwd = createCodexSessionCwdResolver(home);
-  const report = await context.session.recoverSessions({
+  return {
     optionsForSession: async (sessionId) => {
       const cwd = await resolveCwd(sessionId);
       if (!cwd) throw new Error("Original Codex session working directory is unavailable");
@@ -84,15 +92,19 @@ export async function recoverCodexSessions(
       if (!config.enabled) throw new Error("Original Codex session tracing is disabled");
       const writer = writerOptions(config);
       if (!writer) throw new Error("Original Codex session upload credentials are unavailable");
-      if (createLangSmithUploadWriter(writer).accountFingerprint !== context.accountFingerprint) {
+      if (createLangSmithUploadWriter(writer).accountFingerprint !== accountFingerprint) {
         throw new Error("Original Codex session account or project does not match");
       }
       return codexSessionCallbacks(sessionId, cwd, home);
     },
-  });
-  for (const failure of report.failed) {
-    console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
-  }
+    onReport: (result) => {
+      if (result.status === "failed") console.error(result.message);
+      if (result.status !== "completed" && result.status !== "partial") return;
+      for (const failure of result.report.failed) {
+        console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
+      }
+    },
+  };
 }
 
 function codexSessionCallbacks(
@@ -473,29 +485,16 @@ async function isSavedCaptureWake(
   input: LifecycleCaptureInput,
   allowSnapshotRevision = false,
 ): Promise<boolean> {
-  if (!(error instanceof CaptureWakeError)) return false;
-  const record = error.captureResult.record;
-  if (
-    record.integration !== LS_INTEGRATION ||
-    record.sessionId !== context.sessionId ||
-    record.turnId !== input.turnId ||
-    (!allowSnapshotRevision && record.eventId !== input.eventId) ||
-    record.runId !== input.submission.run.id ||
-    record.destinationFingerprint !== context.accountFingerprint
-  )
-    return false;
-  const saved = await context.captureStore.read({
-    integration: record.integration,
-    sessionId: record.sessionId,
-    turnId: record.turnId,
-    eventId: record.eventId,
-  });
   return (
-    saved?.eventId === record.eventId &&
-    saved.runId === record.runId &&
-    saved.destinationFingerprint === record.destinationFingerprint &&
-    saved.eventKind === record.eventKind &&
-    saved.capturedAtMs === record.capturedAtMs
+    (await readSavedCaptureWake(error, {
+      store: context.captureStore,
+      integration: LS_INTEGRATION,
+      sessionId: context.sessionId,
+      turnId: input.turnId,
+      destinationFingerprint: context.accountFingerprint,
+      runId: input.submission.run.id,
+      ...(allowSnapshotRevision ? {} : { eventId: input.eventId }),
+    })) !== undefined
   );
 }
 

@@ -12,7 +12,11 @@ import { getConfig } from "../src/config.js";
 import { createCodexTracingSession } from "../src/tracing-engine.js";
 import { readCapturedTools } from "../src/tool-capture.js";
 import { stableRunId } from "../src/trace-delivery.js";
-import { TOOL_COMPLETE_EVENT_SUFFIX, TOOL_START_EVENT_SUFFIX } from "../src/constants.js";
+import {
+  ENGINE_WORKER_FLAG,
+  TOOL_COMPLETE_EVENT_SUFFIX,
+  TOOL_START_EVENT_SUFFIX,
+} from "../src/constants.js";
 
 // Exercise the installed bundle, real file discovery, and real SDK. Only the
 // destination is local; no Client/RunTree/config or fetch mocks are involved.
@@ -187,10 +191,6 @@ it("saves PostToolUse output without its transcript while the worker is locked",
       replicas: [],
     }),
   );
-  await hook(
-    { hook_event_name: "UserPromptSubmit", prompt: "work" },
-    { TRACE_TO_LANGSMITH: "true" },
-  );
   const config = await getConfig({ home, cwd, env: { HOME: home, TRACE_TO_LANGSMITH: "true" } });
   const context = createCodexTracingSession(config, "thread", cwd, home);
   expect(context).toBeDefined();
@@ -221,7 +221,14 @@ it("saves PostToolUse output without its transcript while the worker is locked",
   };
   await fs.writeFile(
     clockFile,
-    "const value = Number(process.env.CODEX_TEST_NOW); if (Number.isSafeInteger(value)) Date.now = () => value;\n",
+    `const value = Number(process.env.CODEX_TEST_NOW); if (Number.isSafeInteger(value)) Date.now = () => value;
+if (process.env.CODEX_TEST_BACKGROUND_DISCOVERY && !process.argv.includes(${JSON.stringify(ENGINE_WORKER_FLAG)})) {
+  const { default: fs } = await import("node:fs/promises");
+  fs.opendir = () => { throw new Error("Foreground session discovery is forbidden"); };
+  const { syncBuiltinESMExports } = await import("node:module");
+  syncBuiltinESMExports();
+}
+`,
   );
   const tool = {
     transcript_path: transcript,
@@ -238,6 +245,10 @@ it("saves PostToolUse output without its transcript while the worker is locked",
   let startedAt: number;
   let endedAt: number;
   try {
+    await hook(
+      { hook_event_name: "UserPromptSubmit", prompt: "work" },
+      { TRACE_TO_LANGSMITH: "true" },
+    );
     await hook({ ...tool, hook_event_name: "PreToolUse" }, oldEnvironment);
     startedAt = (await readCapturedTools(transcript, "turn"))[0]!.startedAt;
     await hook({ ...tool, hook_event_name: "PreToolUse" }, oldEnvironment);
@@ -320,7 +331,11 @@ it("saves PostToolUse output without its transcript while the worker is locked",
       cwd,
       prompt: "work",
     },
-    { TRACE_TO_LANGSMITH: "true" },
+    {
+      TRACE_TO_LANGSMITH: "true",
+      NODE_OPTIONS: `--import=${pathToFileURL(clockFile).href}`,
+      CODEX_TEST_BACKGROUND_DISCOVERY: "1",
+    },
   );
   await vi.waitFor(
     () => {

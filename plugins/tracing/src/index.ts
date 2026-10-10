@@ -13,7 +13,6 @@ import {
   clearCodexToolCapture,
   createCodexTracingSession,
   handleCodexToolHook,
-  recoverCodexSessions,
   runCodexEngineWorker,
 } from "./tracing-engine.js";
 import { readCapturedTools } from "./tool-capture.js";
@@ -32,7 +31,7 @@ async function runHook() {
       const context = createCodexTracingSession(config, content.session_id, content.cwd, home);
       if (context) {
         try {
-          await recoverCodexSessions(context, home);
+          await context.session.wake();
         } catch (error) {
           console.error(`Codex session recovery failed: ${error}`);
         }

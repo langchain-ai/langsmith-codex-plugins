@@ -16891,7 +16891,7 @@ function preprocess(fn, schema) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -16903,7 +16903,7 @@ const COMMON_BOOLEAN_SETTINGS = {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -17266,10 +17266,10 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_type: void 0
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -17291,7 +17291,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -17422,7 +17422,7 @@ async function resolveGitInfo(cwd, sessionGit) {
 	return pending;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_RUN_TYPES = [
 	"root",
@@ -17544,7 +17544,7 @@ const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
 	["modelName", "ls_model_name"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field(key, options = {}) {
 	return {
 		key,
@@ -17673,7 +17673,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function isRecord$4(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -17728,7 +17728,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -17785,7 +17785,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_DIRECTORY = "capture-v1";
 const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
 const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
@@ -17793,7 +17793,7 @@ const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
 const CAPTURE_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
 const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -17832,7 +17832,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -17894,7 +17894,7 @@ function requireNonNegativeInteger(value, name) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -17911,7 +17911,7 @@ function metadataForMode$1(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -18161,7 +18161,7 @@ function v5(value, namespace, buf, offset) {
 v5.DNS = DNS;
 v5.URL = URL$1;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_TEMP_SUFFIX = ".tmp";
@@ -18173,7 +18173,7 @@ const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive n
 const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
 const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function isRecord$3(value) {
 	return typeof value === "object" && value !== null;
 }
@@ -18433,7 +18433,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -18460,7 +18460,7 @@ function receiptPath(root, scope, destination) {
 	return join(captureDirectory(root), "integrations", scope.integration, "sessions", identifierHash(scope.sessionId), "turns", identifierHash(scope.turnId), "receipts", identifierHash(destination), `${identifierHash(scope.eventId)}.json`);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	await mkdir(root, {
 		recursive: true,
@@ -18561,7 +18561,7 @@ function errorCode$2(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -18591,7 +18591,7 @@ function errorCode$1(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -18939,7 +18939,7 @@ function errorCode(error) {
 	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/delivery/constants.js
 const DELIVERY_DIRECTORY = "delivery-v1";
 const DELIVERY_ATTEMPT_FILE = /^([1-9]\d*)\.json$/u;
 const DELIVERY_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
@@ -18948,7 +18948,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_RETRY_EXHAUSTED_REASON = "retry-exhausted";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/delivery/attempt-store.js
 function createDeliveryAttemptStore(root) {
 	const storageRoot = resolve(root);
 	return {
@@ -19034,7 +19034,7 @@ function validateTimestamp(value) {
 	if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== value) throw new TypeError("Invalid delivery attempt timestamp");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 function createDeliveryCoordinator(options) {
 	const { integration, sessionId } = options;
 	validateIntegration(integration);
@@ -19320,7 +19320,7 @@ function resolvePolicy$1(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -19337,7 +19337,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -19450,7 +19450,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
 	return new Client({
@@ -19472,7 +19472,7 @@ function createUploadClient(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -19515,7 +19515,7 @@ const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
 ]);
 const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -19536,7 +19536,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -19645,7 +19645,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
 	if (sourceProjectName === destinationProjectName) return context;
 	return {
@@ -19677,7 +19677,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -19849,11 +19849,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -19869,8 +19869,21 @@ async function wakeCapturedWork(captureResult, wake) {
 		throw new CaptureWakeError(captureResult, cause);
 	}
 }
+async function readSavedCaptureWake(error, options) {
+	if (!(error instanceof CaptureWakeError)) return void 0;
+	const result = structuredClone(error.captureResult);
+	const { record } = result;
+	if (record.integration !== options.integration || record.sessionId !== options.sessionId || record.turnId !== options.turnId || record.destinationFingerprint !== options.destinationFingerprint || options.eventId !== void 0 && record.eventId !== options.eventId || options.runId !== void 0 && record.runId !== options.runId) return void 0;
+	const saved = await options.store.read({
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	});
+	return saved !== void 0 && canonicalJson(saved) === canonicalJson(record) ? result : void 0;
+}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -19900,7 +19913,7 @@ const LIFECYCLE_TURN_CLOSURE_STATES = [
 	"authoritative"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -20016,7 +20029,7 @@ function captureScopeKey$1(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -20076,7 +20089,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectSubmission(value, integration, priorIdentity) {
 	const source = requirePlainRecord(value, "Prepared run submission");
 	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError("Run integration does not match the lifecycle bridge");
@@ -20318,7 +20331,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_METADATA_KEYS = [...[
 	"repository_name",
 	"repository_provider",
@@ -20331,7 +20344,7 @@ const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_EVENT_ID_PATTERN = /^turn-settlement-[0-9a-f]{64}$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	for (const key of REPOSITORY_METADATA_KEYS) {
@@ -20362,7 +20375,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -20859,7 +20872,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -20890,7 +20903,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/snapshot.js
 async function captureLifecycleSnapshot(options, input) {
 	const captureInput = snapshotData(requirePlainRecord(input, "Lifecycle snapshot capture"));
 	const snapshot = requirePlainRecord(captureInput, "Lifecycle snapshot capture");
@@ -21150,7 +21163,7 @@ function sameCanonical(left, right) {
 	return JSON.stringify(canonicalJsonValue(left)) === JSON.stringify(canonicalJsonValue(right));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const integration = options.integration;
 	const wake = options.wake;
@@ -22391,7 +22404,7 @@ async function handlePromptSubmit(input, privacyPath = defaultPrivacyPath(), con
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_DIRECTORY = "background-worker";
 const BACKGROUND_WORKER_INTEGRATIONS_DIRECTORY = "integrations";
 const BACKGROUND_WORKER_SESSIONS_DIRECTORY = "sessions";
@@ -22407,7 +22420,7 @@ const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\
 const BACKGROUND_WORKER_OWNER_WAIT_MS = 3e4;
 const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -22433,7 +22446,13 @@ function workerLaunchPath(storageRoot, scope) {
 	return join(workerDirectory(storageRoot, scope), BACKGROUND_WORKER_LAUNCHING_FILE);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+async function matchesScope(resolveScope, expected) {
+	const actual = await resolveScope();
+	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const storageRoot = resolve(options.storageRoot);
@@ -22534,10 +22553,6 @@ function makeMarker(id) {
 		id,
 		sourcePid: process.pid
 	};
-}
-async function matchesScope(resolveScope, expected) {
-	const actual = await resolveScope();
-	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 async function processLocked(storageRoot, directory, scope, options, retryPolicy) {
 	const state = await readWorkerState(storageRoot, directory);
@@ -22760,7 +22775,7 @@ function parseObject(contents) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DIRECTORY = "reconstruction-v1";
 const RECONSTRUCTION_WORKER_DIRECTORY = "workers";
 const RECONSTRUCTION_SESSIONS_DIRECTORY = "sessions";
@@ -22813,7 +22828,7 @@ const RECONSTRUCTION_DEPENDENCY_KEYS = [
 	"turnId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -23379,7 +23394,12 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/utils/errors.js
+function describe(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.captured > 0 || result.failed > 0 || result.dropped > 0 ? "progressed" : "idle";
@@ -23388,8 +23408,20 @@ function lifecyclePassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	return result.settlement.captured > 0 || result.delivered > 0 || result.dropped > 0 || result.failed > 0 ? "progressed" : "idle";
 }
+const TRACING_ENGINE_BACKGROUND_RECOVERY_DIRECTORY = "background-recovery";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_INTEGRATIONS_DIRECTORY = "integrations";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_ACCOUNTS_DIRECTORY = "accounts";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_LOCK_FILE = "scan.lock";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_FILE = "cooldown.json";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_EXISTS_ERROR = "Background recovery cooldown marker is already published";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_RETRY_RANGE_ERROR = "Background recovery retry time is outside the supported range";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_ERROR = "Background recovery report callback failed";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_SESSION_CALLBACK_ERROR = "Background recovery session callback is required";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR = "Background recovery report callback is required";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR = "Minimum foreign session age must be a non-negative integer";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_COOLDOWN_RANGE_ERROR = "Background recovery cooldown must be a positive integer";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	return Object.freeze({
 		...options,
@@ -23399,9 +23431,16 @@ function snapshotEngineOptions(options) {
 	});
 }
 function snapshotSessionOptions(options) {
+	if (options.backgroundRecovery !== void 0) {
+		if (typeof options.backgroundRecovery.optionsForSession !== "function") throw new TypeError(TRACING_ENGINE_BACKGROUND_RECOVERY_SESSION_CALLBACK_ERROR);
+		if (typeof options.backgroundRecovery.onReport !== "function") throw new TypeError(TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR);
+		if (options.backgroundRecovery.minimumForeignAgeMs !== void 0 && (!Number.isSafeInteger(options.backgroundRecovery.minimumForeignAgeMs) || options.backgroundRecovery.minimumForeignAgeMs < 0)) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR);
+		if (options.backgroundRecovery.cooldownMs !== void 0 && (!Number.isSafeInteger(options.backgroundRecovery.cooldownMs) || options.backgroundRecovery.cooldownMs < 1)) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_COOLDOWN_RANGE_ERROR);
+	}
 	return Object.freeze({
 		...options,
-		...options.retryPolicy === void 0 ? {} : { retryPolicy: Object.freeze({ ...options.retryPolicy }) }
+		...options.retryPolicy === void 0 ? {} : { retryPolicy: Object.freeze({ ...options.retryPolicy }) },
+		...options.backgroundRecovery === void 0 ? {} : { backgroundRecovery: Object.freeze({ ...options.backgroundRecovery }) }
 	});
 }
 function snapshotWriterOptions(options) {
@@ -23419,8 +23458,48 @@ function snapshotPolicy(policy) {
 	return Object.freeze({ ...policy });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
-async function recoverTracingSessions(runtime, request) {
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+async function hasUnsettledRecoverySettlement(options) {
+	const missingSettlementCapture = Symbol();
+	try {
+		return (await refreshSettlementProgress(await settleCapturedTurns({
+			captures: options.captures,
+			integration: options.integration,
+			sessionId: options.sessionId,
+			destinationFingerprint: options.destinationFingerprint,
+			destinations: options.destinations,
+			capture: async (input) => {
+				const scope = {
+					integration: options.integration,
+					sessionId: options.sessionId,
+					turnId: input.turnId,
+					eventId: input.eventId
+				};
+				const existing = await options.store.read(scope);
+				if (existing === void 0) throw missingSettlementCapture;
+				const existingContent = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== "capturedAtMs"));
+				const plannedContent = {
+					version: existing.version,
+					integration: options.integration,
+					sessionId: options.sessionId,
+					...input
+				};
+				if (canonicalJson(existingContent) !== canonicalJson(plannedContent)) throw new Error("Recovery settlement capture conflicts with the current source state");
+				return {
+					status: "duplicate",
+					record: existing
+				};
+			},
+			readOutcome: (scope, destination) => options.store.readOutcome(scope, destination)
+		}), options.destinations, (scope, destination) => options.store.readOutcome(scope, destination))).turns.some((turn) => turn.status !== "settled");
+	} catch (error) {
+		if (error === missingSettlementCapture) return true;
+		throw error;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+async function recoverTracingSessions(runtime, request, scopeGuard) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError("Recovery time must be a valid timestamp");
 	const minimumForeignAgeMs = request.minimumForeignAgeMs ?? 72e5;
@@ -23442,80 +23521,95 @@ async function recoverTracingSessions(runtime, request) {
 	]);
 	const scheduled = [];
 	const failed = [];
-	for (const sessionId of [...sessionIds].toSorted()) try {
-		const lifecycleEntries = lifecycleBySession.get(sessionId) ?? [];
-		const reconstructionEntries = reconstructionBySession.get(sessionId) ?? [];
-		let hasLifecycleRecord = false;
-		let hasPendingWork = false;
-		let oldestPendingAtMs = Number.POSITIVE_INFINITY;
-		let lastActivityAtMs = 0;
-		for (const entry of lifecycleEntries) {
-			const record = entry.record;
-			if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
-			hasLifecycleRecord = true;
-			lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
-			let pending = false;
-			for (const destinationId of destinationIds) {
-				const outcome = await lifecycleStore.readOutcome({
+	for (const sessionId of [...sessionIds].toSorted()) {
+		if (request.excludeCurrentSession && sessionId === runtime.currentSessionId) continue;
+		try {
+			const lifecycleEntries = lifecycleBySession.get(sessionId) ?? [];
+			const reconstructionEntries = reconstructionBySession.get(sessionId) ?? [];
+			let hasPendingWork = false;
+			let hasUnsettledTurn = false;
+			let oldestPendingAtMs = Number.POSITIVE_INFINITY;
+			let lastActivityAtMs = 0;
+			for (const entry of lifecycleEntries) {
+				const record = entry.record;
+				if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
+				lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
+				let pending = false;
+				for (const destinationId of destinationIds) {
+					const outcome = await lifecycleStore.readOutcome({
+						integration: record.integration,
+						sessionId: record.sessionId,
+						turnId: record.turnId,
+						eventId: record.eventId
+					}, destinationId);
+					if (outcome.status === "failed") throw new Error(outcome.message);
+					if (outcome.status === "missing-capture") throw new Error("Recovery capture disappeared");
+					if (outcome.status === "pending") pending = true;
+					else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
+				}
+				if (pending) {
+					hasPendingWork = true;
+					oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
+				}
+			}
+			if (lifecycleEntries.some(({ record }) => record.destinationFingerprint === runtime.accountFingerprint && record.eventKind !== "run-post" && record.eventKind !== "run-patch" && record.eventKind !== "run-settlement-patch")) hasUnsettledTurn = true;
+			else if (!hasPendingWork && lifecycleEntries.some(({ record }) => record.destinationFingerprint === runtime.accountFingerprint)) hasUnsettledTurn = await hasUnsettledRecoverySettlement({
+				captures: lifecycleEntries,
+				integration: runtime.integration,
+				sessionId,
+				destinationFingerprint: runtime.accountFingerprint,
+				destinations: writer.destinations,
+				store: lifecycleStore
+			});
+			for (const entry of reconstructionEntries) {
+				const record = entry.record;
+				if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
+				lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
+				if (record.eventKind !== "reconstruction-job-v1") continue;
+				const outcome = await reconstructionStore.readOutcome({
 					integration: record.integration,
 					sessionId: record.sessionId,
 					turnId: record.turnId,
 					eventId: record.eventId
-				}, destinationId);
+				}, runtime.accountFingerprint);
 				if (outcome.status === "failed") throw new Error(outcome.message);
-				if (outcome.status === "missing-capture") throw new Error("Recovery capture disappeared");
-				if (outcome.status === "pending") pending = true;
-				else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
+				if (outcome.status === "missing-capture") throw new Error("Recovery reconstruction job disappeared");
+				if (outcome.status === "pending") {
+					hasPendingWork = true;
+					oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
+				} else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
 			}
-			if (pending) {
-				hasPendingWork = true;
-				oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
+			const isCurrentSession = sessionId === runtime.currentSessionId;
+			if (!hasUnsettledTurn && !hasPendingWork) continue;
+			if (!isCurrentSession && now - oldestPendingAtMs < minimumForeignAgeMs && now - lastActivityAtMs < minimumForeignAgeMs) continue;
+			if (isCurrentSession) {
+				scheduled.push({
+					sessionId,
+					status: await runtime.wakeCurrent()
+				});
+				continue;
 			}
-		}
-		for (const entry of reconstructionEntries) {
-			const record = entry.record;
-			if (record.destinationFingerprint !== runtime.accountFingerprint) continue;
-			lastActivityAtMs = Math.max(lastActivityAtMs, entry.capturedAtMs);
-			if (record.eventKind !== "reconstruction-job-v1") continue;
-			const outcome = await reconstructionStore.readOutcome({
-				integration: record.integration,
-				sessionId: record.sessionId,
-				turnId: record.turnId,
-				eventId: record.eventId
-			}, runtime.accountFingerprint);
-			if (outcome.status === "failed") throw new Error(outcome.message);
-			if (outcome.status === "missing-capture") throw new Error("Recovery reconstruction job disappeared");
-			if (outcome.status === "pending") {
-				hasPendingWork = true;
-				oldestPendingAtMs = Math.min(oldestPendingAtMs, entry.capturedAtMs);
-			} else lastActivityAtMs = Math.max(lastActivityAtMs, new Date(outcome.receipt.recordedAt).getTime());
-		}
-		const isCurrentSession = sessionId === runtime.currentSessionId;
-		if (!hasLifecycleRecord && !hasPendingWork) continue;
-		if (!isCurrentSession && now - oldestPendingAtMs < minimumForeignAgeMs && now - lastActivityAtMs < minimumForeignAgeMs) continue;
-		if (isCurrentSession) {
+			const callbacks = await optionsForSession(sessionId);
+			if (callbacks === null || typeof callbacks !== "object") throw new TypeError("Session recovery options must be an object");
+			const sessionOptions = {
+				...callbacks,
+				sessionId
+			};
+			const target = runtime.createSession(sessionOptions);
+			if (scopeGuard && !await scopeGuard()) return {
+				scheduled,
+				failed
+			};
 			scheduled.push({
 				sessionId,
-				status: await runtime.wakeCurrent()
+				status: await target.wake()
 			});
-			continue;
+		} catch (error) {
+			failed.push({
+				sessionId,
+				message: error instanceof Error ? error.message : String(error)
+			});
 		}
-		const callbacks = await optionsForSession(sessionId);
-		if (callbacks === null || typeof callbacks !== "object") throw new TypeError("Session recovery options must be an object");
-		const sessionOptions = {
-			...callbacks,
-			sessionId
-		};
-		const target = runtime.createSession(sessionOptions);
-		scheduled.push({
-			sessionId,
-			status: await target.wake()
-		});
-	} catch (error) {
-		failed.push({
-			sessionId,
-			message: error instanceof Error ? error.message : String(error)
-		});
 	}
 	return {
 		scheduled,
@@ -23523,7 +23617,146 @@ async function recoverTracingSessions(runtime, request) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_c6dd34050871c96c8ebe73b61868f24b/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-paths.js
+function backgroundRecoveryPathSegments(scope) {
+	return [
+		TRACING_ENGINE_BACKGROUND_RECOVERY_DIRECTORY,
+		TRACING_ENGINE_BACKGROUND_RECOVERY_INTEGRATIONS_DIRECTORY,
+		identifierHash(scope.integration),
+		TRACING_ENGINE_BACKGROUND_RECOVERY_ACCOUNTS_DIRECTORY,
+		identifierHash(scope.accountFingerprint)
+	];
+}
+function backgroundRecoveryPaths(storageRoot, scope) {
+	const directory = join(resolve(storageRoot), ...backgroundRecoveryPathSegments(scope));
+	return {
+		directory,
+		lock: join(directory, TRACING_ENGINE_BACKGROUND_RECOVERY_LOCK_FILE),
+		marker: join(directory, TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_FILE)
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+async function runBackgroundRecovery(runtime, options, scopeGuard) {
+	const cooldownMs = options.cooldownMs ?? 3e5;
+	const minimumForeignAgeMs = options.minimumForeignAgeMs ?? 72e5;
+	const paths = backgroundRecoveryPaths(runtime.storageRoot, runtime);
+	let retryAtMs;
+	let scopeMismatch = false;
+	let scopeCheckFailed = false;
+	let scopeCheckError;
+	const checkScope = scopeGuard ? async () => {
+		try {
+			const matches = await scopeGuard();
+			scopeMismatch ||= !matches;
+			return matches;
+		} catch (error) {
+			scopeCheckFailed = true;
+			scopeCheckError = error;
+			return false;
+		}
+	} : void 0;
+	try {
+		await ensurePrivateDirectory(runtime.storageRoot, backgroundRecoveryPathSegments(runtime));
+		const observedMarker = await readMarker(runtime.storageRoot, paths.marker);
+		if (observedMarker && observedMarker.retryAtMs > Date.now()) return {
+			status: "cooldown",
+			retryAtMs: observedMarker.retryAtMs
+		};
+		return await withFileLock(paths.lock, async () => {
+			if (checkScope && !await checkScope()) return scopeCheckFailed ? {
+				status: "failed",
+				message: describe(scopeCheckError),
+				retryable: true
+			} : { status: "scope-mismatch" };
+			const now = Date.now();
+			const existing = await readMarker(runtime.storageRoot, paths.marker);
+			if (existing && existing.retryAtMs > now) return {
+				status: "cooldown",
+				retryAtMs: existing.retryAtMs
+			};
+			retryAtMs = now + cooldownMs;
+			if (!Number.isSafeInteger(retryAtMs)) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_RETRY_RANGE_ERROR);
+			await writeMarker(paths.marker, {
+				version: 1,
+				retryAtMs
+			});
+			try {
+				const report = await recoverTracingSessions(runtime, {
+					optionsForSession: options.optionsForSession,
+					minimumForeignAgeMs,
+					now,
+					excludeCurrentSession: true
+				}, checkScope);
+				if (checkScope && !scopeMismatch && !scopeCheckFailed) await checkScope();
+				retryAtMs = nextRetryAt(cooldownMs);
+				await writeMarker(paths.marker, {
+					version: 1,
+					retryAtMs
+				});
+				if (scopeCheckFailed) return {
+					status: "failed",
+					message: describe(scopeCheckError),
+					retryable: true,
+					retryAtMs
+				};
+				if (scopeMismatch) return { status: "scope-mismatch" };
+				return report.failed.length === 0 ? {
+					status: "completed",
+					report,
+					retryAtMs
+				} : {
+					status: "partial",
+					report,
+					retryAtMs,
+					retryable: true
+				};
+			} catch (error) {
+				retryAtMs = nextRetryAt(cooldownMs);
+				await writeMarker(paths.marker, {
+					version: 1,
+					retryAtMs
+				});
+				return {
+					status: "failed",
+					message: describe(error),
+					retryable: true,
+					retryAtMs
+				};
+			}
+		});
+	} catch (error) {
+		return {
+			status: "failed",
+			message: describe(error),
+			retryable: true,
+			...retryAtMs === void 0 ? {} : { retryAtMs }
+		};
+	}
+}
+function nextRetryAt(cooldownMs) {
+	const retryAtMs = Date.now() + cooldownMs;
+	if (!Number.isSafeInteger(retryAtMs)) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_RETRY_RANGE_ERROR);
+	return retryAtMs;
+}
+async function readMarker(root, path) {
+	const contents = await readPrivateFile(root, path);
+	if (contents === void 0) return void 0;
+	try {
+		const value = JSON.parse(contents);
+		if (typeof value === "object" && value !== null && "version" in value && value.version === 1 && "retryAtMs" in value && typeof value.retryAtMs === "number" && Number.isSafeInteger(value.retryAtMs) && value.retryAtMs >= 0) return value;
+	} catch {}
+}
+async function writeMarker(path, marker) {
+	try {
+		await unlink(path);
+	} catch (error) {
+		if (error.code !== "ENOENT") throw error;
+	}
+	if (!await publishExclusive(path, JSON.stringify(marker))) throw new Error(TRACING_ENGINE_BACKGROUND_RECOVERY_MARKER_EXISTS_ERROR);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@htt_0bfce9e46565f57236c0f561deaf3df6/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	function forSession(sessionOptions) {
@@ -23562,6 +23795,18 @@ function createTracingEngine(options) {
 			reconstructPending: async () => reconstructionPassResult(await reconstructionWorker.drain()),
 			drainPending: async () => lifecyclePassResult(await lifecycleBridge.drain())
 		});
+		const recoveryRuntime = () => ({
+			storageRoot: config.storageRoot,
+			integration: config.integration,
+			accountFingerprint: lifecycleBridge.accountFingerprint,
+			writer: config.writer,
+			currentSessionId: session.sessionId,
+			wakeCurrent: () => backgroundWorker.wake(),
+			createSession: (recoveredOptions) => createSession(snapshotSessionOptions({
+				...recoveredOptions,
+				...session.backgroundRecovery === void 0 ? {} : { backgroundRecovery: session.backgroundRecovery }
+			}))
+		});
 		return Object.freeze({
 			async capture(input) {
 				return lifecycleBridge.capture(input);
@@ -23578,18 +23823,30 @@ function createTracingEngine(options) {
 				return backgroundWorker.wake();
 			},
 			async drain() {
-				return backgroundWorker.run();
+				const result = await backgroundWorker.run();
+				const backgroundRecovery = session.backgroundRecovery;
+				if (backgroundRecovery && (result === "completed" || result === "idle")) {
+					let recoveryResult;
+					const checkScope = () => matchesScope(() => session.resolveScope(scope), scope);
+					try {
+						recoveryResult = await checkScope() ? await runBackgroundRecovery(recoveryRuntime(), backgroundRecovery, checkScope) : { status: "scope-mismatch" };
+					} catch (error) {
+						recoveryResult = {
+							status: "failed",
+							message: describe(error),
+							retryable: true
+						};
+					}
+					try {
+						await backgroundRecovery.onReport(recoveryResult);
+					} catch (error) {
+						console.error(TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_ERROR, describe(error));
+					}
+				}
+				return result;
 			},
 			async recoverSessions(request) {
-				return recoverTracingSessions({
-					storageRoot: config.storageRoot,
-					integration: config.integration,
-					accountFingerprint: lifecycleBridge.accountFingerprint,
-					writer: config.writer,
-					currentSessionId: session.sessionId,
-					wakeCurrent: () => backgroundWorker.wake(),
-					createSession: (sessionOptions) => createSession(snapshotSessionOptions(sessionOptions))
-				}, request);
+				return recoverTracingSessions(recoveryRuntime(), request);
 			}
 		});
 	}
@@ -23822,7 +24079,8 @@ function createCodexTracingSession(config, sessionId, cwd, home = process.env.HO
 	const captureStore = createCaptureStore(storageRoot);
 	const session = engine.forSession({
 		sessionId,
-		...codexSessionCallbacks(sessionId, cwd, home, launchWorker)
+		...codexSessionCallbacks(sessionId, cwd, home, launchWorker),
+		backgroundRecovery: codexBackgroundRecovery(home, writerInstance.accountFingerprint)
 	});
 	return {
 		accountFingerprint: writerInstance.accountFingerprint,
@@ -23833,23 +24091,29 @@ function createCodexTracingSession(config, sessionId, cwd, home = process.env.HO
 		storageRoot
 	};
 }
-async function recoverCodexSessions(context, home = process.env.HOME ?? os.homedir()) {
+function codexBackgroundRecovery(home, accountFingerprint) {
 	const resolveCwd = createCodexSessionCwdResolver(home);
-	const report = await context.session.recoverSessions({ optionsForSession: async (sessionId) => {
-		const cwd = await resolveCwd(sessionId);
-		if (!cwd) throw new Error("Original Codex session working directory is unavailable");
-		const config = await getConfig({
-			home,
-			cwd,
-			env: process.env
-		});
-		if (!config.enabled) throw new Error("Original Codex session tracing is disabled");
-		const writer = writerOptions(config);
-		if (!writer) throw new Error("Original Codex session upload credentials are unavailable");
-		if (createLangSmithUploadWriter(writer).accountFingerprint !== context.accountFingerprint) throw new Error("Original Codex session account or project does not match");
-		return codexSessionCallbacks(sessionId, cwd, home);
-	} });
-	for (const failure of report.failed) console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
+	return {
+		optionsForSession: async (sessionId) => {
+			const cwd = await resolveCwd(sessionId);
+			if (!cwd) throw new Error("Original Codex session working directory is unavailable");
+			const config = await getConfig({
+				home,
+				cwd,
+				env: process.env
+			});
+			if (!config.enabled) throw new Error("Original Codex session tracing is disabled");
+			const writer = writerOptions(config);
+			if (!writer) throw new Error("Original Codex session upload credentials are unavailable");
+			if (createLangSmithUploadWriter(writer).accountFingerprint !== accountFingerprint) throw new Error("Original Codex session account or project does not match");
+			return codexSessionCallbacks(sessionId, cwd, home);
+		},
+		onReport: (result) => {
+			if (result.status === "failed") console.error(result.message);
+			if (result.status !== "completed" && result.status !== "partial") return;
+			for (const failure of result.report.failed) console.error(`Codex session recovery failed for ${failure.sessionId}: ${failure.message}`);
+		}
+	};
 }
 function codexSessionCallbacks(sessionId, cwd, home, launchWorker) {
 	return {
@@ -24144,16 +24408,15 @@ function safeEpoch(value) {
 	return Number.isSafeInteger(timestamp) && timestamp >= 0 ? timestamp : void 0;
 }
 async function isSavedCaptureWake(error, context, input, allowSnapshotRevision = false) {
-	if (!(error instanceof CaptureWakeError)) return false;
-	const record = error.captureResult.record;
-	if (record.integration !== "openai-codex" || record.sessionId !== context.sessionId || record.turnId !== input.turnId || !allowSnapshotRevision && record.eventId !== input.eventId || record.runId !== input.submission.run.id || record.destinationFingerprint !== context.accountFingerprint) return false;
-	const saved = await context.captureStore.read({
-		integration: record.integration,
-		sessionId: record.sessionId,
-		turnId: record.turnId,
-		eventId: record.eventId
-	});
-	return saved?.eventId === record.eventId && saved.runId === record.runId && saved.destinationFingerprint === record.destinationFingerprint && saved.eventKind === record.eventKind && saved.capturedAtMs === record.capturedAtMs;
+	return await readSavedCaptureWake(error, {
+		store: context.captureStore,
+		integration: LS_INTEGRATION,
+		sessionId: context.sessionId,
+		turnId: input.turnId,
+		destinationFingerprint: context.accountFingerprint,
+		runId: input.submission.run.id,
+		...allowSnapshotRevision ? {} : { eventId: input.eventId }
+	}) !== void 0;
 }
 function isSavedReconstructionWake(error, context, input) {
 	if (!(error instanceof CaptureWakeError)) return false;
@@ -24227,7 +24490,7 @@ async function runHook() {
 		if (!result && config.enabled) {
 			const context = createCodexTracingSession(config, content.session_id, content.cwd, home);
 			if (context) try {
-				await recoverCodexSessions(context, home);
+				await context.session.wake();
 			} catch (error) {
 				console.error(`Codex session recovery failed: ${error}`);
 			}
