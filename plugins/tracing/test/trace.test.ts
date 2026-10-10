@@ -1115,7 +1115,9 @@ it("traces only the live turn on the first Stop for a resumed rollout", async ()
   // The backlog is not replayed...
   expect.soft(turnIds).toEqual([EDITING_TURN]);
   // ...but it is recorded, so the next Stop is an ordinary one.
-  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EARLIER_TURN}\n${EDITING_TURN}\n`);
+  expect(vol.readFileSync(`${EDITING_FILE}.langsmith`, "utf8")).toBe(
+    `${EARLIER_TURN}\n${EDITING_TURN}\n`,
+  );
 });
 
 it("still traces a backlog turn once the rollout has a traced history", async () => {
@@ -1164,5 +1166,5 @@ it("retries a completed turn when its native session ID arrives after Stop", asy
   const roots = Object.values(tree.data).filter((run) => run.name === "openai.codex");
   expect.soft(roots).toHaveLength(1);
   expect(roots[0]?.extra?.metadata?.thread_id).toBe("019dbc00-a3c9-7681-8e0c-73139815b4f2");
-  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EDITING_TURN}\n`);
+  expect(vol.readFileSync(`${EDITING_FILE}.langsmith`, "utf8")).toBe(`${EDITING_TURN}\n`);
 });

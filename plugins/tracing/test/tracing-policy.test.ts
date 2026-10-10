@@ -118,7 +118,7 @@ it("serializes concurrent updates, safe prototype IDs, and writes private files"
   const policy = JSON.parse(await fs.readFile(file, "utf8"));
   expect(Object.keys(policy.threads)).toHaveLength(16);
   expect(policy.threads.__proto__.preference).toBe("metadata");
-  expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
+  if (process.platform !== "win32") expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
   expect(
     (await fs.readdir(path.dirname(file))).filter(
       (name) => name.endsWith(".tmp") || name.endsWith(".lock"),
@@ -135,7 +135,8 @@ it("never steals a stale lock; retries are bounded and actionable", async () => 
   );
   expect(performance.now() - start).toBeGreaterThanOrEqual(2000);
   expect(performance.now() - start).toBeLessThan(2600);
-  expect((await fs.stat(`${file}.lock`)).mode & 0o777).toBe(0o700);
+  if (process.platform !== "win32")
+    expect((await fs.stat(`${file}.lock`)).mode & 0o777).toBe(0o700);
 });
 it("dangling symlinks and unreadable policy directories fail closed", async () => {
   await fs.mkdir(path.dirname(file), { recursive: true });
@@ -185,9 +186,10 @@ it.each(["writeFile", "sync", "close"] as const)(
     expect(await fs.readdir(path.dirname(file))).toEqual([path.basename(file)]);
   },
 );
-it.each(["directory open", "directory sync", "directory close", "lock rmdir"])(
+it.for(["directory open", "directory sync", "directory close", "lock rmdir"])(
   "postcommit %s failure reports saved with a warning",
-  async (fault) => {
+  async (fault, context) => {
+    if (process.platform === "win32" && fault !== "lock rmdir") context.skip();
     await submitPreference(file, "thread", "first", true, "mute");
     const original = fs.open;
     vi.spyOn(fs, "open").mockImplementation(async (...args) => {

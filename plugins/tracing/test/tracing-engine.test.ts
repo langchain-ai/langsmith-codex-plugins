@@ -6,7 +6,7 @@ import type { RunTree } from "langsmith";
 import { fs, vol } from "memfs";
 import { createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import {
   captureCodexRun,
   createCodexTracingSession,
@@ -135,7 +135,7 @@ it("propagates tool-start capture failures that were not saved", async () => {
   };
   const originalMkdir = fs.promises.mkdir.bind(fs.promises);
   const mkdirSpy = vi.spyOn(fs.promises, "mkdir").mockImplementation(async (path, options) => {
-    if (String(path) === storageRoot) {
+    if (resolve(String(path)) === resolve(storageRoot)) {
       const error = new Error("synthetic capture storage failure") as NodeJS.ErrnoException;
       error.code = "EACCES";
       throw error;

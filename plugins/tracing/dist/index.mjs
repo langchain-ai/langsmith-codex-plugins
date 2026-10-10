@@ -21497,7 +21497,7 @@ async function updatePolicy(path, update) {
 		await temp.close();
 		await rename(tempPath, path);
 		tempPath = void 0;
-		await bestEffort(async () => {
+		if (process.platform !== "win32") await bestEffort(async () => {
 			const directory = await open(dirname(path), "r");
 			try {
 				await directory.sync();

@@ -170,14 +170,16 @@ async function updatePolicy(
     await rename(tempPath, path);
     // Commit point: readers now see the requested mode, even if fsync fails.
     tempPath = undefined;
-    await bestEffort(async () => {
-      const directory = await open(dirname(path), "r");
-      try {
-        await directory.sync();
-      } finally {
-        await bestEffort(() => directory.close(), "Directory close cleanup failed");
-      }
-    }, "Preference is effective, but crash durability could not be confirmed; retry saving");
+    if (process.platform !== "win32") {
+      await bestEffort(async () => {
+        const directory = await open(dirname(path), "r");
+        try {
+          await directory.sync();
+        } finally {
+          await bestEffort(() => directory.close(), "Directory close cleanup failed");
+        }
+      }, "Preference is effective, but crash durability could not be confirmed; retry saving");
+    }
   } finally {
     if (tempPath) {
       await bestEffort(() => unlink(tempPath!), "Temporary file cleanup failed");
