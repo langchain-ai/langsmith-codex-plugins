@@ -1,5 +1,5 @@
 import { RunTree, type RunTreeConfig } from "langsmith";
-import type { TracingMode } from "./tracing-policy.js";
+import type { TracingMode } from "./models/tracing-policy.js";
 import {
   metadataForMode as sharedMetadataForMode,
   projectCodingAgentMetadata,

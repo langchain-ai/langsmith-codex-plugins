@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { tryAcquireFileLock } from "@langchain/plugins-base/storage";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -28,6 +29,18 @@ beforeEach(async () => {
   }
   file = defaultPrivacyPath();
 });
+
+async function expectNoPreferenceLockArtifacts(expectedFiles: string[]): Promise<void> {
+  const claimsPath = `${file}.claims`;
+  expect((await fs.lstat(claimsPath)).isDirectory()).toBe(true);
+  expect(await fs.readdir(claimsPath)).toEqual([]);
+  expect(
+    (await fs.readdir(path.dirname(file)))
+      .filter((name) => name !== path.basename(claimsPath))
+      .sort(),
+  ).toEqual([...expectedFiles].sort());
+}
+
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
@@ -119,11 +132,37 @@ it("serializes concurrent updates, safe prototype IDs, and writes private files"
   expect(Object.keys(policy.threads)).toHaveLength(16);
   expect(policy.threads.__proto__.preference).toBe("metadata");
   if (process.platform !== "win32") expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
-  expect(
-    (await fs.readdir(path.dirname(file))).filter(
-      (name) => name.endsWith(".tmp") || name.endsWith(".lock"),
-    ),
-  ).toEqual([]);
+  await expectNoPreferenceLockArtifacts([path.basename(file)]);
+});
+it("holds the shared preference claim through the atomic commit", async () => {
+  let unblockCommit: () => void = () => {};
+  let commitEntered: () => void = () => {};
+  const commitBarrier = new Promise<void>((resolve) => {
+    unblockCommit = resolve;
+  });
+  const enteredCommit = new Promise<void>((resolve) => {
+    commitEntered = resolve;
+  });
+  const originalRename = fs.rename.bind(fs);
+  vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
+    if (String(args[1]) === file) {
+      commitEntered();
+      await commitBarrier;
+    }
+    return originalRename(...args);
+  });
+  const pending = submitPreference(file, "thread", "turn", true, "mute");
+  try {
+    await enteredCommit;
+    expect((await fs.lstat(`${file}.lock`)).isDirectory()).toBe(true);
+    const claims = await fs.readdir(`${file}.claims`);
+    expect(claims).toHaveLength(1);
+    expect(claims[0]).toMatch(/^[0-9a-f-]+\.json$/);
+  } finally {
+    unblockCommit();
+    await pending;
+  }
+  await expectNoPreferenceLockArtifacts([path.basename(file)]);
 });
 it.each(["missing", "file", "symlink"] as const)(
   "propagates EPERM when the lock path is %s",
@@ -180,6 +219,32 @@ it("never steals a stale lock; retries are bounded and actionable", async () => 
   if (process.platform !== "win32")
     expect((await fs.stat(`${file}.lock`)).mode & 0o777).toBe(0o700);
 });
+it("keeps timeout guidance when releasing the legacy gate also fails", async () => {
+  const blocker = await tryAcquireFileLock(file);
+  if (!blocker) throw new Error("Could not acquire the test file lock");
+  const lockPath = `${file}.lock`;
+  const originalRmdir = fs.rmdir.bind(fs);
+  vi.spyOn(fs, "rmdir").mockImplementation(async (...args) => {
+    if (String(args[0]) === lockPath)
+      throw Object.assign(new Error("gate cleanup failed"), { code: "EACCES" });
+    return originalRmdir(...args);
+  });
+  try {
+    await expect(submitPreference(file, "thread", "turn", true, "mute")).rejects.toThrow(
+      "confirming no preference writer",
+    );
+    expect(savedTurnMode(file, "thread", "turn")).toBe("metadata");
+  } finally {
+    vi.restoreAllMocks();
+    await blocker.release();
+    try {
+      await fs.rmdir(lockPath);
+    } catch (error) {
+      expect(error).toMatchObject({ code: "ENOENT" });
+    }
+  }
+  await expectNoPreferenceLockArtifacts([]);
+});
 it("dangling symlinks and unreadable policy directories fail closed", async () => {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.symlink(path.join(home, "missing"), file);
@@ -202,7 +267,7 @@ it("precommit rename failure preserves the old policy and cleans temporary files
     "rename failed",
   );
   expect(await fs.readFile(file, "utf8")).toBe(before);
-  expect(await fs.readdir(path.dirname(file))).toEqual([path.basename(file)]);
+  await expectNoPreferenceLockArtifacts([path.basename(file)]);
 });
 it.each(["writeFile", "sync", "close"] as const)(
   "precommit temp %s failure preserves the old policy",
@@ -225,7 +290,7 @@ it.each(["writeFile", "sync", "close"] as const)(
       `${fault} failed`,
     );
     expect(await fs.readFile(file, "utf8")).toBe(before);
-    expect(await fs.readdir(path.dirname(file))).toEqual([path.basename(file)]);
+    await expectNoPreferenceLockArtifacts([path.basename(file)]);
   },
 );
 it.for(["directory open", "directory sync", "directory close", "lock rmdir"])(
@@ -234,6 +299,7 @@ it.for(["directory open", "directory sync", "directory close", "lock rmdir"])(
     if (process.platform === "win32" && fault !== "lock rmdir") context.skip();
     await submitPreference(file, "thread", "first", true, "mute");
     const original = fs.open;
+    const policyRenames = vi.spyOn(fs, "rename");
     vi.spyOn(fs, "open").mockImplementation(async (...args) => {
       if (String(args[0]) !== path.dirname(file)) return original(...args);
       if (fault === "directory open") throw new Error(`${fault} failed`);
@@ -264,6 +330,10 @@ it.for(["directory open", "directory sync", "directory close", "lock rmdir"])(
     expect(result?.reason).toContain(`${fault} failed`);
     expect(result?.reason).not.toContain("Could not");
     expect(JSON.parse(await fs.readFile(file, "utf8")).threads.thread.preference).toBe("full");
+    expect(policyRenames.mock.calls.filter(([, target]) => String(target) === file)).toHaveLength(
+      1,
+    );
+    expect(await fs.readdir(`${file}.claims`)).toEqual([]);
   },
 );
 it("ordinary prompts also fail closed rather than start without durable evidence", async () => {

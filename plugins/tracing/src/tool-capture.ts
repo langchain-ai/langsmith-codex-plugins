@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { TracingHookInput } from "./models/tracing-hook.js";
 import type { CaptureRedactor, CapturedTool } from "./models/tool-capture.js";
-import type { TurnMode } from "./tracing-policy.js";
+import type { TurnMode } from "./models/tracing-policy.js";
 import {
   TOOL_CAPTURE_END_SUFFIX,
   TOOL_CAPTURE_FILE_PATTERN,

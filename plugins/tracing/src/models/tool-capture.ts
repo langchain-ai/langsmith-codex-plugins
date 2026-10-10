@@ -1,4 +1,4 @@
-import type { TurnMode } from "../tracing-policy.js";
+import type { TurnMode } from "./tracing-policy.js";
 
 export interface CapturedTool {
   id: string;

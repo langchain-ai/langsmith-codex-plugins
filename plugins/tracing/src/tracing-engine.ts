@@ -40,7 +40,7 @@ import { createCodexSessionCwdResolver } from "./session-discovery.js";
 import type { CodexRunCaptureContext, CodexTracingEngineContext } from "./models/tracing-engine.js";
 import type { TracingHookInput } from "./models/tracing-hook.js";
 import type { CapturedTool, CaptureRedactor } from "./models/tool-capture.js";
-import type { TurnMode } from "./tracing-policy.js";
+import type { TurnMode } from "./models/tracing-policy.js";
 import { defaultPrivacyPath, savedTurnMode } from "./tracing-policy.js";
 import { stripUndefinedDeep } from "./utils/objects.js";
 import { stableEventId, stableRunId, stableRunStartTime } from "./trace-delivery.js";

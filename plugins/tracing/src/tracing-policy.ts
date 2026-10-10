@@ -1,25 +1,27 @@
 import { randomUUID } from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
-import { lstat, mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
+import { open, rename, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
-import { performance } from "node:perf_hooks";
-import { setTimeout as delay } from "node:timers/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { WINDOWS_LOCK_CONTENTION_CODES } from "./constants.ts";
+import { acquireCompatibleDirectoryFileLock } from "@langchain/plugins-base/storage";
+import {
+  TRACING_POLICY_LOCK_SUFFIX,
+  TRACING_POLICY_LOCK_TIMEOUT_MESSAGE,
+  TRACING_POLICY_LOCK_TIMEOUT_ERROR,
+  TRACING_POLICY_LOCK_TIMEOUT_MS,
+} from "./tracing-policy-constants.ts";
+import type {
+  ThreadPolicy,
+  TracingMode,
+  TracingPolicy,
+  TracingPolicyUpdater,
+  TracingPolicyUpdateResult,
+  TurnMode,
+} from "./models/tracing-policy.js";
+import { hasFileLockTimeoutError } from "./utils/errors.ts";
+export type { TracingMode, TurnMode } from "./models/tracing-policy.js";
 
-export type TracingMode = "full" | "metadata";
-export type TurnMode = TracingMode | "off";
-
-interface ThreadPolicy {
-  preference?: TracingMode;
-  turns: Record<string, TurnMode>;
-  inherited?: TurnMode;
-}
-interface TracingPolicy {
-  version: 1;
-  threads: Record<string, ThreadPolicy>;
-}
 function isMode(value: unknown): value is TracingMode {
   return value === "full" || value === "metadata";
 }
@@ -112,37 +114,20 @@ export function parseTracingCommand(prompt: string): "mute" | "unmute" | undefin
  */
 async function updatePolicy(
   path: string,
-  update: (policy: TracingPolicy) => void,
-): Promise<{ warning?: string }> {
-  const lockPath = `${path}.lock`;
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  const deadline = performance.now() + 2000;
-  let locked = false;
-  while (!locked) {
-    try {
-      // Must not be recursive: an existing directory means another writer owns it.
-      await mkdir(lockPath, { mode: 0o700 });
-      locked = true;
-    } catch (error) {
-      if (!hasCode(error, "EEXIST")) {
-        if (!WINDOWS_LOCK_CONTENTION_CODES.some((code) => hasCode(error, code))) throw error;
-        let directoryExists = false;
-        try {
-          directoryExists = (await lstat(lockPath)).isDirectory();
-        } catch {
-          throw error;
-        }
-        if (!directoryExists) throw error;
-      }
-      if (performance.now() >= deadline) {
-        throw new Error(
-          `Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`,
-        );
-      }
-      // Jitter keeps competing writers from retrying in lockstep.
-      await delay(10 + Math.random() * 20);
+  update: TracingPolicyUpdater,
+): Promise<TracingPolicyUpdateResult> {
+  const lockPath = `${path}${TRACING_POLICY_LOCK_SUFFIX}`;
+  const lock = await acquireCompatibleDirectoryFileLock(path, {
+    timeoutMs: TRACING_POLICY_LOCK_TIMEOUT_MS,
+  }).catch((error) => {
+    if (hasFileLockTimeoutError(error)) {
+      throw new Error(
+        `${TRACING_POLICY_LOCK_TIMEOUT_ERROR} ${lockPath}. ${TRACING_POLICY_LOCK_TIMEOUT_MESSAGE}`,
+        { cause: error },
+      );
     }
-  }
+    throw error;
+  });
 
   const warnings: string[] = [];
   // Cleanup attempts are independent and must never replace a precommit error.
@@ -195,7 +180,7 @@ async function updatePolicy(
       await bestEffort(() => unlink(tempPath!), "Temporary file cleanup failed");
     }
     await bestEffort(
-      () => rmdir(lockPath),
+      () => lock.release(),
       `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`,
     );
   }
@@ -218,7 +203,7 @@ export async function submitPreference(
   enabled: boolean,
   command?: "mute" | "unmute",
   defaultMuted = false,
-): Promise<{ warning?: string }> {
+): Promise<TracingPolicyUpdateResult> {
   requireIds(sessionId, turnId);
   return updatePolicy(file, (policy) => {
     const thread: ThreadPolicy = threadPolicy(policy, sessionId) ?? { turns: {} };

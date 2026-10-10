@@ -4,7 +4,7 @@ import type { LifecycleCaptureInput } from "@langchain/plugins-base/tracing/life
 import type { UploadDestination } from "@langchain/plugins-base/tracing/upload";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import type { RunTree } from "langsmith";
-import type { TurnMode } from "../tracing-policy.js";
+import type { TurnMode } from "./tracing-policy.js";
 
 export interface CodexTracingEngineContext {
   accountFingerprint: string;

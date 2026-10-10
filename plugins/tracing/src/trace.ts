@@ -26,12 +26,8 @@ import { createRunTree } from "./privacy.js";
 import { stableRunId, stableRunStartTime } from "./trace-delivery.js";
 import type { CodexRunCapture } from "./models/tracing-engine.js";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
-import {
-  defaultPrivacyPath,
-  savedTurnMode,
-  inheritThreadMode,
-  type TurnMode,
-} from "./tracing-policy.js";
+import { defaultPrivacyPath, savedTurnMode, inheritThreadMode } from "./tracing-policy.js";
+import type { TurnMode } from "./models/tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 
 async function loadSession(name: string) {

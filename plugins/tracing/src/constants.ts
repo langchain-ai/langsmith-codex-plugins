@@ -13,7 +13,6 @@ export const TOOL_SNAPSHOT_EVENT_SUFFIX = ":native-tool";
 export const TOOL_RECONSTRUCTION_EVENT_SUFFIX = ":reconstruct-tool";
 export const TOOL_START_EVENT_SUFFIX = ":tool-start";
 export const TOOL_COMPLETE_EVENT_SUFFIX = ":tool-complete";
-export const WINDOWS_LOCK_CONTENTION_CODES = ["EPERM", "EACCES"] as const;
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.
