@@ -124,6 +124,8 @@ Setting this replaces the normal destination rather than adding to it, and an em
 
 With tracing on, a full turn uploads your messages, tool inputs and outputs, metadata, token usage and subagent structure. A muted turn uploads the structure and placeholders instead. Keep tracing off if none of that may leave your machine.
 
+Full traces include Git repository and author details when a tool path can be resolved. Opaque code wrappers without structured paths have no per-tool Git attribution.
+
 ## Development
 
 ```bash
