@@ -17,7 +17,7 @@ async function hook(
   turnId: string,
   enabled = false,
   defaultMuted = false,
-  options: { configOnly?: boolean; cwd?: string } = {},
+  options: { configOnly?: boolean; cwd?: string; session?: string } = {},
 ) {
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
@@ -55,7 +55,7 @@ async function hook(
     child.stdin.end(
       JSON.stringify({
         hook_event_name: "UserPromptSubmit",
-        session_id: "thread",
+        session_id: options.session ?? "thread",
         turn_id: turnId,
         cwd: options.cwd ?? home,
         prompt,
@@ -156,7 +156,7 @@ it("the production bundle consumes exact controls with no credentials, across re
   expect(JSON.parse(unmuted.stdout).decision).toBe("block");
   expect((await hook("work", "future", true)).stdout).toBe("");
   const policy = JSON.parse(
-    await fs.readFile(path.join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+    await fs.readFile(path.join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
   );
   expect(policy.threads.thread.turns).toEqual({
     control: "off",
@@ -166,13 +166,26 @@ it("the production bundle consumes exact controls with no credentials, across re
 });
 it("the bundle blocks corruption without overwriting it", async () => {
   await fs.mkdir(path.join(home, ".codex"));
-  const file = path.join(home, ".codex/langsmith-state.privacy.json");
+  const file = path.join(home, ".codex/langsmith_state_privacy.json");
   await fs.writeFile(file, "broken");
   const result = await hook("langsmith-tracing:unmute", "control");
   expect(result.code).toBe(0);
   expect(JSON.parse(result.stdout).decision).toBe("block");
   expect(JSON.parse(result.stdout).reason).toContain("Refusing to overwrite");
   expect(await fs.readFile(file, "utf8")).toBe("broken");
+});
+it("serializes independent hook processes and retains preferences after restart", async () => {
+  const sessions = Array.from({ length: 8 }, (_, index) => `process-${index}`);
+  await Promise.all(
+    sessions.map((session) => hook("langsmith-tracing:mute", "control", true, false, { session })),
+  );
+  const file = path.join(home, ".codex/langsmith_state_privacy.json");
+  const saved = JSON.parse(await fs.readFile(file, "utf8"));
+  expect(Object.keys(saved.threads).sort()).toEqual(sessions);
+  for (const session of sessions) expect(saved.threads[session].preference).toBe("metadata");
+  await hook("work", "after-restart", true, false, { session: sessions[0] });
+  const restarted = JSON.parse(await fs.readFile(file, "utf8"));
+  expect(restarted.threads[sessions[0]].turns["after-restart"]).toBe("metadata");
 });
 it("the bundle does not interpret whitespace or slash lookalikes", async () => {
   expect((await hook(" langsmith-tracing:mute", "a")).stdout).toBe("");
@@ -184,7 +197,7 @@ it("the production bundle follows changing defaults without materializing an ove
   expect((await hook("work", "full", true, false)).stdout).toBe("");
   expect((await hook("work", "muted", true, false)).stdout).toBe("");
   const policy = JSON.parse(
-    await fs.readFile(path.join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+    await fs.readFile(path.join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
   );
   expect(policy).toEqual({
     version: 1,
@@ -215,7 +228,7 @@ it("the production submit hook reads only the hidden home baseline outside home 
     stderr: "",
   });
   const policy = JSON.parse(
-    await fs.readFile(path.join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+    await fs.readFile(path.join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
   );
   expect(policy.threads.thread.turns).toEqual({ "old-only": "off", hidden: "metadata" });
 });

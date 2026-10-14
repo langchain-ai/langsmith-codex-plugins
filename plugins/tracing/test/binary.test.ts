@@ -89,7 +89,7 @@ describe.runIf(binaryExists)("the standalone binary", () => {
       reason: expect.stringContaining("Thread tracing muted (metadata-only)."),
     });
     const policy = JSON.parse(
-      await fs.readFile(path.join(codexHome, ".codex/langsmith-state.privacy.json"), "utf8"),
+      await fs.readFile(path.join(codexHome, ".codex/langsmith_state_privacy.json"), "utf8"),
     );
     expect(policy.threads.thread.turns).toEqual({ control: "off" });
   });
@@ -99,7 +99,7 @@ describe.runIf(binaryExists)("the standalone binary", () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
-    expect(existsSync(path.join(codexHome, ".codex/langsmith-state.privacy.json"))).toBe(false);
+    expect(existsSync(path.join(codexHome, ".codex/langsmith_state_privacy.json"))).toBe(false);
   });
 
   it("does nothing on a hook event it does not handle", async () => {
@@ -107,6 +107,6 @@ describe.runIf(binaryExists)("the standalone binary", () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe("");
-    expect(existsSync(path.join(codexHome, ".codex/langsmith-state.privacy.json"))).toBe(false);
+    expect(existsSync(path.join(codexHome, ".codex/langsmith_state_privacy.json"))).toBe(false);
   });
 });
