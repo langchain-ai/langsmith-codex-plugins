@@ -21,8 +21,8 @@ and their transcript fixtures, `hooks/hooks.json` declares the Codex lifecycle h
 `.codex-plugin/plugin.json` carries the plugin metadata and version. The hook reads its event from
 standard input and Codex invokes it with `PLUGIN_ROOT` pointing at the installed plugin directory,
 so keep runtime dependencies bundled rather than resolved from a `node_modules` that will not be
-there. `src/shared-config.ts` is shared with the Claude Code plugin and has to stay byte for byte
-identical to it, so report bugs in it upstream instead of forking it here.
+there. Settings loading comes from the shared `@langchain/plugins-base` package that the Claude Code
+plugin also uses, so report bugs in it upstream instead of forking it here.
 
 ## The committed bundle is what actually runs
 

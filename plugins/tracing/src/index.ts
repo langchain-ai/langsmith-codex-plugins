@@ -4,10 +4,11 @@ import { getConfig } from "./config.js";
 import { LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
-import { toSdkReplicas } from "./shared-config.js";
+import { toSdkReplicas } from "@langchain/plugins-base/settings";
 import { convertToRunTree } from "./trace.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
+import { homeDirectory } from "./utils/home.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
@@ -26,7 +27,7 @@ async function runHook() {
     return;
   }
   if (content.hook_event_name !== "Stop") return;
-  const config = await getConfig({ home: process.env.HOME!, cwd: content.cwd, env: process.env });
+  const config = await getConfig({ home: homeDirectory(), cwd: content.cwd, env: process.env });
 
   // Skip entirely if tracing is disabled
   if (!config.enabled) return;
