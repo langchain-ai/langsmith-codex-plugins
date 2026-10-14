@@ -3,7 +3,7 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { GitInfo } from "./types.js";
+import type { GitInfo } from "./models/rollout.js";
 import {
   LS_AGENT_PURPOSE,
   LS_AGENT_RUNTIME,

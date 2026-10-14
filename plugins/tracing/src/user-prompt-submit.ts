@@ -1,20 +1,17 @@
 import { getConfig } from "./config.js";
 import { defaultPrivacyPath, parseTracingCommand, submitPreference } from "./tracing-policy.js";
 
-export async function handlePromptSubmit(
-  input: {
-    session_id: string;
-    turn_id: string;
-    cwd: string;
-    prompt: string;
-  },
-  privacyPath = defaultPrivacyPath(),
-) {
+export async function handlePromptSubmit(input: {
+  session_id: string;
+  turn_id: string;
+  cwd: string;
+  prompt: string;
+}) {
   const command = parseTracingCommand(input.prompt);
   try {
     const config = await getConfig({ home: process.env.HOME!, cwd: input.cwd, env: process.env });
     const result = await submitPreference(
-      privacyPath,
+      defaultPrivacyPath(),
       input.session_id,
       input.turn_id,
       config.enabled,

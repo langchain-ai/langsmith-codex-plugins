@@ -6,9 +6,7 @@ import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-
-export type TracingMode = "full" | "metadata";
-export type TurnMode = TracingMode | "off";
+import type { TracingMode, TurnMode } from "./models/tracing-policy.js";
 
 interface ThreadPolicy {
   preference?: TracingMode;
