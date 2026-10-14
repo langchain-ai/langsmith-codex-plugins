@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { PREFERENCE_WARNING_PREFIX } from "./constants.js";
 import { homeDirectory } from "./utils/home.js";
 import { defaultPrivacyPath, parseTracingCommand, submitPreference } from "./tracing-policy.js";
 
@@ -11,16 +12,15 @@ export async function handlePromptSubmit(input: {
   const command = parseTracingCommand(input.prompt);
   try {
     const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
-    const result = await submitPreference(
-      defaultPrivacyPath(),
-      input.session_id,
-      input.turn_id,
-      config.enabled,
+    const result = await submitPreference(defaultPrivacyPath(), {
+      sessionId: input.session_id,
+      turnId: input.turn_id,
+      enabled: config.enabled,
       command,
-      config.defaultMuted,
-    );
+      defaultMuted: config.defaultMuted,
+    });
     if (!command) {
-      if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+      if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
       return;
     }
     let reason = `Thread tracing ${command === "mute" ? "muted (metadata-only)" : "unmuted (full content)"}. Preference saved for the next turn; the current turn is unchanged.`;

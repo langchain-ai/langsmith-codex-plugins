@@ -1,9 +1,9 @@
 import * as nodeFs from "node:fs";
 import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
-import { mkdir, open, rename, rmdir, unlink } from "node:fs/promises";
+import { chmod, link, lstat, mkdir, open, readFile, readdir, rename, rmdir, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
@@ -5227,7 +5227,7 @@ async function writeFileAtomic(filePath, content) {
 	});
 	await nodeFsPromises.rename(tempPath, filePath);
 }
-async function readdir(dir) {
+async function readdir$1(dir) {
 	return nodeFsPromises.readdir(dir);
 }
 async function stat(filePath) {
@@ -7682,7 +7682,7 @@ var Client = class Client {
 				Client._fallbackDirsCreated.add(directory);
 			}
 			if (maxBytes !== void 0 && maxBytes > 0) try {
-				const traceFiles = (await readdir(directory)).filter((f) => f.startsWith("trace_") && f.endsWith(".json"));
+				const traceFiles = (await readdir$1(directory)).filter((f) => f.startsWith("trace_") && f.endsWith(".json"));
 				let total = 0;
 				for (const name of traceFiles) {
 					const { size } = await stat(path.join(directory, name));
@@ -12485,6 +12485,7 @@ const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 const CODEX_CONFIG_DIRECTORY = ".codex";
+const PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
 const SIDECAR_SUFFIX = ".langsmith";
 const CHILD_SCOPE_RESET = {
 	approval_policy: void 0,
@@ -12492,6 +12493,7 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_id: void 0,
 	ls_subagent_type: void 0
 };
+const MODE_FULL = "full";
 const MODE_METADATA = "metadata";
 const ENV_PREFIXES = ["LANGSMITH_CODEX_", "LANGSMITH_"];
 const ENV_SUFFIXES = {
@@ -12519,6 +12521,14 @@ const ENV_FALSE_VALUES = [
 	"no",
 	"off"
 ];
+const POLICY_THREAD_KEYS = [
+	"preference",
+	"turns",
+	"inherited"
+];
+const POLICY_TOP_LEVEL_KEYS = ["version", "threads"];
+const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
+const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -12972,7 +12982,906 @@ function createRunTree(config, mode = "full", parent) {
 	return run;
 }
 //#endregion
-//#region src/tracing-policy.ts
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/errors.js
+function describe(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+function errorCode(error) {
+	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+const POLICY_LOCK_TIMEOUT_MS = 2e3;
+const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
+const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
+const POLICY_UNREADABLE_MESSAGE = "Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.";
+const POLICY_NOT_REGULAR_MESSAGE = "Tracing preferences must be a regular, non-symlink file";
+const POLICY_ASYNC_UPDATE_MESSAGE = "A policy update must change the policy synchronously";
+const POLICY_FILE_ENCODING = "utf8";
+const POLICY_TEMP_CLOSE_WARNING = "Temporary file close failed";
+const POLICY_TEMP_CLEANUP_WARNING = "Temporary file cleanup failed";
+const POLICY_DIRECTORY_CLOSE_WARNING = "Directory close cleanup failed";
+const POLICY_LOCK_CLEANUP_FAILED_PREFIX = "Preference lock cleanup failed at";
+const POLICY_CANNOT_READ_PREFIX = "Cannot read tracing preferences at";
+const POLICY_DURABILITY_WARNING = "Preference is effective, but crash durability could not be confirmed; retry saving";
+const POLICY_LOCK_RELEASE_WARNING = "Before retrying, remove the lock only after confirming no preference writer is running";
+const POLICY_PARSE_RESULT_MESSAGE = "A policy parser must return a policy";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/constants.js
+const FILE_MISSING_CODE = "ENOENT";
+const FILE_EXISTS_CODE = "EEXIST";
+const PERMISSION_DENIED_CODE = "EPERM";
+const FILE_ACCESS_DENIED_CODE = "EACCES";
+const FILE_BUSY_CODE = "EBUSY";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+const CLEANUP_IGNORED_DIRECTORY_CODES = [
+	FILE_MISSING_CODE,
+	"ENOTEMPTY",
+	FILE_EXISTS_CODE,
+	PERMISSION_DENIED_CODE,
+	FILE_BUSY_CODE,
+	FILE_ACCESS_DENIED_CODE
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+async function removeDirectoryBestEffort(path, warning) {
+	try {
+		await rmdir(path);
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") console.warn(warning, describe(error));
+	}
+}
+async function removeEmptyAncestors(directory, root) {
+	for (let current = directory; current !== root && current !== dirname(current);) {
+		try {
+			await rmdir(current);
+		} catch (error) {
+			const code = errorCode(error);
+			if (CLEANUP_IGNORED_DIRECTORY_CODES.some((ignored) => ignored === code)) return;
+			throw error;
+		}
+		current = dirname(current);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/constants.js
+const FILE_LOCK_CLAIM_EXTENSION = ".json";
+const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
+const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
+const FILE_LOCK_TIMEOUT_ERROR_NAME = "FileLockTimeoutError";
+const FILE_LOCK_TEMP_SUFFIX = ".tmp";
+const FILE_LOCK_ENCODING = "utf-8";
+const FILE_LOCK_TIMEOUT_MESSAGE = "Timed out waiting for file lock";
+const FILE_LOCK_TICKET_LIMIT_MESSAGE = "File lock ticket limit reached";
+const FILE_LOCK_RELEASE_MESSAGE = "Could not release file lock claim";
+const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive number";
+const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
+const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
+const FILE_LOCK_STALE_CLAIM_MS = 3e3;
+const FILE_LOCK_TRY_CHOOSING_WAIT_MS = 1e3;
+const FILE_LOCK_DIRECTORY_CONTENTION_CODES = [PERMISSION_DENIED_CODE, FILE_ACCESS_DENIED_CODE];
+const FILE_LOCK_BUSY_FILE_CODES = [...FILE_LOCK_DIRECTORY_CONTENTION_CODES, FILE_BUSY_CODE];
+const FILE_LOCK_HEARTBEAT_WARNING = "Could not refresh a file lock claim:";
+const FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE = "Could not release the legacy lock gate after shared lock acquisition failed";
+const FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE = "Could not release compatible file lock";
+const FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE = "Legacy file lock gate changed before release";
+const FILE_LOCK_COMPATIBLE_OWNER_FILE = "owner";
+const FILE_LOCK_COMPATIBLE_OWNER_MESSAGE = "Could not record the legacy file lock gate owner";
+const FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN = /^[1-9]\d*$/u;
+const FILE_LOCK_COMPATIBLE_STALE_SUFFIX = ".stale";
+const FILE_LOCK_GATE_CLEANUP_WARNING = "Could not remove a half-created lock folder:";
+const FILE_LOCK_STALE_GATE_CLEANUP_WARNING = "Could not remove an old lock folder:";
+const STORAGE_NOT_WRITABLE_ERROR_NAME = "StorageNotWritableError";
+const STORAGE_NOT_WRITABLE_MESSAGE = "LangSmith can't write to its storage folder";
+const STORAGE_NOT_WRITABLE_FIX = "Fix that folder's permissions so your user account can create files in it, and tracing will resume.";
+const FILE_LOCK_LOST_MESSAGE = "The file lock was taken over before the write finished";
+const STORAGE_UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+new RegExp(`^\\.${STORAGE_UUID}(\\.${STORAGE_UUID})?\\.tmp$`, "u"), new RegExp(`^wake-[0-9a-f]{64}\\.active\\.${STORAGE_UUID}(\\.attempt\\.[1-9]\\d*)?\\.json$`, "u");
+new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+async function removeEmptyLockFolders(lockPath, root) {
+	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+function isPlainRecord(value) {
+	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/errors.js
+var FileLockTimeoutError = class extends Error {
+	blockedPath;
+	constructor(blockedPath) {
+		super(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(blockedPath)}`);
+		this.name = FILE_LOCK_TIMEOUT_ERROR_NAME;
+		this.blockedPath = resolve(blockedPath);
+	}
+};
+var StorageNotWritableError = class extends Error {
+	folder;
+	code;
+	constructor(folder, cause) {
+		super(`${STORAGE_NOT_WRITABLE_MESSAGE} ${resolve(folder)}. ${STORAGE_NOT_WRITABLE_FIX}`, { cause });
+		this.name = STORAGE_NOT_WRITABLE_ERROR_NAME;
+		this.folder = resolve(folder);
+		this.code = errorCode(cause);
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+const heartbeats = /* @__PURE__ */ new Map();
+function startHeartbeat(path, id) {
+	const timer = setInterval(() => {
+		const now = /* @__PURE__ */ new Date();
+		utimes(path, now, now).catch(warnUnlessMissing);
+	}, 500);
+	timer.unref();
+	heartbeats.set(id, timer);
+}
+function stopHeartbeat(id) {
+	clearInterval(heartbeats.get(id));
+	heartbeats.delete(id);
+}
+function warnUnlessMissing(error) {
+	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+function processIsAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "ESRCH") return false;
+		return;
+	}
+}
+async function removeFile(filePath) {
+	try {
+		await unlink(filePath);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return true;
+		return false;
+	}
+}
+function isBusyFileError(error) {
+	return FILE_LOCK_BUSY_FILE_CODES.includes(errorCode(error) ?? "");
+}
+function timeoutMs(options) {
+	const value = options?.timeoutMs ?? 5e3;
+	if (!Number.isFinite(value) || value <= 0) throw new RangeError(FILE_LOCK_INVALID_TIMEOUT_MESSAGE);
+	return value;
+}
+function waitForNextScan(deadline, blockedPath) {
+	const remaining = deadline - performance$1.now();
+	if (remaining <= 0) return Promise.reject(new FileLockTimeoutError(blockedPath));
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+async function createLegacyGate(gatePath) {
+	await mkdir(gatePath, { mode: 448 });
+	const stat = await lstat(gatePath);
+	if (!stat.isDirectory()) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
+	await recordLegacyGateOwner(gatePath);
+	startHeartbeat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), gatePath);
+	return {
+		path: gatePath,
+		dev: stat.dev,
+		ino: stat.ino,
+		birthtimeMs: stat.birthtimeMs
+	};
+}
+function resetMissingPermission(attempt) {
+	attempt.missingPermissionError = void 0;
+	attempt.windowsDeniedRetries = 0;
+}
+async function waitOutContention(attempt, error) {
+	const { gatePath, filePath, deadline, tryAcquire } = attempt;
+	const code = errorCode(error);
+	const permissionDenied = FILE_LOCK_DIRECTORY_CONTENTION_CODES.includes(code ?? "");
+	if (code !== "EEXIST" && !permissionDenied) throw error;
+	let isContended = false;
+	try {
+		const gate = await lstat(gatePath);
+		const isDirectory = gate.isDirectory();
+		isContended = isDirectory || gate.isFile() && code === "EEXIST";
+		if (isContended && await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) {
+			if (!await reclaimLegacyGate(gatePath, filePath, tryAcquire)) await waitForNextScan(deadline, gatePath);
+			return;
+		}
+	} catch (statError) {
+		if (errorCode(statError) === "ENOENT") {
+			if (code === "EEXIST") {
+				resetMissingPermission(attempt);
+				await waitForNextScan(deadline, gatePath);
+				return;
+			}
+			if (permissionDenied) {
+				const firstRetry = attempt.missingPermissionError === void 0;
+				attempt.missingPermissionError = new StorageNotWritableError(dirname(gatePath), error);
+				if (firstRetry) return;
+				if (process.platform !== "win32" || code !== "EPERM" || attempt.windowsDeniedRetries >= 5) throw attempt.missingPermissionError;
+				attempt.windowsDeniedRetries += 1;
+				const denied = attempt.missingPermissionError;
+				await waitForNextScan(deadline, gatePath).catch(() => Promise.reject(denied));
+				return;
+			}
+		}
+		throw error;
+	}
+	if (!isContended) throw error;
+	resetMissingPermission(attempt);
+	await waitForNextScan(deadline, gatePath);
+}
+async function acquireLegacyDirectoryGate(filePath, deadline, tryAcquire) {
+	const gatePath = `${filePath}${FILE_LOCK_LEGACY_DIRECTORY_SUFFIX}`;
+	await mkdir(dirname(filePath), {
+		recursive: true,
+		mode: 448
+	});
+	const attempt = {
+		gatePath,
+		filePath,
+		deadline,
+		tryAcquire,
+		windowsDeniedRetries: 0
+	};
+	for (;;) {
+		if (performance$1.now() >= deadline) throw attempt.missingPermissionError ?? new FileLockTimeoutError(gatePath);
+		try {
+			return await createLegacyGate(gatePath);
+		} catch (error) {
+			await waitOutContention(attempt, error);
+		}
+	}
+}
+async function releaseLegacyDirectoryGate(gate) {
+	stopHeartbeat(gate.path);
+	let stat;
+	try {
+		stat = await lstat(gate.path);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return;
+		throw error;
+	}
+	if (!stat.isDirectory() || stat.dev !== gate.dev || stat.ino !== gate.ino || stat.birthtimeMs !== gate.birthtimeMs) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
+	await removeFile(join(gate.path, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+	await rmdir(gate.path);
+}
+async function recordLegacyGateOwner(gatePath) {
+	try {
+		await writeFile(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), String(process.pid), {
+			flag: "wx",
+			mode: 384
+		});
+	} catch (error) {
+		await removeDirectoryBestEffort(gatePath, FILE_LOCK_GATE_CLEANUP_WARNING);
+		throw new Error(FILE_LOCK_COMPATIBLE_OWNER_MESSAGE, { cause: error });
+	}
+}
+async function legacyGateIsAbandoned(gatePath, isDirectory, modifiedAtMs) {
+	let contents;
+	try {
+		contents = await readFile(isDirectory ? join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE) : gatePath, FILE_LOCK_ENCODING);
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") return false;
+		contents = "";
+	}
+	const pid = FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN.test(contents.trim()) ? Number(contents.trim()) : void 0;
+	if (pid !== void 0 && Number.isSafeInteger(pid) && pid > 0) return processIsAlive(pid) === false || isDirectory && await ownerHeartbeatStopped(gatePath);
+	return !isDirectory && Date.now() - modifiedAtMs >= 5e3;
+}
+async function ownerHeartbeatStopped(gatePath) {
+	try {
+		const owner = await lstat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+		return Date.now() - owner.mtimeMs >= FILE_LOCK_STALE_CLAIM_MS;
+	} catch {
+		return false;
+	}
+}
+async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
+	const takeover = await tryAcquire(filePath);
+	if (!takeover) return false;
+	try {
+		let gate;
+		try {
+			gate = await lstat(gatePath);
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") return true;
+			throw error;
+		}
+		const isDirectory = gate.isDirectory();
+		if (!await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) return false;
+		const stalePath = `${gatePath}.${randomUUID()}${FILE_LOCK_COMPATIBLE_STALE_SUFFIX}`;
+		try {
+			await rename(gatePath, stalePath);
+		} catch (error) {
+			if (isBusyFileError(error)) return false;
+			throw error;
+		}
+		if (!isDirectory) {
+			await removeFile(stalePath);
+			return true;
+		}
+		await removeFile(join(stalePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+		await removeDirectoryBestEffort(stalePath, FILE_LOCK_STALE_GATE_CLEANUP_WARNING);
+		return true;
+	} finally {
+		await takeover.release();
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+function parseClaim(value, id) {
+	if (!isPlainRecord(value)) return void 0;
+	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
+	return value;
+}
+async function publishClaim(filePath, claim, create, deadline) {
+	const temporaryPath = join(dirname(filePath), `.${claim.id}.${randomUUID()}${FILE_LOCK_TEMP_SUFFIX}`);
+	try {
+		await writeFile(temporaryPath, JSON.stringify(claim), {
+			flag: "wx",
+			mode: 384
+		});
+		if (create) await link(temporaryPath, filePath);
+		else {
+			const replacementDeadline = deadline ?? performance$1.now() + 100;
+			for (;;) try {
+				await rename(temporaryPath, filePath);
+				break;
+			} catch (error) {
+				if (errorCode(error) !== "EPERM") throw error;
+				await waitForNextScan(replacementDeadline, dirname(filePath));
+			}
+		}
+	} finally {
+		await removeFile(temporaryPath);
+	}
+}
+async function createClaim(claimDirectory) {
+	for (;;) {
+		const id = randomUUID();
+		const claim = {
+			version: 1,
+			id,
+			pid: process.pid,
+			choosing: true,
+			ticket: 0
+		};
+		try {
+			const path = join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
+			await publishClaim(path, claim, true);
+			startHeartbeat(path, id);
+			return claim;
+		} catch (error) {
+			if (errorCode(error) !== "EEXIST") throw error;
+		}
+	}
+}
+async function scanClaims(claimDirectory, ownPath) {
+	const entries = await readdir(claimDirectory, { withFileTypes: true });
+	const claims = [];
+	const reference = ownPath === void 0 ? void 0 : await modifiedAt(ownPath);
+	const abandoned = async (path) => {
+		if (reference === void 0) return false;
+		const modified = await modifiedAt(path);
+		if (modified === void 0 || reference - modified < 3e3) return false;
+		return removeFile(path);
+	};
+	for (const entry of entries) {
+		if (!entry.name.endsWith(".json")) continue;
+		const id = entry.name.slice(0, -5);
+		const path = join(claimDirectory, entry.name);
+		if (!entry.isFile()) return {
+			claims,
+			blocked: true
+		};
+		let value;
+		try {
+			value = JSON.parse(await readFile(path, FILE_LOCK_ENCODING));
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") continue;
+			if (await abandoned(path)) continue;
+			return {
+				claims,
+				blocked: true,
+				transient: isBusyFileError(error)
+			};
+		}
+		const claim = parseClaim(value, id);
+		if (!claim) {
+			if (await abandoned(path)) continue;
+			return {
+				claims,
+				blocked: true
+			};
+		}
+		const alive = processIsAlive(claim.pid);
+		if (alive === false) {
+			if (!await removeFile(path)) return {
+				claims,
+				blocked: true
+			};
+			continue;
+		}
+		if (await abandoned(path)) continue;
+		if (alive === void 0) return {
+			claims,
+			blocked: true
+		};
+		claims.push(claim);
+	}
+	return {
+		claims,
+		blocked: false
+	};
+}
+async function modifiedAt(path) {
+	try {
+		return (await lstat(path)).mtimeMs;
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return void 0;
+		throw error;
+	}
+}
+function claimPath(claimDirectory, id) {
+	return join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
+}
+function hasClaimState(claims, id, choosing, ticket) {
+	const claim = claims.find((peer) => peer.id === id);
+	return claim?.choosing === choosing && claim.ticket === ticket;
+}
+function makeHandle(claimDirectory, claim) {
+	let releasePromise;
+	return {
+		async assertHeld() {
+			if (await modifiedAt(claimPath(claimDirectory, claim.id)) === void 0) throw new Error(FILE_LOCK_LOST_MESSAGE);
+		},
+		release() {
+			stopHeartbeat(claim.id);
+			releasePromise ??= removeFile(claimPath(claimDirectory, claim.id)).then((removed) => {
+				if (!removed) throw new Error(FILE_LOCK_RELEASE_MESSAGE);
+			});
+			return releasePromise;
+		}
+	};
+}
+async function beginClaim(filePath) {
+	const claimDirectory = `${resolve(filePath)}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	for (;;) try {
+		await assertSafeClaimDirectory(claimDirectory);
+		await mkdir(claimDirectory, {
+			recursive: true,
+			mode: 448
+		});
+		await assertSafeClaimDirectory(claimDirectory);
+		await chmod(claimDirectory, 448);
+		return {
+			claimDirectory,
+			claim: await createClaim(claimDirectory)
+		};
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") throw error;
+	}
+}
+async function assertSafeClaimDirectory(claimDirectory) {
+	let stat;
+	try {
+		stat = await lstat(claimDirectory);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return;
+		throw error;
+	}
+	if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE);
+}
+function isStillBusy(attempt, scan) {
+	return !attempt.waitForPeers && scan.blocked && scan.transient === true && performance$1.now() < attempt.busyDeadline;
+}
+async function waitOrReleaseClaim(attempt) {
+	if (!attempt.waitForPeers) {
+		await makeHandle(attempt.claimDirectory, attempt.claim).release();
+		return false;
+	}
+	await waitForNextScan(attempt.deadline, attempt.claimDirectory);
+	return true;
+}
+async function observePeers(attempt, expectedChoosing, expectedTicket) {
+	for (;;) {
+		const scan = await scanClaims(attempt.claimDirectory, attempt.ownPath);
+		if (isStillBusy(attempt, scan)) {
+			await setTimeout$1(10);
+			continue;
+		}
+		if (scan.blocked || !hasClaimState(scan.claims, attempt.claim.id, expectedChoosing, expectedTicket)) {
+			if (!await waitOrReleaseClaim(attempt)) return void 0;
+			continue;
+		}
+		return scan.claims;
+	}
+}
+async function takeTicket(attempt) {
+	const { claim, claimDirectory, ownPath, waitForPeers } = attempt;
+	const claims = await observePeers(attempt, true, 0);
+	if (claims === void 0) return void 0;
+	if (!waitForPeers && claims.some((peer) => peer.id !== claim.id && !peer.choosing)) {
+		await makeHandle(claimDirectory, claim).release();
+		return;
+	}
+	let maxTicket = 0;
+	for (const peer of claims) maxTicket = Math.max(maxTicket, peer.ticket);
+	if (maxTicket >= Number.MAX_SAFE_INTEGER) throw new Error(FILE_LOCK_TICKET_LIMIT_MESSAGE);
+	const ticketedClaim = {
+		...claim,
+		choosing: false,
+		ticket: maxTicket + 1
+	};
+	await publishClaim(ownPath, ticketedClaim, false, waitForPeers ? attempt.deadline : attempt.busyDeadline);
+	return ticketedClaim;
+}
+async function waitForTurn(attempt, ticketedClaim) {
+	const { claim, claimDirectory, waitForPeers } = attempt;
+	const choosingDeadline = performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS;
+	for (;;) {
+		const claims = await observePeers(attempt, false, ticketedClaim.ticket);
+		if (claims === void 0) return void 0;
+		const peers = claims.filter((peer) => peer.id !== claim.id);
+		if (!waitForPeers && !peers.some((peer) => !peer.choosing && precedes(peer, ticketedClaim)) && peers.some((peer) => peer.choosing) && performance$1.now() < choosingDeadline) {
+			await setTimeout$1(10);
+			continue;
+		}
+		if (peers.some((peer) => precedes(peer, ticketedClaim))) {
+			if (!await waitOrReleaseClaim(attempt)) return void 0;
+			continue;
+		}
+		if (waitForPeers && performance$1.now() > attempt.deadline) throw new FileLockTimeoutError(claimDirectory);
+		return {
+			claimDirectory,
+			claim: ticketedClaim
+		};
+	}
+}
+async function acquireClaim(filePath, waitForPeers, deadline) {
+	const { claimDirectory, claim } = await beginClaim(filePath);
+	const attempt = {
+		filePath,
+		claimDirectory,
+		claim,
+		ownPath: claimPath(claimDirectory, claim.id),
+		waitForPeers,
+		deadline,
+		busyDeadline: performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS
+	};
+	try {
+		const ticketedClaim = await takeTicket(attempt);
+		if (!ticketedClaim) return void 0;
+		return await waitForTurn(attempt, ticketedClaim);
+	} catch (error) {
+		await makeHandle(claimDirectory, claim).release();
+		throw error;
+	}
+}
+async function tryAcquireFileLock(filePath) {
+	const acquired = await acquireClaim(filePath, false, 0);
+	if (!acquired) return void 0;
+	return makeHandle(acquired.claimDirectory, acquired.claim);
+}
+async function acquireCompatibleDirectoryFileLock(filePath, options) {
+	const resolvedPath = resolve(filePath);
+	const deadline = performance$1.now() + timeoutMs(options);
+	const gate = await acquireLegacyDirectoryGate(resolvedPath, deadline, tryAcquireFileLock);
+	let acquired;
+	try {
+		acquired = await acquireClaim(resolvedPath, true, deadline);
+		if (!acquired) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
+	} catch (error) {
+		try {
+			await releaseLegacyDirectoryGate(gate);
+		} catch (cleanupError) {
+			throw new AggregateError([error, cleanupError], FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE, { cause: cleanupError });
+		}
+		throw error;
+	}
+	const sharedHandle = makeHandle(acquired.claimDirectory, acquired.claim);
+	let releasePromise;
+	return {
+		assertHeld: () => sharedHandle.assertHeld(),
+		release() {
+			releasePromise ??= (async () => {
+				const errors = [];
+				try {
+					await sharedHandle.release();
+				} catch (error) {
+					errors.push(error);
+				}
+				try {
+					await releaseLegacyDirectoryGate(gate);
+				} catch (error) {
+					errors.push(error);
+				}
+				if (errors.length === 1) throw errors[0];
+				if (errors.length > 1) throw new AggregateError(errors, FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE);
+			})();
+			return releasePromise;
+		}
+	};
+}
+function precedes(left, right) {
+	return left.ticket < right.ticket || left.ticket === right.ticket && left.id < right.id;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+function readPolicyFile(path, options) {
+	let raw;
+	try {
+		if (options.requireRegularFile && !lstatSync(path).isFile()) throw new Error(POLICY_NOT_REGULAR_MESSAGE);
+		raw = readFileSync(path, POLICY_FILE_ENCODING);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") try {
+			lstatSync(path);
+		} catch (statError) {
+			if (errorCode(statError) === "ENOENT") return options.empty();
+			throw statError;
+		}
+		throw error;
+	}
+	const policy = options.parse(JSON.parse(raw));
+	if (policy === void 0) throw new TypeError(POLICY_PARSE_RESULT_MESSAGE);
+	return policy;
+}
+async function updatePolicyFile(path, options, update) {
+	const lockPath = `${path}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	const lock = await acquirePolicyLock(path);
+	const warnings = [];
+	try {
+		const policy = readPolicyForUpdate(path, options);
+		const updated = update(policy);
+		if (isThenable(updated)) throw new TypeError(POLICY_ASYNC_UPDATE_MESSAGE);
+		await replacePolicyFile(path, updated === void 0 ? policy : updated, warnings);
+		if (process.platform !== "win32") await syncPolicyDirectory(path, warnings);
+	} finally {
+		await bestEffort(warnings, async () => {
+			await lock.release();
+			await removeEmptyLockFolders(path, dirname(path));
+		}, `${POLICY_LOCK_CLEANUP_FAILED_PREFIX} ${lockPath}. ${POLICY_LOCK_RELEASE_WARNING}`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+async function bestEffort(warnings, action, message) {
+	try {
+		await action();
+	} catch (error) {
+		warnings.push(`${message}: ${describe(error)}`);
+	}
+}
+function acquirePolicyLock(path) {
+	return acquireCompatibleDirectoryFileLock(path, { timeoutMs: POLICY_LOCK_TIMEOUT_MS }).catch((error) => {
+		const timeout = findLockTimeout(error);
+		if (timeout !== void 0) throw new Error(`${POLICY_LOCK_TIMEOUT_ERROR} ${timeout.blockedPath}. ${POLICY_LOCK_TIMEOUT_MESSAGE}`, { cause: error });
+		throw error;
+	});
+}
+function readPolicyForUpdate(path, options) {
+	try {
+		return readPolicyFile(path, options);
+	} catch (error) {
+		throw new Error(`${POLICY_CANNOT_READ_PREFIX} ${path}. ${POLICY_UNREADABLE_MESSAGE}`, { cause: error });
+	}
+}
+async function writePolicyTemp(tempPath, policy, warnings) {
+	const temp = await open(tempPath, "wx", 384);
+	try {
+		await temp.writeFile(`${JSON.stringify(policy)}\n`, POLICY_FILE_ENCODING);
+		await temp.sync();
+	} catch (error) {
+		await bestEffort(warnings, () => temp.close(), POLICY_TEMP_CLOSE_WARNING);
+		throw error;
+	}
+	await temp.close();
+}
+async function replacePolicyFile(path, policy, warnings) {
+	const tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+	try {
+		await writePolicyTemp(tempPath, policy, warnings);
+		await rename(tempPath, path);
+	} catch (error) {
+		await bestEffort(warnings, () => unlink(tempPath), POLICY_TEMP_CLEANUP_WARNING);
+		throw error;
+	}
+}
+async function syncPolicyDirectory(path, warnings) {
+	await bestEffort(warnings, async () => {
+		const directory = await open(dirname(path), "r");
+		try {
+			await directory.sync();
+		} finally {
+			await bestEffort(warnings, () => directory.close(), POLICY_DIRECTORY_CLOSE_WARNING);
+		}
+	}, POLICY_DURABILITY_WARNING);
+}
+function isThenable(value) {
+	return typeof Reflect.get(Object(value), "then") === "function";
+}
+function findLockTimeout(error) {
+	if (error instanceof FileLockTimeoutError) return error;
+	if (!(error instanceof AggregateError)) return void 0;
+	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
+const CODING_AGENT_PURPOSE = "coding";
+const GIT_METADATA_KEYS = {
+	repository: "ls_git_repo",
+	repositoryUrl: "ls_git_repo_url",
+	provider: "ls_repo_provider",
+	branch: "ls_git_branch",
+	commit: "ls_git_commit_hash"
+};
+const LEGACY_GIT_METADATA_KEYS = {
+	repository: "repository_name",
+	repositoryUrl: "repository_url",
+	provider: "repository_provider",
+	branch: "git_branch",
+	commit: "git_commit_sha"
+};
+const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
+GIT_METADATA_KEYS.repository, GIT_METADATA_KEYS.provider, GIT_METADATA_KEYS.repositoryUrl, GIT_METADATA_KEYS.branch, GIT_METADATA_KEYS.commit, LEGACY_GIT_METADATA_KEYS.repository, LEGACY_GIT_METADATA_KEYS.provider, LEGACY_GIT_METADATA_KEYS.repositoryUrl, LEGACY_GIT_METADATA_KEYS.branch, LEGACY_GIT_METADATA_KEYS.commit;
+const CODING_AGENT_RUN_TYPES = [
+	"root",
+	"llm",
+	"tool",
+	"subagent",
+	"interrupted"
+];
+const CODING_AGENT_RUN_SCOPES = {
+	all: CODING_AGENT_RUN_TYPES,
+	rootInterrupted: ["root", "interrupted"],
+	subagent: ["subagent"],
+	tool: ["tool"],
+	llmTool: ["llm", "tool"],
+	chain: [
+		"root",
+		"subagent",
+		"interrupted"
+	]
+};
+const CODING_AGENT_AGENT_TYPES = [
+	"root",
+	"subagent",
+	"middleware",
+	"compaction"
+];
+const CODING_AGENT_SCHEMA_INTEGRATIONS = [
+	"claude-code",
+	"openai-codex",
+	"deepagents-code",
+	"cursor",
+	"pi"
+];
+const CODING_AGENT_CORE_INTEGRATIONS = [
+	"claude-code",
+	"cursor",
+	"openai-codex"
+];
+const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
+const CODING_AGENT_RUNTIME_NAMES = {
+	"claude-code": "Claude Code",
+	"openai-codex": "Codex",
+	"deepagents-code": "Deep Agents Code",
+	cursor: "Cursor",
+	pi: "Pi"
+};
+const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
+const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
+	requirement: "where_known",
+	requiredWhereKnown: true
+};
+const CODING_AGENT_FIELD_DEFAULTS = {
+	appliesTo: CODING_AGENT_RUN_TYPES,
+	type: "string",
+	allowedValues: null,
+	requirement: "contextual",
+	requiredWhereKnown: false,
+	metadataModeIntegrations: []
+};
+const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "structural"
+};
+const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
+	metadataSource: "provider",
+	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+function field(key, options = {}) {
+	return {
+		key,
+		...CODING_AGENT_FIELD_DEFAULTS,
+		...options
+	};
+}
+const structural = (key, options = {}) => field(key, {
+	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
+	...options
+});
+const provider = (key, options = {}) => field(key, {
+	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
+	...options
+});
+structural("ls_agent_purpose", {
+	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+	allowedValues: [CODING_AGENT_PURPOSE]
+}), structural("ls_integration", {
+	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+	allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
+}), structural("ls_agent_runtime", {
+	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+	allowedValues: Object.values(CODING_AGENT_RUNTIME_NAMES)
+}), structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS), structural("ls_trace_schema_version", {
+	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+	allowedValues: [CODING_AGENT_SCHEMA_VERSION]
+}), structural("ls_agent_type", {
+	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+	allowedValues: CODING_AGENT_AGENT_TYPES
+}), structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("turn_number", {
+	...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
+	type: "integer"
+}), field(GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field("ls_skill_name", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+}), field(ATTRIBUTION_IDENTIFIER_KEY), field("user_id"), field("local_username"), field("user_email"), field("sandbox_type"), field("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }), field("ls_subagent_id", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+}), field("ls_subagent_type", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+}), field("ls_tool_name", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+}), provider("ls_provider", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
+}), provider("ls_model_type", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+}), provider("ls_message_format", {
+	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+}), provider("codex_cli_version", {
+	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+}), provider("ls_raw_aggregated_usage", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.chain,
+	type: "object",
+	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+}), provider("ls_invocation_params", {
+	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+	type: "object"
+}), field("usage_metadata", {
+	type: "object",
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "explicit"
+}), field("ls_model_name", {
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "explicit"
+});
+Buffer.from("6ba7b810-9dad-11d1-80b4-00c04fd430c8".replaceAll("-", ""), "hex");
+GIT_METADATA_KEYS.repository;
+//#endregion
+//#region src/utils/home.ts
+function homeDirectory() {
+	return process.env.HOME ?? os.homedir();
+}
+//#endregion
+//#region src/utils/validation/tracing-policy.ts
 function isMode(value) {
 	return value === "full" || value === "metadata";
 }
@@ -12980,41 +13889,23 @@ function isTurnMode(value) {
 	return isMode(value) || value === "off";
 }
 function validThread(value) {
-	return isObject(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isObject(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => [
-		"preference",
-		"turns",
-		"inherited"
-	].includes(key));
+	return isRecord(value) && (!Object.hasOwn(value, "preference") || isMode(value.preference)) && isRecord(value.turns) && Object.values(value.turns).every(isTurnMode) && (value.inherited === void 0 || isTurnMode(value.inherited)) && Object.keys(value).every((key) => POLICY_THREAD_KEYS.includes(key));
 }
-function isObject(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasCode(error, code) {
-	return isObject(error) && error.code === code;
-}
-/** Missing policy has no overrides/evidence; every other read failure is fail-closed. */
-function readPolicy(path) {
-	let raw;
-	try {
-		raw = readFileSync(path, "utf8");
-	} catch (error) {
-		if (hasCode(error, "ENOENT")) try {
-			lstatSync(path);
-		} catch (statError) {
-			if (hasCode(statError, "ENOENT")) return {
-				version: 1,
-				threads: {}
-			};
-			throw statError;
-		}
-		throw error;
-	}
-	const value = JSON.parse(raw);
-	if (!isObject(value) || value.version !== 1 || !isObject(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => key !== "version" && key !== "threads")) throw new Error("Invalid tracing preference format");
+function parsePolicy(value) {
+	if (!isRecord(value) || value.version !== 1 || !isRecord(value.threads) || Object.values(value.threads).some((thread) => !validThread(thread)) || Object.keys(value).some((key) => !POLICY_TOP_LEVEL_KEYS.includes(key))) throw new Error(POLICY_INVALID_MESSAGE);
 	return value;
 }
+//#endregion
+//#region src/tracing-policy.ts
+const POLICY_FILE = {
+	empty: () => ({
+		version: 1,
+		threads: {}
+	}),
+	parse: parsePolicy
+};
 function defaultPrivacyPath() {
-	return nodePath.join(process.env.HOME ?? os.homedir(), ".codex", "langsmith-state.privacy.json");
+	return nodePath.join(homeDirectory(), CODEX_CONFIG_DIRECTORY, PRIVACY_FILE_NAME);
 }
 function threadPolicy(policy, id) {
 	return Object.hasOwn(policy.threads, id) ? policy.threads[id] : void 0;
@@ -13022,11 +13913,11 @@ function threadPolicy(policy, id) {
 /** No launch evidence means metadata-only, never today's sticky preference. */
 function savedTurnMode(file, sessionId, turnId) {
 	try {
-		const thread = threadPolicy(readPolicy(file), sessionId);
+		const thread = threadPolicy(readPolicyFile(file, POLICY_FILE), sessionId);
 		if (thread?.inherited) return thread.inherited;
-		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : "metadata";
+		return turnId && thread && Object.hasOwn(thread.turns, turnId) ? thread.turns[turnId] : MODE_METADATA;
 	} catch {
-		return "metadata";
+		return MODE_METADATA;
 	}
 }
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
@@ -13034,86 +13925,20 @@ function parseTracingCommand(prompt) {
 	if (prompt === "langsmith-tracing:mute") return "mute";
 	if (prompt === "langsmith-tracing:unmute") return "unmute";
 }
-/**
-* Independent of tracing state and its pruning. Writers serialize through an
-* exclusive directory lock (mkdir avoids O_EXCL's network-filesystem caveats).
-* No age/PID-based stealing: even a slow live writer is safe.
-* A crashed writer's lock requires explicit removal after confirming it is idle.
-* Rename commits the effective preference. Later durability/cleanup failures are
-* returned as local warnings, not thrown as if the preference were unchanged.
-*/
-async function updatePolicy(path, update) {
-	const lockPath = `${path}.lock`;
-	await mkdir(dirname(path), {
-		recursive: true,
-		mode: 448
-	});
-	const deadline = performance$1.now() + 2e3;
-	let locked = false;
-	while (!locked) try {
-		await mkdir(lockPath, { mode: 448 });
-		locked = true;
-	} catch (error) {
-		if (!hasCode(error, "EEXIST")) throw error;
-		if (performance$1.now() >= deadline) throw new Error(`Timed out waiting for tracing preference lock ${lockPath}. Retry; if it persists, remove the lock only after confirming no preference writer is running.`);
-		await setTimeout$1(10 + Math.random() * 20);
-	}
-	const warnings = [];
-	async function bestEffort(action, message) {
-		try {
-			await action();
-		} catch (error) {
-			warnings.push(`${message}: ${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	let tempPath;
-	try {
-		let policy;
-		try {
-			policy = readPolicy(path);
-		} catch (error) {
-			throw new Error(`Cannot read tracing preferences at ${path}. Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.`, { cause: error });
-		}
-		update(policy);
-		tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-		const temp = await open(tempPath, "wx", 384);
-		try {
-			await temp.writeFile(`${JSON.stringify(policy)}\n`, "utf8");
-			await temp.sync();
-		} catch (error) {
-			await bestEffort(() => temp.close(), "Temporary file close failed");
-			throw error;
-		}
-		await temp.close();
-		await rename(tempPath, path);
-		tempPath = void 0;
-		await bestEffort(async () => {
-			const directory = await open(dirname(path), "r");
-			try {
-				await directory.sync();
-			} finally {
-				await bestEffort(() => directory.close(), "Directory close cleanup failed");
-			}
-		}, "Preference is effective, but crash durability could not be confirmed; retry saving");
-	} finally {
-		if (tempPath) await bestEffort(() => unlink(tempPath), "Temporary file cleanup failed");
-		await bestEffort(() => rmdir(lockPath), `Preference lock cleanup failed at ${lockPath}. Before retrying, remove the lock only after confirming no preference writer is running`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
-}
 function requireIds(sessionId, turnId) {
 	if (typeof sessionId !== "string" || !sessionId || typeof turnId !== "string" || !turnId) throw new Error("Nonempty native session_id and turn_id are required; update Codex and enable synchronous UserPromptSubmit hooks");
 }
 /** One atomic transaction preserves active/queued snapshots before changing preference. */
-async function submitPreference(file, sessionId, turnId, enabled, command, defaultMuted = false) {
+async function submitPreference(file, request) {
+	const { sessionId, turnId, enabled, command, defaultMuted = false } = request;
 	requireIds(sessionId, turnId);
-	return updatePolicy(file, (policy) => {
+	return updatePolicyFile(file, POLICY_FILE, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
 		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
 			...thread.turns,
 			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
 		};
-		if (command) thread.preference = command === "mute" ? "metadata" : "full";
+		if (command) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
 		policy.threads = {
 			...policy.threads,
 			[sessionId]: thread
@@ -13122,8 +13947,8 @@ async function submitPreference(file, sessionId, turnId, enabled, command, defau
 }
 /** First launch wins, even after unmute, a direct child Stop, or sidecar deletion. */
 async function inheritThreadMode(file, sessionId, mode) {
-	let inherited = "metadata";
-	const result = await updatePolicy(file, (policy) => {
+	let inherited = MODE_METADATA;
+	const result = await updatePolicyFile(file, POLICY_FILE, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
 		thread.inherited ??= mode;
 		inherited = thread.inherited;
@@ -13132,7 +13957,7 @@ async function inheritThreadMode(file, sessionId, mode) {
 			[sessionId]: thread
 		};
 	});
-	if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+	if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
 	return inherited;
 }
 //#endregion
@@ -13143,11 +13968,6 @@ function* enumerate(arr) {
 		arr[i],
 		arr
 	];
-}
-//#endregion
-//#region src/utils/home.ts
-function homeDirectory() {
-	return process.env.HOME ?? os.homedir();
 }
 //#endregion
 //#region src/utils/rollout.ts
@@ -13951,9 +14771,15 @@ async function handlePromptSubmit(input) {
 			cwd: input.cwd,
 			env: process.env
 		});
-		const result = await submitPreference(defaultPrivacyPath(), input.session_id, input.turn_id, config.enabled, command, config.defaultMuted);
+		const result = await submitPreference(defaultPrivacyPath(), {
+			sessionId: input.session_id,
+			turnId: input.turn_id,
+			enabled: config.enabled,
+			command,
+			defaultMuted: config.defaultMuted
+		});
 		if (!command) {
-			if (result.warning) console.error(`Tracing preference warning: ${result.warning}`);
+			if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
 			return;
 		}
 		let reason = `Thread tracing ${command === "mute" ? "muted (metadata-only)" : "unmuted (full content)"}. Preference saved for the next turn; the current turn is unchanged.`;
