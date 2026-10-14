@@ -20,6 +20,12 @@ export type GitInfo = {
   repository_url?: string;
 };
 
+export type RepositoryInfo = {
+  repository_url?: string;
+  repository_provider?: string;
+  repository_name?: string;
+};
+
 // `session_meta.source` for a spawned subagent thread.
 export type SubagentSource = {
   subagent: {

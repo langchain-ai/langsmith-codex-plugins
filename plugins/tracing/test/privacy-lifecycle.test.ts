@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { convertToRunTree } from "../src/trace.js";
 import { savedTurnMode, submitPreference } from "../src/tracing-policy.js";
-import { MUTED_TRACE_CONTENT } from "../src/privacy.js";
+import { MUTED_TRACE_CONTENT } from "@langchain/plugins-base/privacy";
 import { mockClient } from "./utils/mock_client.js";
 
 let dir: string;

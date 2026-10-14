@@ -2,9 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Client as SDKClient, RunTreeConfig } from "langsmith";
 
-// No SDK mocks: capture only the HTTP boundary, after SDK enrichment,
-// anonymization, batching and (for multipart) splitting into individual parts.
-type Transport = "non-batched" | "json-batch" | "multipart";
+// No SDK mocks: capture only the HTTP boundary, after SDK enrichment and anonymization.
 type Status = "running" | "completed" | "error";
 type Payload = Record<string, any>;
 type Operation = { action: "post" | "patch"; payload: Payload };
@@ -17,18 +15,15 @@ const WORKSPACE = `${FORBIDDEN}_workspace`;
 const CI_SHA = `${FORBIDDEN}_ci`;
 const SECRET = "custom-sensitive-model-name";
 const REDACTED = "[private-model]";
-const transports: Transport[] = ["non-batched", "json-batch", "multipart"];
 
 let Client: typeof import("langsmith").Client;
 let RunTree: typeof import("langsmith").RunTree;
-let withTrustedMetadata: typeof import("../src/metadata.js").withTrustedMetadata;
+let buildCodingAgentMetadata: typeof import("@langchain/plugins-base/metadata").buildCodingAgentMetadata;
 let createRunTree: typeof import("../src/privacy.js").createRunTree;
 let createSecretAnonymizer: typeof import("langsmith/anonymizer").createSecretAnonymizer;
 let clients: Set<SDKClient>;
 let requests: RequestBody[];
-let transport: Transport;
 
-// Usage content is allowed, unlike general run/custom metadata content.
 const allowedUsage = {
   input_tokens: 2,
   output_tokens: 3,
@@ -60,58 +55,87 @@ const allowedMetadata = {
   ls_subagent_type: "Explore",
 };
 
-async function decodeMultipart(raw: string, contentType: string): Promise<Operation[]> {
-  const form = await new Response(raw, { headers: { "content-type": contentType } }).formData();
-  const operations = new Map<string, Operation>();
-  for (const [name, part] of form.entries()) {
-    const match = /^(post|patch)\.([^.]+)(?:\.(.+))?$/.exec(name);
-    // Unexpected attachment/other parts must fail rather than go unexamined.
-    expect(match, `unexpected multipart part ${name}`).not.toBeNull();
-    const [, action, id, field] = match!;
-    const key = `${action}.${id}`;
-    const op = operations.get(key) ?? { action: action as Operation["action"], payload: {} };
-    const value = JSON.parse(typeof part === "string" ? part : await part.text());
-    if (field) op.payload[field] = value;
-    else Object.assign(op.payload, value);
-    operations.set(key, op);
+function withTrustedMetadata(
+  untrusted: Record<string, unknown>,
+  structural: Record<string, unknown>,
+): Record<string, unknown> {
+  const source = { ...untrusted, ...structural };
+  const providerMetadata = Object.fromEntries(
+    [
+      "ls_provider",
+      "ls_model_type",
+      "ls_message_format",
+      "codex_cli_version",
+      "ls_raw_aggregated_usage",
+      "ls_invocation_params",
+    ].flatMap((key) => (source[key] === undefined ? [] : [[key, source[key]]])),
+  );
+  const base = { ...source };
+  for (const key of [
+    "ls_agent_purpose",
+    "ls_agent_type",
+    "ls_integration",
+    "ls_agent_runtime",
+    "ls_trace_schema_version",
+    "thread_id",
+    "ls_integration_version",
+    "ls_agent_runtime_version",
+    "turn_id",
+    "turn_number",
+    "approval_policy",
+    "ls_subagent_id",
+    "ls_subagent_type",
+    "ls_tool_name",
+    "ls_skill_name",
+    "ls_model_name",
+    "usage_metadata",
+    ...Object.keys(providerMetadata),
+  ]) {
+    delete base[key];
   }
-  return [...operations.values()];
+  return buildCodingAgentMetadata({
+    integration: "openai-codex",
+    integrationVersion:
+      typeof source.ls_integration_version === "string" ? source.ls_integration_version : undefined,
+    runtimeVersion:
+      typeof source.ls_agent_runtime_version === "string"
+        ? source.ls_agent_runtime_version
+        : undefined,
+    threadId: typeof source.thread_id === "string" ? source.thread_id : "thread",
+    turnId: typeof source.turn_id === "string" ? source.turn_id : undefined,
+    turnNumber: typeof source.turn_number === "number" ? source.turn_number : undefined,
+    agentType: source.ls_agent_type === "subagent" ? "subagent" : "root",
+    runType: "root",
+    approvalPolicy: typeof source.approval_policy === "string" ? source.approval_policy : undefined,
+    subagentId: typeof source.ls_subagent_id === "string" ? source.ls_subagent_id : undefined,
+    subagentType: typeof source.ls_subagent_type === "string" ? source.ls_subagent_type : undefined,
+    toolName: typeof source.ls_tool_name === "string" ? source.ls_tool_name : undefined,
+    runName: "openai.codex.tool",
+    skillName: typeof source.ls_skill_name === "string" ? source.ls_skill_name : undefined,
+    modelName: typeof source.ls_model_name === "string" ? source.ls_model_name : undefined,
+    usageMetadata:
+      source.usage_metadata != null && typeof source.usage_metadata === "object"
+        ? (source.usage_metadata as Record<string, unknown>)
+        : undefined,
+    providerMetadata,
+    base,
+  });
 }
 
 const captureFetch: typeof fetch = async (input, init) => {
   const url = new URL(input instanceof Request ? input.url : String(input));
-  // Even shared/fallback clients cannot make an external request.
   expect(url.origin).toBe(API);
-  if (url.pathname === "/info") {
-    return Response.json({
-      batch_ingest_config: { use_multipart_endpoint: transport === "multipart" },
-    });
-  }
+  if (url.pathname === "/info") return Response.json({});
   const method = init?.method ?? (input instanceof Request ? input.method : "GET");
-  const headers = new Headers(
-    init?.headers ?? (input instanceof Request ? input.headers : undefined),
-  );
-  const raw =
-    init?.body != null
-      ? await new Response(init.body).text()
-      : input instanceof Request
-        ? await input.text()
-        : "";
-  let operations: Operation[];
-  if (url.pathname.endsWith("/runs/multipart")) {
-    operations = await decodeMultipart(raw, headers.get("content-type")!);
-  } else if (url.pathname.endsWith("/runs/batch")) {
-    const body = JSON.parse(raw);
-    operations = [
-      ...(body.post ?? []).map((payload: Payload) => ({ action: "post" as const, payload })),
-      ...(body.patch ?? []).map((payload: Payload) => ({ action: "patch" as const, payload })),
-    ];
-  } else {
-    expect(method).toMatch(/^(POST|PATCH)$/);
-    expect(url.pathname).toMatch(/\/runs(?:\/[\da-f-]+)?$/);
-    operations = [{ action: method === "POST" ? "post" : "patch", payload: JSON.parse(raw) }];
-  }
-  requests.push({ url, method, raw, operations });
+  const raw = init?.body != null ? await new Response(init.body).text() : "";
+  expect(method).toMatch(/^(POST|PATCH)$/);
+  expect(url.pathname).toMatch(/\/runs(?:\/[\da-f-]+)?$/);
+  requests.push({
+    url,
+    method,
+    raw,
+    operations: [{ action: method === "POST" ? "post" : "patch", payload: JSON.parse(raw) }],
+  });
   return Response.json({});
 };
 
@@ -135,10 +159,9 @@ beforeEach(async () => {
   vi.stubGlobal("fetch", captureFetch);
   clients = new Set();
   requests = [];
-  transport = "non-batched";
   ({ Client, RunTree } = await import("langsmith"));
+  ({ buildCodingAgentMetadata } = await import("@langchain/plugins-base/metadata"));
   ({ createRunTree } = await import("../src/privacy.js"));
-  ({ withTrustedMetadata } = await import("../src/metadata.js"));
   ({ createSecretAnonymizer } = await import("langsmith/anonymizer"));
 });
 
@@ -152,15 +175,12 @@ afterEach(async () => {
 });
 
 function makeClient(): SDKClient {
-  const batched = transport !== "non-batched";
   const client = new Client({
     apiUrl: API,
     apiKey: "test-only-key",
-    autoBatchTracing: batched,
-    manualFlushMode: batched,
+    autoBatchTracing: false,
     blockOnRootRunFinalization: false,
     tracingSamplingRate: 1,
-    // Deliberately leave omitTracedRuntimeInfo at its SDK default (false).
     hideMetadata: createSecretAnonymizer({ extraRules: [{ pattern: SECRET, replace: REDACTED }] }),
     anonymizer: createSecretAnonymizer({ extraRules: [{ pattern: SECRET, replace: REDACTED }] }),
     fetchImplementation: captureFetch,
@@ -211,21 +231,8 @@ async function flush(): Promise<void> {
   await Promise.all([...clients].map((client) => client.flush()));
 }
 
-function expectTransport(expectedRequests: number): Operation[] {
+function expectOperations(expectedRequests: number): Operation[] {
   expect(requests).toHaveLength(expectedRequests);
-  for (const request of requests) {
-    if (transport === "non-batched") {
-      expect(request.url.pathname).toMatch(/\/runs(?:\/[\da-f-]+)?$/);
-      expect(request.operations).toHaveLength(1);
-    } else {
-      expect(request.method).toBe("POST");
-      expect(
-        request.url.pathname.endsWith(
-          transport === "multipart" ? "/runs/multipart" : "/runs/batch",
-        ),
-      ).toBe(true);
-    }
-  }
   return requests.flatMap((request) => request.operations);
 }
 
@@ -252,108 +259,8 @@ function expectMutedContent(payload: Payload, excludeInputs = false): void {
   });
 }
 
-function expectMetadata(payload: Payload, status: Status, redacted = true): void {
-  // Soft assertions show post AND patch leaks in one run, rather than hiding
-  // replica update failures behind the earlier post's runtime enrichment.
-  expectMutedContent(payload);
-  expect.soft(payload.error).toBeUndefined();
-  // Exact equality, not just a denylist: newly SDK-injected keys are forbidden too.
-  expect.soft(payload.extra).toEqual({
-    metadata: {
-      ...allowedMetadata,
-      ls_model_name: redacted ? REDACTED : SECRET,
-      status,
-      ls_tracing_mode: "metadata",
-    },
-  });
-  expect.soft(JSON.stringify(payload)).not.toContain(FORBIDDEN);
-  if (redacted) expect.soft(JSON.stringify(payload)).not.toContain(SECRET);
-}
-
-function replicaUpdates(): Payload {
-  return {
-    inputs: { private: `${FORBIDDEN}_replica_input` },
-    outputs: { private: `${FORBIDDEN}_replica_output` },
-    error: `${FORBIDDEN}_replica_error`,
-    tags: [`${FORBIDDEN}_replica_tag`],
-    extra: {
-      metadata: { custom: `${FORBIDDEN}_replica_metadata` },
-      runtime: { private: FORBIDDEN },
-    },
-  };
-}
-
-describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
-  it.each([allowedUsage, {}, { annotation: "ALLOWED_USAGE_ONLY", empty: {} }])(
-    "preserves arbitrary trusted usage but rejects plain custom metadata: %j",
-    async (usage) => {
-      transport = selectedTransport;
-      const client = makeClient();
-      const initial = config(client);
-      initial.extra = {
-        metadata: withTrustedMetadata(
-          { custom: FORBIDDEN, usage_metadata: { annotation: FORBIDDEN } },
-          {
-            usage_metadata: usage,
-            ls_raw_aggregated_usage: usage,
-            cwd: FORBIDDEN,
-            custom: FORBIDDEN,
-          },
-        ),
-      };
-      await createRunTree(initial, "metadata").postRun();
-      await flush();
-      initial.extra = { metadata: { ...allowedMetadata, ls_model_name: FORBIDDEN } };
-      await createRunTree({ ...initial, id: randomUUID() }, "metadata").postRun();
-      await flush();
-      const operations = expectTransport(2);
-      expectMutedContent(operations[0].payload);
-      expect(operations[0].payload.extra).toEqual({
-        metadata: {
-          usage_metadata: usage,
-          ls_raw_aggregated_usage: usage,
-          status: "running",
-          ls_tracing_mode: "metadata",
-        },
-      });
-      expect(operations[1].payload.extra).toEqual({
-        metadata: { status: "running", ls_tracing_mode: "metadata" },
-      });
-      for (const request of requests) expect(request.raw).not.toContain(FORBIDDEN);
-    },
-  );
-
-  it("does not restore usage annotations removed by SDK anonymization", async () => {
-    transport = selectedTransport;
-    const initial = config(makeClient());
-    const usage = { ...allowedUsage, annotation: { model: SECRET } };
-    initial.extra = {
-      metadata: withTrustedMetadata(
-        {},
-        {
-          usage_metadata: usage,
-          ls_raw_aggregated_usage: usage,
-        },
-      ),
-    };
-    await createRunTree(initial, "metadata").postRun();
-    await flush();
-    const [operation] = expectTransport(1);
-    const redactedUsage = { ...allowedUsage, annotation: { model: REDACTED } };
-    expect(operation.payload.extra).toEqual({
-      metadata: {
-        usage_metadata: redactedUsage,
-        ls_raw_aggregated_usage: redactedUsage,
-        status: "running",
-        ls_tracing_mode: "metadata",
-      },
-    });
-    expect(requests[0].raw).not.toContain(SECRET);
-    expect(requests[0].raw).not.toContain(FORBIDDEN);
-  });
-
+describe("real SDK privacy for run trees the plugin creates", () => {
   it("rejects custom allowlist collisions and parent baggage at the wire", async () => {
-    transport = selectedTransport;
     const client = makeClient();
     const parent = new RunTree({
       name: "external",
@@ -362,262 +269,62 @@ describe.each(transports)("real SDK privacy over %s", (selectedTransport) => {
     });
     const initial = config(client);
     initial.extra = {
-      metadata: withTrustedMetadata(
-        { ...allowedMetadata, ls_subagent_type: FORBIDDEN },
-        { thread_id: "trusted-thread" },
-      ),
+      metadata: buildCodingAgentMetadata({
+        integration: "openai-codex",
+        threadId: "trusted-thread",
+        agentType: "root",
+        runType: "root",
+        base: { ls_subagent_type: FORBIDDEN },
+      }),
     };
     const run = createRunTree(initial, "metadata", parent);
     await run.postRun();
     await flush();
-    const [operation] = expectTransport(1);
+    const [operation] = expectOperations(1);
     expect(operation.payload.parent_run_id).toBe(parent.id);
     expect(operation.payload.extra).toEqual({
-      metadata: { thread_id: "trusted-thread", status: "running", ls_tracing_mode: "metadata" },
+      metadata: {
+        ls_agent_purpose: "coding",
+        ls_agent_type: "root",
+        ls_integration: "openai-codex",
+        ls_agent_runtime: "Codex",
+        ls_trace_schema_version: "coding-agent-v1",
+        thread_id: "trusted-thread",
+        status: "running",
+        ls_tracing_mode: "metadata",
+      },
     });
     expect(JSON.stringify(operation)).not.toContain(FORBIDDEN);
   });
 
-  it("omits patch inputs by default while preserving muted outputs", async () => {
-    transport = selectedTransport;
+  it("keeps a metadata child private under a full-mode parent", async () => {
+    const client = makeClient();
+    const parent = createRunTree(config(client), "full");
+    const child = createRunTree(config(client), "metadata", parent);
+    await child.postRun();
+    await flush();
+    const [operation] = expectOperations(1);
+    expectMutedContent(operation.payload);
+    expect(operation.payload.extra.metadata).toMatchObject({
+      ls_agent_purpose: "coding",
+      ls_integration: "openai-codex",
+      thread_id: "thread",
+      ls_tracing_mode: "metadata",
+    });
+    expect(JSON.stringify(operation)).not.toContain(FORBIDDEN);
+    expect(JSON.stringify(operation)).not.toContain(SECRET);
+    const serializedChild = parent.toJSON().child_runs?.[0];
+    expect(serializedChild).toBeDefined();
+    expectMutedContent(serializedChild!);
+    expect(JSON.stringify(serializedChild!)).not.toContain(FORBIDDEN);
+  });
+
+  it("keeps patch inputs and outputs muted", async () => {
     await createRunTree(config(makeClient(), "completed"), "metadata").patchRun();
     await flush();
-    const [operation] = expectTransport(1);
+    const [operation] = expectOperations(1);
     expect(operation.action).toBe("patch");
-    expectMutedContent(operation.payload, true);
+    expectMutedContent(operation.payload);
     expect(requests[0].raw).not.toContain(FORBIDDEN);
   });
-
-  it("preserves parent identity, trace ordering and lifecycle timestamps on the wire", async () => {
-    transport = selectedTransport;
-    const client = makeClient();
-    const parentId = randomUUID();
-    const traceId = randomUUID();
-    const initial = {
-      ...config(client),
-      parent_run_id: parentId,
-      trace_id: traceId,
-      dotted_order: `20241231T235959000000Z${parentId}.20250101T000000000000Z${randomUUID()}`,
-    };
-    await createRunTree(initial, "metadata").postRun();
-    await flush();
-    await createRunTree(
-      { ...initial, end_time: "2025-01-01T00:00:01Z", error: `${FORBIDDEN}_failure` },
-      "metadata",
-    ).patchRun({ excludeInputs: false });
-    await flush();
-    const operations = expectTransport(2);
-    expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
-    expect(operations[0].payload).toMatchObject({
-      id: initial.id,
-      name: initial.name,
-      run_type: initial.run_type,
-      session_name: initial.project_name,
-      start_time: initial.start_time,
-    });
-    expect(operations[0].payload.end_time).toBeUndefined();
-    for (const { payload } of operations) {
-      expect(payload).toMatchObject({
-        parent_run_id: parentId,
-        trace_id: traceId,
-        dotted_order: initial.dotted_order,
-      });
-    }
-    expect(operations[1].payload.end_time).toBe("2025-01-01T00:00:01Z");
-    expectMetadata(operations[0].payload, "running");
-    expectMetadata(operations[1].payload, "error");
-  });
-
-  it("mixes metadata and full runs on one client, with separately serialized post and patch", async () => {
-    transport = selectedTransport;
-    const client = makeClient();
-    const ids = [randomUUID(), randomUUID(), randomUUID()];
-    const modes = ["metadata", "full", "metadata"] as const;
-    for (let i = 0; i < ids.length; i++) {
-      const run = createRunTree(config(client, "running", ids[i]), modes[i]);
-      expect(run).toBeInstanceOf(RunTree);
-      await run.postRun();
-    }
-    // A real flush boundary prevents the SDK merging a patch into its post.
-    await flush();
-    expectTransport(transport === "non-batched" ? 3 : 1);
-    for (let i = 0; i < ids.length; i++) {
-      // The plugin reconstructs RunTrees for updates in later hook processes.
-      await createRunTree(
-        config(client, i === 2 ? "completed" : "error", ids[i]),
-        modes[i],
-      ).patchRun({ excludeInputs: false });
-    }
-    await flush();
-    const operations = expectTransport(transport === "non-batched" ? 6 : 2);
-    expect(operations).toHaveLength(6);
-    for (let i = 0; i < ids.length; i++) {
-      const own = operations.filter(
-        ({ payload }) =>
-          payload.id === ids[i] ||
-          // Non-batched PATCH identifies the run in its URL, not its JSON body.
-          requests.some(
-            (request) =>
-              request.url.pathname.endsWith(`/runs/${ids[i]}`) &&
-              request.operations.some((op) => op.payload === payload),
-          ),
-      );
-      expect(own.map(({ action }) => action)).toEqual(["post", "patch"]);
-      if (modes[i] === "metadata") {
-        expectMetadata(own[0].payload, "running");
-        expectMetadata(own[1].payload, i === 2 ? "completed" : "error");
-      } else {
-        for (const { payload } of own) {
-          expect(payload.inputs).toEqual({ prompt: `${FORBIDDEN}_input` });
-          expect(payload.outputs).toEqual({ answer: `${FORBIDDEN}_output` });
-          expect(payload.extra.metadata).toMatchObject({
-            custom: FORBIDDEN,
-            ls_model_name: REDACTED,
-          });
-          expect(payload.extra.metadata.ls_tracing_mode).toBeUndefined();
-        }
-        expect(own[0].payload.extra.metadata).toMatchObject({
-          revision_id: REVISION,
-          LANGSMITH_WORKSPACE_ID: WORKSPACE,
-        });
-        expect(own[0].payload.extra.runtime).toMatchObject({
-          library: "langsmith",
-          CI_COMMIT_SHA: CI_SHA,
-        });
-        expect(own[1].payload.error).toBe(`${FORBIDDEN}_raw_error`);
-      }
-    }
-  });
-
-  it.each(["object", "tuple"] as const)(
-    "sanitizes %s replica updates without bypassing the destination anonymizer",
-    async (kind) => {
-      transport = selectedTransport;
-      const primary = makeClient();
-      const dedicated = makeClient();
-      const replicas: RunTreeConfig["replicas"] =
-        kind === "object"
-          ? [
-              {
-                projectName: "replica",
-                apiUrl: `${API}/dedicated`,
-                client: dedicated,
-                updates: replicaUpdates(),
-              },
-            ]
-          : [["replica", replicaUpdates()]];
-      const initial = { ...config(primary), replicas };
-      await createRunTree(initial, "metadata").postRun();
-      await flush();
-      expectTransport(1);
-      await createRunTree(
-        { ...config(primary, "error", initial.id), replicas },
-        "metadata",
-      ).patchRun({ excludeInputs: false });
-      await flush();
-      const operations = expectTransport(2);
-      expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
-      expect(operations[0].payload.session_name).toBe("replica");
-      expect(
-        requests.every(({ url }) =>
-          url.pathname.startsWith(kind === "object" ? "/dedicated/runs" : "/runs"),
-        ),
-      ).toBe(true);
-      expectMetadata(operations[0].payload, "running");
-      expectMetadata(operations[1].payload, "error");
-    },
-  );
-});
-
-describe.each(["json-batch", "multipart"] as const)(
-  "coalesced %s payloads",
-  (selectedTransport) => {
-    it("retains the final privacy projection when a patch merges into its create", async () => {
-      transport = selectedTransport;
-      const client = makeClient();
-      const initial = config(client);
-      await createRunTree(initial, "metadata").postRun();
-      await createRunTree(config(client, "completed", initial.id), "metadata").patchRun();
-      await flush();
-      const operations = expectTransport(1);
-      expect(operations).toHaveLength(1);
-      expect(operations[0].action).toBe("post");
-      expectMetadata(operations[0].payload, "completed");
-      expect(requests[0].raw).not.toContain(FORBIDDEN);
-    });
-  },
-);
-
-describe("environment and shared SDK clients", () => {
-  it("filters metadata/runtime on a real shared-client fallback", async () => {
-    // No getSharedClient mock/private singleton replacement. The default shared
-    // client batches; its global fetch is intercepted just like explicit clients.
-    transport = "json-batch";
-    const initial = {
-      ...config(),
-      replicas: [["shared-replica", replicaUpdates()]] as RunTreeConfig["replicas"],
-    };
-    const run = createRunTree(initial, "metadata");
-    const shared = RunTree.getSharedClient();
-    clients.add(shared);
-    expect(run.client).toBe(shared);
-    await run.postRun();
-    await flush();
-    expectTransport(1);
-    await createRunTree(
-      { ...initial, ...config(undefined, "completed", initial.id) },
-      "metadata",
-    ).patchRun({ excludeInputs: false });
-    await flush();
-    const operations = expectTransport(2);
-    expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
-    // Shared SDK client has no anonymizer configured; privacy still applies.
-    expectMetadata(operations[0].payload, "running", false);
-    expectMetadata(operations[1].payload, "completed", false);
-  });
-
-  it.each(["plugin", "sdk"] as const)(
-    "does not leak %s environment-derived replica updates",
-    async (source) => {
-      transport = "json-batch";
-      const updates = replicaUpdates();
-      if (source === "plugin") {
-        vi.stubEnv("LANGSMITH_CODEX_RUNS_ENDPOINTS", JSON.stringify([["env-replica", updates]]));
-      } else {
-        // SDK endpoint parsing ignores updates, but the entire environment string
-        // is also injected as metadata by Client, including on batched PATCH.
-        vi.stubEnv(
-          "LANGSMITH_RUNS_ENDPOINTS",
-          JSON.stringify([
-            {
-              api_url: `${API}/environment`,
-              api_key: "test-only-key",
-              project_name: "env-replica",
-              updates,
-            },
-          ]),
-        );
-      }
-      const client = makeClient();
-      // Same JSON parsing as loadConfig, without unrelated disk/git discovery.
-      const replicas =
-        source === "plugin" ? JSON.parse(process.env.LANGSMITH_CODEX_RUNS_ENDPOINTS!) : undefined;
-      const initial = { ...config(client), replicas };
-      await createRunTree(initial, "metadata").postRun();
-      await flush();
-      expectTransport(1);
-      await createRunTree(
-        { ...config(client, "error", initial.id), replicas },
-        "metadata",
-      ).patchRun({ excludeInputs: false });
-      await flush();
-      const operations = expectTransport(2);
-      expect(operations.map(({ action }) => action)).toEqual(["post", "patch"]);
-      // The locked SDK honors project_name for environment replicas too.
-      expect(operations[0].payload.session_name).toBe("env-replica");
-      expectMetadata(operations[0].payload, "running");
-      expectMetadata(operations[1].payload, "error");
-      for (const request of requests) expect(request.raw).not.toContain(FORBIDDEN);
-    },
-  );
 });

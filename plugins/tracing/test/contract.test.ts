@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
-import { codingAgentMetadata } from "../src/metadata.js";
 import { convertToRunTree } from "../src/trace.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
@@ -506,13 +505,6 @@ describe("coding-agent-v1 contract", () => {
     expect(skills[0].parent_run_id).not.toBe(subTurn?.id);
     expect(skills[0].extra?.metadata?.turn_id).toBe(PARENT_TURN);
   });
-
-  it.each(["root", "subagent", "middleware", "compaction"] as const)(
-    "supports ls_agent_type='%s'",
-    (agentType) => {
-      expect(codingAgentMetadata({ agentType }).ls_agent_type).toBe(agentType);
-    },
-  );
 
   it("maps the frozen literal values and turn markers", async () => {
     const byType = await buildRuns();
