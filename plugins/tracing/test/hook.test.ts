@@ -187,6 +187,16 @@ it("serializes independent hook processes and retains preferences after restart"
   const restarted = JSON.parse(await fs.readFile(file, "utf8"));
   expect(restarted.threads[sessions[0]].turns["after-restart"]).toBe("metadata");
 });
+it("the bundle lets an ordinary prompt through a corrupt preference file with a warning", async () => {
+  await fs.mkdir(path.join(home, ".codex"));
+  const file = path.join(home, ".codex/langsmith_state_privacy.json");
+  await fs.writeFile(file, "broken");
+  const result = await hook("work", "turn");
+  expect(result.code).toBe(0);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toContain("Could not save tracing preference/turn evidence");
+  expect(await fs.readFile(file, "utf8")).toBe("broken");
+});
 it("the bundle does not interpret whitespace or slash lookalikes", async () => {
   expect((await hook(" langsmith-tracing:mute", "a")).stdout).toBe("");
   expect((await hook("/langsmith-tracing:mute", "b")).stdout).toBe("");
