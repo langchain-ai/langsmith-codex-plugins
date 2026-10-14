@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { tryAcquireFileLock } from "@langchain/plugins-base/storage";
 import { updatePolicyFile } from "@langchain/plugins-base/plugin";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
@@ -148,18 +149,31 @@ it("shows the save warning the shared store returns in the control reply", async
   });
   expect(result?.reason).toContain("Warning: directory sync failed.");
 });
-it("ordinary prompts also fail closed rather than start without durable evidence", async () => {
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, "broken");
-  const result = await handlePromptSubmit({
-    session_id: "thread",
-    turn_id: "work",
-    cwd: home,
-    prompt: "work",
-  });
-  expect(result?.decision).toBe("block");
-  expect(await fs.readFile(file, "utf8")).toBe("broken");
-});
+it.each(["corrupt", "unreadable", "locked"] as const)(
+  "an ordinary prompt goes through with a warning when the preference file is %s",
+  async (fault) => {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    if (fault === "corrupt") await fs.writeFile(file, "broken");
+    if (fault === "unreadable") await fs.mkdir(file);
+    const blocker = fault === "locked" ? await tryAcquireFileLock(file) : undefined;
+    const warning = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const result = await handlePromptSubmit({
+        session_id: "thread",
+        turn_id: "work",
+        cwd: home,
+        prompt: "work",
+      });
+      expect(result).toBeUndefined();
+      expect(warning).toHaveBeenCalledWith(
+        expect.stringContaining("Could not save tracing preference/turn evidence"),
+      );
+    } finally {
+      await blocker?.release();
+    }
+    if (fault === "corrupt") expect(await fs.readFile(file, "utf8")).toBe("broken");
+  },
+);
 it("normal submissions never materialize a default preference; existing threads follow config", async () => {
   expect(savedTurnMode(file, "thread", "missing")).toBe("metadata");
   await expect(fs.stat(file)).rejects.toMatchObject({ code: "ENOENT" });
