@@ -11,7 +11,9 @@ let dir: string;
 let privacyPath: string;
 beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), "codex-lifecycle-"));
-  privacyPath = path.join(dir, "privacy.json");
+  vi.stubEnv("HOME", dir);
+  await fs.mkdir(path.join(dir, ".codex", "sessions"), { recursive: true });
+  privacyPath = path.join(dir, ".codex", "langsmith-state.privacy.json");
   for (const key of Object.keys(process.env))
     if (/^(LANGCHAIN_|LANGSMITH_)/.test(key)) vi.stubEnv(key, undefined);
 });
@@ -63,7 +65,7 @@ async function rollout(
   parent?: string,
   canonical = false,
 ) {
-  const file = path.join(dir, `rollout-${id}.jsonl`);
+  const file = path.join(dir, ".codex", "sessions", `rollout-${id}.jsonl`);
   const source = parent ? { subagent: { thread_spawn: { parent_thread_id: parent } } } : "cli";
   await fs.writeFile(
     file,
@@ -90,8 +92,6 @@ async function upload(file: string, turnId: string) {
     { transcript_path: file, turn_id: turnId },
     {
       client,
-      privacyPath,
-      sessionsRoot: dir,
       metadata: { ls_tool_name: "PRIVATE_CUSTOM_COLLISION", custom: "PRIVATE_CUSTOM" },
     },
   );
