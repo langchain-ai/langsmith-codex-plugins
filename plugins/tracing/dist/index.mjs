@@ -1,17 +1,18 @@
-import * as nodeFs from "node:fs";
-import { closeSync, constants, copyFileSync, fstatSync, lstatSync, openSync, readFileSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
-import { chmod, link, lstat, mkdir, open, readFile, readdir, rename, rmdir, unlink, utimes, writeFile } from "node:fs/promises";
+import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
+import * as nodeFs from "node:fs";
+import { closeSync, constants, copyFileSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
-import { dirname, join, resolve } from "node:path";
-import { Worker } from "node:worker_threads";
-import * as os from "node:os";
-import { arch, platform } from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import { Worker } from "node:worker_threads";
+import { execFile, spawn } from "node:child_process";
+import * as tls from "node:tls";
+import { promisify } from "node:util";
+import * as os from "node:os";
+import { arch, platform } from "node:os";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -35,17 +36,3695 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/errors.js
+function describe(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+function errorCode(error) {
+	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
+}
+function failureStatus(error) {
+	if (typeof error !== "object" || error === null) return void 0;
+	const status = Reflect.get(error, "status");
+	return typeof status === "number" ? status : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+const POLICY_LOCK_TIMEOUT_MS = 2e3;
+const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
+const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
+const POLICY_UNREADABLE_MESSAGE = "Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.";
+const POLICY_NOT_REGULAR_MESSAGE = "Tracing preferences must be a regular, non-symlink file";
+const POLICY_ASYNC_UPDATE_MESSAGE = "A policy update must change the policy synchronously";
+const POLICY_FILE_ENCODING = "utf8";
+const POLICY_TEMP_CLOSE_WARNING = "Temporary file close failed";
+const POLICY_TEMP_CLEANUP_WARNING = "Temporary file cleanup failed";
+const POLICY_DIRECTORY_CLOSE_WARNING = "Directory close cleanup failed";
+const POLICY_LOCK_CLEANUP_FAILED_PREFIX = "Preference lock cleanup failed at";
+const POLICY_CANNOT_READ_PREFIX = "Cannot read tracing preferences at";
+const POLICY_DURABILITY_WARNING = "Preference is effective, but crash durability could not be confirmed; retry saving";
+const POLICY_LOCK_RELEASE_WARNING = "Before retrying, remove the lock only after confirming no preference writer is running";
+const COMPILED_BINARY_ENTRY_PREFIXES = [
+	"/$bunfs/",
+	"B:/~BUN/",
+	"B:\\~BUN\\"
+];
+const WORKER_LOG_FILE_NAME = "worker.log";
+const SYSTEM_CERTIFICATES_FILE_NAME = "system_certificates.pem";
+const WORKER_NO_PID_MESSAGE = "Background worker did not report a process ID";
+const UNAVAILABLE_ACCOUNT_FINGERPRINT = "unavailable";
+const HOOK_HELP_FLAGS = ["--help", "-h"];
+const HOOK_VERSION_FLAGS = ["--version", "-v"];
+const POLICY_PARSE_RESULT_MESSAGE = "A policy parser must return a policy";
+const HOOK_OPTIONS_INVALID_MESSAGE = "Hook options need a hooks table and onHookError and onUnknown callbacks";
+const HOOK_ERROR_HANDLER_WARNING = "The hook error handler failed:";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+async function dispatchHookCommand(argv, options) {
+	assertHookOptions(options);
+	const [argument, ...rest] = argv;
+	if (argument !== void 0 && HOOK_HELP_FLAGS.includes(argument)) console.log(options.usage);
+	else if (argument !== void 0 && HOOK_VERSION_FLAGS.includes(argument)) console.log(options.version);
+	else if (argument !== void 0 && options.worker?.command === argument) await guarded(argument, () => options.worker.run(rest), options);
+	else if (argument !== void 0 && Object.hasOwn(options.hooks, argument)) await guarded(argument, options.hooks[argument], options);
+	else options.onUnknown(argument);
+}
+async function guarded(name, run, options) {
+	try {
+		await run();
+	} catch (error) {
+		reportHookError(name, error, options);
+	}
+}
+function assertHookOptions(options) {
+	if (options === null || typeof options !== "object" || options.hooks === null || typeof options.hooks !== "object" || typeof options.onHookError !== "function" || typeof options.onUnknown !== "function") throw new TypeError(HOOK_OPTIONS_INVALID_MESSAGE);
+}
+function reportHookError(name, error, options) {
+	try {
+		options.onHookError(name, error);
+	} catch (handlerError) {
+		console.warn(HOOK_ERROR_HANDLER_WARNING, describe(handlerError));
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/constants.js
+const FILE_MISSING_CODE = "ENOENT";
+const FILE_EXISTS_CODE = "EEXIST";
+const PERMISSION_DENIED_CODE = "EPERM";
+const FILE_ACCESS_DENIED_CODE = "EACCES";
+const FILE_BUSY_CODE = "EBUSY";
+const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
+const INVALID_ARGUMENT_CODE = "EINVAL";
+const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+const CLEANUP_IGNORED_DIRECTORY_CODES = [
+	FILE_MISSING_CODE,
+	DIRECTORY_NOT_EMPTY_CODE,
+	FILE_EXISTS_CODE,
+	PERMISSION_DENIED_CODE,
+	FILE_BUSY_CODE,
+	FILE_ACCESS_DENIED_CODE
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+async function removeFileIfPresent(path) {
+	try {
+		await unlink(path);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return false;
+		throw error;
+	}
+}
+async function removeDirectoryBestEffort(path, warning) {
+	try {
+		await rmdir(path);
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") console.warn(warning, describe(error));
+	}
+}
+async function removeEmptyAncestors(directory, root) {
+	for (let current = directory; current !== root && current !== dirname(current);) {
+		try {
+			await rmdir(current);
+		} catch (error) {
+			const code = errorCode(error);
+			if (CLEANUP_IGNORED_DIRECTORY_CODES.some((ignored) => ignored === code)) return;
+			throw error;
+		}
+		current = dirname(current);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/constants.js
+const FILE_LOCK_CLAIM_EXTENSION = ".json";
+const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
+const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
+const FILE_LOCK_TIMEOUT_ERROR_NAME = "FileLockTimeoutError";
+const FILE_LOCK_TEMP_SUFFIX = ".tmp";
+const FILE_LOCK_ENCODING = "utf-8";
+const FILE_LOCK_TIMEOUT_MESSAGE = "Timed out waiting for file lock";
+const FILE_LOCK_TICKET_LIMIT_MESSAGE = "File lock ticket limit reached";
+const FILE_LOCK_RELEASE_MESSAGE = "Could not release file lock claim";
+const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive number";
+const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
+const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
+const FILE_LOCK_STALE_CLAIM_MS = 3e3;
+const FILE_LOCK_TRY_CHOOSING_WAIT_MS = 1e3;
+const FILE_LOCK_DIRECTORY_CONTENTION_CODES = [PERMISSION_DENIED_CODE, FILE_ACCESS_DENIED_CODE];
+const FILE_LOCK_BUSY_FILE_CODES = [...FILE_LOCK_DIRECTORY_CONTENTION_CODES, FILE_BUSY_CODE];
+const FILE_LOCK_HEARTBEAT_WARNING = "Could not refresh a file lock claim:";
+const FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE = "Could not release the legacy lock gate after shared lock acquisition failed";
+const FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE = "Could not release compatible file lock";
+const FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE = "Legacy file lock gate changed before release";
+const FILE_LOCK_COMPATIBLE_OWNER_FILE = "owner";
+const FILE_LOCK_COMPATIBLE_OWNER_MESSAGE = "Could not record the legacy file lock gate owner";
+const FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN = /^[1-9]\d*$/u;
+const FILE_LOCK_COMPATIBLE_STALE_SUFFIX = ".stale";
+const FILE_LOCK_GATE_CLEANUP_WARNING = "Could not remove a half-created lock folder:";
+const FILE_LOCK_STALE_GATE_CLEANUP_WARNING = "Could not remove an old lock folder:";
+const STORAGE_NOT_WRITABLE_ERROR_NAME = "StorageNotWritableError";
+const STORAGE_NOT_WRITABLE_MESSAGE = "LangSmith can't write to its storage folder";
+const STORAGE_NOT_WRITABLE_FIX = "Fix that folder's permissions so your user account can create files in it, and tracing will resume.";
+const STORAGE_STALE_FILE_MAX_AGE_MS = 72e5;
+const STORAGE_STALE_DIRECTORY_WARNING = "Could not remove an old empty folder:";
+const STORAGE_STALE_REMOVAL_WARNING = "Removed an old leftover file:";
+const FILE_LOCK_LOST_MESSAGE = "The file lock was taken over before the write finished";
+const STORAGE_UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const STORAGE_ENGINE_FILE_PATTERNS = [
+	new RegExp(`^\\.${STORAGE_UUID}(\\.${STORAGE_UUID})?\\.tmp$`, "u"),
+	new RegExp(`^wake-[0-9a-f]{64}\\.active\\.${STORAGE_UUID}(\\.attempt\\.[1-9]\\d*)?\\.json$`, "u"),
+	/^wake-[0-9a-f]{64}\.launching$/u
+];
+const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+async function removeEmptyLockFolders(lockPath, root) {
+	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+const CAPTURE_JOBS_DIRECTORY = "jobs";
+const CAPTURE_SESSIONS_DIRECTORY = "sessions";
+const CAPTURE_TURNS_DIRECTORY = "turns";
+const CAPTURE_REMOVED_DIRECTORY_CODES = [FILE_MISSING_CODE, INVALID_ARGUMENT_CODE];
+const CAPTURE_INTEGRATION = /^[a-z][a-z0-9-]{0,62}$/;
+const CAPTURE_HASH = /^[0-9a-f]{64}$/u;
+const CAPTURE_EVENT_FILE = /^[0-9a-f]{64}\.json$/u;
+const JSON_ARRAY_INDEX_KEY = /^(0|[1-9]\d*)$/u;
+const CAPTURE_EXPIRED_WARNING = "Dropped trace work that was never uploaded: {dropped} saved items were past their age limit ({ceiling} from turns that kept capturing for over 7 days, {otherSetting} saved under a different API key, endpoint, replica or redaction setting)";
+const CAPTURE_HELD_EXPIRED_WARNING = "Dropped {held} saved run updates that were still waiting for their turn to finish before upload";
+const CAPTURE_SKIPPED_WARNING = "Left a saved trace file alone because it could not be read:";
+const CAPTURE_UNREADABLE_WARNING = "Removed a saved trace file that could not be read:";
+const CAPTURE_NAMESPACE_MISMATCH_MESSAGE = "Capture namespace does not match";
+const CAPTURE_RETRY_LOST_MESSAGE = "Capture disappeared before its retry was saved";
+const CAPTURE_OUTCOME_INVALID_MESSAGE = "Invalid outcome";
+const CAPTURE_RECORD_UNSUPPORTED_MESSAGE = "Unsupported capture record";
+const CAPTURE_OUTCOME_UNSUPPORTED_MESSAGE = "Unsupported delivery outcome";
+const CAPTURE_DEPENDENCIES_INVALID_MESSAGE = "Invalid capture dependencies";
+const CAPTURE_DEPENDENCY_INVALID_MESSAGE = "Invalid capture dependency";
+const CAPTURE_DEPENDENCY_INTEGRATION_MESSAGE = "Capture dependencies must use the same integration";
+const CAPTURE_DEPENDENCY_SELF_MESSAGE = "Capture cannot depend on itself";
+const CAPTURE_DEPENDENCY_UNIQUE_MESSAGE = "Capture dependencies must be unique";
+const CAPTURE_VERSION_UNSUPPORTED_MESSAGE = "Unsupported capture record version";
+const CAPTURE_FIELD_UNSUPPORTED_MESSAGE = "Unsupported";
+const CAPTURE_MARKER_SUFFIX = ".outcome";
+const CAPTURE_MARKER_FILE = /^(?:[0-9a-f]{64}|turn)\.outcome$/u;
+const CAPTURE_TURN_MARKER_FILE = "turn.outcome";
+const CAPTURE_MARKER_REMOVED_REASON = "removed-before-delivery";
+const CAPTURE_MARKER_INVALID_MESSAGE = "Invalid outcome marker";
+const CAPTURE_MARKER_INVALID_WARNING = "Removed an unreadable outcome marker:";
+const CAPTURE_ROUTES_INVALID_MESSAGE = "Invalid capture destination routes";
+const CAPTURE_ROUTE_INVALID_MESSAGE = "Invalid capture destination route";
+const CAPTURE_ROUTE_PROJECT_INVALID_MESSAGE = "Invalid capture route project";
+const CAPTURE_FILE_EXTENSION = ".json";
+const CAPTURE_LOCK_EXTENSION = ".lock";
+const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+function canonicalJson(value) {
+	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
+	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
+	return result;
+}
+function canonicalValue(value, seen) {
+	if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (Array.isArray(value)) {
+		if (seen.has(value)) throw new TypeError("Cyclic data cannot be captured");
+		seen.add(value);
+		const descriptors = Object.getOwnPropertyDescriptors(value);
+		if (Reflect.ownKeys(descriptors).some((key) => typeof key === "symbol" || key !== "length" && (!JSON_ARRAY_INDEX_KEY.test(key) || Number(key) >= value.length))) throw new TypeError("Array properties cannot be captured");
+		if (Object.keys(descriptors).length - 1 < value.length) throw new TypeError("Sparse arrays cannot be captured");
+		const result = [];
+		for (let index = 0; index < value.length; index += 1) {
+			const descriptor = descriptors[index];
+			if (!descriptor?.enumerable || !("value" in descriptor)) throw new TypeError("Sparse arrays cannot be captured");
+			result.push(canonicalValue(descriptor.value, seen));
+		}
+		seen.delete(value);
+		return result;
+	}
+	if (typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) throw new TypeError("Capture data must contain only JSON values");
+	if (seen.has(value)) throw new TypeError("Cyclic data cannot be captured");
+	seen.add(value);
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	if (Reflect.ownKeys(descriptors).some((key) => typeof key === "symbol")) throw new TypeError("Symbol keys cannot be captured");
+	const result = Object.create(null);
+	for (const key of Object.keys(descriptors).toSorted()) {
+		const descriptor = descriptors[key];
+		if (!descriptor?.enumerable || !("value" in descriptor)) throw new TypeError("Capture data must use enumerable data fields");
+		result[key] = canonicalValue(descriptor.value, seen);
+	}
+	seen.delete(value);
+	return result;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+function isPlainRecord(value) {
+	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+function requirePlainRecord(value, name) {
+	if (!isPlainRecord(value)) throw new TypeError(`${name} must be a plain object`);
+	return value;
+}
+function ownDataField(source, key) {
+	const descriptor = Object.getOwnPropertyDescriptor(source, key);
+	if (!descriptor?.enumerable || !("value" in descriptor)) return { present: false };
+	return {
+		present: true,
+		value: descriptor.value
+	};
+}
+function requireOwnDataField(source, key) {
+	const field = ownDataField(source, key);
+	if (!field.present) throw new TypeError(`${key} is required`);
+	return field.value;
+}
+function canonicalJsonValue(value) {
+	return canonicalValue(value, /* @__PURE__ */ new Set());
+}
+function canonicalJsonObject(value, name) {
+	return canonicalValue(requirePlainRecord(value, name), /* @__PURE__ */ new Set());
+}
+function canonicalJsonArray(value, name) {
+	if (!Array.isArray(value)) throw new TypeError(`${name} must be an array`);
+	return canonicalValue(value, /* @__PURE__ */ new Set());
+}
+function requireNonBlankString(value, name) {
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError(`${name} is required`);
+	return value;
+}
+function requireString(value, name) {
+	if (typeof value !== "string") throw new TypeError(`${name} must be a string`);
+	return value;
+}
+function requireBoolean(value, name) {
+	if (typeof value !== "boolean") throw new TypeError(`${name} must be a boolean`);
+	return value;
+}
+function requireStringArray(value, name) {
+	const values = canonicalJsonArray(value, name);
+	if (!values.every((entry) => typeof entry === "string")) throw new TypeError(`${name} must contain strings`);
+	return values;
+}
+function requireTimestamp(value) {
+	if (typeof value === "number" && Number.isFinite(value) && Number.isFinite(new Date(value).getTime())) return value;
+	if (typeof value === "string" && value.trim().length > 0 && Number.isFinite(new Date(value).getTime())) return value;
+	throw new TypeError("Run timestamp must be a valid date or millisecond time");
+}
+function requireSafeEpochMilliseconds(value, name) {
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || !Number.isFinite(new Date(value).getTime())) throw new TypeError(`${name} must be a valid millisecond timestamp`);
+	return value;
+}
+function requireNonNegativeInteger(value, name) {
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) throw new TypeError(`${name} must be a non-negative safe integer`);
+	return value;
+}
+function parseJsonObject(contents, message) {
+	const value = JSON.parse(contents);
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(message);
+	return value;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/errors.js
+var FileLockTimeoutError = class extends Error {
+	blockedPath;
+	constructor(blockedPath) {
+		super(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(blockedPath)}`);
+		this.name = FILE_LOCK_TIMEOUT_ERROR_NAME;
+		this.blockedPath = resolve(blockedPath);
+	}
+};
+var StorageNotWritableError = class extends Error {
+	folder;
+	code;
+	constructor(folder, cause) {
+		super(`${STORAGE_NOT_WRITABLE_MESSAGE} ${resolve(folder)}. ${STORAGE_NOT_WRITABLE_FIX}`, { cause });
+		this.name = STORAGE_NOT_WRITABLE_ERROR_NAME;
+		this.folder = resolve(folder);
+		this.code = errorCode(cause);
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+const heartbeats = /* @__PURE__ */ new Map();
+function startHeartbeat(path, id) {
+	const timer = setInterval(() => {
+		const now = /* @__PURE__ */ new Date();
+		utimes(path, now, now).catch(warnUnlessMissing);
+	}, 500);
+	timer.unref();
+	heartbeats.set(id, timer);
+}
+function stopHeartbeat(id) {
+	clearInterval(heartbeats.get(id));
+	heartbeats.delete(id);
+}
+function warnUnlessMissing(error) {
+	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+function processIsAlive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "ESRCH") return false;
+		return;
+	}
+}
+async function removeFile(filePath) {
+	try {
+		await unlink(filePath);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return true;
+		return false;
+	}
+}
+function isBusyFileError(error) {
+	return FILE_LOCK_BUSY_FILE_CODES.includes(errorCode(error) ?? "");
+}
+function timeoutMs(options) {
+	const value = options?.timeoutMs ?? 5e3;
+	if (!Number.isFinite(value) || value <= 0) throw new RangeError(FILE_LOCK_INVALID_TIMEOUT_MESSAGE);
+	return value;
+}
+function waitForNextScan(deadline, blockedPath) {
+	const remaining = deadline - performance$1.now();
+	if (remaining <= 0) return Promise.reject(new FileLockTimeoutError(blockedPath));
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+async function createLegacyGate(gatePath) {
+	await mkdir(gatePath, { mode: 448 });
+	const stat = await lstat(gatePath);
+	if (!stat.isDirectory()) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
+	await recordLegacyGateOwner(gatePath);
+	startHeartbeat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), gatePath);
+	return {
+		path: gatePath,
+		dev: stat.dev,
+		ino: stat.ino,
+		birthtimeMs: stat.birthtimeMs
+	};
+}
+function resetMissingPermission(attempt) {
+	attempt.missingPermissionError = void 0;
+	attempt.windowsDeniedRetries = 0;
+}
+async function waitOutContention(attempt, error) {
+	const { gatePath, filePath, deadline, tryAcquire } = attempt;
+	const code = errorCode(error);
+	const permissionDenied = FILE_LOCK_DIRECTORY_CONTENTION_CODES.includes(code ?? "");
+	if (code !== "EEXIST" && !permissionDenied) throw error;
+	let isContended = false;
+	try {
+		const gate = await lstat(gatePath);
+		const isDirectory = gate.isDirectory();
+		isContended = isDirectory || gate.isFile() && code === "EEXIST";
+		if (isContended && await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) {
+			if (!await reclaimLegacyGate(gatePath, filePath, tryAcquire)) await waitForNextScan(deadline, gatePath);
+			return;
+		}
+	} catch (statError) {
+		if (errorCode(statError) === "ENOENT") {
+			if (code === "EEXIST") {
+				resetMissingPermission(attempt);
+				await waitForNextScan(deadline, gatePath);
+				return;
+			}
+			if (permissionDenied) {
+				const firstRetry = attempt.missingPermissionError === void 0;
+				attempt.missingPermissionError = new StorageNotWritableError(dirname(gatePath), error);
+				if (firstRetry) return;
+				if (process.platform !== "win32" || code !== "EPERM" || attempt.windowsDeniedRetries >= 5) throw attempt.missingPermissionError;
+				attempt.windowsDeniedRetries += 1;
+				const denied = attempt.missingPermissionError;
+				await waitForNextScan(deadline, gatePath).catch(() => Promise.reject(denied));
+				return;
+			}
+		}
+		throw error;
+	}
+	if (!isContended) throw error;
+	resetMissingPermission(attempt);
+	await waitForNextScan(deadline, gatePath);
+}
+async function acquireLegacyDirectoryGate(filePath, deadline, tryAcquire) {
+	const gatePath = `${filePath}${FILE_LOCK_LEGACY_DIRECTORY_SUFFIX}`;
+	await mkdir(dirname(filePath), {
+		recursive: true,
+		mode: 448
+	});
+	const attempt = {
+		gatePath,
+		filePath,
+		deadline,
+		tryAcquire,
+		windowsDeniedRetries: 0
+	};
+	for (;;) {
+		if (performance$1.now() >= deadline) throw attempt.missingPermissionError ?? new FileLockTimeoutError(gatePath);
+		try {
+			return await createLegacyGate(gatePath);
+		} catch (error) {
+			await waitOutContention(attempt, error);
+		}
+	}
+}
+async function releaseLegacyDirectoryGate(gate) {
+	stopHeartbeat(gate.path);
+	let stat;
+	try {
+		stat = await lstat(gate.path);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return;
+		throw error;
+	}
+	if (!stat.isDirectory() || stat.dev !== gate.dev || stat.ino !== gate.ino || stat.birthtimeMs !== gate.birthtimeMs) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
+	await removeFile(join(gate.path, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+	await rmdir(gate.path);
+}
+async function recordLegacyGateOwner(gatePath) {
+	try {
+		await writeFile(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), String(process.pid), {
+			flag: "wx",
+			mode: 384
+		});
+	} catch (error) {
+		await removeDirectoryBestEffort(gatePath, FILE_LOCK_GATE_CLEANUP_WARNING);
+		throw new Error(FILE_LOCK_COMPATIBLE_OWNER_MESSAGE, { cause: error });
+	}
+}
+async function legacyGateIsAbandoned(gatePath, isDirectory, modifiedAtMs) {
+	let contents;
+	try {
+		contents = await readFile(isDirectory ? join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE) : gatePath, FILE_LOCK_ENCODING);
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") return false;
+		contents = "";
+	}
+	const pid = FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN.test(contents.trim()) ? Number(contents.trim()) : void 0;
+	if (pid !== void 0 && Number.isSafeInteger(pid) && pid > 0) return processIsAlive(pid) === false || isDirectory && await ownerHeartbeatStopped(gatePath);
+	return !isDirectory && Date.now() - modifiedAtMs >= 5e3;
+}
+async function ownerHeartbeatStopped(gatePath) {
+	try {
+		const owner = await lstat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+		return Date.now() - owner.mtimeMs >= FILE_LOCK_STALE_CLAIM_MS;
+	} catch {
+		return false;
+	}
+}
+async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
+	const takeover = await tryAcquire(filePath);
+	if (!takeover) return false;
+	try {
+		let gate;
+		try {
+			gate = await lstat(gatePath);
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") return true;
+			throw error;
+		}
+		const isDirectory = gate.isDirectory();
+		if (!await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) return false;
+		const stalePath = `${gatePath}.${randomUUID()}${FILE_LOCK_COMPATIBLE_STALE_SUFFIX}`;
+		try {
+			await rename(gatePath, stalePath);
+		} catch (error) {
+			if (isBusyFileError(error)) return false;
+			throw error;
+		}
+		if (!isDirectory) {
+			await removeFile(stalePath);
+			return true;
+		}
+		await removeFile(join(stalePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+		await removeDirectoryBestEffort(stalePath, FILE_LOCK_STALE_GATE_CLEANUP_WARNING);
+		return true;
+	} finally {
+		await takeover.release();
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+function parseClaim(value, id) {
+	if (!isPlainRecord(value)) return void 0;
+	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
+	return value;
+}
+async function publishClaim(filePath, claim, create, deadline) {
+	const temporaryPath = join(dirname(filePath), `.${claim.id}.${randomUUID()}${FILE_LOCK_TEMP_SUFFIX}`);
+	try {
+		await writeFile(temporaryPath, JSON.stringify(claim), {
+			flag: "wx",
+			mode: 384
+		});
+		if (create) await link(temporaryPath, filePath);
+		else {
+			const replacementDeadline = deadline ?? performance$1.now() + 100;
+			for (;;) try {
+				await rename(temporaryPath, filePath);
+				break;
+			} catch (error) {
+				if (errorCode(error) !== "EPERM") throw error;
+				await waitForNextScan(replacementDeadline, dirname(filePath));
+			}
+		}
+	} finally {
+		await removeFile(temporaryPath);
+	}
+}
+async function createClaim(claimDirectory) {
+	for (;;) {
+		const id = randomUUID();
+		const claim = {
+			version: 1,
+			id,
+			pid: process.pid,
+			choosing: true,
+			ticket: 0
+		};
+		try {
+			const path = join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
+			await publishClaim(path, claim, true);
+			startHeartbeat(path, id);
+			return claim;
+		} catch (error) {
+			if (errorCode(error) !== "EEXIST") throw error;
+		}
+	}
+}
+async function scanClaims(claimDirectory, ownPath) {
+	const entries = await readdir(claimDirectory, { withFileTypes: true });
+	const claims = [];
+	const reference = ownPath === void 0 ? void 0 : await modifiedAt(ownPath);
+	const abandoned = async (path) => {
+		if (reference === void 0) return false;
+		const modified = await modifiedAt(path);
+		if (modified === void 0 || reference - modified < 3e3) return false;
+		return removeFile(path);
+	};
+	for (const entry of entries) {
+		if (!entry.name.endsWith(".json")) continue;
+		const id = entry.name.slice(0, -5);
+		const path = join(claimDirectory, entry.name);
+		if (!entry.isFile()) return {
+			claims,
+			blocked: true
+		};
+		let value;
+		try {
+			value = JSON.parse(await readFile(path, FILE_LOCK_ENCODING));
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") continue;
+			if (await abandoned(path)) continue;
+			return {
+				claims,
+				blocked: true,
+				transient: isBusyFileError(error)
+			};
+		}
+		const claim = parseClaim(value, id);
+		if (!claim) {
+			if (await abandoned(path)) continue;
+			return {
+				claims,
+				blocked: true
+			};
+		}
+		const alive = processIsAlive(claim.pid);
+		if (alive === false) {
+			if (!await removeFile(path)) return {
+				claims,
+				blocked: true
+			};
+			continue;
+		}
+		if (await abandoned(path)) continue;
+		if (alive === void 0) return {
+			claims,
+			blocked: true
+		};
+		claims.push(claim);
+	}
+	return {
+		claims,
+		blocked: false
+	};
+}
+async function modifiedAt(path) {
+	try {
+		return (await lstat(path)).mtimeMs;
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return void 0;
+		throw error;
+	}
+}
+function claimPath(claimDirectory, id) {
+	return join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
+}
+function hasClaimState(claims, id, choosing, ticket) {
+	const claim = claims.find((peer) => peer.id === id);
+	return claim?.choosing === choosing && claim.ticket === ticket;
+}
+function makeHandle(claimDirectory, claim) {
+	let releasePromise;
+	return {
+		async assertHeld() {
+			if (await modifiedAt(claimPath(claimDirectory, claim.id)) === void 0) throw new Error(FILE_LOCK_LOST_MESSAGE);
+		},
+		release() {
+			stopHeartbeat(claim.id);
+			releasePromise ??= removeFile(claimPath(claimDirectory, claim.id)).then((removed) => {
+				if (!removed) throw new Error(FILE_LOCK_RELEASE_MESSAGE);
+			});
+			return releasePromise;
+		}
+	};
+}
+async function beginClaim(filePath) {
+	const claimDirectory = `${resolve(filePath)}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	for (;;) try {
+		await assertSafeClaimDirectory(claimDirectory);
+		await mkdir(claimDirectory, {
+			recursive: true,
+			mode: 448
+		});
+		await assertSafeClaimDirectory(claimDirectory);
+		await chmod(claimDirectory, 448);
+		return {
+			claimDirectory,
+			claim: await createClaim(claimDirectory)
+		};
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") throw error;
+	}
+}
+async function assertSafeClaimDirectory(claimDirectory) {
+	let stat;
+	try {
+		stat = await lstat(claimDirectory);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return;
+		throw error;
+	}
+	if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE);
+}
+function isStillBusy(attempt, scan) {
+	return !attempt.waitForPeers && scan.blocked && scan.transient === true && performance$1.now() < attempt.busyDeadline;
+}
+async function waitOrReleaseClaim(attempt) {
+	if (!attempt.waitForPeers) {
+		await makeHandle(attempt.claimDirectory, attempt.claim).release();
+		return false;
+	}
+	await waitForNextScan(attempt.deadline, attempt.claimDirectory);
+	return true;
+}
+async function observePeers(attempt, expectedChoosing, expectedTicket) {
+	for (;;) {
+		const scan = await scanClaims(attempt.claimDirectory, attempt.ownPath);
+		if (isStillBusy(attempt, scan)) {
+			await setTimeout$1(10);
+			continue;
+		}
+		if (scan.blocked || !hasClaimState(scan.claims, attempt.claim.id, expectedChoosing, expectedTicket)) {
+			if (!await waitOrReleaseClaim(attempt)) return void 0;
+			continue;
+		}
+		return scan.claims;
+	}
+}
+async function takeTicket(attempt) {
+	const { claim, claimDirectory, ownPath, waitForPeers } = attempt;
+	const claims = await observePeers(attempt, true, 0);
+	if (claims === void 0) return void 0;
+	if (!waitForPeers && claims.some((peer) => peer.id !== claim.id && !peer.choosing)) {
+		await makeHandle(claimDirectory, claim).release();
+		return;
+	}
+	let maxTicket = 0;
+	for (const peer of claims) maxTicket = Math.max(maxTicket, peer.ticket);
+	if (maxTicket >= Number.MAX_SAFE_INTEGER) throw new Error(FILE_LOCK_TICKET_LIMIT_MESSAGE);
+	const ticketedClaim = {
+		...claim,
+		choosing: false,
+		ticket: maxTicket + 1
+	};
+	await publishClaim(ownPath, ticketedClaim, false, waitForPeers ? attempt.deadline : attempt.busyDeadline);
+	return ticketedClaim;
+}
+async function waitForTurn(attempt, ticketedClaim) {
+	const { claim, claimDirectory, waitForPeers } = attempt;
+	const choosingDeadline = performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS;
+	for (;;) {
+		const claims = await observePeers(attempt, false, ticketedClaim.ticket);
+		if (claims === void 0) return void 0;
+		const peers = claims.filter((peer) => peer.id !== claim.id);
+		if (!waitForPeers && !peers.some((peer) => !peer.choosing && precedes(peer, ticketedClaim)) && peers.some((peer) => peer.choosing) && performance$1.now() < choosingDeadline) {
+			await setTimeout$1(10);
+			continue;
+		}
+		if (peers.some((peer) => precedes(peer, ticketedClaim))) {
+			if (!await waitOrReleaseClaim(attempt)) return void 0;
+			continue;
+		}
+		if (waitForPeers && performance$1.now() > attempt.deadline) throw new FileLockTimeoutError(claimDirectory);
+		return {
+			claimDirectory,
+			claim: ticketedClaim
+		};
+	}
+}
+async function acquireClaim(filePath, waitForPeers, deadline) {
+	const { claimDirectory, claim } = await beginClaim(filePath);
+	const attempt = {
+		filePath,
+		claimDirectory,
+		claim,
+		ownPath: claimPath(claimDirectory, claim.id),
+		waitForPeers,
+		deadline,
+		busyDeadline: performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS
+	};
+	try {
+		const ticketedClaim = await takeTicket(attempt);
+		if (!ticketedClaim) return void 0;
+		return await waitForTurn(attempt, ticketedClaim);
+	} catch (error) {
+		await makeHandle(claimDirectory, claim).release();
+		throw error;
+	}
+}
+async function tryAcquireFileLock(filePath) {
+	const acquired = await acquireClaim(filePath, false, 0);
+	if (!acquired) return void 0;
+	return makeHandle(acquired.claimDirectory, acquired.claim);
+}
+async function acquireCompatibleDirectoryFileLock(filePath, options) {
+	const resolvedPath = resolve(filePath);
+	const deadline = performance$1.now() + timeoutMs(options);
+	const gate = await acquireLegacyDirectoryGate(resolvedPath, deadline, tryAcquireFileLock);
+	let acquired;
+	try {
+		acquired = await acquireClaim(resolvedPath, true, deadline);
+		if (!acquired) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
+	} catch (error) {
+		try {
+			await releaseLegacyDirectoryGate(gate);
+		} catch (cleanupError) {
+			throw new AggregateError([error, cleanupError], FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE, { cause: cleanupError });
+		}
+		throw error;
+	}
+	const sharedHandle = makeHandle(acquired.claimDirectory, acquired.claim);
+	let releasePromise;
+	return {
+		assertHeld: () => sharedHandle.assertHeld(),
+		release() {
+			releasePromise ??= (async () => {
+				const errors = [];
+				try {
+					await sharedHandle.release();
+				} catch (error) {
+					errors.push(error);
+				}
+				try {
+					await releaseLegacyDirectoryGate(gate);
+				} catch (error) {
+					errors.push(error);
+				}
+				if (errors.length === 1) throw errors[0];
+				if (errors.length > 1) throw new AggregateError(errors, FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE);
+			})();
+			return releasePromise;
+		}
+	};
+}
+function precedes(left, right) {
+	return left.ticket < right.ticket || left.ticket === right.ticket && left.id < right.id;
+}
+async function withFileLock(filePath, callback, options) {
+	const waitMs = timeoutMs(options);
+	const acquired = await acquireClaim(filePath, true, performance$1.now() + waitMs);
+	if (!acquired) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
+	const handle = makeHandle(acquired.claimDirectory, acquired.claim);
+	try {
+		return await callback(handle);
+	} finally {
+		await handle.release();
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+function readPolicyFile(path, options) {
+	let raw;
+	try {
+		if (options.requireRegularFile && !lstatSync(path).isFile()) throw new Error(POLICY_NOT_REGULAR_MESSAGE);
+		raw = readFileSync(path, POLICY_FILE_ENCODING);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") try {
+			lstatSync(path);
+		} catch (statError) {
+			if (errorCode(statError) === "ENOENT") return options.empty();
+			throw statError;
+		}
+		throw error;
+	}
+	const policy = options.parse(JSON.parse(raw));
+	if (policy === void 0) throw new TypeError(POLICY_PARSE_RESULT_MESSAGE);
+	return policy;
+}
+async function updatePolicyFile(path, options, update) {
+	const lockPath = `${path}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	const lock = await acquirePolicyLock(path);
+	const warnings = [];
+	try {
+		const policy = readPolicyForUpdate(path, options);
+		const updated = update(policy);
+		if (isThenable(updated)) throw new TypeError(POLICY_ASYNC_UPDATE_MESSAGE);
+		await replacePolicyFile(path, updated === void 0 ? policy : updated, warnings);
+		if (process.platform !== "win32") await syncPolicyDirectory(path, warnings);
+	} finally {
+		await bestEffort(warnings, async () => {
+			await lock.release();
+			await removeEmptyLockFolders(path, dirname(path));
+		}, `${POLICY_LOCK_CLEANUP_FAILED_PREFIX} ${lockPath}. ${POLICY_LOCK_RELEASE_WARNING}`);
+	}
+	return warnings.length ? { warning: warnings.join("; ") } : {};
+}
+async function bestEffort(warnings, action, message) {
+	try {
+		await action();
+	} catch (error) {
+		warnings.push(`${message}: ${describe(error)}`);
+	}
+}
+function acquirePolicyLock(path) {
+	return acquireCompatibleDirectoryFileLock(path, { timeoutMs: POLICY_LOCK_TIMEOUT_MS }).catch((error) => {
+		const timeout = findLockTimeout(error);
+		if (timeout !== void 0) throw new Error(`${POLICY_LOCK_TIMEOUT_ERROR} ${timeout.blockedPath}. ${POLICY_LOCK_TIMEOUT_MESSAGE}`, { cause: error });
+		throw error;
+	});
+}
+function readPolicyForUpdate(path, options) {
+	try {
+		return readPolicyFile(path, options);
+	} catch (error) {
+		throw new Error(`${POLICY_CANNOT_READ_PREFIX} ${path}. ${POLICY_UNREADABLE_MESSAGE}`, { cause: error });
+	}
+}
+async function writePolicyTemp(tempPath, policy, warnings) {
+	const temp = await open(tempPath, "wx", 384);
+	try {
+		await temp.writeFile(`${JSON.stringify(policy)}\n`, POLICY_FILE_ENCODING);
+		await temp.sync();
+	} catch (error) {
+		await bestEffort(warnings, () => temp.close(), POLICY_TEMP_CLOSE_WARNING);
+		throw error;
+	}
+	await temp.close();
+}
+async function replacePolicyFile(path, policy, warnings) {
+	const tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+	try {
+		await writePolicyTemp(tempPath, policy, warnings);
+		await rename(tempPath, path);
+	} catch (error) {
+		await bestEffort(warnings, () => unlink(tempPath), POLICY_TEMP_CLEANUP_WARNING);
+		throw error;
+	}
+}
+async function syncPolicyDirectory(path, warnings) {
+	await bestEffort(warnings, async () => {
+		const directory = await open(dirname(path), "r");
+		try {
+			await directory.sync();
+		} finally {
+			await bestEffort(warnings, () => directory.close(), POLICY_DIRECTORY_CLOSE_WARNING);
+		}
+	}, POLICY_DURABILITY_WARNING);
+}
+function isThenable(value) {
+	return typeof Reflect.get(Object(value), "then") === "function";
+}
+function findLockTimeout(error) {
+	if (error instanceof FileLockTimeoutError) return error;
+	if (!(error instanceof AggregateError)) return void 0;
+	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+var CaptureRecordInvalidError = class extends Error {};
+var CaptureRecordVersionError = class extends Error {};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+function publishByRename(path, contents, tempSuffix, mode) {
+	const temp = `${path}.${randomUUID()}${tempSuffix}`;
+	const fd = openSync(temp, "wx", mode);
+	try {
+		writeSync(fd, contents);
+	} finally {
+		closeSync(fd);
+	}
+	renameSync(temp, path);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+const STATE_TEMP_SUFFIX = ".state.tmp";
+const STATE_CORRUPT_SUFFIX = ".corrupt";
+const STATE_FILE_ENCODING = "utf-8";
+const STATE_LOCK_RELEASE_WARNING = "Could not release the shared state lock";
+const STATE_LOCK_BUSY_WARNING = "Another process holds the state lock, so state updates in this hook are saved for the next lock holder";
+const STATE_CORRUPT_WARNING = `State was unreadable; started over and kept the old file as ${STATE_CORRUPT_SUFFIX}`;
+const STATE_LOCK_WAIT_MS = 1e3;
+const PENDING_STATE_DIR_SUFFIX = ".pending";
+const PENDING_STATE_FILE_SUFFIX = ".json";
+const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+let sequence = 0;
+const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+function diffValue(path, before, after, operations) {
+	if (same(before, after)) return;
+	if (isPlainRecord(before) && isPlainRecord(after)) {
+		for (const key of Object.keys(before)) if (before[key] !== void 0 && after[key] === void 0) operations.push({
+			path: [...path, key],
+			unset: true
+		});
+		for (const [key, value] of Object.entries(after)) if (value !== void 0) diffValue([...path, key], before[key], value, operations);
+	} else if (Array.isArray(before) && Array.isArray(after)) {
+		const kept = new Set(after.map((item) => JSON.stringify(item)));
+		const known = new Set(before.map((item) => JSON.stringify(item)));
+		const add = after.filter((item) => !known.has(JSON.stringify(item)));
+		const remove = before.filter((item) => !kept.has(JSON.stringify(item)));
+		operations.push({
+			path,
+			add,
+			remove
+		});
+	} else operations.push({
+		path,
+		set: after
+	});
+}
+function diffState(before, after) {
+	const patch = [];
+	for (const session of Object.keys(before)) if (!Object.hasOwn(after, session)) patch.push({
+		session,
+		removed: true
+	});
+	for (const [session, next] of Object.entries(after)) {
+		const operations = [];
+		if (Object.hasOwn(before, session)) diffValue([], before[session], next, operations);
+		else operations.push({
+			path: [],
+			set: next
+		});
+		if (operations.length > 0) patch.push({
+			session,
+			operations
+		});
+	}
+	return patch;
+}
+function applyOperation(root, operation) {
+	const { path } = operation;
+	if (path.length === 0) return operation.set;
+	const [key, ...rest] = path;
+	const node = isPlainRecord(root) ? { ...root } : {};
+	if (rest.length > 0) node[key] = applyOperation(node[key], {
+		...operation,
+		path: rest
+	});
+	else if (operation.unset) delete node[key];
+	else if (operation.add || operation.remove) node[key] = mergeList(node[key], operation);
+	else node[key] = operation.set;
+	return node;
+}
+function mergeList(current, operation) {
+	const removed = new Set((operation.remove ?? []).map((item) => JSON.stringify(item)));
+	const list = (Array.isArray(current) ? current : []).filter((item) => !removed.has(JSON.stringify(item)));
+	const present = new Set(list.map((item) => JSON.stringify(item)));
+	for (const item of operation.add ?? []) if (!present.has(JSON.stringify(item))) list.push(item);
+	return list;
+}
+function applyPatches(state, patches) {
+	let result = state;
+	for (const patch of patches) for (const entry of patch) {
+		if (entry.removed) {
+			result = Object.fromEntries(Object.entries(result).filter(([id]) => id !== entry.session));
+			continue;
+		}
+		let session = result[entry.session];
+		for (const operation of entry.operations ?? []) session = applyOperation(session, operation);
+		result = {
+			...result,
+			[entry.session]: session
+		};
+	}
+	return result;
+}
+const pendingDirectory = (stateFilePath) => `${stateFilePath}${PENDING_STATE_DIR_SUFFIX}`;
+function names(directory) {
+	try {
+		return readdirSync(directory);
+	} catch {
+		return [];
+	}
+}
+function writePending(stateFilePath, patch) {
+	if (patch.length === 0) return;
+	const directory = pendingDirectory(stateFilePath);
+	const time = String(Date.now()).padStart(13, "0");
+	const order = String(sequence++).padStart(6, "0");
+	const file = join(directory, `${time}-${order}-${process.pid}${PENDING_STATE_FILE_SUFFIX}`);
+	for (let attempt = 1;; attempt++) try {
+		mkdirSync(directory, {
+			recursive: true,
+			mode: 448
+		});
+		publishByRename(file, JSON.stringify(patch), PENDING_STATE_TEMP_SUFFIX, 384);
+		return;
+	} catch (error) {
+		if (attempt >= 3) throw error;
+	}
+}
+function readPending(stateFilePath) {
+	const directory = pendingDirectory(stateFilePath);
+	const files = [];
+	const patches = [];
+	for (const name of names(directory).filter((n) => n.endsWith(PENDING_STATE_FILE_SUFFIX)).toSorted()) {
+		const file = join(directory, name);
+		files.push(file);
+		try {
+			patches.push(JSON.parse(readFileSync(file, "utf-8")));
+		} catch {
+			continue;
+		}
+	}
+	return {
+		files,
+		patches
+	};
+}
+function hasRecentPending(stateFilePath) {
+	const directory = pendingDirectory(stateFilePath);
+	return names(directory).some((name) => {
+		try {
+			return name.endsWith(".json") && Date.now() - statSync(join(directory, name)).mtimeMs < 3e4;
+		} catch {
+			return false;
+		}
+	});
+}
+function removePending(stateFilePath, files) {
+	const directory = pendingDirectory(stateFilePath);
+	for (const file of files) rmSync(file, { force: true });
+	for (const name of names(directory)) {
+		if (name.endsWith(".json")) continue;
+		const file = join(directory, name);
+		try {
+			if (Date.now() - statSync(file).mtimeMs > 6e4) rmSync(file, { force: true });
+		} catch {
+			continue;
+		}
+	}
+	if (names(directory).length > 0) return;
+	try {
+		rmdirSync(directory);
+	} catch {
+		return;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+function createStateStore(options) {
+	const { path } = options;
+	const warn = options.warn ?? console.warn;
+	function read() {
+		const { patches } = readPending(path);
+		return applyPatches(readStateFile(path), patches);
+	}
+	async function update(fn) {
+		const waitMs = hasRecentPending(path) ? 200 : STATE_LOCK_WAIT_MS;
+		if (await withStateFileLock(path, warn, () => {
+			const { files, patches } = readPending(path);
+			const current = readStateFile(path, () => setAsideCorruptState(path, warn));
+			publishState(path, fn(applyPatches(current, patches)));
+			removePending(path, files);
+		}, waitMs)) return;
+		const before = read();
+		writePending(path, diffState(before, fn(before)));
+	}
+	return {
+		read,
+		update
+	};
+}
+function pruneStateEntries(state, maxAgeMs, now = Date.now()) {
+	const cutoff = now - maxAgeMs;
+	const pruned = {};
+	for (const [id, entry] of Object.entries(state)) if ((entry.updated ? new Date(entry.updated).getTime() : 0) >= cutoff) Object.defineProperty(pruned, id, {
+		value: entry,
+		writable: true,
+		enumerable: true,
+		configurable: true
+	});
+	return pruned;
+}
+function readStateFile(path, onUnparseable) {
+	let raw;
+	try {
+		raw = readFileSync(path, STATE_FILE_ENCODING);
+	} catch {
+		return {};
+	}
+	try {
+		const parsed = JSON.parse(raw);
+		return isPlainRecord(parsed) ? parsed : {};
+	} catch {
+		onUnparseable?.();
+		return {};
+	}
+}
+function setAsideCorruptState(path, warn) {
+	try {
+		renameSync(path, `${path}${STATE_CORRUPT_SUFFIX}`);
+	} catch {}
+	warn(STATE_CORRUPT_WARNING);
+}
+function publishState(path, state) {
+	publishByRename(path, JSON.stringify(state, null, 2), STATE_TEMP_SUFFIX, 384);
+}
+async function withStateFileLock(path, warn, callback, waitMs) {
+	let lock;
+	try {
+		lock = await acquireCompatibleDirectoryFileLock(path, { timeoutMs: waitMs });
+	} catch (error) {
+		if (!(error instanceof FileLockTimeoutError)) throw error;
+		warn(STATE_LOCK_BUSY_WARNING);
+		return false;
+	}
+	try {
+		await callback();
+	} finally {
+		try {
+			await lock.release();
+		} catch (error) {
+			warn(`${STATE_LOCK_RELEASE_WARNING}: ${error}`);
+		}
+	}
+	return true;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+function validateIntegration(value) {
+	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
+}
+function validateIdentifier(value, name) {
+	if (value.length === 0 || Buffer.byteLength(value, "utf8") > 4096 || hasControlCharacter(value)) throw new TypeError(`Invalid ${name}`);
+}
+function hasControlCharacter(value) {
+	for (const character of value) {
+		const codePoint = character.codePointAt(0);
+		if (codePoint !== void 0 && (codePoint < 32 || codePoint === 127)) return true;
+	}
+	return false;
+}
+function identifierHash(value) {
+	return createHash("sha256").update(value).digest("hex");
+}
+function captureRoot(storage) {
+	return typeof storage === "string" ? resolve(storage) : storage.root;
+}
+function captureDirectory(storage) {
+	const directory = typeof storage === "string" ? CAPTURE_TURNS_DIRECTORY : storage.directory;
+	if (directory !== "turns" && directory !== "jobs") throw new TypeError(CAPTURE_STORAGE_DIRECTORY_MESSAGE);
+	return directory;
+}
+function sessionSegments(sessionHash) {
+	return [CAPTURE_SESSIONS_DIRECTORY, sessionHash];
+}
+function eventSegments(storage, scope) {
+	const segments = [...sessionSegments(identifierHash(scope.sessionId)), captureDirectory(storage)];
+	return captureDirectory(storage) === "turns" ? [...segments, identifierHash(scope.turnId)] : segments;
+}
+function sessionsDirectory(root, integration) {
+	validateIntegration(integration);
+	return join(captureRoot(root), CAPTURE_SESSIONS_DIRECTORY);
+}
+function turnsDirectory(root, integration, sessionHash) {
+	return join(sessionsDirectory(root, integration), sessionHash, captureDirectory(root));
+}
+function eventsDirectory(turns, turnHash) {
+	return join(turns, turnHash);
+}
+function eventPath(root, scope) {
+	const eventId = captureDirectory(root) === "turns" ? scope.eventId : JSON.stringify([scope.turnId, scope.eventId]);
+	return join(captureRoot(root), ...eventSegments(root, scope), `${identifierHash(eventId)}${CAPTURE_FILE_EXTENSION}`);
+}
+function recordLockPath(root, scope) {
+	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+async function ensurePrivateDirectory(root, segments) {
+	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
+}
+async function retryRemovedDirectory(operation) {
+	for (let attempt = 1;; attempt += 1) try {
+		return await operation();
+	} catch (error) {
+		const code = errorCode(error);
+		if (!CAPTURE_REMOVED_DIRECTORY_CODES.some((removed) => removed === code) || attempt >= 100) throw error;
+	}
+}
+async function createPrivateDirectory(root, segments) {
+	await mkdir(root, {
+		recursive: true,
+		mode: 448
+	});
+	const rootInfo = await lstat(root);
+	if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) throw new Error("Capture root must be a real directory");
+	let current = root;
+	for (const segment of segments) {
+		current = join(current, segment);
+		try {
+			await mkdir(current, { mode: 448 });
+		} catch (error) {
+			if (errorCode(error) !== "EEXIST") throw error;
+		}
+		const info = await lstat(current);
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Capture path contains a non-directory");
+		await chmod(current, 448);
+		const checked = await lstat(current);
+		if (!checked.isDirectory() || checked.isSymbolicLink()) throw new Error("Capture path changed during setup");
+	}
+	return current;
+}
+async function publishExclusive(path, contents, beforeCommit) {
+	const directory = dirname(path);
+	const stagingPath = join(directory, `.${randomUUID()}.tmp`);
+	const handle = await open(stagingPath, "wx", 384);
+	try {
+		await handle.writeFile(contents, "utf8");
+		await handle.chmod(384);
+		await handle.sync();
+	} finally {
+		await handle.close();
+	}
+	try {
+		beforeCommit?.();
+		await link(stagingPath, path);
+		await syncDirectory(directory);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "EEXIST") return false;
+		throw error;
+	} finally {
+		await unlink(stagingPath).catch((error) => {
+			if (errorCode(error) !== "ENOENT") throw error;
+		});
+	}
+}
+async function replacePrivateFile(root, path, contents, beforeCommit) {
+	if (!await hasRealParentDirectories(root, path)) throw new Error("Capture record parent directory is missing");
+	const original = await lstat(path);
+	if (!original.isFile() || original.isSymbolicLink() || !hasPrivateFileMode(original.mode)) throw new Error("Capture record must be a private regular file");
+	const directory = dirname(path);
+	const stagingPath = join(directory, `.${randomUUID()}.tmp`);
+	let handle;
+	let stagingCreated = false;
+	let operationFailed = false;
+	let operationError;
+	try {
+		handle = await open(stagingPath, "wx", 384);
+		stagingCreated = true;
+		await handle.writeFile(contents, "utf8");
+		await handle.chmod(384);
+		await handle.sync();
+		await handle.close();
+		handle = void 0;
+		const current = await lstat(path);
+		if (!current.isFile() || current.isSymbolicLink() || current.dev !== original.dev || current.ino !== original.ino || !hasPrivateFileMode(current.mode)) throw new Error("Capture record changed during replacement");
+		await beforeCommit?.();
+		await rename(stagingPath, path);
+		await syncDirectory(directory);
+	} catch (error) {
+		operationFailed = true;
+		operationError = error;
+	}
+	const cleanupErrors = [];
+	if (handle !== void 0) try {
+		await handle.close();
+	} catch (error) {
+		cleanupErrors.push(error);
+	}
+	if (stagingCreated) try {
+		await unlink(stagingPath);
+	} catch (error) {
+		if (errorCode(error) !== "ENOENT") cleanupErrors.push(error);
+	}
+	if (operationFailed && cleanupErrors.length > 0) throw new AggregateError([operationError, ...cleanupErrors], "Capture replacement failed");
+	if (operationFailed) throw operationError;
+	if (cleanupErrors.length === 1) throw cleanupErrors[0];
+	if (cleanupErrors.length > 1) throw new AggregateError(cleanupErrors, "Capture replacement cleanup failed");
+}
+function hasPrivateFileMode(mode) {
+	return process.platform === "win32" || (mode & 63) === 0;
+}
+async function readPrivateFile(root, path) {
+	if (!await hasRealParentDirectories(root, path)) return void 0;
+	let handle;
+	try {
+		const info = await lstat(path);
+		if (!info.isFile() || info.isSymbolicLink()) throw new Error("Capture record must be a regular file");
+		handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return void 0;
+		throw error;
+	}
+	try {
+		if (!(await handle.stat()).isFile()) throw new Error("Capture record must be a regular file");
+		return await handle.readFile("utf8");
+	} finally {
+		await handle.close();
+	}
+}
+async function hasRealParentDirectories(root, path) {
+	const relativeDirectory = relative(root, dirname(path));
+	if (relativeDirectory === ".." || relativeDirectory.startsWith(`..${sep}`) || isAbsolute(relativeDirectory)) throw new Error("Capture path is outside storage root");
+	const directories = [root];
+	let current = root;
+	for (const segment of relativeDirectory.split(sep).filter(Boolean)) {
+		current = join(current, segment);
+		directories.push(current);
+	}
+	for (const directory of directories) {
+		let info;
+		try {
+			info = await lstat(directory);
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") return false;
+			throw error;
+		}
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Capture path contains a non-directory");
+	}
+	return true;
+}
+async function syncDirectory(path) {
+	if (process.platform === "win32") return;
+	const handle = await open(path, constants.O_RDONLY | (constants.O_DIRECTORY ?? 0) | (constants.O_NOFOLLOW ?? 0));
+	try {
+		await handle.sync();
+	} finally {
+		await handle.close();
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+async function listPrivateDirectory(root, directory) {
+	const storageRoot = resolve(root);
+	const target = resolve(directory);
+	const relativePath = relative(storageRoot, target);
+	if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) throw new Error("Private directory is outside storage root");
+	let current = storageRoot;
+	for (const segment of ["", ...relativePath.split(sep).filter(Boolean)]) {
+		if (segment) current = join(current, segment);
+		const info = await lstatDirectory(current);
+		if (!info) return void 0;
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Private path contains a non-directory");
+	}
+	const entries = await readdir(target, { withFileTypes: true });
+	const finalInfo = await lstat(target);
+	if (!finalInfo.isDirectory() || finalInfo.isSymbolicLink()) throw new Error("Private path changed during enumeration");
+	return entries;
+}
+async function lstatDirectory(path) {
+	try {
+		return await lstat(path);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return void 0;
+		throw error;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+function scopeOf(value) {
+	return {
+		integration: value.integration,
+		sessionId: value.sessionId,
+		turnId: value.turnId,
+		eventId: value.eventId
+	};
+}
+function scopeKey(scope) {
+	return JSON.stringify([
+		scope.integration,
+		scope.sessionId,
+		scope.turnId,
+		scope.eventId
+	]);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/compare.js
+function compareText(left, right) {
+	if (left === right) return 0;
+	return left < right ? -1 : 1;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+function compareCaptureOrder(left, right) {
+	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
+	return compareText(left.eventId, right.eventId);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+function captureContentDigest(record) {
+	const content = { ...record };
+	delete content.version;
+	delete content.capturedAtMs;
+	delete content.delivery;
+	delete content.destinationRoutes;
+	return createHash("sha256").update(canonicalJson(content)).digest("hex");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+function markerPath(root, scope) {
+	const path = eventPath(root, scope);
+	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
+}
+function turnMarkerPath(root, scope) {
+	return join(dirname(eventPath(root, scope)), CAPTURE_TURN_MARKER_FILE);
+}
+function needsMarker(record) {
+	const outcomes = Object.values(record.delivery?.outcomes ?? {});
+	return outcomes.length === 0 || outcomes.some(({ outcome }) => outcome === "dropped");
+}
+function markerOf(records) {
+	return {
+		version: 1,
+		entries: Object.fromEntries(records.map((record) => [identifierHash(record.eventId), {
+			runId: record.runId,
+			outcomes: record.delivery?.outcomes ?? {}
+		}])),
+		unsettled: {
+			outcome: "dropped",
+			reason: CAPTURE_MARKER_REMOVED_REASON,
+			recordedAt: (/* @__PURE__ */ new Date()).toISOString()
+		}
+	};
+}
+async function writeOutcomeMarker(root, scope, record) {
+	if (!needsMarker(record)) return;
+	await publishExclusive(markerPath(root, scope), JSON.stringify(markerOf([record])));
+}
+async function writeTurnMarker(root, records, settled) {
+	const [first] = records;
+	if (first === void 0) return;
+	const path = turnMarkerPath(root, first);
+	const previous = await readMarker(root, path);
+	const fresh = markerOf(records);
+	const marker = {
+		...fresh,
+		entries: {
+			...previous?.entries,
+			...fresh.entries
+		},
+		...(settled ?? previous?.settled) === void 0 ? {} : { settled: settled ?? previous?.settled }
+	};
+	if (previous === void 0) await publishExclusive(path, JSON.stringify(marker));
+	else await replacePrivateFile(captureRoot(root), path, JSON.stringify(marker));
+}
+async function readSettledTurn(root, scope) {
+	return (await readMarker(root, join(captureRoot(root), ...eventSegments(root, scope), CAPTURE_TURN_MARKER_FILE)))?.settled;
+}
+function isOutcome(value) {
+	return isPlainRecord(value) && (value["outcome"] === "delivered" || value["outcome"] === "dropped") && typeof value["recordedAt"] === "string";
+}
+function isMarkerEntry(value) {
+	return isPlainRecord(value) && typeof value["runId"] === "string" && isPlainRecord(value["outcomes"]) && Object.values(value["outcomes"]).every(isOutcome);
+}
+function isSettledTurn(value) {
+	return isPlainRecord(value) && typeof value["rootRunId"] === "string" && isPlainRecord(value["attribution"]) && Object.values(value["attribution"]).every((entry) => typeof entry === "string");
+}
+function isMarker(value) {
+	return value["version"] === 1 && isPlainRecord(value["entries"]) && Object.values(value["entries"]).every(isMarkerEntry) && isOutcome(value["unsettled"]) && (value["settled"] === void 0 || isSettledTurn(value["settled"]));
+}
+function parseMarker$1(contents) {
+	try {
+		const value = parseJsonObject(contents, CAPTURE_MARKER_INVALID_MESSAGE);
+		return isMarker(value) ? value : void 0;
+	} catch {
+		return;
+	}
+}
+async function readMarker(root, path) {
+	const contents = await readPrivateFile(captureRoot(root), path);
+	if (contents === void 0) return void 0;
+	const marker = parseMarker$1(contents);
+	if (marker !== void 0) return marker;
+	console.warn(CAPTURE_MARKER_INVALID_WARNING, basename(path));
+	await removeFileIfPresent(path);
+}
+async function readMarkerOutcome(root, scope, destination) {
+	for (const path of [markerPath(root, scope), turnMarkerPath(root, scope)]) {
+		const marker = await readMarker(root, path);
+		const entry = marker?.entries[identifierHash(scope.eventId)];
+		if (marker !== void 0 && entry !== void 0) return entry.outcomes[destination] ?? marker.unsettled;
+	}
+}
+async function readDroppedRunIds(root, scope) {
+	const runIds = /* @__PURE__ */ new Set();
+	const directory = join(captureRoot(root), ...eventSegments(root, scope));
+	for (const path of await markersIn(root, directory)) {
+		const marker = await readMarker(root, path);
+		for (const { runId, outcomes } of Object.values(marker?.entries ?? {})) if (Object.values(outcomes).every(({ outcome }) => outcome === "dropped")) runIds.add(runId);
+	}
+	return runIds;
+}
+async function forgetTurnMarkers(root, scope) {
+	const paths = captureDirectory(root) === "jobs" ? [markerPath(root, scope)] : await markersIn(root, dirname(eventPath(root, scope)));
+	for (const path of paths) await removeFileIfPresent(path);
+}
+async function markersIn(root, directory) {
+	return (await listPrivateDirectory(captureRoot(root), directory) ?? []).filter((entry) => entry.isFile() && CAPTURE_MARKER_FILE.test(entry.name)).map((entry) => join(directory, entry.name));
+}
+async function removeStaleMarkers(root, integration, modifiedBeforeMs) {
+	const sessions = sessionsDirectory(root, integration);
+	let removed = 0;
+	for (const session of await listPrivateDirectory(captureRoot(root), sessions) ?? []) {
+		if (!session.isDirectory() || !CAPTURE_HASH.test(session.name)) continue;
+		const turns = turnsDirectory(root, integration, session.name);
+		const directories = captureDirectory(root) === "jobs" ? [turns] : (await listPrivateDirectory(captureRoot(root), turns) ?? []).filter((turn) => turn.isDirectory() && CAPTURE_HASH.test(turn.name)).map((turn) => eventsDirectory(turns, turn.name));
+		for (const directory of directories) {
+			removed += await removeOldMarkers(root, directory, modifiedBeforeMs);
+			await removeEmptyAncestors(directory, captureRoot(root));
+		}
+	}
+	return removed;
+}
+async function removeOldMarkers(root, directory, modifiedBeforeMs) {
+	let removed = 0;
+	for (const path of await markersIn(root, directory)) {
+		const info = await lstat(path).catch((error) => {
+			if (errorCode(error) === "ENOENT") return void 0;
+			throw error;
+		});
+		if (info === void 0 || info.mtimeMs >= modifiedBeforeMs) continue;
+		if (await removeFileIfPresent(path)) removed += 1;
+	}
+	return removed;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
+	const storageRoot = {
+		root: resolve(root),
+		directory
+	};
+	captureDirectory(storageRoot);
+	return {
+		capture: (input) => captureEvent(storageRoot, input),
+		read: (scope) => readCapture(storageRoot, scope),
+		async enumerate(integration, sessionId) {
+			validateIntegration(integration);
+			validateIdentifier(sessionId, "session ID");
+			return enumerateTurns(storageRoot, integration, identifierHash(sessionId), () => true);
+		},
+		async enumerateTurn(integration, sessionId, turnId) {
+			validateIntegration(integration);
+			validateIdentifier(sessionId, "session ID");
+			validateIdentifier(turnId, "turn ID");
+			const turnHash = identifierHash(turnId);
+			return enumerateTurns(storageRoot, integration, identifierHash(sessionId), (name) => name === turnHash);
+		},
+		enumerateSessions: (integration) => enumerateIntegrationSessions(storageRoot, integration),
+		recordRetry: (scope, destination, retry) => recordRetryState(storageRoot, scope, destination, retry),
+		recordOutcome: (input) => recordDeliveryOutcome(storageRoot, input),
+		readOutcome: (scope, destination) => readDeliveryOutcome(storageRoot, scope, destination),
+		remove: (scope, options) => removeCapture(storageRoot, scope, options),
+		removeTurn: (records, settled) => removeTurnWithMarker(storageRoot, records, settled),
+		readSettledTurn: (integration, sessionId, turnId) => readSettledTurn(storageRoot, {
+			integration,
+			sessionId,
+			turnId
+		}),
+		readDroppedRunIds: (integration, sessionId, turnId) => readDroppedRunIds(storageRoot, {
+			integration,
+			sessionId,
+			turnId
+		}),
+		removeStaleMarkers: (integration, modifiedBeforeMs) => removeStaleMarkers(storageRoot, integration, modifiedBeforeMs)
+	};
+}
+function buildCaptureRecord(input) {
+	validateScope(input);
+	const dependencies = normalizeDependencies(input.dependencies, input);
+	validateIdentifier(input.runId, "run ID");
+	validateIdentifier(input.destinationFingerprint, "destination fingerprint");
+	validateIdentifier(input.eventKind, "event kind");
+	return {
+		version: 2,
+		capturedAtMs: Date.now(),
+		integration: input.integration,
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		eventId: input.eventId,
+		runId: input.runId,
+		destinationFingerprint: input.destinationFingerprint,
+		eventKind: input.eventKind,
+		normalizedPayload: canonicalValue(input.normalizedPayload, /* @__PURE__ */ new Set()),
+		turnEvidence: canonicalValue(input.turnEvidence, /* @__PURE__ */ new Set()),
+		metadataProvenance: canonicalValue(input.metadataProvenance, /* @__PURE__ */ new Set()),
+		...input.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: requireSafeEpochMilliseconds(input.sourceAgeStartedAtMs, "Source age") },
+		...dependencies === void 0 ? {} : { dependencies },
+		...input.destinationRoutes === void 0 ? {} : { destinationRoutes: normalizeDestinationRoutes(input.destinationRoutes) }
+	};
+}
+async function publishCapture(root, input, record, contents) {
+	const path = eventPath(root, input);
+	return withRecordLock(root, input, async () => {
+		if (await retryRemovedDirectory(async () => {
+			await ensureEventDirectory(root, input.integration, input.sessionId, input.turnId);
+			return publishExclusive(path, contents);
+		})) return {
+			status: "published",
+			record
+		};
+		const previous = await readRecord(root, path);
+		if (previous === void 0) return {
+			status: "failed",
+			code: "STORAGE_FAILED",
+			message: "Published event disappeared"
+		};
+		if (!sameScope(previous, input)) return { status: "conflict" };
+		return sameCapture(previous, record) ? {
+			status: "duplicate",
+			record: previous
+		} : { status: "conflict" };
+	});
+}
+async function captureEvent(root, input) {
+	let record;
+	let contents;
+	try {
+		record = buildCaptureRecord(input);
+		contents = canonicalJson(record);
+	} catch (error) {
+		return failure("SERIALIZATION_FAILED", error);
+	}
+	try {
+		return await publishCapture(root, input, record, contents);
+	} catch (error) {
+		return failure("STORAGE_FAILED", error);
+	}
+}
+async function readCapture(root, scope) {
+	validateScope(scope);
+	const record = await readRecord(root, eventPath(root, scope));
+	if (record === void 0) return void 0;
+	if (!sameScope(record, scope)) throw new Error(CAPTURE_NAMESPACE_MISMATCH_MESSAGE);
+	return record;
+}
+async function enumerateIntegrationSessions(root, integration) {
+	validateIntegration(integration);
+	const sessions = [];
+	for (const directory of await listPrivateDirectory(captureRoot(root), sessionsDirectory(root, integration)) ?? []) {
+		if (!directory.isDirectory() || !CAPTURE_HASH.test(directory.name)) continue;
+		const captures = await enumerateTurns(root, integration, directory.name, () => true);
+		if (captures.length > 0) sessions.push({
+			sessionId: captures[0].record.sessionId,
+			captures
+		});
+	}
+	return sessions.toSorted((left, right) => left.sessionId === right.sessionId ? 0 : left.sessionId < right.sessionId ? -1 : 1);
+}
+async function recordRetryState(root, scope, destination, retry) {
+	validateScope(scope);
+	validateIdentifier(destination, "destination");
+	requireNonNegativeInteger(retry.failures, "Delivery failures");
+	requireSafeEpochMilliseconds(retry.notBeforeMs, "Retry time");
+	if (retry.recordedAtMs !== void 0) requireSafeEpochMilliseconds(retry.recordedAtMs, "Retry record time");
+	await withRecordLock(root, scope, async (lock) => {
+		const path = eventPath(root, scope);
+		const record = await readRecord(root, path);
+		if (record === void 0) throw new Error(CAPTURE_RETRY_LOST_MESSAGE);
+		const delivery = deliveryOf(record);
+		await saveDelivery(root, path, record, {
+			...delivery,
+			retries: {
+				...delivery.retries,
+				[destination]: retry
+			}
+		}, lock);
+	});
+}
+function validateOutcomeInput(input) {
+	validateScope(input);
+	validateIdentifier(input.destination, "destination");
+	if (input.outcome !== "delivered" && input.outcome !== "dropped") throw new TypeError(CAPTURE_OUTCOME_INVALID_MESSAGE);
+	if (input.reason !== void 0) validateIdentifier(input.reason, "outcome reason");
+}
+async function recordDeliveryOutcome(root, input) {
+	try {
+		validateOutcomeInput(input);
+		return await withRecordLock(root, input, async (lock) => {
+			const path = eventPath(root, input);
+			const record = await readRecord(root, path);
+			if (record === void 0) return { status: "missing-capture" };
+			const delivery = deliveryOf(record);
+			const previous = delivery.outcomes[input.destination];
+			if (previous !== void 0) return sameOutcome(previous, input) ? {
+				status: "duplicate",
+				receipt: receiptOf(input, previous)
+			} : { status: "conflict" };
+			const outcome = {
+				outcome: input.outcome,
+				...input.reason === void 0 ? {} : { reason: input.reason },
+				recordedAt: (/* @__PURE__ */ new Date()).toISOString()
+			};
+			await saveDelivery(root, path, record, {
+				...delivery,
+				outcomes: {
+					...delivery.outcomes,
+					[input.destination]: outcome
+				}
+			}, lock);
+			return {
+				status: "recorded",
+				receipt: receiptOf(input, outcome)
+			};
+		});
+	} catch (error) {
+		return failure("STORAGE_FAILED", error);
+	}
+}
+async function readDeliveryOutcome(root, scope, destination) {
+	try {
+		validateScope(scope);
+		validateIdentifier(destination, "destination");
+		const record = await readRecord(root, eventPath(root, scope));
+		if (record === void 0) {
+			const removed = await readMarkerOutcome(root, scope, destination);
+			return removed === void 0 ? { status: "missing-capture" } : {
+				status: "settled",
+				receipt: receiptOf({
+					...scope,
+					destination
+				}, removed)
+			};
+		}
+		if (!sameScope(record, scope)) throw new Error(CAPTURE_NAMESPACE_MISMATCH_MESSAGE);
+		const outcome = record.delivery?.outcomes[destination];
+		return outcome === void 0 ? { status: "pending" } : {
+			status: "settled",
+			receipt: receiptOf({
+				...scope,
+				destination
+			}, outcome)
+		};
+	} catch (error) {
+		return failure("STORAGE_FAILED", error);
+	}
+}
+async function removeTurnWithMarker(root, records, settled) {
+	await writeTurnMarker(root, records, settled);
+	for (const record of records) await removeCapture(root, scopeOf(record), {}, false);
+}
+async function removeCapture(root, scope, options = {}, leaveMarker = true) {
+	validateScope(scope);
+	await withRecordLock(root, scope, async () => {
+		const path = eventPath(root, scope);
+		const record = options.forgetTurn || !leaveMarker ? void 0 : await readRecord(root, path);
+		if (record !== void 0 && captureDirectory(root) === "turns") await writeOutcomeMarker(root, scope, record);
+		await removeFileIfPresent(path);
+	});
+	if (options.forgetTurn) await forgetTurnMarkers(root, scope);
+	await removeEmptyLockFolders(recordLockPath(root, scope), captureRoot(root));
+	await removeEmptyAncestors(dirname(eventPath(root, scope)), captureRoot(root));
+}
+async function saveDelivery(root, path, record, delivery, lock) {
+	await replacePrivateFile(captureRoot(root), path, canonicalJson({
+		...record,
+		delivery
+	}), () => lock.assertHeld());
+}
+async function ensureEventDirectory(root, integration, sessionId, turnId) {
+	await ensurePrivateDirectory(captureRoot(root), eventSegments(root, {
+		integration,
+		sessionId,
+		turnId
+	}));
+}
+async function withRecordLock(root, scope, operation) {
+	validateScope(scope);
+	await ensurePrivateDirectory(captureRoot(root), eventSegments(root, scope));
+	return withFileLock(recordLockPath(root, scope), operation);
+}
+function compareCaptures(left, right) {
+	return compareCaptureOrder({
+		capturedAtMs: left.capturedAtMs,
+		eventId: left.record.eventId
+	}, {
+		capturedAtMs: right.capturedAtMs,
+		eventId: right.record.eventId
+	});
+}
+async function enumerateTurns(root, integration, sessionHash, wanted) {
+	const turns = turnsDirectory(root, integration, sessionHash);
+	const captures = [];
+	if (captureDirectory(root) !== "turns") return enumerateEvents(root, turns, integration, sessionHash, wanted);
+	for (const turn of await listPrivateDirectory(captureRoot(root), turns) ?? []) {
+		if (!turn.isDirectory() || !CAPTURE_HASH.test(turn.name) || !wanted(turn.name)) continue;
+		const eventDirectory = eventsDirectory(turns, turn.name);
+		captures.push(...await enumerateEvents(root, eventDirectory, integration, sessionHash, (turnHash) => turnHash === turn.name));
+	}
+	return captures.toSorted(compareCaptures);
+}
+async function enumerateEvents(root, directory, integration, sessionHash, wanted) {
+	const captures = [];
+	for (const event of await listPrivateDirectory(captureRoot(root), directory) ?? []) {
+		if (!event.isFile() || !CAPTURE_EVENT_FILE.test(event.name)) continue;
+		const path = join(directory, event.name);
+		const record = await readEvent(root, path);
+		if (record === void 0 || identifierHash(record.sessionId) !== sessionHash || eventPath(root, record) !== path) {
+			if (record !== void 0) await discardEvent(path, "it does not match its folder");
+			continue;
+		}
+		if (record.integration !== integration || !wanted(identifierHash(record.turnId))) continue;
+		const info = await lstat(path);
+		captures.push({
+			record,
+			capturedAtMs: record.capturedAtMs,
+			modifiedAtMs: info.mtimeMs
+		});
+	}
+	return captures.toSorted(compareCaptures);
+}
+async function readEvent(root, path) {
+	try {
+		return await readRecord(root, path);
+	} catch (error) {
+		if (error instanceof CaptureRecordInvalidError) await discardEvent(path, describe(error));
+		else console.warn(CAPTURE_SKIPPED_WARNING, `${basename(path)} (${describe(error)})`);
+		return;
+	}
+}
+async function discardEvent(path, reason) {
+	await removeFileIfPresent(path);
+	console.warn(CAPTURE_UNREADABLE_WARNING, `${basename(path)} (${reason})`);
+}
+function sameCapture(left, right) {
+	return captureContentDigest(left) === captureContentDigest(right);
+}
+function deliveryOf(record) {
+	return record.delivery ?? {
+		retries: {},
+		outcomes: {}
+	};
+}
+function receiptOf(scope, outcome) {
+	return {
+		integration: scope.integration,
+		sessionId: scope.sessionId,
+		turnId: scope.turnId,
+		eventId: scope.eventId,
+		destination: scope.destination,
+		...outcome
+	};
+}
+function sameOutcome(outcome, input) {
+	return outcome.outcome === input.outcome && outcome.reason === input.reason;
+}
+async function readRecord(root, path) {
+	const contents = await readPrivateFile(captureRoot(root), path);
+	if (contents === void 0) return void 0;
+	let value;
+	try {
+		value = parseJsonObject(contents, "Invalid storage record");
+	} catch (error) {
+		throw new CaptureRecordInvalidError(describe(error));
+	}
+	if (typeof value.version === "number" && value.version !== 2) throw new CaptureRecordVersionError(`${CAPTURE_VERSION_UNSUPPORTED_MESSAGE} ${value.version}`);
+	try {
+		return validateRecord(value);
+	} catch (error) {
+		throw new CaptureRecordInvalidError(describe(error));
+	}
+}
+function validateRecord(value) {
+	if (value.version !== 2 || typeof value.capturedAtMs !== "number" || !Number.isSafeInteger(value.capturedAtMs) || !Number.isFinite(new Date(value.capturedAtMs).getTime()) || typeof value.integration !== "string" || typeof value.sessionId !== "string" || typeof value.turnId !== "string" || typeof value.eventId !== "string" || typeof value.runId !== "string" || typeof value.destinationFingerprint !== "string" || typeof value.eventKind !== "string" || !("normalizedPayload" in value) || !("turnEvidence" in value) || !("metadataProvenance" in value)) throw new Error(CAPTURE_RECORD_UNSUPPORTED_MESSAGE);
+	if ("sourceAgeStartedAtMs" in value) requireSafeEpochMilliseconds(value["sourceAgeStartedAtMs"], "Stored source age");
+	for (const [identifier, name] of [
+		[value.runId, "run ID"],
+		[value.destinationFingerprint, "destination fingerprint"],
+		[value.eventKind, "event kind"]
+	]) validateIdentifier(identifier, name);
+	const scope = {
+		integration: value.integration,
+		sessionId: value.sessionId,
+		turnId: value.turnId,
+		eventId: value.eventId
+	};
+	validateScope(scope);
+	const dependencies = normalizeDependencies(value.dependencies, scope);
+	if ("destinationRoutes" in value) normalizeDestinationRoutes(value.destinationRoutes);
+	const normalizedPayload = canonicalValue(value.normalizedPayload, /* @__PURE__ */ new Set());
+	const delivery = "delivery" in value ? readDelivery(value.delivery) : void 0;
+	return {
+		...value,
+		normalizedPayload,
+		...dependencies === void 0 ? {} : { dependencies },
+		...delivery === void 0 ? {} : { delivery }
+	};
+}
+function readDelivery(value) {
+	const record = parseRecordObject(value, "delivery");
+	const retries = parseRecordObject(record.retries, "delivery retries");
+	const outcomes = parseRecordObject(record.outcomes, "delivery outcomes");
+	for (const [destination, retry] of Object.entries(retries)) {
+		validateIdentifier(destination, "destination");
+		const entry = parseRecordObject(retry, "delivery retry");
+		requireNonNegativeInteger(entry.failures, "Stored delivery failures");
+		requireSafeEpochMilliseconds(entry.notBeforeMs, "Stored retry time");
+		if (entry.recordedAtMs !== void 0) requireSafeEpochMilliseconds(entry.recordedAtMs, "Stored retry record time");
+	}
+	for (const [destination, outcome] of Object.entries(outcomes)) {
+		validateIdentifier(destination, "destination");
+		const entry = parseRecordObject(outcome, "delivery outcome");
+		const recordedAt = new Date(String(entry.recordedAt));
+		if (entry.outcome !== "delivered" && entry.outcome !== "dropped" || "reason" in entry && typeof entry.reason !== "string" || !Number.isFinite(recordedAt.getTime()) || recordedAt.toISOString() !== entry.recordedAt) throw new Error(CAPTURE_OUTCOME_UNSUPPORTED_MESSAGE);
+		if ("reason" in entry) validateIdentifier(entry.reason, "outcome reason");
+	}
+	return {
+		retries,
+		outcomes
+	};
+}
+function parseRecordObject(value, name) {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(`${CAPTURE_FIELD_UNSUPPORTED_MESSAGE} ${name}`);
+	return value;
+}
+function validateScope(scope) {
+	validateIntegration(scope.integration);
+	validateIdentifier(scope.sessionId, "session ID");
+	validateIdentifier(scope.turnId, "turn ID");
+	validateIdentifier(scope.eventId, "event ID");
+}
+function normalizeDependencies(value, dependent) {
+	if (value === void 0) return void 0;
+	if (!Array.isArray(value)) throw new TypeError(CAPTURE_DEPENDENCIES_INVALID_MESSAGE);
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => {
+		if (item === null || typeof item !== "object" || Array.isArray(item)) throw new TypeError(CAPTURE_DEPENDENCY_INVALID_MESSAGE);
+		const candidate = item;
+		if (typeof candidate.integration !== "string" || typeof candidate.sessionId !== "string" || typeof candidate.turnId !== "string" || typeof candidate.eventId !== "string") throw new TypeError(CAPTURE_DEPENDENCY_INVALID_MESSAGE);
+		const dependency = {
+			integration: candidate.integration,
+			sessionId: candidate.sessionId,
+			turnId: candidate.turnId,
+			eventId: candidate.eventId
+		};
+		validateScope(dependency);
+		if (dependency.integration !== dependent.integration) throw new TypeError(CAPTURE_DEPENDENCY_INTEGRATION_MESSAGE);
+		if (sameScope(dependency, dependent)) throw new TypeError(CAPTURE_DEPENDENCY_SELF_MESSAGE);
+		const key = canonicalJson(dependency);
+		if (seen.has(key)) throw new TypeError(CAPTURE_DEPENDENCY_UNIQUE_MESSAGE);
+		seen.add(key);
+		return dependency;
+	});
+}
+function normalizeDestinationRoutes(value) {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new TypeError(CAPTURE_ROUTES_INVALID_MESSAGE);
+	const routes = {};
+	for (const [destination, route] of Object.entries(value)) {
+		validateIdentifier(destination, "destination");
+		if (route === null || typeof route !== "object" || Array.isArray(route)) throw new TypeError(CAPTURE_ROUTE_INVALID_MESSAGE);
+		const { projectName, sourceProjectName, ...extra } = route;
+		if (Object.keys(extra).length > 0) throw new TypeError(CAPTURE_ROUTE_INVALID_MESSAGE);
+		if (typeof projectName !== "string") throw new TypeError(CAPTURE_ROUTE_PROJECT_INVALID_MESSAGE);
+		validateIdentifier(projectName, "route project");
+		if (sourceProjectName !== void 0) {
+			if (typeof sourceProjectName !== "string") throw new TypeError(CAPTURE_ROUTE_PROJECT_INVALID_MESSAGE);
+			validateIdentifier(sourceProjectName, "route project");
+		}
+		routes[destination] = {
+			projectName,
+			...sourceProjectName === void 0 ? {} : { sourceProjectName }
+		};
+	}
+	return routes;
+}
+function sameScope(record, scope) {
+	return record.integration === scope.integration && record.sessionId === scope.sessionId && record.turnId === scope.turnId && record.eventId === scope.eventId;
+}
+function failure(code, error) {
+	return {
+		status: "failed",
+		code: errorCode(error) ?? code,
+		message: error instanceof Error ? error.message : String(error)
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/format.js
+function fillTemplate(template, values) {
+	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+function isWaitingForOtherSetting(record, accountFingerprint) {
+	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+function liveTurnSpans(captures) {
+	const spans = /* @__PURE__ */ new Map();
+	for (const { record, capturedAtMs } of captures) {
+		if (record.sourceAgeStartedAtMs !== void 0) continue;
+		const span = spans.get(record.turnId) ?? {
+			firstMs: capturedAtMs,
+			latestMs: capturedAtMs
+		};
+		spans.set(record.turnId, {
+			firstMs: Math.min(span.firstMs, capturedAtMs),
+			latestMs: Math.max(span.latestMs, capturedAtMs)
+		});
+	}
+	return spans;
+}
+function expiryOf({ record, capturedAtMs }, spans, options) {
+	const span = spans.get(record.turnId);
+	if (record.sourceAgeStartedAtMs === void 0 && span !== void 0 && options.now - span.firstMs >= 6048e5) return "ceiling";
+	const startedAtMs = record.sourceAgeStartedAtMs ?? span?.latestMs ?? capturedAtMs;
+	return options.now - startedAtMs >= options.maxAgeMs ? "age" : void 0;
+}
+async function removeExpiredCaptures(options) {
+	let dropped = 0;
+	let pastCeiling = 0;
+	let otherSetting = 0;
+	let held = 0;
+	for (const { captures } of await options.store.enumerateSessions(options.integration)) {
+		const spans = liveTurnSpans(captures);
+		const expiring = captures.flatMap((capture) => {
+			const reason = expiryOf(capture, spans, options);
+			return reason === void 0 ? [] : [{
+				record: capture.record,
+				reason
+			}];
+		});
+		const sessionKeepsCaptures = expiring.length < captures.length;
+		for (const { record, reason } of expiring) {
+			if (options.heldUpdate?.(record, captures)) held += 1;
+			await options.store.remove(record, { forgetTurn: !sessionKeepsCaptures });
+			if (options.destinations.every((id) => record.delivery?.outcomes[id] !== void 0)) continue;
+			dropped += 1;
+			if (reason === "ceiling") pastCeiling += 1;
+			if (options.accountFingerprint !== void 0 && isWaitingForOtherSetting(record, options.accountFingerprint)) otherSetting += 1;
+		}
+	}
+	await options.store.removeStaleMarkers(options.integration, options.now - options.maxAgeMs);
+	if (dropped > 0) console.warn(fillTemplate(CAPTURE_EXPIRED_WARNING, {
+		dropped,
+		ceiling: pastCeiling,
+		otherSetting
+	}));
+	if (held > 0) console.warn(fillTemplate(CAPTURE_HELD_EXPIRED_WARNING, { held }));
+	return dropped;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+const BACKGROUND_WORKER_LOCK_FILE = "worker";
+const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
+const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
+const BACKGROUND_WORKER_LAUNCHING_FILE = "wake.launching";
+const BACKGROUND_WORKER_STAGING_FILE = /^\.[0-9a-f-]{36}\.tmp$/u;
+const BACKGROUND_WORKER_MARKER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const BACKGROUND_WORKER_ACTIVE_MARKER_NAME = /^wake\.active\.([0-9a-f-]{36})\.json$/u;
+const BACKGROUND_WORKER_ATTEMPT_NAME = /^wake\.active\.([0-9a-f-]{36})\.attempt\.([1-9]\d*)\.json$/u;
+const BACKGROUND_WORKER_OWNER_WAIT_MS = 5e3;
+const BACKGROUND_WORKER_LAUNCH_LEASE_MS = 3e4;
+const BACKGROUND_WORKER_STATE_ERROR = "Invalid background worker state";
+const BACKGROUND_WORKER_LAUNCHER_MUST_RETURN_CHILD_PROCESS_ID_MESSAGE = "Background worker launcher must return a child process ID";
+const BACKGROUND_WORKER_LAUNCH_IS_ALREADY_PENDING_MESSAGE = "Background worker launch is already pending";
+const BACKGROUND_WORKER_MAX_ATTEMPTS_MUST_BE_POSITIVE_INTEGER_MESSAGE = "Background worker max attempts must be a positive integer";
+const BACKGROUND_WORKER_RETRY_DELAY_MUST_BE_NON_NEGATIVE_MESSAGE = "Background worker retry delay must be non-negative";
+const BACKGROUND_WORKER_STARTUP_WAIT_MUST_BE_POSITIVE_INTEGER_MESSAGE = "Background worker startup wait must be a positive integer";
+const BACKGROUND_WORKER_ACTIVE_MARKER_ALREADY_EXISTS_MESSAGE = "Background worker active marker already exists";
+const BACKGROUND_WORKER_RETRY_ATTEMPT_ALREADY_EXISTS_MESSAGE = "Background worker retry attempt already exists";
+const BACKGROUND_WORKER_UNSAFE_LOCK_DIRECTORY_MESSAGE = "Unsafe background worker lock directory";
+const BACKGROUND_WORKER_UNSAFE_PENDING_MARKER_MESSAGE = "Unsafe background worker pending marker";
+const BACKGROUND_WORKER_UNSAFE_ACTIVE_MARKER_MESSAGE = "Unsafe background worker active marker";
+const BACKGROUND_WORKER_INVALID_ACTIVE_PATH_MESSAGE = "Invalid background worker active path";
+const BACKGROUND_WORKER_MULTIPLE_ACTIVE_MARKERS_MESSAGE = "Multiple background worker active markers";
+const BACKGROUND_WORKER_ACTIVE_MARKER_PATH_MISMATCH_MESSAGE = "Background worker active marker path mismatch";
+const BACKGROUND_WORKER_UNSAFE_RETRY_ATTEMPT_MESSAGE = "Unsafe background worker retry attempt";
+const BACKGROUND_WORKER_INVALID_ATTEMPT_PATH_MESSAGE = "Invalid background worker attempt path";
+const BACKGROUND_WORKER_UNSAFE_STAGING_FILE_MESSAGE = "Unsafe background worker staging file";
+const BACKGROUND_WORKER_UNSAFE_LAUNCH_MARKER_MESSAGE = "Unsafe background worker launch marker";
+const BACKGROUND_WORKER_UNEXPECTED_STATE_PATH_MESSAGE = "Unexpected background worker state path";
+const BACKGROUND_WORKER_RETRY_SEQUENCE_HAS_GAP_MESSAGE = "Background worker retry sequence has a gap";
+const BACKGROUND_WORKER_INVALID_LAUNCH_MARKER_MESSAGE = "Invalid background worker launch marker";
+const BACKGROUND_WORKER_STATE_DISAPPEARED_MESSAGE = "Background worker state disappeared";
+const BACKGROUND_WORKER_INVALID_MARKER_MESSAGE = "Invalid background worker marker";
+const BACKGROUND_WORKER_INVALID_RETRY_ATTEMPT_MESSAGE = "Invalid background worker retry attempt";
+const BACKGROUND_WORKER_FILE_PREFIX = "wake";
+const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
+const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+function validateWorkerScope(scope) {
+	validateIntegration(scope.integration);
+	validateIdentifier(scope.sessionId, "session ID");
+	validateIdentifier(scope.accountFingerprint, "account fingerprint");
+}
+function workerDirectory(storageRoot, scope) {
+	validateWorkerScope(scope);
+	return join(resolve(storageRoot), ...sessionSegments(identifierHash(scope.sessionId)));
+}
+function workerLockPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), `${BACKGROUND_WORKER_LOCK_FILE}-${identifierHash(scope.accountFingerprint)}`);
+}
+function workerPendingPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), workerFileName(scope, BACKGROUND_WORKER_PENDING_FILE));
+}
+function workerActivePath(storageRoot, scope, markerId) {
+	return join(workerDirectory(storageRoot, scope), workerFileName(scope, `${BACKGROUND_WORKER_ACTIVE_PREFIX}${markerId}.json`));
+}
+function workerAttemptPath(storageRoot, scope, markerId, attempt) {
+	return join(workerDirectory(storageRoot, scope), workerFileName(scope, `${BACKGROUND_WORKER_ACTIVE_PREFIX}${markerId}.attempt.${attempt}.json`));
+}
+function workerLaunchPath(storageRoot, scope) {
+	return join(workerDirectory(storageRoot, scope), workerFileName(scope, BACKGROUND_WORKER_LAUNCHING_FILE));
+}
+function workerFileName(scope, name) {
+	return name.replace(BACKGROUND_WORKER_FILE_PREFIX, `${BACKGROUND_WORKER_FILE_PREFIX}-${identifierHash(scope.accountFingerprint)}`);
+}
+function scopedWorkerFileName(scope, name) {
+	const prefix = `${BACKGROUND_WORKER_FILE_PREFIX}-${identifierHash(scope.accountFingerprint)}.`;
+	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+async function matchesScope(resolveScope, expected) {
+	const actual = await resolveScope();
+	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+function assertPlainFile(entry, message) {
+	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
+}
+async function readActiveMarker(storageRoot, directory, entry, markerId, scan) {
+	assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_ACTIVE_MARKER_MESSAGE);
+	if (markerId === void 0 || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(markerId)) throw new Error(BACKGROUND_WORKER_INVALID_ACTIVE_PATH_MESSAGE);
+	if (scan.active) throw new Error(BACKGROUND_WORKER_MULTIPLE_ACTIVE_MARKERS_MESSAGE);
+	scan.active = parseMarker(await readRequired(storageRoot, join(directory, entry.name)));
+	if (scan.active.id !== markerId) throw new Error(BACKGROUND_WORKER_ACTIVE_MARKER_PATH_MISMATCH_MESSAGE);
+}
+async function readAttemptFile(storageRoot, directory, entry, match, scan) {
+	assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_RETRY_ATTEMPT_MESSAGE);
+	const markerId = match[1];
+	const attemptNumber = Number(match[2]);
+	if (markerId === void 0 || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(markerId) || !Number.isSafeInteger(attemptNumber)) throw new Error(BACKGROUND_WORKER_INVALID_ATTEMPT_PATH_MESSAGE);
+	const attempt = parseAttempt(await readRequired(storageRoot, join(directory, entry.name)), markerId, attemptNumber);
+	const markerAttempts = scan.attemptsByMarker.get(markerId) ?? [];
+	markerAttempts.push(attempt);
+	scan.attemptsByMarker.set(markerId, markerAttempts);
+}
+async function scanStateEntry(storageRoot, directory, entry, scan, scope) {
+	if (BACKGROUND_WORKER_SHARED_DIRECTORY.test(entry.name)) {
+		if (!entry.isDirectory() || entry.isSymbolicLink()) throw new Error(BACKGROUND_WORKER_UNSAFE_LOCK_DIRECTORY_MESSAGE);
+		return;
+	}
+	const name = scopedWorkerFileName(scope, entry.name);
+	if (name === void 0 && BACKGROUND_WORKER_SCOPED_FILE.test(entry.name)) {
+		assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_ACTIVE_MARKER_MESSAGE);
+		return;
+	}
+	if (name === "wake.pending") {
+		assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_PENDING_MARKER_MESSAGE);
+		scan.pending = parseMarker(await readRequired(storageRoot, join(directory, entry.name)));
+		return;
+	}
+	const activeMatch = BACKGROUND_WORKER_ACTIVE_MARKER_NAME.exec(name ?? "");
+	if (activeMatch) return readActiveMarker(storageRoot, directory, entry, activeMatch[1], scan);
+	const attemptMatch = BACKGROUND_WORKER_ATTEMPT_NAME.exec(name ?? "");
+	if (attemptMatch) return readAttemptFile(storageRoot, directory, entry, attemptMatch, scan);
+	if (BACKGROUND_WORKER_STAGING_FILE.test(entry.name)) {
+		assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_STAGING_FILE_MESSAGE);
+		return;
+	}
+	if (name === "wake.launching") {
+		assertPlainFile(entry, BACKGROUND_WORKER_UNSAFE_LAUNCH_MARKER_MESSAGE);
+		return;
+	}
+	throw new Error(BACKGROUND_WORKER_UNEXPECTED_STATE_PATH_MESSAGE);
+}
+function stateFromScan({ pending, active, attemptsByMarker }) {
+	const attempts = active ? attemptsByMarker.get(active.id) ?? [] : [];
+	attempts.sort((left, right) => left.attempt - right.attempt);
+	for (let index = 0; index < attempts.length; index += 1) if (attempts[index]?.attempt !== index + 1) throw new Error(BACKGROUND_WORKER_RETRY_SEQUENCE_HAS_GAP_MESSAGE);
+	const orphanedAttempts = [...attemptsByMarker.entries()].filter(([markerId]) => active?.id !== markerId).flatMap(([, markerAttempts]) => markerAttempts);
+	return {
+		...pending ? { pending } : {},
+		...active ? { active } : {},
+		attempts,
+		orphanedAttempts
+	};
+}
+async function readWorkerState(storageRoot, directory, scope) {
+	const entries = await listPrivateDirectory(storageRoot, directory);
+	if (!entries) return {
+		attempts: [],
+		orphanedAttempts: []
+	};
+	const scan = { attemptsByMarker: /* @__PURE__ */ new Map() };
+	for (const entry of entries) await scanStateEntry(storageRoot, directory, entry, scan, scope);
+	return stateFromScan(scan);
+}
+async function readRequired(storageRoot, path) {
+	const contents = await readPrivateFile(storageRoot, path);
+	if (contents === void 0) throw new Error(BACKGROUND_WORKER_STATE_DISAPPEARED_MESSAGE);
+	return contents;
+}
+function parseMarker(contents) {
+	const value = parseJsonObject(contents, BACKGROUND_WORKER_STATE_ERROR);
+	if (value.version !== 1 || typeof value.id !== "string" || !BACKGROUND_WORKER_MARKER_ID_PATTERN.test(value.id) || typeof value.sourcePid !== "number" || !Number.isSafeInteger(value.sourcePid) || value.sourcePid <= 0) throw new Error(BACKGROUND_WORKER_INVALID_MARKER_MESSAGE);
+	return value;
+}
+function parseAttempt(contents, markerId, attempt) {
+	const value = parseJsonObject(contents, BACKGROUND_WORKER_STATE_ERROR);
+	if (value.version !== 1 || value.markerId !== markerId || value.attempt !== attempt) throw new Error(BACKGROUND_WORKER_INVALID_RETRY_ATTEMPT_MESSAGE);
+	return value;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+function createBackgroundWorker(options) {
+	validateOptions(options);
+	const context = createWorkerContext(options);
+	return {
+		wake: () => wakeWorker(context),
+		async run() {
+			try {
+				return await runPasses(context);
+			} finally {
+				await removeEmptyLockFolders(context.lockPath, context.storageRoot);
+			}
+		}
+	};
+}
+function createWorkerContext(options) {
+	const storageRoot = resolve(options.storageRoot);
+	const scope = Object.freeze({ ...options.scope });
+	const retryPolicy = {
+		maxAttempts: options.retryPolicy?.maxAttempts ?? 3,
+		retryDelayMs: options.retryPolicy?.retryDelayMs ?? 100
+	};
+	return {
+		config: {
+			...options,
+			storageRoot,
+			scope,
+			retryPolicy
+		},
+		storageRoot,
+		scope,
+		retryPolicy,
+		directory: workerDirectory(storageRoot, scope),
+		lockPath: workerLockPath(storageRoot, scope),
+		directorySegments: sessionSegments(identifierHash(scope.sessionId))
+	};
+}
+async function wakeWorker(context) {
+	const { storageRoot, scope, lockPath } = context;
+	await ensurePrivateDirectory(storageRoot, context.directorySegments);
+	const marker = makeMarker(randomUUID());
+	await publishExclusive(workerPendingPath(storageRoot, scope), JSON.stringify(marker));
+	const lock = await tryAcquireFileLock(lockPath);
+	if (!lock) return "queued";
+	try {
+		return await launchWorker(context);
+	} finally {
+		await lock.release();
+	}
+}
+async function launchWorker(context) {
+	const { config, storageRoot, scope } = context;
+	const existingLaunch = await readLaunch(storageRoot, scope);
+	if (existingLaunch && existingLaunch.expiresAtMs > Date.now() && processIsAlive(existingLaunch.pid) !== false) return "queued";
+	if (existingLaunch) await removeFileIfPresent(workerLaunchPath(storageRoot, scope));
+	const pid = await config.launchWorker();
+	if (!Number.isSafeInteger(pid) || pid <= 0 || pid === process.pid) throw new TypeError(BACKGROUND_WORKER_LAUNCHER_MUST_RETURN_CHILD_PROCESS_ID_MESSAGE);
+	const createdAtMs = Date.now();
+	const launch = {
+		version: 1,
+		pid,
+		createdAtMs,
+		expiresAtMs: createdAtMs + Math.max(BACKGROUND_WORKER_LAUNCH_LEASE_MS, config.startupWaitMs ?? 0)
+	};
+	if (!await publishExclusive(workerLaunchPath(storageRoot, scope), JSON.stringify(launch))) throw new Error(BACKGROUND_WORKER_LAUNCH_IS_ALREADY_PENDING_MESSAGE);
+	return "launched";
+}
+async function runPasses(context) {
+	const { storageRoot, directory, lockPath, retryPolicy, scope } = context;
+	await ensurePrivateDirectory(storageRoot, context.directorySegments);
+	const totals = {
+		processed: false,
+		retryExhausted: false,
+		failures: 0
+	};
+	for (;;) {
+		const result = await withOwnerLock(lockPath, () => runOwnedPasses(context, totals), { timeoutMs: BACKGROUND_WORKER_OWNER_WAIT_MS });
+		if (result === "scope-mismatch" || result === "deferred" || result === "busy") return result;
+		if (totals.failures >= retryPolicy.maxAttempts) return "retry-exhausted";
+		if (!await hasPendingWork(storageRoot, directory, scope)) return result;
+	}
+}
+async function passInScope(context) {
+	const { config, storageRoot, scope } = context;
+	if (!await matchesScope(config.resolveScope, scope)) return lockedPass({ scopeMismatch: true });
+	await clearOwnedLaunch(storageRoot, scope);
+	return processLocked(storageRoot, context.directory, scope, config, context.retryPolicy);
+}
+async function runOwnedPasses(context, totals) {
+	const { config, storageRoot, scope, directory, retryPolicy } = context;
+	for (;;) {
+		if (!await matchesScope(config.resolveScope, scope)) return "scope-mismatch";
+		const pass = await passInScope(context);
+		if (pass.scopeMismatch) return "scope-mismatch";
+		if (pass.deferred) return "deferred";
+		totals.processed ||= pass.processed;
+		totals.retryExhausted ||= pass.retryExhausted;
+		if (pass.retryAttempted) totals.failures += 1;
+		if (totals.failures >= retryPolicy.maxAttempts && pass.retryAttempted) return "retry-exhausted";
+		if (pass.retryPending && retryPolicy.retryDelayMs > 0) await setTimeout$1(retryPolicy.retryDelayMs);
+		if (!await hasPendingWork(storageRoot, directory, scope)) return totals.retryExhausted ? "retry-exhausted" : totals.processed ? "completed" : "idle";
+	}
+}
+async function withOwnerLock(lockPath, callback, options) {
+	try {
+		return await withFileLock(lockPath, callback, options);
+	} catch (error) {
+		if (error instanceof FileLockTimeoutError) return "busy";
+		throw error;
+	}
+}
+function validateOptions(options) {
+	const policy = options.retryPolicy;
+	if (policy?.maxAttempts !== void 0 && (!Number.isSafeInteger(policy.maxAttempts) || policy.maxAttempts < 1)) throw new RangeError(BACKGROUND_WORKER_MAX_ATTEMPTS_MUST_BE_POSITIVE_INTEGER_MESSAGE);
+	if (policy?.retryDelayMs !== void 0 && (!Number.isFinite(policy.retryDelayMs) || policy.retryDelayMs < 0)) throw new RangeError(BACKGROUND_WORKER_RETRY_DELAY_MUST_BE_NON_NEGATIVE_MESSAGE);
+	if (options.startupWaitMs !== void 0 && (!Number.isSafeInteger(options.startupWaitMs) || options.startupWaitMs <= 0)) throw new RangeError(BACKGROUND_WORKER_STARTUP_WAIT_MUST_BE_POSITIVE_INTEGER_MESSAGE);
+}
+function makeMarker(id) {
+	return {
+		version: 1,
+		id,
+		sourcePid: process.pid
+	};
+}
+function lockedPass(overrides = {}) {
+	return {
+		scopeMismatch: false,
+		processed: false,
+		retryExhausted: false,
+		retryPending: false,
+		retryAttempted: false,
+		deferred: false,
+		...overrides
+	};
+}
+async function claimMarker(storageRoot, scope, state) {
+	const marker = state.active ?? state.pending;
+	if (!state.active && state.pending) {
+		if (!await publishExclusive(workerActivePath(storageRoot, scope, state.pending.id), JSON.stringify(state.pending))) throw new Error(BACKGROUND_WORKER_ACTIVE_MARKER_ALREADY_EXISTS_MESSAGE);
+		await removeFileIfPresent(workerPendingPath(storageRoot, scope));
+	} else if (marker && state.pending?.id === marker.id) await removeFileIfPresent(workerPendingPath(storageRoot, scope));
+	return marker;
+}
+async function recordAttempt(storageRoot, scope, marker, attemptNumber) {
+	const attempt = {
+		version: 1,
+		markerId: marker.id,
+		attempt: attemptNumber
+	};
+	if (!await publishExclusive(workerAttemptPath(storageRoot, scope, marker.id, attemptNumber), JSON.stringify(attempt))) throw new Error(BACKGROUND_WORKER_RETRY_ATTEMPT_ALREADY_EXISTS_MESSAGE);
+	return attempt;
+}
+async function processLocked(storageRoot, directory, scope, options, retryPolicy) {
+	const state = await readWorkerState(storageRoot, directory, scope);
+	for (const attempt of state.orphanedAttempts) await removeFileIfPresent(workerAttemptPath(storageRoot, scope, attempt.markerId, attempt.attempt));
+	const marker = await claimMarker(storageRoot, scope, state);
+	if (!marker) return lockedPass();
+	let attempts = state.attempts;
+	if (attempts.length >= retryPolicy.maxAttempts) {
+		await removeActiveMarker(storageRoot, scope, marker, attempts);
+		return lockedPass({
+			processed: true,
+			retryExhausted: true
+		});
+	}
+	for (;;) {
+		if (!await matchesScope(options.resolveScope, scope)) return lockedPass({ scopeMismatch: true });
+		const result = await runTasks(options, scope);
+		if (result === "scope-mismatch" || !await matchesScope(options.resolveScope, scope)) return lockedPass({ scopeMismatch: true });
+		if (result === "progressed") continue;
+		if (result === "idle" || result === "deferred") {
+			if (result === "idle") await removeActiveMarker(storageRoot, scope, marker, attempts);
+			return lockedPass({
+				processed: true,
+				deferred: result === "deferred"
+			});
+		}
+		attempts = [...attempts, await recordAttempt(storageRoot, scope, marker, attempts.length + 1)];
+		if (attempts.length >= retryPolicy.maxAttempts) {
+			await removeActiveMarker(storageRoot, scope, marker, attempts);
+			return lockedPass({
+				processed: true,
+				retryExhausted: true,
+				retryAttempted: true
+			});
+		}
+		return lockedPass({
+			processed: true,
+			retryPending: true,
+			retryAttempted: true
+		});
+	}
+}
+async function runTasks(options, scope) {
+	let progressed = false;
+	let deferred = false;
+	if (options.reconstructPending) {
+		let result;
+		try {
+			result = await options.reconstructPending();
+		} catch {
+			return "retryable-failure";
+		}
+		if (!await matchesScope(options.resolveScope, scope)) return "scope-mismatch";
+		if (result === "retryable-failure") return result;
+		progressed ||= result === "progressed";
+		deferred ||= result === "deferred";
+	}
+	let result;
+	try {
+		result = await options.drainPending();
+	} catch {
+		return "retryable-failure";
+	}
+	if (result === "retryable-failure") return result;
+	progressed ||= result === "progressed";
+	deferred ||= result === "deferred";
+	return deferred ? "deferred" : progressed ? "progressed" : "idle";
+}
+async function hasPendingWork(storageRoot, directory, scope) {
+	return (await listPrivateDirectory(storageRoot, directory))?.some((entry) => {
+		const name = scopedWorkerFileName(scope, entry.name);
+		return name === "wake.pending" || BACKGROUND_WORKER_ACTIVE_MARKER_NAME.test(name ?? "");
+	}) ?? false;
+}
+async function removeActiveMarker(storageRoot, scope, marker, attempts) {
+	await removeFileIfPresent(workerActivePath(storageRoot, scope, marker.id));
+	for (const attempt of attempts) await removeFileIfPresent(workerAttemptPath(storageRoot, scope, marker.id, attempt.attempt));
+}
+async function clearOwnedLaunch(storageRoot, scope) {
+	if ((await readLaunch(storageRoot, scope))?.pid === process.pid) await removeFileIfPresent(workerLaunchPath(storageRoot, scope));
+}
+async function readLaunch(storageRoot, scope) {
+	const contents = await readPrivateFile(storageRoot, workerLaunchPath(storageRoot, scope));
+	if (contents === void 0) return void 0;
+	const value = parseJsonObject(contents, BACKGROUND_WORKER_STATE_ERROR);
+	if (value.version !== 1 || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.createdAtMs !== "number" || !Number.isSafeInteger(value.createdAtMs) || typeof value.expiresAtMs !== "number" || !Number.isSafeInteger(value.expiresAtMs) || value.expiresAtMs <= value.createdAtMs) throw new Error(BACKGROUND_WORKER_INVALID_LAUNCH_MARKER_MESSAGE);
+	return value;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+function ifMissing(fallback) {
+	return (error) => {
+		if (errorCode(error) === "ENOENT") return fallback;
+		throw error;
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
+	let removed = 0;
+	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
+	return removed;
+}
+async function removeStaleChildren(directory, modifiedBeforeMs) {
+	let removed = 0;
+	for (const name of await readdir(directory).catch(ifMissing([]))) {
+		const path = join(directory, name);
+		const info = await lstat(path).catch(ifMissing(void 0));
+		if (info === void 0) continue;
+		if (info.isDirectory()) {
+			removed += await removeStaleChildren(path, modifiedBeforeMs);
+			if (info.mtimeMs < modifiedBeforeMs) await rmdir(path).catch(warnUnlessExpected);
+		} else if (info.mtimeMs < modifiedBeforeMs && isEngineFile(path) && !await heldByLiveProcess(path)) {
+			if (!await removeFileIfPresent(path)) continue;
+			console.warn(STORAGE_STALE_REMOVAL_WARNING, name);
+			removed += 1;
+		}
+	}
+	return removed;
+}
+function isEngineFile(path) {
+	const name = basename(path);
+	return STORAGE_ENGINE_FILE_PATTERNS.some((pattern) => pattern.test(name)) || STORAGE_CLAIM_FILE.test(name) && basename(dirname(path)).endsWith(".claims");
+}
+async function heldByLiveProcess(path) {
+	if (!STORAGE_CLAIM_FILE.test(basename(path))) return false;
+	try {
+		const claim = JSON.parse(await readFile(path, "utf8"));
+		return typeof claim === "object" && claim !== null && "pid" in claim && typeof claim.pid === "number" && processIsAlive(claim.pid) === true;
+	} catch {
+		return false;
+	}
+}
+function warnUnlessExpected(error) {
+	const code = errorCode(error);
+	if (code !== "ENOENT" && code !== "ENOTEMPTY") console.warn(STORAGE_STALE_DIRECTORY_WARNING, describe(error));
+}
+const DELIVERY_RETRY_MAX_MS = 18e5;
+const DELIVERY_DROPPED_WARNING = "Dropped trace work:";
+const DELIVERY_CAPACITY_REASON = "capacity";
+const DELIVERY_REJECTED_REASON = "rejected";
+const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
+const DELIVERY_AUTH_STATUSES = [401, 403];
+const DELIVERY_AUTH_HINT = "Check the LangSmith API key.";
+const DELIVERY_WRITER_REQUIRED_MESSAGE = "A delivery writer is required";
+const DELIVERY_DESTINATION_REQUIRED_MESSAGE = "At least one delivery destination is required";
+const DELIVERY_DESTINATION_INVALID_MESSAGE = "Invalid delivery destination";
+const DELIVERY_DESTINATION_DUPLICATE_MESSAGE = "Delivery destinations must be unique";
+const DELIVERY_TRANSPORT_REQUIRED_MESSAGE = "A delivery transport is required";
+const DELIVERY_BATCH_LIMITS_INVALID_MESSAGE = "Invalid delivery batch limits";
+const DELIVERY_POLICY_INVALID_MESSAGE = "Invalid delivery policy";
+const DELIVERY_PREREQUISITE_READ_MESSAGE = "Could not read prerequisite receipt:";
+const DELIVERY_RECEIPT_READ_MESSAGE = "Could not read delivery receipt:";
+const DELIVERY_RECEIPT_PERSIST_MESSAGE = "Could not persist delivery receipt:";
+const DELIVERY_ACCOUNT_MISMATCH_WARNING = "Saved trace work was saved under a different API key, endpoint, replica or redaction setting, not uploaded with the current one. It waits until that setting returns. Files waiting: {count}";
+const DELIVERY_DRAIN_LOCK = "delivery";
+const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
+const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+const PROCESS_STARTED_AT_MS = Date.now();
+function isWaitingForRetry(retry, now = Date.now()) {
+	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+function createBatch() {
+	return {
+		candidates: [],
+		scopes: /* @__PURE__ */ new Set(),
+		runIds: /* @__PURE__ */ new Set(),
+		bytes: 0
+	};
+}
+function payloadBytes(record) {
+	return Buffer.byteLength(JSON.stringify(record.normalizedPayload));
+}
+function canJoinBatch(batch, candidate, writer) {
+	if (batch.candidates.length === 0) return true;
+	const limits = writer.batchLimits;
+	return batch.candidates.length < limits.maxRecords && batch.bytes + payloadBytes(candidate.entry.record) <= limits.maxBytes && !batch.runIds.has(candidate.entry.record.runId);
+}
+function joinBatch(batch, candidate) {
+	batch.candidates.push(candidate);
+	batch.scopes.add(scopeKey(scopeOf(candidate.entry.record)));
+	batch.runIds.add(candidate.entry.record.runId);
+	batch.bytes += payloadBytes(candidate.entry.record);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+function isRetryable(error) {
+	return error?.retryable !== false;
+}
+function rejection(error) {
+	const status = failureStatus(error);
+	return status === void 0 ? { reason: DELIVERY_REJECTED_REASON } : {
+		reason: `${DELIVERY_REJECTED_REASON} (HTTP ${status})`,
+		status
+	};
+}
+function authHint(status) {
+	return status !== void 0 && DELIVERY_AUTH_STATUSES.includes(status) ? ` ${DELIVERY_AUTH_HINT}` : "";
+}
+function nextRetry(previous, baseMs) {
+	const failures = (previous?.failures ?? 0) + 1;
+	return {
+		failures,
+		recordedAtMs: Date.now(),
+		notBeforeMs: Date.now() + Math.min(baseMs * 2 ** (failures - 1), DELIVERY_RETRY_MAX_MS)
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+function emptyDestinationResult() {
+	return {
+		delivered: 0,
+		dropped: 0,
+		failed: 0,
+		progressed: false
+	};
+}
+function addDestinationResult(total, part) {
+	total.delivered += part.delivered;
+	total.dropped += part.dropped;
+	total.failed += part.failed;
+	total.progressed ||= part.progressed;
+}
+async function dependenciesForDestination(drainCache, entry, destination, inBatch = /* @__PURE__ */ new Set()) {
+	const dependent = entry.record;
+	let pending = false;
+	for (const dependency of dependent.dependencies ?? []) {
+		if (inBatch.has(scopeKey(dependency))) continue;
+		const prerequisite = await drainCache.read(dependency);
+		if (prerequisite !== void 0 && prerequisite.destinationFingerprint !== dependent.destinationFingerprint) {
+			pending = true;
+			continue;
+		}
+		const outcome = await drainCache.readOutcome(dependency, destination);
+		if (outcome.status === "failed") throw new Error(`${DELIVERY_PREREQUISITE_READ_MESSAGE} ${outcome.status}`);
+		if (outcome.status === "pending" || outcome.status === "missing-capture") {
+			pending = true;
+			continue;
+		}
+		if (outcome.receipt.outcome === "dropped") return "dropped";
+	}
+	return pending ? "pending" : "ready";
+}
+async function recordDropped(drainCache, candidate, destination, { reason, status }) {
+	const { scope, entry } = candidate;
+	await drainCache.recordOutcome({
+		...scope,
+		destination,
+		outcome: "dropped",
+		reason
+	});
+	if (reason === "dependency-dropped") {
+		const runs = drainCache.dependentDrops.get(destination) ?? /* @__PURE__ */ new Set();
+		drainCache.dependentDrops.set(destination, runs.add(entry.record.runId));
+		return 1;
+	}
+	console.warn(DELIVERY_DROPPED_WARNING, fillTemplate(DELIVERY_DROPPED_DETAIL, {
+		eventId: scope.eventId,
+		runId: entry.record.runId,
+		destination,
+		reason,
+		hint: authHint(status)
+	}));
+	return 1;
+}
+function dropAsDependent(drainCache, candidate, destination) {
+	return recordDropped(drainCache, candidate, destination, { reason: DELIVERY_DEPENDENCY_DROPPED_REASON });
+}
+async function dropDependents(drainCache, candidates) {
+	let dropped = 0;
+	let changed;
+	do {
+		changed = false;
+		for (const candidate of candidates) {
+			const pending = [];
+			for (const destination of candidate.pending) if (await dependenciesForDestination(drainCache, candidate.entry, destination.id) === "dropped") {
+				dropped += await dropAsDependent(drainCache, candidate, destination.id);
+				changed = true;
+			} else pending.push(destination);
+			candidate.pending = pending;
+		}
+	} while (changed);
+	return dropped;
+}
+async function settleDroppedDependency(drainCache, candidate, destination, result) {
+	result.dropped += await dropAsDependent(drainCache, candidate, destination);
+	result.progressed = true;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+async function trySend(context, destination, candidates) {
+	const { policy, request } = context;
+	const { writer } = request;
+	const send = () => writer.sendBatch(candidates.map(({ entry }) => structuredClone(entry.record)), destination, writer.accountFingerprint);
+	try {
+		try {
+			await send();
+		} catch (error) {
+			if (!candidates.every(({ entry }) => entry.record.delivery?.retries[destination.id] === void 0) || policy.quickRetryMs === 0 || !isRetryable(error)) throw error;
+			await setTimeout$1(policy.quickRetryMs);
+			await send();
+		}
+	} catch (error) {
+		return error ?? /* @__PURE__ */ new Error();
+	}
+}
+async function settleDelivered(context, destination, candidates) {
+	const result = emptyDestinationResult();
+	for (const candidate of candidates) {
+		await context.drainCache.recordOutcome({
+			...candidate.scope,
+			destination: destination.id,
+			outcome: "delivered"
+		});
+		result.delivered += 1;
+	}
+	result.progressed = true;
+	return result;
+}
+async function settleFailed(context, destination, candidates, error) {
+	const { captureStore, drainCache, policy } = context;
+	const result = emptyDestinationResult();
+	for (const candidate of candidates) {
+		result.failed += 1;
+		if (!isRetryable(error)) {
+			result.dropped += await recordDropped(drainCache, candidate, destination.id, rejection(error));
+			result.progressed = true;
+		} else await captureStore.recordRetry(candidate.scope, destination.id, nextRetry(candidate.entry.record.delivery?.retries[destination.id], policy.retryBaseMs));
+	}
+	return result;
+}
+async function deliverOneByOne(context, destination, candidates) {
+	const result = emptyDestinationResult();
+	for (const candidate of candidates) {
+		const state = await dependenciesForDestination(context.drainCache, candidate.entry, destination.id);
+		if (state === "pending") continue;
+		if (state === "dropped") {
+			await settleDroppedDependency(context.drainCache, candidate, destination.id, result);
+			continue;
+		}
+		const error = await trySend(context, destination, [candidate]);
+		addDestinationResult(result, error === void 0 ? await settleDelivered(context, destination, [candidate]) : await settleFailed(context, destination, [candidate], error));
+	}
+	return result;
+}
+async function deliverBatch(context, destination, candidates) {
+	const error = await trySend(context, destination, candidates);
+	if (error === void 0) return settleDelivered(context, destination, candidates);
+	if (candidates.length > 1 && !isRetryable(error)) return deliverOneByOne(context, destination, candidates);
+	return settleFailed(context, destination, candidates, error);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+function deliveryKey(scope, destination) {
+	return JSON.stringify([scopeKey(scope), destination]);
+}
+function createDrainCache(store) {
+	const captures = /* @__PURE__ */ new Map();
+	const outcomes = /* @__PURE__ */ new Map();
+	return {
+		dependentDrops: /* @__PURE__ */ new Map(),
+		read(scope) {
+			const key = scopeKey(scope);
+			let record = captures.get(key);
+			if (record === void 0) {
+				record = store.read(scope);
+				captures.set(key, record);
+			}
+			return record;
+		},
+		readOutcome(scope, destination) {
+			const key = deliveryKey(scope, destination);
+			let outcome = outcomes.get(key);
+			if (outcome === void 0) {
+				outcome = store.readOutcome(scope, destination);
+				outcomes.set(key, outcome);
+			}
+			return outcome;
+		},
+		async recordOutcome(input) {
+			const result = await store.recordOutcome(input);
+			if (result.status !== "recorded" && result.status !== "duplicate") throw new Error(`${DELIVERY_RECEIPT_PERSIST_MESSAGE} ${input.outcome} ${result.status}`);
+			outcomes.set(deliveryKey(input, input.destination), Promise.resolve({
+				status: "settled",
+				receipt: result.receipt
+			}));
+			return result.receipt;
+		},
+		rememberCapture(record) {
+			captures.set(scopeKey(record), Promise.resolve(record));
+		}
+	};
+}
+async function requireOutcome(drainCache, scope, destination) {
+	const result = await drainCache.readOutcome(scope, destination);
+	if (result.status === "failed" || result.status === "missing-capture") throw new Error(`${DELIVERY_RECEIPT_READ_MESSAGE} ${result.status}`);
+	return result;
+}
+async function countPending(drainCache, entries, destinations) {
+	let count = 0;
+	let nextRetryAtMs;
+	for (const entry of entries) {
+		const scope = scopeOf(entry.record);
+		for (const destination of destinations) {
+			if ((await requireOutcome(drainCache, scope, destination.id)).status !== "pending") continue;
+			count += 1;
+			const retry = entry.record.delivery?.retries[destination.id];
+			if (retry !== void 0 && (nextRetryAtMs === void 0 || retry.notBeforeMs < nextRetryAtMs)) nextRetryAtMs = retry.notBeforeMs;
+		}
+	}
+	return nextRetryAtMs === void 0 ? { count } : {
+		count,
+		nextRetryAtMs
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
+	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
+	for (const { record } of eligible) drainCache.rememberCapture(record);
+	let dropped = 0;
+	let failed = 0;
+	let delivered = 0;
+	const candidates = await pendingCandidates(drainCache, eligible, request.writer.destinations);
+	dropped += await dropDependents(drainCache, candidates);
+	let active = candidates.filter((candidate) => candidate.pending.length > 0);
+	const overflowing = turnsToDrop(active, policy.maxEntries);
+	if (overflowing.size > 0) {
+		for (const candidate of active.filter(({ scope }) => overflowing.has(scope.turnId))) {
+			dropped += await dropPending(drainCache, candidate, DELIVERY_CAPACITY_REASON);
+			candidate.pending = [];
+		}
+		active = candidates.filter((candidate) => candidate.pending.length > 0);
+	}
+	const context = {
+		captureStore,
+		drainCache,
+		policy,
+		request,
+		attempted: request.attempted ?? /* @__PURE__ */ new Set(),
+		sendable: active
+	};
+	let progressed;
+	do {
+		progressed = false;
+		for (const destination of request.writer.destinations) {
+			const result = await drainDestination(context, destination);
+			delivered += result.delivered;
+			dropped += result.dropped;
+			failed += result.failed;
+			progressed ||= result.progressed;
+		}
+	} while (progressed);
+	warnAboutDependentDrops(drainCache);
+	await removeDroppedCaptures(captureStore, drainCache, eligible, request.writer.destinations);
+	return {
+		delivered,
+		dropped,
+		failed
+	};
+}
+async function drainDestination(context, destination) {
+	const { drainCache, attempted, request } = context;
+	const { writer } = request;
+	const result = emptyDestinationResult();
+	let batch = createBatch();
+	const flush = async () => {
+		if (batch.candidates.length > 0) addDestinationResult(result, await deliverBatch(context, destination, batch.candidates));
+		batch = createBatch();
+	};
+	for (const candidate of context.sendable) {
+		if (!candidate.pending.some(({ id }) => id === destination.id)) continue;
+		const key = deliveryKey(candidate.scope, destination.id);
+		if (attempted.has(key)) continue;
+		const record = candidate.entry.record;
+		const dependencyState = await dependenciesForDestination(drainCache, candidate.entry, destination.id, batch.scopes);
+		if (dependencyState === "pending") continue;
+		const retry = record.delivery?.retries[destination.id];
+		if (isWaitingForRetry(retry)) continue;
+		const sendsNow = dependencyState === "ready" && record.destinationFingerprint === writer.accountFingerprint;
+		if (sendsNow && !canJoinBatch(batch, candidate, writer)) {
+			await flush();
+			continue;
+		}
+		attempted.add(key);
+		if (dependencyState === "dropped") {
+			await settleDroppedDependency(drainCache, candidate, destination.id, result);
+			continue;
+		}
+		if (!sendsNow) continue;
+		joinBatch(batch, candidate);
+	}
+	await flush();
+	return result;
+}
+function warnAboutDependentDrops(drainCache) {
+	for (const [destination, runs] of drainCache.dependentDrops) console.warn(fillTemplate(DELIVERY_DEPENDENTS_DROPPED_WARNING, {
+		destination,
+		runs: [...runs].join(", ")
+	}));
+}
+async function removeDroppedCaptures(captureStore, drainCache, entries, destinations) {
+	for (const { record } of entries) if ((await Promise.all(destinations.map(({ id }) => drainCache.readOutcome(scopeOf(record), id)))).every((outcome) => outcome.status === "settled" && outcome.receipt.outcome === "dropped")) await captureStore.remove(scopeOf(record));
+}
+function turnsToDrop(active, maxEntries) {
+	const sizes = /* @__PURE__ */ new Map();
+	for (const { scope } of active) sizes.set(scope.turnId, (sizes.get(scope.turnId) ?? 0) + 1);
+	const dropping = /* @__PURE__ */ new Set();
+	let remaining = active.length;
+	for (const [turnId, size] of sizes) {
+		if (remaining <= maxEntries) break;
+		dropping.add(turnId);
+		remaining -= size;
+	}
+	return dropping;
+}
+async function pendingCandidates(drainCache, entries, destinations) {
+	const candidates = [];
+	for (const entry of entries) {
+		const scope = scopeOf(entry.record);
+		const pending = [];
+		for (const destination of destinations) if ((await requireOutcome(drainCache, scope, destination.id)).status === "pending") pending.push(destination);
+		if (pending.length > 0) candidates.push({
+			entry,
+			scope,
+			pending
+		});
+	}
+	return candidates;
+}
+async function dropPending(drainCache, candidate, reason) {
+	let dropped = 0;
+	for (const destination of candidate.pending) dropped += await recordDropped(drainCache, candidate, destination.id, { reason });
+	return dropped;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+function validateDrainRequest(request) {
+	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
+	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
+	if (!Array.isArray(request.writer.destinations) || request.writer.destinations.length === 0) throw new TypeError(DELIVERY_DESTINATION_REQUIRED_MESSAGE);
+	const ids = /* @__PURE__ */ new Set();
+	for (const destination of request.writer.destinations) {
+		validateIdentifier(destination.id, "destination");
+		if (ids.has(destination.id)) throw new TypeError(DELIVERY_DESTINATION_DUPLICATE_MESSAGE);
+		ids.add(destination.id);
+	}
+	if (typeof request.writer.sendBatch !== "function") throw new TypeError(DELIVERY_TRANSPORT_REQUIRED_MESSAGE);
+}
+function snapshotWriter(writer) {
+	if (writer === null || typeof writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
+	const accountFingerprint = writer.accountFingerprint;
+	const sourceDestinations = writer.destinations;
+	const sendBatch = writer.sendBatch;
+	const batchLimits = writer.batchLimits;
+	if (!Array.isArray(sourceDestinations) || sourceDestinations.length === 0) throw new TypeError(DELIVERY_DESTINATION_REQUIRED_MESSAGE);
+	const destinations = sourceDestinations.map((destination) => {
+		if (destination === null || typeof destination !== "object") throw new TypeError(DELIVERY_DESTINATION_INVALID_MESSAGE);
+		return Object.freeze({ id: destination.id });
+	});
+	return Object.freeze({
+		accountFingerprint,
+		destinations: Object.freeze(destinations),
+		sendBatch: typeof sendBatch === "function" ? sendBatch.bind(writer) : sendBatch,
+		batchLimits: Object.freeze({ ...validBatchLimits(batchLimits) })
+	});
+}
+function validBatchLimits(limits) {
+	if (limits === null || typeof limits !== "object") throw new TypeError(DELIVERY_BATCH_LIMITS_INVALID_MESSAGE);
+	if (!Number.isSafeInteger(limits.maxRecords) || limits.maxRecords < 1 || !(limits.maxBytes > 0)) throw new TypeError(DELIVERY_BATCH_LIMITS_INVALID_MESSAGE);
+	return {
+		maxRecords: limits.maxRecords,
+		maxBytes: limits.maxBytes
+	};
+}
+function resolvePolicy(policy) {
+	const resolved = {
+		maxAgeMs: policy?.maxAgeMs ?? 216e5,
+		maxEntries: policy?.maxEntries ?? 500,
+		retryBaseMs: policy?.retryBaseMs ?? 5e3,
+		quickRetryMs: policy?.quickRetryMs ?? 1e3
+	};
+	if (!Number.isSafeInteger(resolved.maxAgeMs) || resolved.maxAgeMs <= 0 || !Number.isSafeInteger(resolved.maxEntries) || resolved.maxEntries <= 0 || !Number.isSafeInteger(resolved.retryBaseMs) || resolved.retryBaseMs < 0 || !Number.isSafeInteger(resolved.quickRetryMs) || resolved.quickRetryMs < 0) throw new TypeError(DELIVERY_POLICY_INVALID_MESSAGE);
+	return resolved;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+async function drainUnderLock(context, request, drainCache) {
+	const { captureStore, integration, sessionId, storageRoot, policy } = context;
+	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
+	const lockPath = join(sessionDirectory, DELIVERY_DRAIN_LOCK);
+	const lock = await tryAcquireFileLock(lockPath);
+	if (!lock) return void 0;
+	try {
+		return await drainLocked(captureStore, integration, sessionId, policy, request, drainCache);
+	} finally {
+		await lock.release();
+		await removeEmptyLockFolders(lockPath, storageRoot);
+	}
+}
+async function summarizeDrain(context, writer, counts, drainCache) {
+	const captures = await context.captureStore.enumerate(context.integration, context.sessionId);
+	const { count, nextRetryAtMs } = await countPending(drainCache, captures.filter(({ record }) => record.destinationFingerprint === writer.accountFingerprint), writer.destinations);
+	const accountMismatch = captures.filter(({ record }) => isWaitingForOtherSetting(record, writer.accountFingerprint)).length;
+	if (accountMismatch > 0 && !context.mismatchWarned.value) {
+		context.mismatchWarned.value = true;
+		console.warn(fillTemplate(DELIVERY_ACCOUNT_MISMATCH_WARNING, { count: accountMismatch }));
+	}
+	return {
+		status: "drained",
+		...counts,
+		pending: count,
+		...nextRetryAtMs === void 0 ? {} : { nextRetryAtMs },
+		accountMismatch
+	};
+}
+function createDeliveryCoordinator(options) {
+	const { integration, sessionId } = options;
+	validateIntegration(integration);
+	validateIdentifier(sessionId, "session ID");
+	const storageRoot = resolve(options.storageRoot);
+	const context = {
+		integration,
+		sessionId,
+		storageRoot,
+		policy: resolvePolicy(options.policy),
+		captureStore: createCaptureStore(storageRoot),
+		mismatchWarned: { value: false }
+	};
+	return {
+		capture(input) {
+			const scoped = {
+				...input,
+				integration,
+				sessionId
+			};
+			return context.captureStore.capture(scoped);
+		},
+		async drain(request) {
+			const writer = snapshotWriter(request.writer);
+			const drainRequest = {
+				writer,
+				...request.attempted === void 0 ? {} : { attempted: request.attempted }
+			};
+			validateDrainRequest(drainRequest);
+			const drainCache = createDrainCache(context.captureStore);
+			const counts = await drainUnderLock(context, drainRequest, drainCache);
+			if (counts === void 0) return { status: "busy" };
+			return summarizeDrain(context, writer, counts, drainCache);
+		}
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
+const CODING_AGENT_PURPOSE = "coding";
+const GIT_METADATA_KEYS = {
+	repository: "ls_git_repo",
+	repositoryUrl: "ls_git_repo_url",
+	provider: "ls_repo_provider",
+	branch: "ls_git_branch",
+	commit: "ls_git_commit_hash"
+};
+const LEGACY_GIT_METADATA_KEYS = {
+	repository: "repository_name",
+	repositoryUrl: "repository_url",
+	provider: "repository_provider",
+	branch: "git_branch",
+	commit: "git_commit_sha"
+};
+const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
+const REPOSITORY_METADATA_KEYS = [
+	GIT_METADATA_KEYS.repository,
+	GIT_METADATA_KEYS.provider,
+	GIT_METADATA_KEYS.repositoryUrl,
+	GIT_METADATA_KEYS.branch,
+	GIT_METADATA_KEYS.commit,
+	LEGACY_GIT_METADATA_KEYS.repository,
+	LEGACY_GIT_METADATA_KEYS.provider,
+	LEGACY_GIT_METADATA_KEYS.repositoryUrl,
+	LEGACY_GIT_METADATA_KEYS.branch,
+	LEGACY_GIT_METADATA_KEYS.commit,
+	ATTRIBUTION_IDENTIFIER_KEY
+];
+const CODING_AGENT_RUN_TYPES = [
+	"root",
+	"llm",
+	"tool",
+	"subagent",
+	"interrupted"
+];
+const CODING_AGENT_RUN_SCOPES = {
+	all: CODING_AGENT_RUN_TYPES,
+	rootInterrupted: ["root", "interrupted"],
+	subagent: ["subagent"],
+	tool: ["tool"],
+	llmTool: ["llm", "tool"],
+	chain: [
+		"root",
+		"subagent",
+		"interrupted"
+	]
+};
+const CODING_AGENT_AGENT_TYPES = [
+	"root",
+	"subagent",
+	"middleware",
+	"compaction"
+];
+const CODING_AGENT_SCHEMA_INTEGRATIONS = [
+	"claude-code",
+	"openai-codex",
+	"deepagents-code",
+	"cursor",
+	"pi"
+];
+const CODING_AGENT_CORE_INTEGRATIONS = [
+	"claude-code",
+	"cursor",
+	"openai-codex"
+];
+const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
+const CODING_AGENT_RUNTIME_NAMES = {
+	"claude-code": "Claude Code",
+	"openai-codex": "Codex",
+	"deepagents-code": "Deep Agents Code",
+	cursor: "Cursor",
+	pi: "Pi"
+};
+const CODING_AGENT_INTEGRATION_POLICIES = {
+	"claude-code": {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: false,
+		legacyAliases: true
+	},
+	cursor: {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: true,
+		legacyAliases: false
+	},
+	"openai-codex": {
+		fullModePrecedence: "structural-wins",
+		metadataModeUsesDirectMetadata: false,
+		metadataModePreservesToolName: false,
+		legacyAliases: false
+	}
+};
+const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
+const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
+	requirement: "where_known",
+	requiredWhereKnown: true
+};
+const CODING_AGENT_FIELD_DEFAULTS = {
+	appliesTo: CODING_AGENT_RUN_TYPES,
+	type: "string",
+	allowedValues: null,
+	requirement: "contextual",
+	requiredWhereKnown: false,
+	metadataModeIntegrations: []
+};
+const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "structural"
+};
+const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
+	metadataSource: "provider",
+	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+};
+const CODING_AGENT_METADATA_PROVENANCE_FIELDS = [
+	"integration",
+	"integrationVersion",
+	"runtimeVersion",
+	"threadId",
+	"turnId",
+	"turnNumber",
+	"agentType",
+	"runType",
+	"approvalPolicy",
+	"subagentId",
+	"subagentType",
+	"clearSubagent",
+	"toolName",
+	"runName",
+	"skillName",
+	"modelName",
+	"usageMetadata",
+	"providerMetadata",
+	"runSpecific",
+	"base"
+];
+const CODING_AGENT_METADATA_PROJECTION_FIELDS = [
+	["integrationVersion", "ls_integration_version"],
+	["runtimeVersion", "ls_agent_runtime_version"],
+	["turnId", "turn_id"],
+	["turnNumber", "turn_number"],
+	["approvalPolicy", "approval_policy"],
+	["subagentId", "ls_subagent_id"],
+	["subagentType", "ls_subagent_type"],
+	["skillName", "ls_skill_name"],
+	["modelName", "ls_model_name"]
+];
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
+const METADATA_MODE_NAME = "metadata";
+const METADATA_MODE_STATUS_VALUES = [
+	"running",
+	"completed",
+	"error"
+];
+const CODING_AGENT_RUNTIME_LIBRARY = "langsmith";
+const CODING_AGENT_RUNTIME_SDK = "langsmith-js";
+const CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES = [
+	"VERCEL_GIT_COMMIT_SHA",
+	"NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
+	"COMMIT_REF",
+	"RENDER_GIT_COMMIT",
+	"CI_COMMIT_SHA",
+	"CIRCLE_SHA1",
+	"CF_PAGES_COMMIT_SHA",
+	"REACT_APP_GIT_SHA",
+	"SOURCE_VERSION",
+	"GITHUB_SHA",
+	"TRAVIS_COMMIT",
+	"GIT_COMMIT",
+	"BUILD_VCS_NUMBER",
+	"bamboo_planRepository_revision",
+	"Build.SourceVersion",
+	"BITBUCKET_COMMIT",
+	"DRONE_COMMIT_SHA",
+	"SEMAPHORE_GIT_SHA",
+	"BUILDKITE_COMMIT"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES = ["LANGCHAIN_", "LANGSMITH_"];
+const CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED = [
+	"LANGCHAIN_API_KEY",
+	"LANGCHAIN_ENDPOINT",
+	"LANGCHAIN_TRACING_V2",
+	"LANGCHAIN_PROJECT",
+	"LANGCHAIN_SESSION",
+	"LANGSMITH_API_KEY",
+	"LANGSMITH_ENDPOINT",
+	"LANGSMITH_TRACING_V2",
+	"LANGSMITH_CONFIG_FILE",
+	"LANGSMITH_PROJECT",
+	"LANGSMITH_SESSION",
+	"LANGSMITH_AGENT_ID",
+	"LANGSMITH_AGENT_ENVIRONMENT"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS = [
+	"key",
+	"secret",
+	"token",
+	"password",
+	"passwd",
+	"pwd",
+	"credential",
+	"email"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
+	"endpoint",
+	"proxy",
+	"url",
+	"auth",
+	"header"
+];
+const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
+const CODING_AGENT_REVISION_ID_KEY = "revision_id";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+function field$2(key, options = {}) {
+	return {
+		key,
+		...CODING_AGENT_FIELD_DEFAULTS,
+		...options
+	};
+}
+const structural = (key, options = {}) => field$2(key, {
+	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
+	...options
+});
+const provider = (key, options = {}) => field$2(key, {
+	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
+	...options
+});
+const CODING_AGENT_V1_CONTRACT = {
+	schemaVersion: CODING_AGENT_SCHEMA_VERSION,
+	integrations: CODING_AGENT_SCHEMA_INTEGRATIONS,
+	runtimeNames: CODING_AGENT_RUNTIME_NAMES,
+	keys: [
+		structural("ls_agent_purpose", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [CODING_AGENT_PURPOSE]
+		}),
+		structural("ls_integration", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
+		}),
+		structural("ls_agent_runtime", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: Object.values(CODING_AGENT_RUNTIME_NAMES)
+		}),
+		structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS),
+		structural("ls_trace_schema_version", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [CODING_AGENT_SCHEMA_VERSION]
+		}),
+		structural("ls_agent_type", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_AGENT_TYPES
+		}),
+		structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_number", {
+			...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
+			type: "integer"
+		}),
+		field$2(GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(LEGACY_GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(LEGACY_GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(LEGACY_GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(LEGACY_GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2(LEGACY_GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field$2("ls_skill_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field$2(ATTRIBUTION_IDENTIFIER_KEY),
+		field$2("user_id"),
+		field$2("local_username"),
+		field$2("user_email"),
+		field$2("sandbox_type"),
+		field$2("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }),
+		field$2("ls_subagent_id", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field$2("ls_subagent_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field$2("ls_tool_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		provider("ls_provider", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_model_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_message_format", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("codex_cli_version", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_raw_aggregated_usage", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.chain,
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_invocation_params", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			type: "object"
+		}),
+		field$2("usage_metadata", {
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		}),
+		field$2("ls_model_name", {
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		})
+	],
+	runtime: {
+		library: CODING_AGENT_RUNTIME_LIBRARY,
+		sdk: CODING_AGENT_RUNTIME_SDK,
+		releaseEnvironmentVariables: CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES,
+		environmentMetadata: {
+			prefixes: CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES,
+			excluded: CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED,
+			sensitiveSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS,
+			endpointSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS,
+			revisionId: {
+				variable: CODING_AGENT_REVISION_ID_VARIABLE,
+				key: CODING_AGENT_REVISION_ID_KEY
+			}
+		}
+	},
+	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+function withBothGitMetadataNames(metadata) {
+	const both = { ...metadata };
+	for (const role of Object.keys(GIT_METADATA_KEYS)) {
+		const value = both[GIT_METADATA_KEYS[role]] ?? both[LEGACY_GIT_METADATA_KEYS[role]];
+		if (value === void 0) continue;
+		both[GIT_METADATA_KEYS[role]] ??= value;
+		both[LEGACY_GIT_METADATA_KEYS[role]] ??= value;
+	}
+	return both;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+function metadataFieldTypeIssue(field, value) {
+	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
+}
+function metadataFieldValueIssue(field, value) {
+	const typeIssue = metadataFieldTypeIssue(field, value);
+	if (typeIssue) return typeIssue;
+	if (field.allowedValues && !field.allowedValues.includes(value)) return "value";
+}
+function validateProviderMetadata(value, integration, runType) {
+	if (!isPlainRecord(value)) return [{
+		key: "",
+		reason: "type"
+	}];
+	const issues = [];
+	for (const [key, entry] of Object.entries(value)) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((candidate) => candidate.key === key);
+		if (field?.metadataSource !== "provider") {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		if (!field.providerIntegrations?.includes(integration)) {
+			issues.push({
+				key,
+				reason: "integration"
+			});
+			continue;
+		}
+		if (!field.appliesTo.includes(runType)) {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		const reason = metadataFieldValueIssue(field, entry);
+		if (reason) issues.push({
+			key,
+			reason
+		});
+	}
+	return issues;
+}
+function normalizeProviderMetadata(value, integration, runType) {
+	if (!isPlainRecord(value)) return {};
+	const issues = new Map(validateProviderMetadata(value, integration, runType).map((issue) => [issue.key, issue]));
+	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+function buildCodingAgentMetadata(options) {
+	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
+	const identity = {
+		ls_agent_purpose: CODING_AGENT_PURPOSE,
+		ls_integration: options.integration,
+		ls_agent_runtime: CODING_AGENT_V1_CONTRACT.runtimeNames[options.integration],
+		ls_trace_schema_version: CODING_AGENT_SCHEMA_VERSION,
+		ls_agent_type: options.agentType,
+		thread_id: options.threadId
+	};
+	if (options.integrationVersion) identity.ls_integration_version = options.integrationVersion;
+	if (options.runtimeVersion) identity.ls_agent_runtime_version = options.runtimeVersion;
+	if (options.turnId) identity.turn_id = options.turnId;
+	if (typeof options.turnNumber === "number") identity.turn_number = options.turnNumber;
+	if (options.approvalPolicy) identity.approval_policy = options.approvalPolicy;
+	if (options.clearSubagent) {
+		identity.ls_subagent_id = void 0;
+		identity.ls_subagent_type = void 0;
+	} else {
+		if (options.subagentId) identity.ls_subagent_id = options.subagentId;
+		if (options.subagentType) identity.ls_subagent_type = options.subagentType;
+	}
+	if (options.toolName) {
+		if (policy.legacyAliases) identity.tool_name = options.toolName;
+		if (options.runName && options.toolName !== options.runName) identity.ls_tool_name = options.toolName;
+	}
+	if (options.skillName) identity.ls_skill_name = options.skillName;
+	if (policy.legacyAliases && options.subagentId) identity.agent_id = options.subagentId;
+	if (policy.legacyAliases && options.subagentType) identity.agent_type = options.subagentType;
+	const explicit = {};
+	if (options.modelName !== void 0) explicit.ls_model_name = options.modelName;
+	if (options.usageMetadata !== void 0) explicit.usage_metadata = options.usageMetadata;
+	const provider = normalizeProviderMetadata(options.providerMetadata, options.integration, options.runType);
+	const trusted = {
+		...identity,
+		...explicit,
+		...provider
+	};
+	if (policy.metadataModePreservesToolName && options.toolName) trusted.ls_tool_name = options.toolName;
+	const pieces = [
+		identity,
+		explicit,
+		provider,
+		options.runSpecific,
+		options.base
+	];
+	const full = policy.fullModePrecedence === "custom-wins" ? pieces : pieces.toReversed();
+	const merged = {};
+	for (const piece of full) if (piece) Object.assign(merged, piece);
+	const result = withBothGitMetadataNames(merged);
+	Object.defineProperty(result, TRUSTED_METADATA, { value: trusted });
+	return result;
+}
+function trustedCodingAgentMetadata(metadata) {
+	return metadata?.[TRUSTED_METADATA];
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+function forwardsEnvironmentVariable(name, value, environmentMetadata) {
+	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
+}
+function buildCodingAgentRuntimeMetadata(options) {
+	const { library, sdk, releaseEnvironmentVariables, environmentMetadata } = CODING_AGENT_V1_CONTRACT.runtime;
+	const runtime = {
+		library,
+		runtime: options.runtime,
+		sdk,
+		sdk_version: options.sdkVersion
+	};
+	for (const name of releaseEnvironmentVariables) {
+		const value = options.env[name];
+		if (value !== void 0) runtime[name] = value;
+	}
+	const metadata = {};
+	for (const [name, value] of Object.entries(options.env)) {
+		if (!forwardsEnvironmentVariable(name, value, environmentMetadata)) continue;
+		metadata[name === environmentMetadata.revisionId.variable ? environmentMetadata.revisionId.key : name] = value;
+	}
+	return {
+		runtime,
+		metadata
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+function projectCodingAgentMetadata(metadata, integration, status) {
+	const safe = {};
+	for (const [key, value] of Object.entries(metadata ?? {})) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((entry) => entry.key === key);
+		if (!field?.metadataModeIntegrations.includes(integration) || value === void 0 || metadataFieldTypeIssue(field, value) !== void 0) continue;
+		safe[key] = value;
+	}
+	safe.status = METADATA_MODE_STATUS_VALUES.includes(status) ? status : "running";
+	safe.ls_tracing_mode = METADATA_MODE_NAME;
+	return safe;
+}
+function metadataForMode(metadata, integration, mode = "full", status) {
+	if (mode === "full") return metadata;
+	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
+	const source = requirePlainRecord(value, "Run metadata");
+	const declaredIntegration = ownDataField(source, "integration");
+	if (declaredIntegration.present && declaredIntegration.value !== integration) throw new TypeError("Run metadata integration does not match the lifecycle bridge");
+	const selected = {};
+	for (const key of CODING_AGENT_METADATA_PROVENANCE_FIELDS) {
+		const field = ownDataField(source, key);
+		if (field.present && field.value !== void 0) selected[key] = field.value;
+	}
+	selected["integration"] = integration;
+	const threadId = selected["threadId"];
+	if (typeof threadId !== "string" || threadId.trim().length === 0) return { status: "deferred" };
+	const agentType = selected["agentType"];
+	if (typeof agentType !== "string" || !CODING_AGENT_AGENT_TYPES.includes(agentType)) throw new TypeError("Run metadata has an invalid agent type");
+	const runType = selected["runType"];
+	if (typeof runType !== "string" || !CODING_AGENT_RUN_TYPES.includes(runType)) throw new TypeError("Run metadata has an invalid run type");
+	for (const key of [
+		"usageMetadata",
+		"providerMetadata",
+		"runSpecific",
+		"base"
+	]) if (selected[key] !== void 0) selected[key] = canonicalJsonObject(selected[key], `Run metadata ${key}`);
+	selected["providerMetadata"] = normalizeProviderMetadata(selected["providerMetadata"], integration, runType);
+	if (mode === "metadata") {
+		delete selected["base"];
+		delete selected["runSpecific"];
+	}
+	const options = selected;
+	return {
+		status: "ready",
+		value: mode === "metadata" ? projectMetadataProvenance(options, integration, status) : options
+	};
+}
+function projectMetadataProvenance(options, integration, status) {
+	const projection = metadataForMode(buildCodingAgentMetadata(options), integration, "metadata", status) ?? {};
+	const safe = {
+		integration,
+		threadId: projectedString(projection, "thread_id"),
+		agentType: projectedString(projection, "ls_agent_type"),
+		runType: options.runType
+	};
+	for (const [optionKey, metadataKey] of CODING_AGENT_METADATA_PROJECTION_FIELDS) if (Object.hasOwn(projection, metadataKey)) safe[optionKey] = projection[metadataKey];
+	if (options.clearSubagent === true) safe["clearSubagent"] = true;
+	if (typeof options.toolName === "string" && (projection["ls_tool_name"] === options.toolName || projection["tool_name"] === options.toolName)) {
+		safe["toolName"] = options.toolName;
+		if (typeof options.runName === "string") safe["runName"] = options.runName;
+	}
+	if (Object.hasOwn(projection, "usage_metadata")) safe["usageMetadata"] = projection["usage_metadata"];
+	const provider = normalizeProviderMetadata(options.providerMetadata, integration, options.runType);
+	const allowedProvider = Object.fromEntries(Object.entries(provider).filter(([key]) => Object.hasOwn(projection, key)));
+	if (Object.keys(allowedProvider).length > 0) safe["providerMetadata"] = allowedProvider;
+	return safe;
+}
+function projectedString(source, key) {
+	const value = source[key];
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError(`Metadata projection ${key} is required`);
+	return value;
+}
+//#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/regex.js
-var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/validate.js
-function validate(uuid) {
-	return typeof uuid === "string" && regex_default.test(uuid);
+function validate$1(uuid) {
+	return typeof uuid === "string" && regex_default$1.test(uuid);
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/parse.js
-function parse$1(uuid) {
-	if (!validate(uuid)) throw TypeError("Invalid UUID");
+function parse$2(uuid) {
+	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
@@ -55,10 +3734,10 @@ function parse$1(uuid) {
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 */
-const byteToHex = [];
-for (let i = 0; i < 256; ++i) byteToHex.push((i + 256).toString(16).slice(1));
-function unsafeStringify(arr, offset = 0) {
-	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+const byteToHex$1 = [];
+for (let i = 0; i < 256; ++i) byteToHex$1.push((i + 256).toString(16).slice(1));
+function unsafeStringify$1(arr, offset = 0) {
+	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/rng.js
@@ -84,7 +3763,7 @@ function _v4(options, buf, offset) {
 		for (let i = 0; i < 16; ++i) buf[offset + i] = rnds[i];
 		return buf;
 	}
-	return unsafeStringify(rnds);
+	return unsafeStringify$1(rnds);
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/sha1.js
@@ -99,7 +3778,7 @@ function f(s, x, y, z) {
 function ROTL(x, n) {
 	return x << n | x >>> 32 - n;
 }
-function sha1(bytes) {
+function sha1$1(bytes) {
 	const K = [
 		1518500249,
 		1859775393,
@@ -156,18 +3835,18 @@ function sha1(bytes) {
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v35.js
-function stringToBytes(str) {
+function stringToBytes$1(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
 	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
 	return bytes;
 }
-const DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-const URL$1 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
-function v35(version, hash, value, namespace, buf, offset) {
-	const valueBytes = typeof value === "string" ? stringToBytes(value) : value;
-	const namespaceBytes = typeof namespace === "string" ? parse$1(namespace) : namespace;
-	if (typeof namespace === "string") namespace = parse$1(namespace);
+const DNS$1 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const URL$2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+function v35$1(version, hash, value, namespace, buf, offset) {
+	const valueBytes = typeof value === "string" ? stringToBytes$1(value) : value;
+	const namespaceBytes = typeof namespace === "string" ? parse$2(namespace) : namespace;
+	if (typeof namespace === "string") namespace = parse$2(namespace);
 	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
 	let bytes = new Uint8Array(16 + valueBytes.length);
 	bytes.set(namespaceBytes);
@@ -181,15 +3860,15 @@ function v35(version, hash, value, namespace, buf, offset) {
 		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
 		return buf;
 	}
-	return unsafeStringify(bytes);
+	return unsafeStringify$1(bytes);
 }
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v5.js
-function v5(value, namespace, buf, offset) {
-	return v35(80, sha1, value, namespace, buf, offset);
+function v5$1(value, namespace, buf, offset) {
+	return v35$1(80, sha1$1, value, namespace, buf, offset);
 }
-v5.DNS = DNS;
-v5.URL = URL$1;
+v5$1.DNS = DNS$1;
+v5$1.URL = URL$2;
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v7.js
 const _state = {};
@@ -202,7 +3881,7 @@ function v7(options, buf, offset) {
 		updateV7State(_state, now, rnds);
 		bytes = v7Bytes(rnds, _state.msecs, _state.seq, buf, offset);
 	}
-	return buf ?? unsafeStringify(bytes);
+	return buf ?? unsafeStringify$1(bytes);
 }
 function updateV7State(state, now, rnds) {
 	state.msecs ??= -Infinity;
@@ -4952,7 +8631,7 @@ function agent(agentId, agentEnvironment) {
 * Only agent addresses, `lrn:agents/{id}/environments/{environment}`, exist.
 * @throws If `value` is not a valid agent address.
 */
-function parse(value) {
+function parse$1(value) {
 	const match = typeof value === "string" ? ADDRESS_PATTERN.exec(value) : void 0;
 	if (!match) throw new Error(`An address must be a string like "lrn:agents/{id}/environments/{environment}", got ${JSON.stringify(value)}.`);
 	return agent(match[1], match[2]);
@@ -4981,7 +8660,7 @@ function envNames() {
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/agent_addressing.js
 /** Validate and normalise an address at an entry point; the SDK carries the result. */
 function checkAddress(address) {
-	return address == null ? void 0 : parse(address);
+	return address == null ? void 0 : parse$1(address);
 }
 function rejectConflicting(project, address) {
 	if (project && address) throw new Error(`A run is sent to a project (${JSON.stringify(project)}) or to an address (${JSON.stringify(address)}), not both.`);
@@ -5230,19 +8909,19 @@ async function writeFileAtomic(filePath, content) {
 async function readdir$1(dir) {
 	return nodeFsPromises.readdir(dir);
 }
-async function stat(filePath) {
+async function stat$1(filePath) {
 	return nodeFsPromises.stat(filePath);
 }
 function existsSync(p) {
 	return nodeFs.existsSync(p);
 }
-function mkdirSync(dir) {
+function mkdirSync$1(dir) {
 	nodeFs.mkdirSync(dir, { recursive: true });
 }
-function writeFileSync(filePath, content) {
+function writeFileSync$1(filePath, content) {
 	nodeFs.writeFileSync(filePath, content);
 }
-function renameSync(oldPath, newPath) {
+function renameSync$1(oldPath, newPath) {
 	nodeFs.renameSync(oldPath, newPath);
 }
 function unlinkSync(filePath) {
@@ -5460,11 +9139,11 @@ var PromptCache = class {
 		const entries = {};
 		for (const [key, entry] of this.cache.entries()) entries[key] = entry.value;
 		const dir = path.dirname(filePath);
-		if (!existsSync(dir)) mkdirSync(dir);
+		if (!existsSync(dir)) mkdirSync$1(dir);
 		const tempPath = `${filePath}.tmp`;
 		try {
-			writeFileSync(tempPath, JSON.stringify({ entries }, null, 2));
-			renameSync(tempPath, filePath);
+			writeFileSync$1(tempPath, JSON.stringify({ entries }, null, 2));
+			renameSync$1(tempPath, filePath);
 		} catch (e) {
 			if (existsSync(tempPath)) unlinkSync(tempPath);
 			throw e;
@@ -7685,7 +11364,7 @@ var Client = class Client {
 				const traceFiles = (await readdir$1(directory)).filter((f) => f.startsWith("trace_") && f.endsWith(".json"));
 				let total = 0;
 				for (const name of traceFiles) {
-					const { size } = await stat(path.join(directory, name));
+					const { size } = await stat$1(path.join(directory, name));
 					total += size;
 				}
 				if (total >= maxBytes) {
@@ -11056,7 +14735,7 @@ function setContextVar(runTree, key, value) {
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/run_trees.js
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
-	return v5(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
+	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
 }
 function stripNonAlphanumeric(input) {
 	return input.replace(/[-:.]/g, "");
@@ -11084,7 +14763,7 @@ const LANGSMITH_ADDRESS = "langsmith-address";
 function addressFromHeader(value) {
 	if (value == null) return;
 	try {
-		return parse(value);
+		return parse$1(value);
 	} catch {
 		console.warn("Ignoring an unusable address in a `baggage` header.");
 		return;
@@ -12007,6 +15686,22 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/uuid.js
+/**
+* Compute the run ID used for a secondary tracing replica.
+*
+* @param runId - The original UUID v7 run ID.
+* @param projectName - The secondary replica's destination project name.
+* @returns The run ID used in the secondary replica destination.
+*/
+function computeRunIdForSecondaryReplica(runId, projectName) {
+	if (typeof projectName !== "string" || projectName.length === 0) throw new Error("projectName must be a non-empty string");
+	assertUuid(runId, "runId");
+	const normalizedRunId = runId.toLowerCase();
+	if (getUuidVersion(normalizedRunId) !== 7) throw new Error("runId must be a UUID v7");
+	return nonCryptographicUuid7Deterministic(normalizedRunId, projectName);
+}
+//#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/singletons/traceable.js
 var MockAsyncLocalStorage = class {
 	getStore() {}
@@ -12028,6 +15723,327 @@ new AsyncLocalStorageProvider();
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/index.js
 const __version__ = "0.10.8";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
+const METADATA_MODE_RUN_CONFIG_FIELDS = [
+	"client",
+	"id",
+	"name",
+	"run_type",
+	"project_name",
+	"start_time",
+	"end_time",
+	"parent_run",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"distributedParentId"
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+function mutedContent(role) {
+	return { messages: [{
+		role,
+		content: MUTED_TRACE_CONTENT
+	}] };
+}
+function statusOfRun(run) {
+	const metadataStatus = run.extra?.metadata?.status;
+	if (run.error != null || metadataStatus === "error") return "error";
+	if (run.end_time != null || metadataStatus === "completed") return "completed";
+	return "running";
+}
+function projectReplica(replica) {
+	if (!replica || typeof replica !== "object") return replica;
+	if (Array.isArray(replica)) return { projectName: replica[0] };
+	const { updates: _updates, ...safe } = replica;
+	return safe;
+}
+function extraForMode(metadata, integration, status) {
+	return {
+		metadata,
+		toJSON() {
+			const currentStatus = this.metadata?.status;
+			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
+			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
+		}
+	};
+}
+function configForMetadataMode(config, integration, privacyContext) {
+	const source = config;
+	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
+	const originalExtra = source.extra;
+	const safe = {};
+	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
+	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
+	if (Array.isArray(source.tags) && source.tags.length === 0) safe.tags = [];
+	safe.inputs = mutedContent("user");
+	safe.outputs = mutedContent("assistant");
+	safe.extra = extraForMode(metadataForMode(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
+	return safe;
+}
+function sanitizeRunTree(run, integration) {
+	const status = statusOfRun(run);
+	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
+	run.inputs = mutedContent("user");
+	run.outputs = mutedContent("assistant");
+	delete run.error;
+	run.serialized = {};
+	if (!Array.isArray(run.tags) || run.tags.length > 0) delete run.tags;
+	delete run.reference_example_id;
+	delete run.attachments;
+	delete run.events;
+	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
+	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
+	run.extra = extraForMode(metadata, integration, status);
+}
+function protectRunTree(run, integration) {
+	sanitizeRunTree(run, integration);
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
+	const postRun = run.postRun.bind(run);
+	run.postRun = async (excludeChildRuns = true) => {
+		sanitizeRunTree(run, integration);
+		if (!excludeChildRuns) {
+			const childRuns = [...run.child_runs];
+			await postRun(true);
+			for (const childRun of childRuns) await childRun.postRun(false);
+			return;
+		}
+		return postRun(excludeChildRuns);
+	};
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => {
+		sanitizeRunTree(run, integration);
+		return patchRun({
+			excludeInputs: false,
+			...options
+		});
+	};
+	const end = run.end.bind(run);
+	run.end = (outputs, error, endTime, metadata) => {
+		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
+		const safeMetadata = metadataForMode(metadata, integration, "metadata", status) ?? { status };
+		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
+	};
+	const toJSON = run.toJSON.bind(run);
+	run.toJSON = () => {
+		sanitizeRunTree(run, integration);
+		return toJSON();
+	};
+	return run;
+}
+function preserveFullModePatchInputs(run) {
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => patchRun({
+		excludeInputs: false,
+		...options
+	});
+	return run;
+}
+function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
+	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
+	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
+}
+function survivingCodingAgentPatchFields(projectedRun, fields) {
+	return fields.filter((field) => {
+		const descriptor = Object.getOwnPropertyDescriptor(projectedRun, field);
+		return descriptor?.enumerable === true && "value" in descriptor && descriptor.value !== void 0;
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
+const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
+const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
+const UPLOAD_API_URL_TRAILING_SLASH_PATTERN = /\/$/;
+const UPLOAD_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UPLOAD_REPLICA_UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UPLOAD_REPLICA_UUID_V5_NAMESPACE_BYTES = Buffer.from("6ba7b810-9dad-11d1-80b4-00c04fd430c8".replaceAll("-", ""), "hex");
+const UPLOAD_REPLICA_UUID_V5_DOMAIN = "langchain-upload-replica-v1";
+const UPLOAD_REPLICA_IDENTITY_UPDATE_FIELDS = /* @__PURE__ */ new Set([
+	"id",
+	"name",
+	"run_type",
+	"start_time",
+	"parent_run_id",
+	"session_id",
+	"session_name",
+	"trace_id",
+	"dotted_order"
+]);
+const UPLOAD_REPLICA_PATCH_UPDATE_FIELDS = /* @__PURE__ */ new Set([
+	"inputs",
+	"outputs",
+	"end_time",
+	"extra",
+	"tags",
+	"error",
+	"serialized",
+	"reference_example_id",
+	"events"
+]);
+const UPLOAD_PATCH_FIELDS = /* @__PURE__ */ new Set([
+	"inputs",
+	"outputs",
+	"end_time",
+	"error",
+	"tags",
+	"serialized",
+	"events",
+	"reference_example_id"
+]);
+const UPLOAD_REDACTED_FIELDS = ["inputs", "outputs"];
+const UPLOAD_FAILED_MESSAGE = "LangSmith upload failed";
+const UPLOAD_RETRYABLE_STATUSES = [
+	408,
+	409,
+	429
+];
+const UPLOAD_NODE_RUNTIME = "node";
+const UPLOAD_DOTTED_ORDER_SEGMENT = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(\d{6})Z/;
+const UPLOAD_REQUEST_TIMEOUT_MS = 15e3;
+const UPLOAD_SEND_DEADLINE_MS = 2e4;
+const UPLOAD_BATCH_LIMITS = {
+	maxRuns: 100,
+	maxBytes: 8388608
+};
+const UPLOAD_DEADLINE_MESSAGE = "LangSmith upload did not finish in time";
+const UPLOAD_RECEIPT_MISSING_MESSAGE = "The upload returned no receipt";
+const UPLOAD_ERROR_NAME = "UploadError";
+const UPLOAD_UNKNOWN_DESTINATION_MESSAGE = "Unknown upload destination";
+const UPLOAD_SAMPLING_RATE_VARIABLES = ["LANGSMITH_TRACING_SAMPLING_RATE", "LANGCHAIN_TRACING_SAMPLING_RATE"];
+const UPLOAD_SAMPLING_HASH = "sha256";
+const UPLOAD_DOTTED_ORDER_ROOT_ID = /^\d{8}T\d+Z([0-9a-f-]{36})/i;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+function createUploadClient(options) {
+	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
+	return new Client({
+		apiKey,
+		apiUrl,
+		workspaceId: workspaceId ?? "",
+		autoBatchTracing: false,
+		manualFlushMode: true,
+		timeout_ms: UPLOAD_REQUEST_TIMEOUT_MS,
+		callerOptions: { maxRetries: 0 },
+		disablePromptCache: true,
+		debug: false,
+		omitTracedRuntimeInfo: true,
+		tracingMode: "langsmith",
+		...anonymizer === void 0 ? {} : {
+			anonymizer,
+			hideMetadata: anonymizer
+		},
+		...redactedFields?.includes("inputs") ? { hideInputs: false } : {},
+		...redactedFields?.includes("outputs") ? { hideOutputs: false } : {}
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+function resolveUploadDestinationIdentities(options) {
+	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
+	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
+	if (typeof options.redact !== "boolean") throw new TypeError("A redaction setting is required");
+	const replicas = options.replicas ?? [];
+	if (replicas.length > 0 && options.destinations.length !== 1) throw new TypeError("A replica upload requires exactly one primary destination");
+	const primary = options.destinations[0];
+	const routedReplicas = primary && typeof primary === "object" && !hasApiKey(primary.apiKey) ? replicas.filter((replica) => !replica || typeof replica !== "object" || hasApiKey(replica.apiKey)) : replicas;
+	const primaryProjectName = routedReplicas.length === 0 || primary === void 0 ? void 0 : normalizeRequiredText(primary.projectName, "project name");
+	const destinations = routedReplicas.length === 0 ? options.destinations.map((destination) => resolveDestination(destination)) : routedReplicas.map((replica) => resolveReplicaDestination(replica, primary, primaryProjectName));
+	const ids = /* @__PURE__ */ new Set();
+	for (const destination of destinations) {
+		if (ids.has(destination.id)) throw new TypeError("Upload destinations must be unique");
+		ids.add(destination.id);
+	}
+	const fingerprints = destinations.map(({ id }) => id).toSorted();
+	return {
+		accountFingerprint: `${UPLOAD_ACCOUNT_FINGERPRINT_PREFIX}${fingerprint(JSON.stringify({
+			destinations: fingerprints,
+			redact: options.redact,
+			redactExtraRules: options.redactExtraRules ?? null
+		}))}`,
+		destinations
+	};
+}
+function resolveDestination(config, sourceProjectName, updates, replicaProjectName) {
+	if (!config || typeof config !== "object") throw new TypeError("Invalid upload destination");
+	if (!hasApiKey(config.apiKey)) throw new TypeError("An API key is required for each upload destination");
+	const apiUrl = normalizeApiUrl(config.apiUrl);
+	const projectName = normalizeRequiredText(config.projectName, "project name");
+	const workspaceId = config.workspaceId === void 0 ? void 0 : normalizeRequiredText(config.workspaceId, "workspace ID");
+	const identity = JSON.stringify({
+		apiKey: config.apiKey,
+		apiUrl,
+		workspaceId: workspaceId ?? null,
+		...sourceProjectName === void 0 ? {} : {
+			projectName: replicaProjectName ?? null,
+			updates: updates ?? null
+		}
+	});
+	return {
+		id: `${UPLOAD_DESTINATION_ID_PREFIX}${fingerprint(identity)}`,
+		apiKey: config.apiKey,
+		apiUrl,
+		projectName,
+		...workspaceId === void 0 ? {} : { workspaceId },
+		...sourceProjectName === void 0 ? {} : { sourceProjectName },
+		...updates === void 0 ? {} : { updates }
+	};
+}
+function resolveReplicaDestination(replica, primary, primaryProjectName) {
+	if (!replica || typeof replica !== "object") throw new TypeError("Invalid upload replica");
+	const updates = snapshotReplicaUpdates(replica.updates);
+	const workspaceId = replica.workspaceId ?? primary.workspaceId;
+	return resolveDestination({
+		apiKey: replica.apiKey ?? primary.apiKey,
+		apiUrl: replica.apiUrl ?? primary.apiUrl,
+		projectName: replica.projectName ?? primary.projectName,
+		...workspaceId === void 0 ? {} : { workspaceId }
+	}, primaryProjectName, updates, replica.projectName === void 0 ? null : normalizeRequiredText(replica.projectName, "project name"));
+}
+function snapshotReplicaUpdates(value) {
+	if (value === void 0) return void 0;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Replica updates must be an object");
+	let snapshot;
+	try {
+		snapshot = JSON.parse(JSON.stringify(value));
+	} catch {
+		throw new TypeError("Replica updates must be JSON serializable");
+	}
+	if (snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new TypeError("Replica updates must be an object");
+	const updates = snapshot;
+	for (const field of Object.keys(updates)) {
+		if (UPLOAD_REPLICA_IDENTITY_UPDATE_FIELDS.has(field)) throw new TypeError("Replica updates cannot override run identity");
+		if (!UPLOAD_REPLICA_PATCH_UPDATE_FIELDS.has(field)) throw new TypeError("Unsupported replica update field");
+		if (field === "extra" && (updates[field] === null || typeof updates[field] !== "object" || Array.isArray(updates[field]))) throw new TypeError("Replica extra updates must be an object");
+	}
+	return canonicalJsonObject(updates, "Replica updates");
+}
+function normalizeApiUrl(value) {
+	if (typeof value !== "string" || value.trim().length === 0) throw new TypeError("An API endpoint is required for each upload destination");
+	let endpoint;
+	try {
+		endpoint = new URL(value);
+	} catch {
+		throw new TypeError("Invalid upload API endpoint");
+	}
+	if (endpoint.protocol !== "https:" && endpoint.protocol !== "http:" || endpoint.username.length > 0 || endpoint.password.length > 0 || endpoint.search.length > 0 || endpoint.hash.length > 0) throw new TypeError("Invalid upload API endpoint");
+	return endpoint.toString().replace(UPLOAD_API_URL_TRAILING_SLASH_PATTERN, "");
+}
+function normalizeRequiredText(value, name) {
+	if (typeof value !== "string" || value.trim().length === 0 || UPLOAD_CONTROL_CHARACTER_PATTERN.test(value)) throw new TypeError(`Invalid upload ${name}`);
+	return value.trim();
+}
+function hasApiKey(value) {
+	return typeof value === "string" && value.trim().length > 0;
+}
+function fingerprint(value) {
+	return createHash("sha256").update(value).digest("hex").slice(0, 32);
+}
 //#endregion
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/anonymizer/index.js
 function extractStringNodes(data, options) {
@@ -12263,6 +16279,3340 @@ const DEFAULT_SECRET_RULES = [
 */
 function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+function createUploadAnonymizer(enabled, extraRules) {
+	if (!enabled) return void 0;
+	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
+		pattern,
+		...replace === void 0 ? {} : { replace }
+	}));
+	return createSecretAnonymizer(normalizedRules === void 0 ? {} : { extraRules: normalizedRules });
+}
+function redactSdkOmittedFields(payload, anonymizer) {
+	if (!anonymizer) return;
+	if (payload["tags"] !== void 0) payload["tags"] = anonymizer(payload["tags"]);
+	if (payload["serialized"] !== void 0) payload["serialized"] = anonymizer(payload["serialized"]);
+	if (payload["events"] !== void 0) payload["events"] = anonymizer(payload["events"]);
+}
+function normalizedRedactedFields(value) {
+	if (value === void 0) return [];
+	if (!Array.isArray(value) || value.some((field) => !UPLOAD_REDACTED_FIELDS.includes(field)) || new Set(value).size !== value.length) throw new TypeError("Redacted fields must be unique inputs or outputs");
+	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+function resolveUploadDestinations(options) {
+	const resolved = resolveUploadDestinationIdentities(options);
+	const destinations = resolved.destinations.map((destination) => {
+		const anonymizer = createUploadAnonymizer(options.redact, options.redactExtraRules);
+		const client = createUploadClient({
+			apiKey: destination.apiKey,
+			apiUrl: destination.apiUrl,
+			...destination.workspaceId === void 0 ? {} : { workspaceId: destination.workspaceId },
+			...anonymizer === void 0 ? {} : { anonymizer }
+		});
+		return {
+			...destination,
+			...anonymizer === void 0 ? {} : { anonymizer },
+			client
+		};
+	});
+	return {
+		accountFingerprint: resolved.accountFingerprint,
+		destinations
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+function createUploadClientCache() {
+	const clientsByMode = /* @__PURE__ */ new Map();
+	return { forSubmission(destination, submission) {
+		const redactedFields = normalizedRedactedFields(submission.redactedFields).filter((field) => submission.privacyMode === "full" && !(submission.operation === "patch" && field === "outputs" && Object.hasOwn(destination.updates ?? {}, "outputs")));
+		let client = destination.client;
+		if (redactedFields.length > 0) {
+			const key = JSON.stringify([destination.id, redactedFields]);
+			const previous = clientsByMode.get(key);
+			client = previous ?? createUploadClient({
+				...destination,
+				redactedFields
+			});
+			if (previous === void 0) clientsByMode.set(key, client);
+		}
+		return client;
+	} };
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+var UploadError = class extends Error {
+	retryable;
+	status;
+	constructor(cause) {
+		super(UPLOAD_FAILED_MESSAGE, { cause });
+		this.name = UPLOAD_ERROR_NAME;
+		const status = failureStatus(cause);
+		this.status = status;
+		this.retryable = status === void 0 || status >= 500 || UPLOAD_RETRYABLE_STATUSES.includes(status);
+	}
+};
+function isAlreadyReceived(cause) {
+	return failureStatus(cause) === 409 && describe(cause).includes("already received");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+function applyRuntimeMetadata(payload, privacyMode) {
+	if (privacyMode !== "full") return;
+	const added = buildCodingAgentRuntimeMetadata({
+		env: process.env,
+		runtime: "Bun" in globalThis ? "bun" : UPLOAD_NODE_RUNTIME,
+		sdkVersion: __version__
+	});
+	const extra = payload.extra ?? {};
+	const metadata = {
+		...added.metadata,
+		...extra["metadata"]
+	};
+	payload.extra = {
+		...extra,
+		runtime: {
+			...added.runtime,
+			...extra["runtime"]
+		},
+		metadata
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+function contextForDestination(context, destination) {
+	if (destination.sourceProjectName === void 0) return context;
+	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
+}
+function runIdForDestination(runId, destination) {
+	if (destination.sourceProjectName === void 0 || destination.sourceProjectName === destination.projectName) return runId;
+	return remapReplicaRunId(runId, destination.projectName);
+}
+function remapReplicaRunContext(context, sourceProjectName, destinationProjectName) {
+	if (sourceProjectName === destinationProjectName) return context;
+	return {
+		...context,
+		id: remapReplicaRunId(context.id, destinationProjectName),
+		...context.parent_run_id === void 0 ? {} : { parent_run_id: remapReplicaRunId(context.parent_run_id, destinationProjectName) },
+		...context.trace_id === void 0 ? {} : { trace_id: remapReplicaRunId(context.trace_id, destinationProjectName) },
+		...context.dotted_order === void 0 ? {} : { dotted_order: remapReplicaDottedOrder(context.dotted_order, destinationProjectName) }
+	};
+}
+function remapReplicaRunId(runId, projectName) {
+	if (!UPLOAD_UUID_PATTERN.test(runId)) throw new TypeError("Replica run IDs must be UUIDs");
+	if (UPLOAD_REPLICA_UUID_V7_PATTERN.test(runId)) return computeRunIdForSecondaryReplica(runId, projectName);
+	const name = JSON.stringify([
+		UPLOAD_REPLICA_UUID_V5_DOMAIN,
+		projectName,
+		runId.toLowerCase()
+	]);
+	const hash = createHash("sha1").update(UPLOAD_REPLICA_UUID_V5_NAMESPACE_BYTES).update(name).digest();
+	hash[6] = hash[6] & 15 | 80;
+	hash[8] = hash[8] & 63 | 128;
+	const value = hash.subarray(0, 16).toString("hex");
+	return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+}
+function remapReplicaDottedOrder(dottedOrder, projectName) {
+	return dottedOrder.split(".").map((segment) => {
+		const id = segment.slice(-36);
+		return `${segment.slice(0, -36)}${remapReplicaRunId(id, projectName)}`;
+	}).join(".");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+function applyReplicaPatchUpdates(payload, destination, privacyMode) {
+	if (privacyMode !== "full" || destination.updates === void 0) return;
+	const mutablePayload = payload;
+	for (const [field, value] of Object.entries(destination.updates)) {
+		if (field === "inputs" || field === "end_time" && payload.end_time === void 0) continue;
+		if (field === "extra") mutablePayload.extra = mergeReplicaExtra(mutablePayload.extra, value);
+		else mutablePayload[field] = structuredClone(value);
+	}
+}
+function mergeReplicaExtra(baseValue, updateValue) {
+	const baseExtra = isPlainRecord(baseValue) ? baseValue : {};
+	const updateExtra = isPlainRecord(updateValue) ? structuredClone(updateValue) : {};
+	const baseMetadata = isPlainRecord(baseExtra["metadata"]) ? baseExtra["metadata"] : {};
+	const updateMetadata = isPlainRecord(updateExtra["metadata"]) ? updateExtra["metadata"] : {};
+	return {
+		...baseExtra,
+		...updateExtra,
+		metadata: {
+			...updateMetadata,
+			...baseMetadata
+		}
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+async function withDeadline(work) {
+	let timer;
+	const expired = new Promise((_resolve, reject) => {
+		timer = setTimeout(() => reject(/* @__PURE__ */ new Error(UPLOAD_DEADLINE_MESSAGE)), UPLOAD_SEND_DEADLINE_MS);
+	});
+	try {
+		return await Promise.race([work, expired]);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+function samplingRate(environment) {
+	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
+		const value = environment[name]?.trim();
+		if (value === void 0 || value === "") continue;
+		const rate = Number(value);
+		return Number.isFinite(rate) ? rate : void 0;
+	}
+}
+function isSampled(item, rate) {
+	if (rate === void 0 || rate >= 1) return true;
+	const traceId = traceIdOf(item.submission.run);
+	return createHash(UPLOAD_SAMPLING_HASH).update(traceId.toLowerCase()).digest().readUIntBE(0, 6) / 2 ** 48 < rate;
+}
+function traceIdOf(run) {
+	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+function startTimeFromDottedOrder(dottedOrder) {
+	if (typeof dottedOrder !== "string") return void 0;
+	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
+	const match = UPLOAD_DOTTED_ORDER_SEGMENT.exec(own);
+	if (match === null) return void 0;
+	const [, year, month, day, hour, minute, second, micros] = match;
+	return `${year}-${month}-${day}T${hour}:${minute}:${second}.${micros}Z`;
+}
+function startTimeText(supplied, dottedOrder) {
+	if (typeof supplied === "string") return supplied;
+	if (typeof supplied === "number") return new Date(supplied).toISOString();
+	return startTimeFromDottedOrder(dottedOrder);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+function createLangSmithUploadWriter(options) {
+	const resolved = resolveUploadDestinations(options);
+	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
+	const byId = new Map(resolved.destinations.map((destination) => [destination.id, destination]));
+	const clients = createUploadClientCache();
+	const rate = samplingRate(process.env);
+	const routes = Object.freeze(Object.fromEntries(resolved.destinations.map(({ id, projectName, sourceProjectName }) => [id, Object.freeze({
+		projectName,
+		...sourceProjectName === void 0 ? {} : { sourceProjectName }
+	})])));
+	async function sendBatch(items, destinationId) {
+		const configured = byId.get(destinationId);
+		if (!configured) throw new TypeError(UPLOAD_UNKNOWN_DESTINATION_MESSAGE);
+		const prepared = items.map(({ submission, route }) => prepareItem(clients, route === void 0 ? configured : routedDestination(configured, route), submission));
+		const clientOptions = {
+			apiKey: configured.apiKey,
+			apiUrl: configured.apiUrl,
+			...configured.workspaceId === void 0 ? {} : { workspaceId: configured.workspaceId }
+		};
+		for (const [client, group] of segmentByClient(prepared)) {
+			const sampled = group.filter((item) => isSampled(item, rate));
+			try {
+				await withDeadline(client.batchIngestRuns(ingestFor(sampled), clientOptions)).catch(ignoreAlreadyReceived);
+			} catch (error) {
+				throw new UploadError(error);
+			}
+		}
+		return prepared.map(({ submission, operation }) => ({
+			destinationId,
+			runId: submission.run.id,
+			operation
+		}));
+	}
+	return Object.freeze({
+		accountFingerprint: resolved.accountFingerprint,
+		destinations: Object.freeze(destinations),
+		routes,
+		batchLimits: UPLOAD_BATCH_LIMITS,
+		sendBatch,
+		async send(submission, destinationId, route) {
+			const [receipt] = await sendBatch([route === void 0 ? { submission } : {
+				submission,
+				route
+			}], destinationId);
+			if (receipt === void 0) throw new Error(UPLOAD_RECEIPT_MISSING_MESSAGE);
+			return receipt;
+		}
+	});
+}
+function routedDestination(destination, route) {
+	const routed = {
+		...destination,
+		projectName: route.projectName
+	};
+	if (route.sourceProjectName === void 0) delete routed.sourceProjectName;
+	else routed.sourceProjectName = route.sourceProjectName;
+	return routed;
+}
+function prepareItem(clients, destination, submission) {
+	validateSubmission(submission);
+	const client = clients.forSubmission(destination, submission);
+	const payload = submission.operation === "post" ? preparePostRunPayload(submission, destination) : preparePatchRunPayload(submission, destination);
+	if (submission.operation === "patch") applyReplicaPatchUpdates(payload, destination, submission.privacyMode);
+	applyRuntimeMetadata(payload, submission.privacyMode);
+	redactSdkOmittedFields(payload, destination.anonymizer);
+	return {
+		client,
+		submission,
+		payload,
+		destination,
+		operation: submission.operation === "post" ? "posted" : "patched"
+	};
+}
+function segmentByClient(items) {
+	const segments = [];
+	for (const item of items) {
+		const last = segments.at(-1);
+		if (last !== void 0 && last[0] === item.client) last[1].push(item);
+		else segments.push([item.client, [item]]);
+	}
+	return segments;
+}
+function ingestFor(items) {
+	const runCreates = [];
+	const runUpdates = [];
+	for (const { payload, submission, destination, operation } of items) if (operation === "posted") runCreates.push({
+		...payload,
+		session_name: destination.projectName
+	});
+	else {
+		const id = runIdForDestination(submission.run.id, destination);
+		runUpdates.push({
+			...payload,
+			id
+		});
+	}
+	return {
+		runCreates,
+		runUpdates
+	};
+}
+function ignoreAlreadyReceived(error) {
+	if (!isAlreadyReceived(error)) throw error;
+}
+function runConfig(context, submission, destination) {
+	const metadata = buildCodingAgentMetadata(submission.metadata);
+	const destinationContext = contextForDestination(context, destination);
+	return {
+		id: destinationContext.id,
+		name: destinationContext.name,
+		run_type: destinationContext.run_type,
+		project_name: destination.projectName,
+		inputs: {},
+		extra: { metadata },
+		client: destination.client,
+		...destinationContext.start_time === void 0 ? {} : { start_time: destinationContext.start_time },
+		...destinationContext.parent_run_id === void 0 ? {} : { parent_run_id: destinationContext.parent_run_id },
+		...destinationContext.trace_id === void 0 ? {} : { trace_id: destinationContext.trace_id },
+		...destinationContext.dotted_order === void 0 ? {} : { dotted_order: destinationContext.dotted_order }
+	};
+}
+function preparePostRunPayload(submission, destination) {
+	const source = submission.run;
+	const config = runConfig(source, submission, destination);
+	config.inputs = source.inputs;
+	if (source.end_time !== void 0) config.end_time = source.end_time;
+	if (source.outputs !== void 0) config.outputs = source.outputs;
+	if (source.tags !== void 0) config.tags = source.tags;
+	if (source.error !== void 0) config.error = source.error;
+	if (source.serialized !== void 0) config.serialized = source.serialized;
+	if (source.reference_example_id !== void 0) config.reference_example_id = source.reference_example_id;
+	const run = createCodingAgentRunTree(config, submission.integration, submission.privacyMode, submission.privacyContext);
+	if (source.events !== void 0) run.events = source.events;
+	const create = JSON.parse(JSON.stringify(run.toJSON()));
+	const startTime = startTimeText(source.start_time, create.dotted_order);
+	if (startTime !== void 0) create.start_time = startTime;
+	return create;
+}
+function preparePatchRunPayload(submission, destination) {
+	const config = runConfig(submission.run, submission, destination);
+	for (const field of submission.patch.fields) if (field === "inputs") config.inputs = submission.patch.values.inputs;
+	else if (field === "outputs") config.outputs = submission.patch.values.outputs;
+	else if (field === "end_time") config.end_time = submission.patch.values.end_time;
+	else if (field === "error") config.error = submission.patch.values.error;
+	else if (field === "tags") config.tags = submission.patch.values.tags;
+	else if (field === "serialized") config.serialized = submission.patch.values.serialized;
+	else if (field === "reference_example_id") config.reference_example_id = submission.patch.values.reference_example_id;
+	const run = createCodingAgentRunTree(config, submission.integration, submission.privacyMode, submission.privacyContext);
+	if (submission.patch.fields.includes("events")) run.events = submission.patch.values.events;
+	const snapshot = JSON.parse(JSON.stringify(run.toJSON()));
+	const update = {
+		extra: snapshot["extra"],
+		session_name: destination.projectName,
+		trace_id: snapshot["trace_id"],
+		dotted_order: snapshot["dotted_order"],
+		...snapshot["parent_run_id"] === void 0 ? {} : { parent_run_id: snapshot["parent_run_id"] }
+	};
+	for (const field of submission.patch.fields) {
+		const value = snapshot[field];
+		if (value === void 0) continue;
+		if (field === "inputs") update.inputs = value;
+		else if (field === "outputs") update.outputs = value;
+		else if (field === "end_time") update.end_time = value;
+		else if (field === "error") update.error = value;
+		else if (field === "tags") update.tags = value;
+		else if (field === "serialized") update.serialized = value;
+		else if (field === "events") update.events = value;
+		else if (field === "reference_example_id") update.reference_example_id = value;
+	}
+	return update;
+}
+function validateSubmission(submission) {
+	if (submission === null || typeof submission !== "object") throw new TypeError("A prepared run submission is required");
+	if (submission.operation !== "post" && submission.operation !== "patch") throw new TypeError("Invalid upload operation");
+	if (submission.metadata === null || typeof submission.metadata !== "object") throw new TypeError("Run metadata is required");
+	if (submission.integration !== submission.metadata.integration) throw new TypeError("Run metadata integration does not match the submission");
+	if (submission.run === null || typeof submission.run !== "object") throw new TypeError("Run data is required");
+	if (Object.hasOwn(submission.run, "child_runs")) throw new TypeError("Each upload submission must contain a single run");
+	if (typeof submission.run.id !== "string" || submission.run.id.trim().length === 0) throw new TypeError("A stable run ID is required");
+	if (submission.privacyMode !== "full" && submission.privacyMode !== "metadata") throw new TypeError("Invalid privacy mode");
+	if (submission.operation === "patch") validatePatch(submission);
+}
+function validatePatch(submission) {
+	if (submission.patch === null || typeof submission.patch !== "object" || !Array.isArray(submission.patch.fields) || submission.patch.values === null || typeof submission.patch.values !== "object") throw new TypeError("A patch field set and values are required");
+	if (typeof submission.run.name !== "string" || typeof submission.run.run_type !== "string") throw new TypeError("Patch run context must preserve its name and type");
+	const selected = /* @__PURE__ */ new Set();
+	for (const candidate of submission.patch.fields) {
+		if (typeof candidate !== "string" || !UPLOAD_PATCH_FIELDS.has(candidate)) throw new TypeError("Invalid patch field");
+		const field = candidate;
+		if (selected.has(field)) throw new TypeError("Patch fields must be unique");
+		if (!Object.hasOwn(submission.patch.values, field) || submission.patch.values[field] === void 0) throw new TypeError("Every selected patch field must have a value");
+		selected.add(field);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
+const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+var CaptureWakeError = class extends Error {
+	captureResult;
+	constructor(captureResult, cause) {
+		super(`${CAPTURE_WAKE_FAILURE_MESSAGE}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+		this.name = CAPTURE_WAKE_ERROR_NAME;
+		this.captureResult = captureResult;
+	}
+};
+async function wakeCapturedWork(captureResult, wake) {
+	try {
+		await wake();
+	} catch (cause) {
+		throw new CaptureWakeError(captureResult, cause);
+	}
+}
+async function readSavedCaptureWake(error, options) {
+	if (!(error instanceof CaptureWakeError)) return void 0;
+	const result = structuredClone(error.captureResult);
+	const { record } = result;
+	if (record.integration !== options.integration || record.sessionId !== options.sessionId || record.turnId !== options.turnId || record.destinationFingerprint !== options.destinationFingerprint || options.eventId !== void 0 && record.eventId !== options.eventId || options.runId !== void 0 && record.runId !== options.runId) return void 0;
+	const saved = await options.store.read({
+		integration: record.integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId
+	});
+	return saved !== void 0 && saved.capturedAtMs === record.capturedAtMs && captureContentDigest(saved) === captureContentDigest(record) ? {
+		...result,
+		record: saved
+	} : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
+const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
+const LIFECYCLE_POST_EVENT_KIND = "run-post";
+const LIFECYCLE_PATCH_EVENT_KIND = "run-patch";
+const LIFECYCLE_SETTLEMENT_EVENT_KIND = "run-settlement-patch";
+const LIFECYCLE_ATTRIBUTION_READY_FIELD = "attributionReady";
+const LIFECYCLE_ENGINE_FOLDERS = [CAPTURE_SESSIONS_DIRECTORY];
+const LIFECYCLE_SETTLEMENT_LOCK_PREFIX = "settlement-";
+const LIFECYCLE_TURN_CLOSURE_STATES = [
+	"open",
+	"provisional",
+	"authoritative"
+];
+const LIFECYCLE_SWEEP_WARNING = "Could not clean up old trace files:";
+const LIFECYCLE_UPLOAD_ACCOUNT_CHANGED_MESSAGE = "Upload account changed";
+const LIFECYCLE_STORED_RUN_CONTEXT_IS_REQUIRED_MESSAGE = "Stored run context is required";
+const LIFECYCLE_STORED_INTEGRATION_DOES_NOT_MATCH_LIFECYCLE_BRIDGE_MESSAGE = "Stored integration does not match the lifecycle bridge";
+const LIFECYCLE_STORED_RUN_DATA_IS_REQUIRED_MESSAGE = "Stored run data is required";
+const LIFECYCLE_STORED_RUN_ID_DOES_NOT_MATCH_ITS_CAPTURE_MESSAGE = "Stored run ID does not match its capture";
+const LIFECYCLE_STORED_PRIVACY_MODE_IS_INVALID_MESSAGE = "Stored privacy mode is invalid";
+const LIFECYCLE_STORED_CAPTURE_IS_MISSING_THREAD_IDENTITY_MESSAGE = "Stored capture is missing thread identity";
+const LIFECYCLE_RUN_INTEGRATION_MISMATCH_MESSAGE = "Run integration does not match the lifecycle bridge";
+const LIFECYCLE_INVALID_PRIVACY_MODE_MESSAGE = "Invalid privacy mode";
+const LIFECYCLE_INVALID_RUN_OPERATION_MESSAGE = "Invalid run operation";
+const LIFECYCLE_INVALID_CLOSURE_STATE_MESSAGE = "Lifecycle turn evidence has an invalid closure state";
+const LIFECYCLE_RUN_IDENTITY_CHANGED_MESSAGE = "Run identity changed for a persisted capture";
+const LIFECYCLE_PATCH_START_TIME_MESSAGE = "Patch run context must preserve its canonical start time";
+const LIFECYCLE_RUN_TRACE_ORDER_MESSAGE = "Run context must preserve its canonical trace ID and dotted order";
+const LIFECYCLE_INVALID_PATCH_FIELD_MESSAGE = "Invalid patch field";
+const LIFECYCLE_PATCH_FIELDS_UNIQUE_MESSAGE = "Patch fields must be unique";
+const LIFECYCLE_PATCH_FIELD_VALUE_MESSAGE = "Every selected patch field must have a value";
+const LIFECYCLE_INVALID_PATCH_PRIVACY_STATUS_MESSAGE = "Invalid patch privacy status";
+const LIFECYCLE_IDENTITY_FIELD_LABELS = [
+	["parent_run_id", "Parent run ID"],
+	["trace_id", "Trace ID"],
+	["dotted_order", "Dotted order"]
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+async function captureReadiness(scopes, destinations, readOutcome) {
+	const pending = /* @__PURE__ */ new Set();
+	const dropped = /* @__PURE__ */ new Set();
+	for (const scope of scopes) for (const destination of destinations) {
+		const outcome = await readOutcome(scope, destination.id);
+		if (outcome.status === "failed") throw new Error(`Could not read settlement receipt: ${outcome.code}`);
+		if (outcome.status === "settled") {
+			if (outcome.receipt.outcome === "dropped") dropped.add(destination.id);
+		} else pending.add(destination.id);
+	}
+	return pending.size > 0 ? {
+		status: "pending",
+		destinations: [...pending].toSorted()
+	} : dropped.size > 0 ? {
+		status: "dropped",
+		destinations: [...dropped].toSorted()
+	} : {
+		status: "delivered",
+		destinations: []
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+function deriveAttributionReadiness(value, integration) {
+	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
+	if (metadata.status === "deferred") return false;
+	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
+}
+function storedAttributionReadiness(record, integration) {
+	const readiness = ownDataField(requirePlainRecord(record.turnEvidence, "Stored turn evidence"), LIFECYCLE_ATTRIBUTION_READY_FIELD);
+	if (readiness.present) return requireBoolean(readiness.value, `Stored turn evidence ${LIFECYCLE_ATTRIBUTION_READY_FIELD}`);
+	if (requireOwnDataField(requirePlainRecord(record.normalizedPayload, "Stored run payload"), "privacyMode") !== "full") return false;
+	const metadata = prepareCodingAgentMetadataProvenance(record.metadataProvenance, integration, "full");
+	if (metadata.status === "deferred") return false;
+	return attributionMetadataReady(buildCodingAgentMetadata(metadata.value));
+}
+function indexCaptureSources(sources) {
+	return new Map(sources.map((source) => [scopeKey(scopeOf(source)), source]));
+}
+function attributionMetadataReady(projected) {
+	const repository = projected[GIT_METADATA_KEYS.repository];
+	const identifier = projected[ATTRIBUTION_IDENTIFIER_KEY];
+	return typeof repository === "string" && repository.length > 0 && typeof identifier === "string" && identifier.length > 0;
+}
+async function withholdUnresolvedEndTime(input) {
+	const { record, submission, sourceSnapshot, sourceByScope, integration, destinations, readOutcome } = input;
+	if (record.eventKind !== "run-post" && record.eventKind !== "run-patch") return submission;
+	const evidence = requirePlainRecord(record.turnEvidence, "Stored turn evidence");
+	const attributionReady = storedAttributionReadiness(record, integration);
+	const closureState = requireOwnDataField(evidence, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Stored turn evidence has an invalid closure state");
+	const runType = submission.metadata.runType;
+	if (runType !== "tool" && runType !== "root") return submission;
+	if (!((submission.operation === "post" ? submission.run.end_time !== void 0 : submission.patch.fields.includes("end_time")) || hasPriorEndTime(record, sourceByScope)) || attributionReady) return submission;
+	if (runType === "root" && !await hasMissingChildReceipts(record, evidence, sourceSnapshot, destinations, readOutcome)) return submission;
+	return removeOutgoingEndTime(submission);
+}
+function hasPriorEndTime(record, sourceByScope) {
+	const pending = [...record.dependencies ?? []];
+	const visited = /* @__PURE__ */ new Set();
+	while (pending.length > 0) {
+		const key = scopeKey(pending.pop());
+		if (visited.has(key)) continue;
+		visited.add(key);
+		const previous = sourceByScope.get(key);
+		if (previous === void 0) continue;
+		if (previous.runId === record.runId && (previous.eventKind === "run-post" || previous.eventKind === "run-patch") && recordHasEndTime(previous)) return true;
+		pending.push(...previous.dependencies ?? []);
+	}
+	return false;
+}
+function recordHasEndTime(record) {
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored run payload");
+	if (payload["operation"] === "post") {
+		const endTime = ownDataField(requirePlainRecord(requireOwnDataField(payload, "run"), "Stored run snapshot"), "end_time");
+		return endTime.present && endTime.value !== void 0;
+	}
+	if (payload["operation"] !== "patch") return false;
+	const patch = requirePlainRecord(requireOwnDataField(payload, "patch"), "Stored run patch");
+	if (!requireStringArray(requireOwnDataField(patch, "fields"), "Patch fields").includes("end_time")) return false;
+	const endTime = ownDataField(requirePlainRecord(requireOwnDataField(patch, "values"), "Patch values"), "end_time");
+	return endTime.present && endTime.value !== void 0;
+}
+async function hasMissingChildReceipts(record, evidence, sourceSnapshot, destinations, readOutcome) {
+	const children = requireStringArray(requireOwnDataField(evidence, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID")).filter((runId) => runId !== record.runId);
+	if (children.length === 0) return false;
+	for (const childRunId of children) {
+		const childCaptures = sourceSnapshot.filter((source) => source.runId === childRunId && source.destinationFingerprint === record.destinationFingerprint && source.eventKind === "run-post");
+		if (childCaptures.length === 0) return true;
+		for (const child of childCaptures) {
+			const scope = scopeOf(child);
+			for (const destination of destinations) {
+				const outcome = await readOutcome(scope, destination.id);
+				if (outcome.status === "failed") throw new Error(`Could not read child delivery receipt: ${outcome.code}`);
+				if (outcome.status !== "settled" || outcome.receipt.outcome !== "delivered") return true;
+			}
+		}
+	}
+	return false;
+}
+function removeOutgoingEndTime(submission) {
+	if (submission.operation === "patch") return void 0;
+	const privacyContext = submission.privacyMode !== "metadata" ? void 0 : { status: submission.run.error !== void 0 || submission.privacyContext?.status === "error" ? "error" : "running" };
+	const run = { ...submission.run };
+	delete run.end_time;
+	return {
+		...submission,
+		run,
+		...privacyContext === void 0 ? {} : { privacyContext }
+	};
+}
+function isHeldUpdate(record, captures, integration) {
+	if (record.eventKind !== "run-patch") return false;
+	if (field$1(record.metadataProvenance, "runType") !== "tool") return false;
+	const fields = field$1(field$1(record.normalizedPayload, "patch"), "fields");
+	if (!Array.isArray(fields) || !fields.includes("end_time")) return false;
+	if (storedAttributionReadiness(record, integration)) return false;
+	return !captures.some((capture) => capture.record.eventKind === "run-settlement-patch" && capture.record.runId === record.runId);
+}
+function field$1(value, key) {
+	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+function createRunIdentity(input) {
+	const id = requireNonBlankString(input.id, "Run ID");
+	const start_time = requireTimestamp(input.start_time);
+	const segment = dottedOrderSegment(start_time, id);
+	if (input.parent === void 0) return {
+		id,
+		start_time,
+		trace_id: id,
+		dotted_order: segment
+	};
+	const parent = canonicalParent(input.parent);
+	return {
+		id,
+		start_time,
+		parent_run_id: parent.id,
+		trace_id: parent.trace_id,
+		dotted_order: `${parent.dotted_order}.${segment}`
+	};
+}
+function canonicalParent(parent) {
+	const id = requireNonBlankString(parent.id, "Parent run ID");
+	const trace_id = requireNonBlankString(parent.trace_id, "Parent trace ID");
+	const dotted_order = requireNonBlankString(parent.dotted_order, "Parent dotted order");
+	const parent_run_id = parent.parent_run_id === void 0 ? void 0 : requireNonBlankString(parent.parent_run_id, "Parent run's parent ID");
+	const segments = dotted_order.split(".").map(parseDottedOrderSegment);
+	const runIds = segments.map((segment) => segment.runId);
+	const lastSegment = segments.at(-1);
+	const start_time = parent.start_time === void 0 ? void 0 : requireTimestamp(parent.start_time);
+	if (lastSegment?.runId !== id || runIds[0] !== trace_id || parent_run_id !== void 0 && (runIds.length < 2 || runIds.at(-2) !== parent_run_id) || start_time !== void 0 && lastSegment.timestamp.slice(0, 18) !== dottedOrderTimePrefix(start_time)) throw new TypeError("Parent run identity is not canonical");
+	return {
+		id,
+		...parent_run_id === void 0 ? {} : { parent_run_id },
+		trace_id,
+		dotted_order,
+		...start_time === void 0 ? {} : { start_time }
+	};
+}
+function parseDottedOrderSegment(segment) {
+	const match = DOTTED_ORDER_SEGMENT_PATTERN.exec(segment);
+	if (match === null || !isValidDottedOrderTime(match[1])) throw new TypeError("Parent run identity is not canonical");
+	return {
+		timestamp: match[1],
+		runId: match[2]
+	};
+}
+function isValidDottedOrderTime(value) {
+	const time = value.slice(0, 18);
+	const iso = `${time.slice(0, 4)}-${time.slice(4, 6)}-${time.slice(6, 8)}T${time.slice(9, 11)}:${time.slice(11, 13)}:${time.slice(13, 15)}.${time.slice(15, 18)}Z`;
+	const parsed = new Date(iso);
+	return Number.isFinite(parsed.getTime()) && parsed.toISOString() === iso;
+}
+function dottedOrderTimePrefix(startTime) {
+	return new Date(startTime).toISOString().slice(0, -1).replace(DOTTED_ORDER_STRIP_PATTERN, "");
+}
+function dottedOrderSegment(startTime, runId) {
+	const epoch = new Date(startTime).getTime();
+	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+function projectPostSubmission(source, common, priorIdentity) {
+	const { integration, privacyMode, redaction } = common;
+	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
+	const suppliedPrivacyContext = ownDataField(source, "privacyContext");
+	const status = run.error !== void 0 ? "error" : suppliedPrivacyContext.present ? privacyStatus(suppliedPrivacyContext.value).status : statusForPost(run);
+	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, status);
+	if (metadata.status === "deferred") return metadata;
+	return {
+		status: "ready",
+		value: {
+			payload: {
+				operation: "post",
+				integration,
+				privacyMode,
+				...redaction,
+				...privacyMode === "metadata" ? { privacyContext: { status } } : {},
+				run: privacyMode === "metadata" ? projectPost(run, metadata.value, status) : run
+			},
+			metadata: metadata.value,
+			privacyStatus: status
+		}
+	};
+}
+function projectPatchSubmission(source, common, priorIdentity) {
+	const { integration, privacyMode, redaction } = common;
+	const run = canonicalIdentity(normalizedRunContext(requireOwnDataField(source, "run")), priorIdentity, true);
+	const patch = normalizedPatch(requireOwnDataField(source, "patch"));
+	const privacyContext = privacyStatus(requireOwnDataField(source, "privacyContext"));
+	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, privacyContext.status);
+	if (metadata.status === "deferred") return metadata;
+	return {
+		status: "ready",
+		value: {
+			payload: {
+				operation: "patch",
+				integration,
+				privacyMode,
+				...redaction,
+				run,
+				privacyContext,
+				patch: privacyMode === "metadata" ? projectPatch(run, patch, integration, metadata.value, privacyContext) : patch
+			},
+			metadata: metadata.value,
+			privacyStatus: privacyContext.status
+		}
+	};
+}
+function projectSubmission(value, integration, priorIdentity) {
+	const source = requirePlainRecord(value, "Prepared run submission");
+	if (requireOwnDataField(source, "integration") !== integration) throw new TypeError(LIFECYCLE_RUN_INTEGRATION_MISMATCH_MESSAGE);
+	const privacyMode = requireOwnDataField(source, "privacyMode");
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError(LIFECYCLE_INVALID_PRIVACY_MODE_MESSAGE);
+	const redactedField = ownDataField(source, "redactedFields");
+	const redactedFields = normalizedRedactedFields(redactedField.present ? redactedField.value : void 0);
+	const common = {
+		integration,
+		privacyMode,
+		redaction: privacyMode === "full" && redactedFields.length > 0 ? { redactedFields } : {}
+	};
+	const operation = requireOwnDataField(source, "operation");
+	if (operation === "post") return projectPostSubmission(source, common, priorIdentity);
+	if (operation === "patch") return projectPatchSubmission(source, common, priorIdentity);
+	throw new TypeError(LIFECYCLE_INVALID_RUN_OPERATION_MESSAGE);
+}
+function projectTurnEvidence(value, mode, attributionReady) {
+	const source = requirePlainRecord(value, "Lifecycle turn evidence");
+	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
+	const closureState = requireOwnDataField(source, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError(LIFECYCLE_INVALID_CLOSURE_STATE_MESSAGE);
+	const persisted = {
+		childRunIds,
+		closureState,
+		[LIFECYCLE_ATTRIBUTION_READY_FIELD]: attributionReady
+	};
+	const rootRunId = ownDataField(source, "rootRunId");
+	if (rootRunId.present && rootRunId.value !== void 0) persisted.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
+	return canonicalJsonValue(mode === "metadata" ? persisted : {
+		...source,
+		...persisted
+	});
+}
+function projectPost(run, metadata, status) {
+	const tree = createCodingAgentRunTree({
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		...run.start_time === void 0 ? {} : { start_time: run.start_time },
+		inputs: run.inputs,
+		extra: { metadata: buildCodingAgentMetadata(metadata) },
+		...run.end_time === void 0 ? {} : { end_time: run.end_time },
+		...run.outputs === void 0 ? {} : { outputs: run.outputs },
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		...run.trace_id === void 0 ? {} : { trace_id: run.trace_id },
+		...run.dotted_order === void 0 ? {} : { dotted_order: run.dotted_order },
+		...run.error === void 0 ? {} : { error: run.error },
+		...run.tags === void 0 ? {} : { tags: run.tags },
+		...run.serialized === void 0 ? {} : { serialized: run.serialized },
+		...run.reference_example_id === void 0 ? {} : { reference_example_id: run.reference_example_id }
+	}, metadata.integration, "metadata", { status });
+	if (run.events !== void 0) tree.events = run.events;
+	const projected = tree.toJSON();
+	return {
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		start_time: requireTimestamp(run.start_time),
+		inputs: canonicalJsonObject(projected["inputs"], "Projected run inputs"),
+		outputs: canonicalJsonObject(projected["outputs"], "Projected run outputs"),
+		...run.end_time === void 0 ? {} : { end_time: run.end_time },
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		...run.trace_id === void 0 ? {} : { trace_id: run.trace_id },
+		...run.dotted_order === void 0 ? {} : { dotted_order: run.dotted_order },
+		...Array.isArray(projected["tags"]) ? { tags: requireStringArray(projected["tags"], "Projected run tags") } : {}
+	};
+}
+function projectPatch(context, patch, integration, metadata, privacyContext) {
+	const tree = createCodingAgentRunTree({
+		id: context.id,
+		name: context.name,
+		run_type: context.run_type,
+		...context.start_time === void 0 ? {} : { start_time: context.start_time },
+		inputs: patch.values.inputs ?? {},
+		outputs: patch.values.outputs ?? {},
+		extra: { metadata: buildCodingAgentMetadata(metadata) },
+		...context.parent_run_id === void 0 ? {} : { parent_run_id: context.parent_run_id },
+		...context.trace_id === void 0 ? {} : { trace_id: context.trace_id },
+		...context.dotted_order === void 0 ? {} : { dotted_order: context.dotted_order },
+		...patch.values.end_time === void 0 ? {} : { end_time: patch.values.end_time },
+		...patch.values.error === void 0 ? {} : { error: patch.values.error },
+		...patch.values.tags === void 0 ? {} : { tags: patch.values.tags },
+		...patch.values.serialized === void 0 ? {} : { serialized: patch.values.serialized },
+		...patch.values.reference_example_id === void 0 ? {} : { reference_example_id: patch.values.reference_example_id }
+	}, integration, "metadata", privacyContext);
+	if (patch.values.events !== void 0) tree.events = patch.values.events;
+	const projected = tree.toJSON();
+	const fields = survivingCodingAgentPatchFields(projected, patch.fields);
+	const values = {};
+	for (const field of fields) {
+		const value = ownDataField(projected, field);
+		if (!value.present) continue;
+		values[field] = field === "inputs" || field === "outputs" ? canonicalJsonObject(value.value, `Projected patch ${field}`) : field === "tags" ? requireStringArray(value.value, `Projected patch ${field}`) : field === "events" ? canonicalJsonArray(value.value, `Projected patch ${field}`) : field === "error" || field === "reference_example_id" ? requireString(value.value, `Projected patch ${field}`) : field === "end_time" ? requireTimestamp(value.value) : canonicalJsonObject(value.value, `Projected patch ${field}`);
+	}
+	return {
+		fields: fields.filter((field) => Object.hasOwn(values, field)),
+		values
+	};
+}
+function normalizedRunSnapshot(value) {
+	const source = requirePlainRecord(value, "Normalized run snapshot");
+	const run = {
+		id: requiredText(source, "id", "Run ID"),
+		name: requiredText(source, "name", "Run name"),
+		run_type: requiredText(source, "run_type", "Run type"),
+		inputs: canonicalJsonObject(requireOwnDataField(source, "inputs"), "Run inputs")
+	};
+	copyRunContext(source, run);
+	const endTime = ownDataField(source, "end_time");
+	if (endTime.present && endTime.value !== void 0) run.end_time = requireTimestamp(endTime.value);
+	const outputs = ownDataField(source, "outputs");
+	if (outputs.present && outputs.value !== void 0) run.outputs = canonicalJsonObject(outputs.value, "Run outputs");
+	const tags = ownDataField(source, "tags");
+	if (tags.present && tags.value !== void 0) run.tags = requireStringArray(tags.value, "Run tags");
+	const error = ownDataField(source, "error");
+	if (error.present && error.value !== void 0) run.error = requireString(error.value, "Run error");
+	const serialized = ownDataField(source, "serialized");
+	if (serialized.present && serialized.value !== void 0) run.serialized = canonicalJsonObject(serialized.value, "Serialized run data");
+	const events = ownDataField(source, "events");
+	if (events.present && events.value !== void 0) run.events = canonicalJsonArray(events.value, "Run events");
+	const example = ownDataField(source, "reference_example_id");
+	if (example.present && example.value !== void 0) run.reference_example_id = requireNonBlankString(example.value, "Reference example ID");
+	return run;
+}
+function normalizedRunContext(value) {
+	const source = requirePlainRecord(value, "Normalized run context");
+	const run = {
+		id: requiredText(source, "id", "Run ID"),
+		name: requiredText(source, "name", "Run name"),
+		run_type: requiredText(source, "run_type", "Run type")
+	};
+	copyRunContext(source, run);
+	return run;
+}
+function copyRunContext(source, run) {
+	const start = ownDataField(source, "start_time");
+	if (start.present && start.value !== void 0) run.start_time = requireTimestamp(start.value);
+	for (const [key, name] of LIFECYCLE_IDENTITY_FIELD_LABELS) {
+		const field = ownDataField(source, key);
+		if (field.present && field.value !== void 0) run[key] = requireNonBlankString(field.value, name);
+	}
+}
+function canonicalIdentity(run, prior, requireStableIdentity = false) {
+	const reusable = prior?.id === run.id && prior.parent_run_id === run.parent_run_id ? prior : void 0;
+	if (reusable !== void 0 && (run.start_time !== void 0 && run.start_time !== reusable.start_time || run.trace_id !== void 0 && run.trace_id !== reusable.trace_id || run.dotted_order !== void 0 && run.dotted_order !== reusable.dotted_order)) throw new TypeError(LIFECYCLE_RUN_IDENTITY_CHANGED_MESSAGE);
+	const knownStartTime = run.start_time ?? reusable?.start_time;
+	if (knownStartTime === void 0 && requireStableIdentity) throw new TypeError(LIFECYCLE_PATCH_START_TIME_MESSAGE);
+	const startTime = knownStartTime ?? Date.now();
+	const result = {
+		...run,
+		start_time: startTime
+	};
+	const canGenerateRootIdentity = !requireStableIdentity && result.parent_run_id === void 0;
+	const generatedOrder = canGenerateRootIdentity && result.dotted_order === void 0 && reusable?.dotted_order === void 0 ? createRunIdentity({
+		id: result.id,
+		start_time: startTime
+	}).dotted_order : void 0;
+	const traceId = result.trace_id ?? reusable?.trace_id ?? (canGenerateRootIdentity ? result.id : void 0);
+	const order = result.dotted_order ?? reusable?.dotted_order ?? generatedOrder;
+	if (traceId === void 0 || order === void 0) throw new TypeError(LIFECYCLE_RUN_TRACE_ORDER_MESSAGE);
+	result.trace_id = traceId;
+	result.dotted_order = order;
+	return result;
+}
+function normalizedPatch(value) {
+	const source = requirePlainRecord(value, "Normalized run patch");
+	const candidates = canonicalJsonArray(requireOwnDataField(source, "fields"), "Patch field mask");
+	const sourceValues = requirePlainRecord(requireOwnDataField(source, "values"), "Patch values");
+	const seen = /* @__PURE__ */ new Set();
+	const fields = [];
+	const values = {};
+	for (const candidate of candidates) {
+		if (typeof candidate !== "string" || !UPLOAD_PATCH_FIELDS.has(candidate)) throw new TypeError(LIFECYCLE_INVALID_PATCH_FIELD_MESSAGE);
+		const field = candidate;
+		if (seen.has(field)) throw new TypeError(LIFECYCLE_PATCH_FIELDS_UNIQUE_MESSAGE);
+		const selected = ownDataField(sourceValues, field);
+		if (!selected.present || selected.value === void 0) throw new TypeError(LIFECYCLE_PATCH_FIELD_VALUE_MESSAGE);
+		seen.add(field);
+		fields.push(field);
+		values[field] = field === "inputs" || field === "outputs" ? canonicalJsonObject(selected.value, `Patch ${field}`) : field === "end_time" ? requireTimestamp(selected.value) : field === "error" ? requireString(selected.value, "Patch error") : field === "reference_example_id" ? requireNonBlankString(selected.value, "Patch reference example ID") : field === "tags" ? requireStringArray(selected.value, "Patch tags") : field === "events" ? canonicalJsonArray(selected.value, "Patch events") : canonicalJsonObject(selected.value, `Patch ${field}`);
+	}
+	return {
+		fields,
+		values
+	};
+}
+function privacyStatus(value) {
+	const status = requireOwnDataField(requirePlainRecord(value, "Patch privacy context"), "status");
+	if (status !== "running" && status !== "completed" && status !== "error") throw new TypeError(LIFECYCLE_INVALID_PATCH_PRIVACY_STATUS_MESSAGE);
+	return { status };
+}
+function statusForPost(run) {
+	if (run.error !== void 0) return "error";
+	if (run.end_time !== void 0) return "completed";
+	return "running";
+}
+function requiredText(source, key, name) {
+	return requireNonBlankString(requireOwnDataField(source, key), name);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+function projectCapture(record, integration) {
+	const submission = projectSubmission({
+		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
+		metadata: record.metadataProvenance
+	}, integration);
+	if (submission.status === "deferred") return void 0;
+	const expectedKind = submission.value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND;
+	if (record.eventKind !== expectedKind) throw new TypeError("Capture event kind does not match its operation");
+	const evidence = parseEvidence(record.turnEvidence, storedAttributionReadiness(record, integration));
+	return {
+		record,
+		payload: submission.value.payload,
+		metadata: submission.value.metadata,
+		open: captureIsOpen(submission.value.payload),
+		attributionReady: evidence.attributionReady
+	};
+}
+function captureIsOpen(payload) {
+	if (payload.operation === "post") return payload.run.end_time === void 0 && payload.run.error === void 0;
+	if (payload.privacyContext.status === "running") return true;
+	return false;
+}
+function patchPayload(source, metadata, integration, endTime, causalRunError, runEvents) {
+	const context = source.payload.run;
+	const projected = projectSubmission({
+		operation: "patch",
+		integration,
+		privacyMode: source.payload.privacyMode,
+		...source.payload.redactedFields === void 0 ? {} : { redactedFields: source.payload.redactedFields },
+		metadata,
+		run: {
+			id: context.id,
+			name: context.name,
+			run_type: context.run_type,
+			...context.start_time === void 0 ? {} : { start_time: context.start_time },
+			...context.parent_run_id === void 0 ? {} : { parent_run_id: context.parent_run_id },
+			...context.trace_id === void 0 ? {} : { trace_id: context.trace_id },
+			...context.dotted_order === void 0 ? {} : { dotted_order: context.dotted_order }
+		},
+		privacyContext: source.payload.operation === "patch" ? {
+			...source.payload.privacyContext,
+			...causalRunError ? { status: "error" } : endTime !== void 0 && source.payload.privacyContext.status !== "error" ? { status: "completed" } : {}
+		} : { status: causalRunError || source.payload.run.error !== void 0 || source.payload.privacyContext?.status === "error" ? "error" : endTime !== void 0 || source.payload.run.end_time !== void 0 ? "completed" : source.payload.privacyContext?.status ?? "running" },
+		patch: carriedPatch(runEvents, endTime)
+	}, integration);
+	if (projected.status === "deferred") throw new Error("Settlement patch lost thread identity");
+	return projected.value;
+}
+function carriedPatch(runEvents, endTime) {
+	const carried = runEvents.flatMap(({ payload }) => payload.operation === "patch" ? [payload.patch] : []);
+	const fields = [...new Set(carried.flatMap((patch) => patch.fields))].filter((field) => field !== "end_time");
+	const values = Object.assign({}, ...carried.map((patch) => patch.values));
+	delete values.end_time;
+	return endTime === void 0 ? {
+		fields,
+		values
+	} : {
+		fields: [...fields, "end_time"],
+		values: {
+			...values,
+			end_time: endTime
+		}
+	};
+}
+function addAttribution(metadata, attribution) {
+	const layer = CODING_AGENT_INTEGRATION_POLICIES[metadata.integration].fullModePrecedence === "custom-wins" ? "base" : "runSpecific";
+	const previous = metadata[layer] ?? {};
+	return {
+		...metadata,
+		[layer]: {
+			...previous,
+			...attribution
+		}
+	};
+}
+function parseEvidence(value, attributionReady) {
+	const source = requirePlainRecord(value, "Stored turn evidence");
+	const childRunIds = requireStringArray(requireOwnDataField(source, "childRunIds"), "Child run IDs").map((runId) => requireNonBlankString(runId, "Child run ID"));
+	const closureState = requireOwnDataField(source, "closureState");
+	if (typeof closureState !== "string" || !LIFECYCLE_TURN_CLOSURE_STATES.includes(closureState)) throw new TypeError("Stored turn evidence has an invalid closure state");
+	const result = {
+		childRunIds,
+		closureState,
+		attributionReady
+	};
+	const rootRunId = ownDataField(source, "rootRunId");
+	if (rootRunId.present && rootRunId.value !== void 0) result.rootRunId = requireNonBlankString(rootRunId.value, "Root run ID");
+	return result;
+}
+function closureRank(state) {
+	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
+const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
+const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
+const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
+const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+function recordRun(events) {
+	const latest = events.at(-1);
+	const run = latest.payload.run;
+	return {
+		run_id: latest.record.runId,
+		...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+		trace_id: requireNonBlankString(run.trace_id, "Trace ID"),
+		dotted_order: requireNonBlankString(run.dotted_order, "Dotted order"),
+		name: requireNonBlankString(run.name, "Run name"),
+		run_type: requireNonBlankString(run.run_type, "Run type"),
+		tracing: latest.payload.privacyMode,
+		open: latest.open,
+		metadata: buildCodingAgentMetadata(mergeMetadataOptions(events))
+	};
+}
+function mergeMetadataOptions(captures) {
+	const first = captures[0];
+	if (first === void 0) throw new Error("Run metadata is required for settlement");
+	let merged = first.metadata;
+	for (const { metadata } of captures.slice(1)) {
+		const base = mergeMetadataObject(merged.base, metadata.base);
+		const runSpecific = mergeMetadataObject(merged.runSpecific, metadata.runSpecific);
+		const providerMetadata = mergeMetadataObject(merged.providerMetadata, metadata.providerMetadata);
+		const usageMetadata = mergeMetadataObject(merged.usageMetadata, metadata.usageMetadata);
+		merged = {
+			...merged,
+			...metadata,
+			...base === void 0 ? {} : { base },
+			...runSpecific === void 0 ? {} : { runSpecific },
+			...providerMetadata === void 0 ? {} : { providerMetadata },
+			...usageMetadata === void 0 ? {} : { usageMetadata }
+		};
+	}
+	return merged;
+}
+function mergeMetadataObject(previous, current) {
+	if (previous === void 0 && current === void 0) return void 0;
+	return {
+		...previous,
+		...current
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+function uniqueScopes(scopes) {
+	const unique = /* @__PURE__ */ new Map();
+	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
+	return [...unique.values()].toSorted(compareScopes);
+}
+function compareScopes(left, right) {
+	return compareText(JSON.stringify(left), JSON.stringify(right));
+}
+function orderSourceCaptures(records) {
+	const byScope = new Map(records.map((record) => [scopeKey(scopeOf(record)), record]));
+	const dependents = new Map(records.map((record) => [scopeKey(scopeOf(record)), []]));
+	const dependencyCounts = new Map(records.map((record) => [scopeKey(scopeOf(record)), 0]));
+	for (const record of records) {
+		const recordKey = scopeKey(scopeOf(record));
+		for (const dependency of record.dependencies ?? []) {
+			const prerequisite = byScope.get(scopeKey(dependency));
+			if (prerequisite === void 0) continue;
+			dependents.get(scopeKey(scopeOf(prerequisite))).push(record);
+			dependencyCounts.set(recordKey, dependencyCounts.get(recordKey) + 1);
+		}
+	}
+	const ready = [];
+	for (const record of records) if (dependencyCounts.get(scopeKey(scopeOf(record))) === 0) pushOrderedCapture(ready, record);
+	const ordered = [];
+	while (ready.length > 0) {
+		const record = popOrderedCapture(ready);
+		ordered.push(record);
+		for (const dependent of dependents.get(scopeKey(scopeOf(record))) ?? []) {
+			const key = scopeKey(scopeOf(dependent));
+			const count = dependencyCounts.get(key) - 1;
+			dependencyCounts.set(key, count);
+			if (count === 0) pushOrderedCapture(ready, dependent);
+		}
+	}
+	if (ordered.length !== records.length) throw new TypeError("Source capture dependencies contain a cycle");
+	return ordered;
+}
+function compareSourceCaptures(left, right) {
+	return compareCaptureOrder(left, right) || compareScopes(scopeOf(left), scopeOf(right));
+}
+function pushOrderedCapture(heap, record) {
+	let index = heap.length;
+	heap.push(record);
+	while (index > 0) {
+		const parentIndex = Math.floor((index - 1) / 2);
+		const parent = heap[parentIndex];
+		if (compareSourceCaptures(parent, record) <= 0) break;
+		heap[index] = parent;
+		index = parentIndex;
+	}
+	heap[index] = record;
+}
+function popOrderedCapture(heap) {
+	const first = heap[0];
+	if (first === void 0) return void 0;
+	const last = heap.pop();
+	if (heap.length === 0) return first;
+	let index = 0;
+	while (index * 2 + 1 < heap.length) {
+		const leftIndex = index * 2 + 1;
+		const rightIndex = leftIndex + 1;
+		const childIndex = rightIndex < heap.length && compareSourceCaptures(heap[rightIndex], heap[leftIndex]) < 0 ? rightIndex : leftIndex;
+		const child = heap[childIndex];
+		if (compareSourceCaptures(last, child) <= 0) break;
+		heap[index] = child;
+		index = childIndex;
+	}
+	heap[index] = last;
+	return first;
+}
+function groupByTurn(records) {
+	const turns = /* @__PURE__ */ new Map();
+	for (const record of records) {
+		const captures = turns.get(record.turnId) ?? [];
+		captures.push(record);
+		turns.set(record.turnId, captures);
+	}
+	return turns;
+}
+function report(turnId, status, reason, runIds = [], destinations = []) {
+	return {
+		turnId,
+		status,
+		reason,
+		...runIds.length === 0 ? {} : { runIds },
+		...destinations.length === 0 ? {} : { destinations },
+		patches: 0
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
+	const revision = createHash("sha256").update(JSON.stringify({
+		turnId,
+		runId,
+		rootRunId,
+		childRunIds: [...childRunIds].toSorted(),
+		dependencies: dependencies.toSorted(compareScopes),
+		attribution
+	})).digest("hex");
+	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+function hasCausalRunError(events) {
+	let hasError = false;
+	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
+	else if (payload.patch.fields.includes("error")) hasError = payload.patch.values.error !== void 0;
+	else if (payload.privacyContext.status === "error") hasError = true;
+	return hasError;
+}
+function capturedEndTime(event) {
+	if (event.payload.operation === "post") return event.payload.run.end_time;
+	if (!event.payload.patch.fields.includes("end_time")) return void 0;
+	const value = event.payload.patch.values.end_time;
+	return value === void 0 ? void 0 : requireTimestamp(value);
+}
+function retainedEndTime(events) {
+	let endTime;
+	for (const event of events) {
+		const captured = capturedEndTime(event);
+		if (captured !== void 0) endTime = captured;
+	}
+	return endTime;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+function attributionOf(metadata) {
+	const carried = {};
+	const named = withBothGitMetadataNames(metadata ?? {});
+	for (const key of REPOSITORY_METADATA_KEYS) {
+		const value = named[key];
+		if (typeof value === "string" && value.length > 0) carried[key] = value;
+	}
+	return carried;
+}
+const namesARepository = (carried) => carried[REPOSITORY_NAME_KEY] !== void 0;
+function turnAttribution(record) {
+	const root = attributionOf(record.root?.metadata);
+	const inToolCallOrder = [...record.children].sort((left, right) => left.dotted_order < right.dotted_order ? -1 : 1).map((child) => attributionOf(child.metadata));
+	const source = namesARepository(root) ? root : inToolCallOrder.find((carried) => namesARepository(carried));
+	const knowsWhoWorkedInSource = (carried) => carried["ls_attribution_identifier"] !== void 0 && carried[REPOSITORY_NAME_KEY] === source?.[REPOSITORY_NAME_KEY];
+	const author = root["ls_attribution_identifier"] ?? source?.["ls_attribution_identifier"] ?? inToolCallOrder.find(knowsWhoWorkedInSource)?.["ls_attribution_identifier"];
+	const filled = { ...source };
+	if (author !== void 0) filled[ATTRIBUTION_IDENTIFIER_KEY] = author;
+	return Object.keys(filled).length > 0 ? filled : void 0;
+}
+function metadataAfterFill(run, filled) {
+	const carried = attributionOf(run.metadata);
+	if (namesARepository(carried) && carried[REPOSITORY_NAME_KEY] !== filled[REPOSITORY_NAME_KEY]) return void 0;
+	const missing = Object.entries(filled).filter(([key]) => carried[key] === void 0);
+	if (missing.length === 0) return void 0;
+	return {
+		...run.metadata,
+		...Object.fromEntries(missing)
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+function unsettled(settlementReport) {
+	return {
+		report: settlementReport,
+		patches: [],
+		captured: 0
+	};
+}
+function collectTurnEvidence(events) {
+	const rootRunIds = /* @__PURE__ */ new Set();
+	const childRunIds = /* @__PURE__ */ new Set();
+	let closureState = "open";
+	for (const event of events) {
+		const evidence = parseEvidence(event.record.turnEvidence, event.attributionReady);
+		if (evidence.rootRunId !== void 0) rootRunIds.add(evidence.rootRunId);
+		for (const childRunId of evidence.childRunIds) childRunIds.add(childRunId);
+		if (closureRank(evidence.closureState) > closureRank(closureState)) closureState = evidence.closureState;
+	}
+	return {
+		rootRunIds,
+		childRunIds,
+		closureState
+	};
+}
+function evidenceResult(turnId, events, { rootRunIds, closureState }, isQuiet) {
+	if (rootRunIds.size === 0) return unsettled(report(turnId, "deferred", "missing-root"));
+	if (rootRunIds.size > 1) return unsettled(report(turnId, "blocked", "conflicting-root", [...rootRunIds].toSorted()));
+	if (closureState === "authoritative") return void 0;
+	if (!isQuiet) return unsettled(report(turnId, "deferred", closureState));
+	if (!isChildTurn(events, [...rootRunIds][0])) warnAboutNeverEndedTurn(turnId);
+}
+function isChildTurn(events, rootRunId) {
+	return events.some(({ record, payload }) => record.runId === rootRunId && payload.run.parent_run_id !== void 0);
+}
+const warnedNeverEndedTurns = /* @__PURE__ */ new Set();
+function warnAboutNeverEndedTurn(turnId) {
+	if (warnedNeverEndedTurns.has(turnId)) return;
+	warnedNeverEndedTurns.add(turnId);
+	console.warn(fillTemplate(SETTLEMENT_NEVER_ENDED_WARNING, { turnId }));
+}
+function isQuietTurn(events, now) {
+	return events.length > 0 && now - Math.max(...events.map(({ record }) => record.capturedAtMs)) >= 72e5;
+}
+function groupByRunId(events) {
+	const grouped = /* @__PURE__ */ new Map();
+	for (const event of events) {
+		const runEvents = grouped.get(event.record.runId) ?? [];
+		runEvents.push(event);
+		grouped.set(event.record.runId, runEvents);
+	}
+	return grouped;
+}
+function requiredRunEvents(requiredRunIds, rootRunId, currentByRunId, allByRunId) {
+	const byRunId = /* @__PURE__ */ new Map();
+	for (const runId of requiredRunIds) byRunId.set(runId, runId === rootRunId ? currentByRunId.get(runId) ?? [] : allByRunId.get(runId) ?? []);
+	return byRunId;
+}
+function buildTurnRecord(turnId, rootRunId, requiredRunIds, recorded) {
+	return {
+		path: "",
+		origin: "capture",
+		root: recorded.get(rootRunId),
+		children: requiredRunIds.filter((runId) => runId !== rootRunId).map((runId) => recorded.get(runId)),
+		turnId,
+		closed: true,
+		delivered: new Set(requiredRunIds),
+		fixed: /* @__PURE__ */ new Set()
+	};
+}
+function planRunPatch(state, runId) {
+	const { attribution, captureEvents, recorded } = state;
+	const events = captureEvents.get(runId);
+	const run = recorded.get(runId);
+	const merged = attribution === void 0 ? void 0 : metadataAfterFill(run, attribution);
+	const currentAttribution = attributionOf(run.metadata);
+	const added = Object.fromEntries(Object.entries(merged === void 0 ? {} : attribution ?? {}).filter(([key]) => currentAttribution[key] === void 0));
+	const endTime = retainedEndTime(events);
+	const restoreEndTime = endTime !== void 0 && events.some((event) => (event.metadata.runType === "tool" || event.metadata.runType === "root") && !event.attributionReady && capturedEndTime(event) !== void 0);
+	if (Object.keys(added).length === 0 && !restoreEndTime) return void 0;
+	const sourceMetadata = mergeMetadataOptions(events);
+	const metadata = Object.keys(added).length === 0 ? sourceMetadata : addAttribution(sourceMetadata, added);
+	const updatedMetadata = buildCodingAgentMetadata(metadata);
+	if (Object.entries(added).some(([key, value]) => updatedMetadata[key] !== value)) throw new Error(SETTLEMENT_ATTRIBUTION_LOST_MESSAGE);
+	if (endTime === void 0 && !state.quiet) return void 0;
+	return {
+		metadata,
+		added,
+		endTime: endTime ?? lastCapturedTime(events)
+	};
+}
+function lastCapturedTime(events) {
+	return new Date(Math.max(...events.map(({ record }) => record.capturedAtMs))).toISOString();
+}
+const warnedDroppedRuns = /* @__PURE__ */ new Set();
+function warnAboutDroppedRuns(turnId, runIds) {
+	for (const runId of runIds) {
+		const key = JSON.stringify([turnId, runId]);
+		if (warnedDroppedRuns.has(key)) continue;
+		warnedDroppedRuns.add(key);
+		console.warn(fillTemplate(SETTLEMENT_DROPPED_RUN_WARNING, { runId }));
+	}
+}
+function settlementCaptureInput(state, generated, options, runId, plan) {
+	const { turnId, rootRunId, childRunIds, closureState, dependencies, captureEvents } = state;
+	const events = captureEvents.get(runId);
+	const latest = events.at(-1);
+	const submission = patchPayload(latest, plan.metadata, options.integration, plan.endTime, hasCausalRunError(events), events);
+	const eventId = settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, plan.added);
+	const previous = orderSourceCaptures(generated.filter((item) => item.runId === runId && item.eventId !== eventId)).at(-1);
+	const previousDependency = previous === void 0 ? [] : [scopeOf(previous)];
+	return {
+		scope: {
+			integration: options.integration,
+			sessionId: options.sessionId,
+			turnId,
+			eventId
+		},
+		input: {
+			turnId,
+			eventId,
+			runId,
+			destinationFingerprint: options.destinationFingerprint,
+			eventKind: LIFECYCLE_SETTLEMENT_EVENT_KIND,
+			normalizedPayload: canonicalJsonValue(submission.payload),
+			metadataProvenance: canonicalJsonValue(submission.metadata),
+			turnEvidence: canonicalJsonValue({
+				rootRunId,
+				childRunIds: [...childRunIds].toSorted(),
+				closureState,
+				[LIFECYCLE_ATTRIBUTION_READY_FIELD]: latest.attributionReady
+			}),
+			dependencies: uniqueScopes([...dependencies, ...previousDependency])
+		}
+	};
+}
+async function captureRunPatch(state, generated, options, runId, plan) {
+	const { input, scope } = settlementCaptureInput(state, generated, options, runId, plan);
+	const result = await options.capture(input);
+	if (result.status === "failed" || result.status === "conflict") throw new Error(`Could not capture settled run ${runId}: ${result.status}`);
+	return {
+		patch: {
+			turnId: state.turnId,
+			runId,
+			scope
+		},
+		published: result.status === "published"
+	};
+}
+async function captureTurnPatches(state, requiredRunIds, currentByRunId, generated, options) {
+	const patches = [];
+	let captured = 0;
+	for (const runId of requiredRunIds) {
+		if (!currentByRunId.has(runId)) continue;
+		const plan = planRunPatch(state, runId);
+		if (plan === void 0) continue;
+		const outcome = await captureRunPatch(state, generated, options, runId, plan);
+		if (outcome.published) captured += 1;
+		patches.push(outcome.patch);
+	}
+	return {
+		report: {
+			...report(state.turnId, patches.length === 0 ? "settled" : "pending", patches.length === 0 ? "no-change" : "settlement-pending", patches.map(({ runId }) => runId)),
+			patches: patches.length,
+			settled: {
+				rootRunId: state.rootRunId,
+				attribution: state.attribution ?? {}
+			}
+		},
+		patches,
+		captured
+	};
+}
+function hasRootPost(events, evidence) {
+	const [rootRunId] = evidence.rootRunIds;
+	return evidence.rootRunIds.size === 1 && events.some(({ payload, record }) => record.runId === rootRunId && payload.operation === "post");
+}
+async function settleLateRuns(turnId, events, generated, settledTurn, options) {
+	const currentByRunId = groupByRunId(events);
+	const runIds = [...currentByRunId.keys()].filter((runId) => runId !== settledTurn.rootRunId && currentByRunId.get(runId).some(({ payload }) => payload.operation === "post"));
+	return captureTurnPatches({
+		turnId,
+		rootRunId: settledTurn.rootRunId,
+		childRunIds: new Set(runIds),
+		closureState: "authoritative",
+		quiet: isQuietTurn(events, options.now ?? Date.now()),
+		dependencies: uniqueScopes(events.map(({ record }) => scopeOf(record))),
+		attribution: Object.keys(settledTurn.attribution).length === 0 ? void 0 : settledTurn.attribution,
+		recorded: new Map(runIds.map((runId) => [runId, recordRun(currentByRunId.get(runId))])),
+		captureEvents: currentByRunId
+	}, runIds, currentByRunId, generated, options);
+}
+async function settleOneTurn(turnId, events, generated, allByRunId, options) {
+	const evidence = collectTurnEvidence(events);
+	const settledTurn = hasRootPost(events, evidence) ? void 0 : await options.settledTurn(turnId);
+	if (settledTurn !== void 0) return settleLateRuns(turnId, events, generated, settledTurn, options);
+	const quiet = isQuietTurn(events, options.now ?? Date.now());
+	const early = evidenceResult(turnId, events, evidence, quiet);
+	if (early !== void 0) return early;
+	const { childRunIds, closureState } = evidence;
+	const rootRunId = [...evidence.rootRunIds][0];
+	childRunIds.delete(rootRunId);
+	const droppedRunIds = await options.droppedRunIds(turnId);
+	if (droppedRunIds.has(rootRunId)) return unsettled(report(turnId, "blocked", "source-dropped", [rootRunId]));
+	warnAboutDroppedRuns(turnId, [...childRunIds].filter((runId) => droppedRunIds.has(runId)));
+	const requiredRunIds = [rootRunId, ...[...childRunIds].filter((runId) => !droppedRunIds.has(runId)).toSorted()];
+	const currentByRunId = groupByRunId(events);
+	const captureEvents = requiredRunEvents(requiredRunIds, rootRunId, currentByRunId, allByRunId);
+	const missingRunId = requiredRunIds.find((runId) => !captureEvents.get(runId).some(({ payload }) => payload.operation === "post"));
+	if (missingRunId !== void 0) return unsettled(report(turnId, "deferred", "missing-run", [missingRunId]));
+	const sourceEvents = [...events];
+	for (const childRunId of childRunIds) sourceEvents.push(...allByRunId.get(childRunId) ?? []);
+	const sourceScopes = uniqueScopes(sourceEvents.map(({ record }) => scopeOf(record)));
+	const recorded = new Map(requiredRunIds.map((runId) => [runId, recordRun(captureEvents.get(runId))]));
+	return captureTurnPatches({
+		turnId,
+		rootRunId,
+		childRunIds,
+		closureState,
+		quiet,
+		dependencies: sourceScopes,
+		attribution: turnAttribution(buildTurnRecord(turnId, rootRunId, requiredRunIds, recorded)),
+		recorded,
+		captureEvents
+	}, requiredRunIds, currentByRunId, generated, options);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+async function settleCapturedTurns(options) {
+	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
+	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
+	const generatedRecords = options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && record.eventKind === "run-settlement-patch");
+	const projected = /* @__PURE__ */ new Map();
+	const allByRunId = /* @__PURE__ */ new Map();
+	for (const record of sourceRecords) {
+		const capture = projectCapture(record, options.integration);
+		if (capture === void 0) continue;
+		const turn = projected.get(record.turnId) ?? [];
+		turn.push(capture);
+		projected.set(record.turnId, turn);
+		const runEvents = allByRunId.get(record.runId) ?? [];
+		runEvents.push(capture);
+		allByRunId.set(record.runId, runEvents);
+	}
+	const generatedByTurn = groupByTurn(generatedRecords);
+	const turns = [.../* @__PURE__ */ new Set([...projected.keys(), ...generatedByTurn.keys()])].toSorted();
+	const reports = [];
+	const patches = [];
+	let captured = 0;
+	for (const turnId of turns) {
+		const result = await settleOneTurn(turnId, projected.get(turnId) ?? [], generatedByTurn.get(turnId) ?? [], allByRunId, options);
+		reports.push(result.report);
+		patches.push(...result.patches);
+		captured += result.captured;
+	}
+	return {
+		progress: {
+			captured,
+			turns: reports
+		},
+		patches
+	};
+}
+async function refreshSettlementProgress(work, destinations, readOutcome) {
+	const patchesByTurn = /* @__PURE__ */ new Map();
+	for (const patch of work.patches) {
+		const turn = patchesByTurn.get(patch.turnId) ?? [];
+		turn.push(patch);
+		patchesByTurn.set(patch.turnId, turn);
+	}
+	const turns = [];
+	for (const entry of work.progress.turns) {
+		const patches = patchesByTurn.get(entry.turnId) ?? [];
+		if (patches.length === 0 || entry.status !== "pending" && entry.status !== "settled") {
+			turns.push(entry);
+			continue;
+		}
+		const readiness = await captureReadiness(patches.map(({ scope }) => scope), destinations, readOutcome);
+		const { reason: previousReason, destinations: previousDestinations, ...unchanged } = entry;
+		const reason = readiness.status === "delivered" ? previousReason === "settlement-pending" ? void 0 : previousReason : readiness.status === "dropped" ? "settlement-dropped" : "settlement-pending";
+		const reportDestinations = readiness.destinations.length > 0 ? readiness.destinations : previousReason === "settlement-pending" ? void 0 : previousDestinations;
+		turns.push({
+			...unchanged,
+			status: readiness.status === "pending" ? "pending" : "settled",
+			...reason === void 0 ? {} : { reason },
+			...reportDestinations === void 0 ? {} : { destinations: reportDestinations }
+		});
+	}
+	return {
+		captured: work.progress.captured,
+		turns
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+function snapshotData(value) {
+	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
+}
+function copySnapshot(value, copies) {
+	if (value === null || typeof value !== "object") return value;
+	const previous = copies.get(value);
+	if (previous !== void 0) return previous;
+	const prototype = Object.getPrototypeOf(value);
+	if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) throw new TypeError("Snapshot input must contain plain objects and arrays");
+	let copy;
+	if (Array.isArray(value)) {
+		const array = [];
+		array.length = value.length;
+		copy = array;
+	} else copy = Object.create(prototype);
+	copies.set(value, copy);
+	for (const key of Reflect.ownKeys(value)) {
+		if (Array.isArray(value) && key === "length") continue;
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (descriptor === void 0 || !("value" in descriptor)) throw new TypeError("Snapshot input must use data properties");
+		Object.defineProperty(copy, key, {
+			value: copySnapshot(descriptor.value, copies),
+			enumerable: descriptor.enumerable === true,
+			configurable: true,
+			writable: true
+		});
+	}
+	return copy;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+async function removeSettledTurns(options) {
+	const known = new Set(options.knownScopes.map(turnEventKey));
+	const removable = /* @__PURE__ */ new Map();
+	for (const turnId of options.settledTurnIds) {
+		const records = (await options.store.enumerateTurn(options.integration, options.sessionId, turnId)).map(({ record }) => record).filter((record) => record.destinationFingerprint === options.destinationFingerprint);
+		if (records.every((record) => known.has(turnEventKey(record)) && isSettled(record, options.destinations))) removable.set(turnId, records);
+	}
+	const childTurns = [];
+	const removedRunIds = /* @__PURE__ */ new Set();
+	for (const [turnId, records] of removable) {
+		if (rootParentRunId(records) !== void 0) {
+			childTurns.push([turnId, records]);
+			continue;
+		}
+		await removeRecords(options, records, turnId);
+		for (const { runId } of records) removedRunIds.add(runId);
+	}
+	if (childTurns.length === 0) return;
+	const savedRunIds = new Set((await options.store.enumerate(options.integration, options.sessionId)).map(({ record }) => record.runId));
+	let pending = childTurns;
+	while (pending.length > 0) {
+		const waiting = [];
+		for (const [turnId, records] of pending) {
+			const parent = rootParentRunId(records);
+			const newest = Math.max(...records.map(({ capturedAtMs }) => capturedAtMs));
+			const orphaned = !savedRunIds.has(parent) && Date.now() - newest >= 36e5;
+			if (!removedRunIds.has(parent) && !orphaned) {
+				waiting.push([turnId, records]);
+				continue;
+			}
+			await removeRecords(options, records, turnId);
+			for (const { runId } of records) removedRunIds.add(runId);
+		}
+		if (waiting.length === pending.length) return;
+		pending = waiting;
+	}
+}
+async function removeRecords(options, records, turnId) {
+	await options.store.removeTurn(records, options.settledTurns?.get(turnId));
+}
+function turnEventKey(scope) {
+	return JSON.stringify([scope.turnId, scope.eventId]);
+}
+function isSettled(record, destinations) {
+	return destinations.every(({ id }) => record.delivery?.outcomes[id] !== void 0);
+}
+function rootParentRunId(records) {
+	for (const record of records) {
+		const rootRunId = field(record.turnEvidence, "rootRunId");
+		if (typeof rootRunId !== "string" || record.runId !== rootRunId) continue;
+		const parent = field(field(record.normalizedPayload, "run"), "parent_run_id");
+		if (typeof parent === "string") return parent;
+	}
+}
+function field(value, key) {
+	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+function createLifecycleBridge(options) {
+	const context = createBridgeContext(options);
+	return Object.freeze({
+		accountFingerprint: context.writer.accountFingerprint,
+		capture: (input) => captureLifecycleSubmission(context, input),
+		drain: (input = {}) => drainLifecycleWork(context, input)
+	});
+}
+function createBridgeContext(options) {
+	const integration = options.integration;
+	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
+	const storageRoot = resolve(options.storageRoot);
+	return {
+		integration,
+		sessionId,
+		storageRoot,
+		captureStore: createCaptureStore(storageRoot),
+		coordinator: createDeliveryCoordinator({
+			storageRoot,
+			integration,
+			sessionId,
+			...options.policy === void 0 ? {} : { policy: options.policy }
+		}),
+		writer: createLangSmithUploadWriter(options.writer),
+		policy: resolvePolicy(options.policy),
+		wake: options.wake
+	};
+}
+function parseCaptureRequest(input) {
+	const record = requirePlainRecord(snapshotData(requirePlainRecord(input, "Lifecycle capture")), "Lifecycle capture");
+	const turnId = requireNonBlankString(record["turnId"], "Turn ID");
+	const eventId = requireNonBlankString(record["eventId"], "Event ID");
+	const sourceAge = ownDataField(record, "sourceAgeStartedAtMs");
+	return {
+		record,
+		turnId,
+		eventId,
+		sourceAgeStartedAtMs: sourceAge.present ? requireSafeEpochMilliseconds(sourceAge.value, "Source age") : void 0
+	};
+}
+async function parentPostDependency(context, supplied, value) {
+	const parentRunId = value.payload.run.parent_run_id;
+	if (value.payload.operation !== "post" || parentRunId === void 0) return [];
+	for (const scope of supplied ?? []) {
+		const record = await context.captureStore.read(scope).catch(() => void 0);
+		if (record?.runId === parentRunId && record.eventKind === "run-post") return [];
+	}
+	const parent = (await context.captureStore.enumerate(context.integration, context.sessionId)).find(({ record }) => record.runId === parentRunId && record.eventKind === "run-post");
+	return parent === void 0 ? [] : [scopeOf(parent.record)];
+}
+async function captureDependencies(context, request, value) {
+	const supplied = request.record["dependencies"];
+	const previous = await context.captureStore.read({
+		integration: context.integration,
+		sessionId: context.sessionId,
+		turnId: request.turnId,
+		eventId: request.eventId
+	});
+	const suppliedKeys = new Set((supplied ?? []).map(scopeKey));
+	if (previous?.dependencies?.some((scope) => !suppliedKeys.has(scopeKey(scope)))) return previous.dependencies;
+	if (previous !== void 0) return supplied;
+	const parent = (await parentPostDependency(context, supplied, value)).filter((scope) => !suppliedKeys.has(scopeKey(scope)));
+	return parent.length === 0 ? supplied : [...supplied ?? [], ...parent];
+}
+async function saveProjectedSubmission(context, request, turnEvidence, value) {
+	const dependencies = await captureDependencies(context, request, value);
+	return context.coordinator.capture({
+		turnId: request.turnId,
+		eventId: request.eventId,
+		runId: value.payload.run.id,
+		destinationFingerprint: context.writer.accountFingerprint,
+		eventKind: value.payload.operation === "post" ? LIFECYCLE_POST_EVENT_KIND : LIFECYCLE_PATCH_EVENT_KIND,
+		normalizedPayload: canonicalJsonValue(value.payload),
+		turnEvidence,
+		metadataProvenance: canonicalJsonValue(value.metadata),
+		...request.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: request.sourceAgeStartedAtMs },
+		...dependencies === void 0 ? {} : { dependencies },
+		destinationRoutes: context.writer.routes
+	});
+}
+async function retryWithoutSuppliedIdentity(context, request, scope, turnEvidence, projected, identityPresence) {
+	const winner = await context.captureStore.read(scope);
+	if (winner?.runId !== projected.payload.run.id) return void 0;
+	const run = { ...projected.payload.run };
+	if (!identityPresence.startTime) delete run.start_time;
+	if (!identityPresence.traceId) delete run.trace_id;
+	if (!identityPresence.dottedOrder) delete run.dotted_order;
+	const retry = projectSubmission({
+		...projected.payload,
+		run,
+		metadata: projected.metadata
+	}, context.integration, previousRunContext(winner));
+	if (retry.status !== "ready") return void 0;
+	return saveProjectedSubmission(context, request, turnEvidence, retry.value);
+}
+async function captureLifecycleSubmission(context, input) {
+	const request = parseCaptureRequest(input);
+	const scope = {
+		integration: context.integration,
+		sessionId: context.sessionId,
+		turnId: request.turnId,
+		eventId: request.eventId
+	};
+	const previous = await context.captureStore.read(scope);
+	const projected = projectSubmission(request.record["submission"], context.integration, previous === void 0 ? void 0 : previousRunContext(previous));
+	if (projected.status === "deferred") return {
+		status: "deferred",
+		reason: "missing-thread-identity"
+	};
+	const turnEvidence = projectTurnEvidence(request.record["turnEvidence"], projected.value.payload.privacyMode, deriveAttributionReadiness(request.record["submission"], context.integration));
+	const identityPresence = projected.value.payload.operation === "post" ? suppliedRunIdentityFields(request.record["submission"]) : void 0;
+	let result = await saveProjectedSubmission(context, request, turnEvidence, projected.value);
+	if (result.status === "conflict" && previous === void 0 && identityPresence !== void 0 && projected.value.payload.operation === "post") result = await retryWithoutSuppliedIdentity(context, request, scope, turnEvidence, projected.value, identityPresence) ?? result;
+	if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => context.wake?.());
+	return result;
+}
+function busyDrainResult() {
+	return {
+		status: "busy",
+		settlement: {
+			captured: 0,
+			turns: []
+		}
+	};
+}
+async function acquireSettlementLock(context) {
+	const directory = await ensurePrivateDirectory(context.storageRoot, sessionSegments(identifierHash(context.sessionId)));
+	const path = join(directory, `${LIFECYCLE_SETTLEMENT_LOCK_PREFIX}${identifierHash(context.writer.accountFingerprint)}`);
+	return {
+		path,
+		lock: await tryAcquireFileLock(path)
+	};
+}
+async function sweepWithWarning(fallback, sweep) {
+	try {
+		return await sweep();
+	} catch (error) {
+		console.warn(LIFECYCLE_SWEEP_WARNING, describe(error));
+		return fallback;
+	}
+}
+function sweepExpiredCaptures(context, now) {
+	return sweepWithWarning(0, () => removeExpiredCaptures({
+		store: context.captureStore,
+		integration: context.integration,
+		destinations: context.writer.destinations.map(({ id }) => id),
+		accountFingerprint: context.writer.accountFingerprint,
+		now,
+		maxAgeMs: context.policy.maxAgeMs,
+		heldUpdate: (record, captures) => isHeldUpdate(record, captures, context.integration)
+	}));
+}
+function sweepStaleFiles(context, now) {
+	return sweepWithWarning(0, () => removeStaleStorageFiles(context.storageRoot, LIFECYCLE_ENGINE_FOLDERS, now - STORAGE_STALE_FILE_MAX_AGE_MS));
+}
+function readCaptureOutcome(context) {
+	return (scope, destination) => context.captureStore.readOutcome(scope, destination);
+}
+async function sendCapturedRuns(context, send) {
+	const { sourceSnapshot, sourceByScope, records, destination, fingerprint } = send;
+	const { integration, writer } = context;
+	if (fingerprint !== writer.accountFingerprint) throw new Error(LIFECYCLE_UPLOAD_ACCOUNT_CHANGED_MESSAGE);
+	const items = [];
+	for (const record of records) {
+		const submission = restoreSubmission(record, integration);
+		const ready = await withholdUnresolvedEndTime({
+			record,
+			submission,
+			sourceSnapshot,
+			sourceByScope,
+			integration,
+			destinations: writer.destinations,
+			readOutcome: readCaptureOutcome(context)
+		}) ?? await afterSettledTurn(context, record, submission, sourceSnapshot);
+		if (ready === void 0) continue;
+		const route = capturedRoute(record, sourceSnapshot, destination.id);
+		items.push(route === void 0 ? { submission: ready } : {
+			submission: ready,
+			route
+		});
+	}
+	await writer.sendBatch(items, destination.id);
+}
+async function afterSettledTurn(context, record, submission, sourceSnapshot) {
+	const { captureStore, integration, sessionId } = context;
+	const settled = await captureStore.readSettledTurn(integration, sessionId, record.turnId);
+	if (settled !== void 0) return {
+		...submission,
+		metadata: addAttribution(submission.metadata, settled.attribution)
+	};
+	return sourceSnapshot.some((source) => source.runId === record.runId && source.eventKind === "run-post") ? void 0 : submission;
+}
+async function drainOnce(context, attempted) {
+	const { captureStore, integration, sessionId, writer } = context;
+	const sourceSnapshot = (await captureStore.enumerate(integration, sessionId)).map(({ record }) => record);
+	const sourceByScope = indexCaptureSources(sourceSnapshot);
+	return context.coordinator.drain({
+		writer: {
+			accountFingerprint: writer.accountFingerprint,
+			destinations: writer.destinations,
+			sendBatch: (records, destination, fingerprint) => sendCapturedRuns(context, {
+				sourceSnapshot,
+				sourceByScope,
+				records,
+				destination,
+				fingerprint
+			}),
+			batchLimits: {
+				maxRecords: writer.batchLimits.maxRuns,
+				maxBytes: writer.batchLimits.maxBytes
+			}
+		},
+		attempted
+	});
+}
+async function settleSessionTurns(context) {
+	const { captureStore, coordinator, integration, sessionId, writer } = context;
+	const captures = await captureStore.enumerate(integration, sessionId);
+	return {
+		captures,
+		work: await settleCapturedTurns({
+			captures,
+			integration,
+			sessionId,
+			destinationFingerprint: writer.accountFingerprint,
+			destinations: writer.destinations,
+			capture: (captureInput) => coordinator.capture(captureInput),
+			readOutcome: readCaptureOutcome(context),
+			droppedRunIds: (turnId) => captureStore.readDroppedRunIds(integration, sessionId, turnId),
+			settledTurn: (turnId) => captureStore.readSettledTurn(integration, sessionId, turnId)
+		})
+	};
+}
+function mergeDrainResults(first, second) {
+	return {
+		status: "drained",
+		delivered: first.delivered + second.delivered,
+		dropped: first.dropped + second.dropped,
+		failed: first.failed + second.failed,
+		pending: second.pending,
+		...second.nextRetryAtMs === void 0 ? {} : { nextRetryAtMs: second.nextRetryAtMs },
+		accountMismatch: second.accountMismatch
+	};
+}
+async function drainWhileLocked(context, input) {
+	const { captureStore, integration, sessionId, writer } = context;
+	const attempted = /* @__PURE__ */ new Set();
+	const now = input.now ?? Date.now();
+	const expired = await sweepExpiredCaptures(context, now);
+	await sweepStaleFiles(context, now);
+	const first = await drainOnce(context, attempted);
+	if (first.status === "busy") return busyDrainResult();
+	const { captures, work } = await settleSessionTurns(context);
+	let result = first;
+	if (work.progress.captured > 0) {
+		const second = await drainOnce(context, attempted);
+		if (second.status === "drained") result = mergeDrainResults(first, second);
+	}
+	const readOutcome = readCaptureOutcome(context);
+	const settlement = await refreshSettlementProgress(work, writer.destinations, readOutcome);
+	await removeSettledTurns({
+		integration,
+		sessionId,
+		destinationFingerprint: writer.accountFingerprint,
+		store: captureStore,
+		destinations: writer.destinations,
+		settledTurnIds: settlement.turns.filter((entry) => entry.status === "settled").map((entry) => entry.turnId),
+		settledTurns: new Map(settlement.turns.flatMap((entry) => entry.settled === void 0 ? [] : [[entry.turnId, entry.settled]])),
+		knownScopes: [...captures.map(({ record }) => record), ...work.patches.map(({ scope }) => scope)]
+	});
+	return {
+		...result,
+		dropped: result.dropped + expired,
+		settlement
+	};
+}
+async function drainLifecycleWork(context, input) {
+	const { path, lock } = await acquireSettlementLock(context);
+	if (lock === void 0) return busyDrainResult();
+	let drainResult;
+	try {
+		drainResult = await drainWhileLocked(context, input);
+	} finally {
+		await lock.release();
+		await removeEmptyLockFolders(path, context.storageRoot);
+	}
+	if (drainResult.status === "drained" && drainResult.delivered + drainResult.dropped > 0) await context.wake?.();
+	return drainResult;
+}
+function capturedRoute(record, sourceSnapshot, destination) {
+	return record.destinationRoutes?.[destination] ?? sourceSnapshot.find((source) => source.runId === record.runId && source.destinationRoutes?.[destination] !== void 0)?.destinationRoutes?.[destination];
+}
+function suppliedRunIdentityFields(value) {
+	const run = requirePlainRecord(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "run"), "Normalized run snapshot");
+	const supplied = (key) => {
+		const field = ownDataField(run, key);
+		return field.present && field.value !== void 0;
+	};
+	return {
+		startTime: supplied("start_time"),
+		traceId: supplied("trace_id"),
+		dottedOrder: supplied("dotted_order")
+	};
+}
+function previousRunContext(record) {
+	const runField = ownDataField(requirePlainRecord(record.normalizedPayload, "Stored run payload"), "run");
+	if (!runField.present) throw new TypeError(LIFECYCLE_STORED_RUN_CONTEXT_IS_REQUIRED_MESSAGE);
+	const run = requirePlainRecord(runField.value, "Stored run context");
+	const context = {
+		id: requireNonBlankString(run["id"], "Run ID"),
+		name: requireNonBlankString(run["name"], "Run name"),
+		run_type: requireNonBlankString(run["run_type"], "Run type")
+	};
+	const startTime = ownDataField(run, "start_time");
+	if (startTime.present && startTime.value !== void 0) context.start_time = requireTimestamp(startTime.value);
+	const parentRunId = ownDataField(run, "parent_run_id");
+	if (parentRunId.present && parentRunId.value !== void 0) context.parent_run_id = requireNonBlankString(parentRunId.value, "Parent run ID");
+	const traceId = ownDataField(run, "trace_id");
+	if (traceId.present && traceId.value !== void 0) context.trace_id = requireNonBlankString(traceId.value, "Trace ID");
+	const dottedOrder = ownDataField(run, "dotted_order");
+	if (dottedOrder.present && dottedOrder.value !== void 0) context.dotted_order = requireNonBlankString(dottedOrder.value, "Dotted order");
+	return context;
+}
+function restoreSubmission(record, integration) {
+	const payload = canonicalJsonObject(record.normalizedPayload, "Stored run payload");
+	if (payload["integration"] !== integration) throw new TypeError(LIFECYCLE_STORED_INTEGRATION_DOES_NOT_MATCH_LIFECYCLE_BRIDGE_MESSAGE);
+	if (payload["run"] === null || typeof payload["run"] !== "object") throw new TypeError(LIFECYCLE_STORED_RUN_DATA_IS_REQUIRED_MESSAGE);
+	if (payload["run"]["id"] !== record.runId) throw new TypeError(LIFECYCLE_STORED_RUN_ID_DOES_NOT_MATCH_ITS_CAPTURE_MESSAGE);
+	const mode = payload["privacyMode"];
+	if (mode !== "full" && mode !== "metadata") throw new TypeError(LIFECYCLE_STORED_PRIVACY_MODE_IS_INVALID_MESSAGE);
+	const projected = projectSubmission({
+		...payload,
+		metadata: record.metadataProvenance
+	}, integration);
+	if (projected.status === "deferred") throw new TypeError(LIFECYCLE_STORED_CAPTURE_IS_MISSING_THREAD_IDENTITY_MESSAGE);
+	return {
+		...projected.value.payload,
+		metadata: projected.value.metadata
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
+const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
+const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
+const RECONSTRUCTION_JOB_KIND = "reconstruction-job-v1";
+const RECONSTRUCTION_MAPPING_KIND = "reconstruction-map-v1";
+const RECONSTRUCTION_CLOSURE_STATES = [
+	"open",
+	"provisional",
+	"authoritative"
+];
+const RECONSTRUCTION_JOB_INPUT_KEYS = [
+	"eventId",
+	"privacyMode",
+	"sourceRefs",
+	"turnEvidence",
+	"turnId"
+];
+const RECONSTRUCTION_JOB_OPTIONAL_INPUT_KEYS = ["sourceAgeStartedAtMs", "sourceSnapshots"];
+const RECONSTRUCTION_SOURCE_SNAPSHOT_KEYS = [
+	"sourceAgeStartedAtMs",
+	"sourceRef",
+	"submission"
+];
+const RECONSTRUCTION_SOURCE_SNAPSHOT_OPTIONAL_KEYS = ["attributionContext"];
+const RECONSTRUCTION_STORED_JOB_KEYS = [
+	"privacyMode",
+	"recordVersion",
+	"sourceRefs"
+];
+const RECONSTRUCTION_STORED_JOB_OPTIONAL_KEYS = ["sourceAgeStartedAtMs", "sourceSnapshots"];
+const RECONSTRUCTION_ATTRIBUTION_CONTEXT_KEYS = ["toolOrigin"];
+const RECONSTRUCTION_ATTRIBUTION_CONTEXT_OPTIONAL_KEYS = ["pinnedRepositoryKeys"];
+const RECONSTRUCTION_TOOL_ORIGIN_KEYS = ["namedAPath"];
+const RECONSTRUCTION_TOOL_ORIGIN_OPTIONAL_KEYS = ["cwd", "path"];
+const RECONSTRUCTION_OUTPUT_KEYS = ["eventId", "submission"];
+const RECONSTRUCTION_OUTPUT_OPTIONAL_KEYS = [
+	"dependencies",
+	"sourceRef",
+	"turnEvidence"
+];
+const RECONSTRUCTION_TURN_EVIDENCE_KEYS = ["childRunIds", "closureState"];
+const RECONSTRUCTION_TURN_EVIDENCE_KEYS_WITH_ROOT = [
+	"childRunIds",
+	"closureState",
+	"rootRunId"
+];
+const RECONSTRUCTION_DEPENDENCY_KEYS = [
+	"eventId",
+	"integration",
+	"sessionId",
+	"turnId"
+];
+const RECONSTRUCTION_OUTPUTS_MUST_BE_ARRAY_MESSAGE = "Reconstruction outputs must be an array";
+const RECONSTRUCTION_OUTPUT_HAS_UNSUPPORTED_FIELDS_MESSAGE = "Reconstruction output has unsupported fields";
+const RECONSTRUCTION_EVENT_IDS_MUST_BE_UNIQUE_MESSAGE = "Reconstruction event IDs must be unique";
+const RECONSTRUCTION_INTEGRATION_CHANGED_MESSAGE = "Reconstruction integration changed";
+const RECONSTRUCTION_PRIVACY_MODE_IS_INVALID_MESSAGE = "Reconstruction privacy mode is invalid";
+const RECONSTRUCTION_METADATA_FULL_MODE_MESSAGE = "Metadata reconstruction cannot emit full-mode captures";
+const RECONSTRUCTION_DEPENDENCIES_MUST_BE_ARRAY_MESSAGE = "Reconstruction dependencies must be an array";
+const RECONSTRUCTION_EVIDENCE_IDENTITY_MESSAGE = "Reconstructed turn evidence must preserve known run identities";
+const RECONSTRUCTION_SNAPSHOT_OUTPUTS_REQUIRE_SOURCE_REF_MESSAGE = "Snapshot outputs require a source ref";
+const RECONSTRUCTION_OUTPUT_SOURCE_REF_HAS_NO_SNAPSHOT_MESSAGE = "Output source ref has no snapshot";
+const RECONSTRUCTION_OUTPUT_REF_UNKNOWN_MESSAGE = "Output source ref is not in the reconstruction job";
+const RECONSTRUCTION_DEPENDENCY_SCOPE_MESSAGE = "Reconstruction dependencies must contain only capture scopes";
+const RECONSTRUCTION_DEPENDENCY_INTEGRATION_MESSAGE = "Reconstruction dependencies must use the same integration";
+const RECONSTRUCTION_CAPTURES_CANNOT_DEPEND_ON_THEMSELVES_MESSAGE = "Reconstruction captures cannot depend on themselves";
+const RECONSTRUCTION_DEPENDENCIES_MUST_BE_UNIQUE_MESSAGE = "Reconstruction dependencies must be unique";
+const RECONSTRUCTION_JOB_HAS_UNSUPPORTED_FIELDS_MESSAGE = "Reconstruction job has unsupported fields";
+const RECONSTRUCTION_SOURCE_REFS_ARE_REQUIRED_MESSAGE = "Reconstruction source refs are required";
+const RECONSTRUCTION_SOURCE_REFS_MUST_BE_UNIQUE_MESSAGE = "Reconstruction source refs must be unique";
+const RECONSTRUCTION_SOURCE_CONFLICT_MESSAGE = "Reconstruction jobs cannot combine snapshots with a job-level source age";
+const RECONSTRUCTION_SNAPSHOTS_EMPTY_MESSAGE = "Reconstruction source snapshots must be a nonempty array";
+const RECONSTRUCTION_SNAPSHOT_FIELDS_MESSAGE = "Reconstruction source snapshot has unsupported fields";
+const RECONSTRUCTION_SNAPSHOT_REF_MUST_BELONG_TO_JOB_MESSAGE = "Reconstruction snapshot ref must belong to the job";
+const RECONSTRUCTION_SNAPSHOT_REFS_MUST_BE_UNIQUE_MESSAGE = "Reconstruction snapshot refs must be unique";
+const RECONSTRUCTION_SNAPSHOT_PRIVACY_MESSAGE = "Snapshot privacy mode must match the reconstruction job";
+const RECONSTRUCTION_SNAPSHOT_START_TIME_MESSAGE = "Source snapshot posts must preserve their start time";
+const RECONSTRUCTION_SNAPSHOT_NOT_READY_MESSAGE = "Reconstruction snapshots must be ready for shared projection";
+const RECONSTRUCTION_SNAPSHOT_COVERAGE_MESSAGE = "Source snapshots must cover every reconstruction source ref";
+const RECONSTRUCTION_PATHLESS_REF_MESSAGE = "Snapshot source refs must be pathless identifiers";
+const RECONSTRUCTION_CONTEXT_FIELDS_MESSAGE = "Attribution context has unsupported fields";
+const RECONSTRUCTION_TOOL_ORIGIN_HAS_UNSUPPORTED_FIELDS_MESSAGE = "Tool origin has unsupported fields";
+const RECONSTRUCTION_PINNED_BLANK_MESSAGE = "Pinned repository keys must be nonblank";
+const RECONSTRUCTION_PINNED_UNIQUE_MESSAGE = "Pinned repository keys must be unique";
+const RECONSTRUCTION_EVIDENCE_STRUCTURAL_MESSAGE = "Reconstruction turn evidence must be structural only";
+const RECONSTRUCTION_CLOSURE_STATE_MESSAGE = "Reconstruction turn evidence has an invalid closure state";
+const RECONSTRUCTION_STORED_NAMESPACE_MESSAGE = "Stored reconstruction job namespace does not match";
+const RECONSTRUCTION_UNSUPPORTED_RECONSTRUCTION_JOB_MESSAGE = "Unsupported reconstruction job";
+const RECONSTRUCTION_STORED_FIELDS_MESSAGE = "Stored reconstruction job has unsupported fields";
+const RECONSTRUCTION_STORED_PRIVACY_MESSAGE = "Invalid stored reconstruction privacy mode";
+const RECONSTRUCTION_STORED_REFS_EMPTY_MESSAGE = "Stored reconstruction source refs are empty";
+const RECONSTRUCTION_STORED_REFS_UNIQUE_MESSAGE = "Stored reconstruction source refs are not unique";
+const RECONSTRUCTION_STORED_SOURCE_CONFLICT_MESSAGE = "Stored reconstruction job combines snapshots with a job-level source age";
+const RECONSTRUCTION_PROVENANCE_MESSAGE = "Reconstruction jobs cannot store metadata provenance";
+const RECONSTRUCTION_JOB_DEPENDENCIES_MESSAGE = "Reconstruction jobs cannot have capture dependencies";
+const RECONSTRUCTION_UNSUPPORTED_RECONSTRUCTION_MAPPING_MESSAGE = "Unsupported reconstruction mapping";
+const RECONSTRUCTION_STORED_NO_OUTPUTS_MESSAGE = "Stored reconstruction mapping has no outputs";
+const RECONSTRUCTION_STORED_EVENTS_UNIQUE_MESSAGE = "Stored reconstruction event IDs are not unique";
+const RECONSTRUCTION_STORED_DEPENDENCIES_MESSAGE = "Stored reconstruction dependencies are invalid";
+const RECONSTRUCTION_DEFERRAL_REASON_INVALID_MESSAGE = "Invalid reconstruction deferral reason";
+const RECONSTRUCTION_RESULT_STATUS_INVALID_MESSAGE = "Invalid reconstruction result status";
+const RECONSTRUCTION_TERMINAL_OUTCOME_MESSAGE = "Could not record terminal reconstruction outcome:";
+const RECONSTRUCTION_CALLBACKS_REQUIRED_MESSAGE = "Reconstruction callbacks are required";
+const RECONSTRUCTION_DRAIN_TIME_MESSAGE = "Drain time must be finite";
+const RECONSTRUCTION_RECORD_UNSUPPORTED_MESSAGE = "Unsupported reconstruction record";
+const RECONSTRUCTION_JOB_MISSING_MESSAGE = "Reconstruction job disappeared";
+const RECONSTRUCTION_LABEL_OUTPUT = "Reconstruction output";
+const RECONSTRUCTION_LABEL_EVENT_ID = "Event ID";
+const RECONSTRUCTION_LABEL_EVENT_ID_FIELD = "event ID";
+const RECONSTRUCTION_LABEL_SUBMISSION = "Reconstruction submission";
+const RECONSTRUCTION_LABEL_RUN_ID = "Run ID";
+const RECONSTRUCTION_LABEL_RUN_ID_FIELD = "run ID";
+const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
+const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
+const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+function assertKnownKeys(record, required, optional, message) {
+	const keys = Object.keys(record);
+	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+function readEventId(output, seen) {
+	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
+	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
+	if (seen.has(eventId)) throw new TypeError(RECONSTRUCTION_EVENT_IDS_MUST_BE_UNIQUE_MESSAGE);
+	seen.add(eventId);
+	return eventId;
+}
+function isPreparedSubmission(value) {
+	const fields = value;
+	return typeof fields["integration"] === "string" && (fields["privacyMode"] === "full" || fields["privacyMode"] === "metadata") && isPlainRecord(fields["run"]);
+}
+function readSubmission(output, job) {
+	const submission = canonicalJsonObject(requirePlainRecord(requireOwnDataField(output, "submission"), RECONSTRUCTION_LABEL_SUBMISSION), RECONSTRUCTION_LABEL_SUBMISSION);
+	if (requireNonBlankString(requireOwnDataField(submission, "integration"), "Integration") !== job.integration) throw new TypeError(RECONSTRUCTION_INTEGRATION_CHANGED_MESSAGE);
+	const privacyMode = requireOwnDataField(submission, "privacyMode");
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError(RECONSTRUCTION_PRIVACY_MODE_IS_INVALID_MESSAGE);
+	if (job.privacyMode === "metadata" && privacyMode === "full") throw new TypeError(RECONSTRUCTION_METADATA_FULL_MODE_MESSAGE);
+	if (!isPreparedSubmission(submission)) throw new TypeError(RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE);
+	return submission;
+}
+function readRunId(submission) {
+	const runId = requireNonBlankString(requireOwnDataField(requirePlainRecord(submission.run, "Run"), "id"), RECONSTRUCTION_LABEL_RUN_ID);
+	validateIdentifier(runId, RECONSTRUCTION_LABEL_RUN_ID_FIELD);
+	return runId;
+}
+function readDependencies(output, job, eventId) {
+	const field = ownDataField(output, "dependencies");
+	if (!field.present) return void 0;
+	if (!Array.isArray(field.value)) throw new TypeError(RECONSTRUCTION_DEPENDENCIES_MUST_BE_ARRAY_MESSAGE);
+	return validateDependencies(field.value, job, eventId);
+}
+function readTurnEvidence(output, job) {
+	const field = ownDataField(output, "turnEvidence");
+	const turnEvidence = field.present ? validateTurnEvidence(field.value) : void 0;
+	if (turnEvidence !== void 0 && (job.turnEvidence.rootRunId !== void 0 && turnEvidence.rootRunId !== job.turnEvidence.rootRunId || job.turnEvidence.childRunIds.some((id) => !turnEvidence.childRunIds.includes(id)))) throw new TypeError(RECONSTRUCTION_EVIDENCE_IDENTITY_MESSAGE);
+	return turnEvidence;
+}
+function readSourceRef(output) {
+	const field = ownDataField(output, "sourceRef");
+	if (!field.present) return void 0;
+	const sourceRef = requireNonBlankString(field.value, RECONSTRUCTION_LABEL_SOURCE_REF);
+	validateIdentifier(sourceRef, RECONSTRUCTION_LABEL_SOURCE_REF_FIELD);
+	return sourceRef;
+}
+function sourceAgeFor(job, sourceRef, jobCapturedAtMs) {
+	if (job.sourceSnapshots !== void 0) {
+		if (sourceRef === void 0) throw new TypeError(RECONSTRUCTION_SNAPSHOT_OUTPUTS_REQUIRE_SOURCE_REF_MESSAGE);
+		const snapshot = job.sourceSnapshots.find((candidate) => candidate.sourceRef === sourceRef);
+		if (snapshot === void 0) throw new TypeError(RECONSTRUCTION_OUTPUT_SOURCE_REF_HAS_NO_SNAPSHOT_MESSAGE);
+		return snapshot.sourceAgeStartedAtMs;
+	}
+	if (sourceRef !== void 0 && !job.sourceRefs.includes(sourceRef)) throw new TypeError(RECONSTRUCTION_OUTPUT_REF_UNKNOWN_MESSAGE);
+	return job.sourceAgeStartedAtMs ?? jobCapturedAtMs;
+}
+function validateOutput(item, job, jobCapturedAtMs, seen) {
+	const output = requirePlainRecord(item, RECONSTRUCTION_LABEL_OUTPUT);
+	assertKnownKeys(output, RECONSTRUCTION_OUTPUT_KEYS, RECONSTRUCTION_OUTPUT_OPTIONAL_KEYS, RECONSTRUCTION_OUTPUT_HAS_UNSUPPORTED_FIELDS_MESSAGE);
+	const eventId = readEventId(output, seen);
+	const submission = readSubmission(output, job);
+	const runId = readRunId(submission);
+	const dependencies = readDependencies(output, job, eventId);
+	const turnEvidence = readTurnEvidence(output, job);
+	const sourceRef = readSourceRef(output);
+	const sourceAgeStartedAtMs = sourceAgeFor(job, sourceRef, jobCapturedAtMs);
+	return {
+		eventId,
+		runId,
+		submission,
+		...turnEvidence === void 0 ? {} : { turnEvidence },
+		...sourceRef === void 0 ? {} : { sourceRef },
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
+		...dependencies === void 0 ? {} : { dependencies }
+	};
+}
+function validateOutputs(value, job, jobCapturedAtMs) {
+	if (!Array.isArray(value)) throw new TypeError(RECONSTRUCTION_OUTPUTS_MUST_BE_ARRAY_MESSAGE);
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => validateOutput(item, job, jobCapturedAtMs, seen));
+}
+function validateDependencies(value, job, eventId) {
+	if (!Array.isArray(value)) throw new TypeError(RECONSTRUCTION_DEPENDENCIES_MUST_BE_ARRAY_MESSAGE);
+	const dependent = {
+		...scopeOf(job),
+		eventId
+	};
+	const seen = /* @__PURE__ */ new Set();
+	return value.map((item) => {
+		const source = requirePlainRecord(item, "Reconstruction dependency");
+		if (canonicalJson(Object.keys(source).toSorted()) !== canonicalJson(RECONSTRUCTION_DEPENDENCY_KEYS)) throw new TypeError(RECONSTRUCTION_DEPENDENCY_SCOPE_MESSAGE);
+		const integration = requireNonBlankString(requireOwnDataField(source, "integration"), "Dependency integration");
+		if (integration !== job.integration) throw new TypeError(RECONSTRUCTION_DEPENDENCY_INTEGRATION_MESSAGE);
+		const scope = {
+			integration,
+			sessionId: requireNonBlankString(requireOwnDataField(source, "sessionId"), "Dependency session ID"),
+			turnId: requireNonBlankString(requireOwnDataField(source, "turnId"), "Dependency turn ID"),
+			eventId: requireNonBlankString(requireOwnDataField(source, "eventId"), "Dependency event ID")
+		};
+		validateIdentifier(scope.sessionId, "dependency session ID");
+		validateIdentifier(scope.turnId, "dependency turn ID");
+		validateIdentifier(scope.eventId, "dependency event ID");
+		if (scope.sessionId === dependent.sessionId && scope.turnId === dependent.turnId && scope.eventId === dependent.eventId) throw new TypeError(RECONSTRUCTION_CAPTURES_CANNOT_DEPEND_ON_THEMSELVES_MESSAGE);
+		const key = canonicalJson(scope);
+		if (seen.has(key)) throw new TypeError(RECONSTRUCTION_DEPENDENCIES_MUST_BE_UNIQUE_MESSAGE);
+		seen.add(key);
+		return scope;
+	});
+}
+function validateJobInput(value, integration, sessionId, accountFingerprint) {
+	const input = requirePlainRecord(snapshotData(requirePlainRecord(value, "Reconstruction job")), "Reconstruction job");
+	assertKnownKeys(input, RECONSTRUCTION_JOB_INPUT_KEYS, RECONSTRUCTION_JOB_OPTIONAL_INPUT_KEYS, RECONSTRUCTION_JOB_HAS_UNSUPPORTED_FIELDS_MESSAGE);
+	const turnId = requireNonBlankString(requireOwnDataField(input, "turnId"), "Turn ID");
+	const eventId = requireNonBlankString(requireOwnDataField(input, "eventId"), "Event ID");
+	validateIdentifier(turnId, "turn ID");
+	validateIdentifier(eventId, "event ID");
+	const privacyMode = requireOwnDataField(input, "privacyMode");
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new TypeError(RECONSTRUCTION_PRIVACY_MODE_IS_INVALID_MESSAGE);
+	const sourceRefs = requireStringArray(requireOwnDataField(input, "sourceRefs"), "Source refs");
+	if (sourceRefs.length === 0) throw new TypeError(RECONSTRUCTION_SOURCE_REFS_ARE_REQUIRED_MESSAGE);
+	if (new Set(sourceRefs).size !== sourceRefs.length) throw new TypeError(RECONSTRUCTION_SOURCE_REFS_MUST_BE_UNIQUE_MESSAGE);
+	for (const ref of sourceRefs) {
+		requireNonBlankString(ref, "Source ref");
+		validateIdentifier(ref, "source ref");
+	}
+	const turnEvidence = validateTurnEvidence(requireOwnDataField(input, "turnEvidence"));
+	const sourceSnapshotsField = ownDataField(input, "sourceSnapshots");
+	const sourceAgeField = ownDataField(input, "sourceAgeStartedAtMs");
+	if (sourceSnapshotsField.present && sourceAgeField.present) throw new TypeError(RECONSTRUCTION_SOURCE_CONFLICT_MESSAGE);
+	const sourceAgeStartedAtMs = sourceAgeField.present ? requireSafeEpochMilliseconds(sourceAgeField.value, "Source age") : void 0;
+	const sourceSnapshots = sourceSnapshotsField.present ? validateSourceSnapshots(sourceSnapshotsField.value, integration, privacyMode, sourceRefs) : void 0;
+	return {
+		integration,
+		sessionId,
+		turnId,
+		eventId,
+		accountFingerprint,
+		sourceRefs,
+		privacyMode,
+		turnEvidence,
+		...sourceSnapshots === void 0 ? {} : { sourceSnapshots },
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs }
+	};
+}
+function snapshotSubmission(source, integration, privacyMode) {
+	const submission = canonicalJsonObject(requirePlainRecord(requireOwnDataField(source, "submission"), "Prepared submission"), "Prepared submission");
+	if (requireOwnDataField(submission, "privacyMode") !== privacyMode) throw new TypeError(RECONSTRUCTION_SNAPSHOT_PRIVACY_MESSAGE);
+	if (submission["operation"] === "post") {
+		if (!ownDataField(requirePlainRecord(requireOwnDataField(submission, "run"), "Prepared run"), "start_time").present) throw new TypeError(RECONSTRUCTION_SNAPSHOT_START_TIME_MESSAGE);
+	}
+	const projected = projectSubmission(submission, integration);
+	if (projected.status !== "ready") throw new TypeError(RECONSTRUCTION_SNAPSHOT_NOT_READY_MESSAGE);
+	return canonicalJsonObject({
+		...projected.value.payload,
+		metadata: projected.value.metadata
+	}, "Projected submission");
+}
+function validateSourceSnapshot(item, integration, privacyMode, sourceRefs, seen) {
+	const source = requirePlainRecord(item, "Reconstruction source snapshot");
+	assertKnownKeys(source, RECONSTRUCTION_SOURCE_SNAPSHOT_KEYS, RECONSTRUCTION_SOURCE_SNAPSHOT_OPTIONAL_KEYS, RECONSTRUCTION_SNAPSHOT_FIELDS_MESSAGE);
+	const sourceRef = requireNonBlankString(requireOwnDataField(source, "sourceRef"), "Source ref");
+	validatePathlessSourceRef(sourceRef);
+	if (!sourceRefs.includes(sourceRef)) throw new TypeError(RECONSTRUCTION_SNAPSHOT_REF_MUST_BELONG_TO_JOB_MESSAGE);
+	if (seen.has(sourceRef)) throw new TypeError(RECONSTRUCTION_SNAPSHOT_REFS_MUST_BE_UNIQUE_MESSAGE);
+	seen.add(sourceRef);
+	const sourceAgeStartedAtMs = requireSafeEpochMilliseconds(requireOwnDataField(source, "sourceAgeStartedAtMs"), "Source age");
+	const submission = snapshotSubmission(source, integration, privacyMode);
+	const attributionField = ownDataField(source, "attributionContext");
+	const attributionContext = attributionField.present ? validateAttributionContext(attributionField.value, privacyMode) : void 0;
+	return {
+		sourceRef,
+		submission,
+		sourceAgeStartedAtMs,
+		...attributionContext === void 0 ? {} : { attributionContext }
+	};
+}
+function validateSourceSnapshots(value, integration, privacyMode, sourceRefs) {
+	if (!Array.isArray(value) || value.length === 0) throw new TypeError(RECONSTRUCTION_SNAPSHOTS_EMPTY_MESSAGE);
+	for (const ref of sourceRefs) validatePathlessSourceRef(ref);
+	const seen = /* @__PURE__ */ new Set();
+	const snapshots = value.map((item) => validateSourceSnapshot(item, integration, privacyMode, sourceRefs, seen));
+	if (snapshots.length !== sourceRefs.length) throw new TypeError(RECONSTRUCTION_SNAPSHOT_COVERAGE_MESSAGE);
+	return snapshots;
+}
+function validatePathlessSourceRef(sourceRef) {
+	validateIdentifier(sourceRef, "source ref");
+	if (sourceRef.includes("/") || sourceRef.includes("\\")) throw new TypeError(RECONSTRUCTION_PATHLESS_REF_MESSAGE);
+}
+function validateAttributionContext(value, privacyMode) {
+	const context = requirePlainRecord(value, "Attribution context");
+	assertKnownKeys(context, RECONSTRUCTION_ATTRIBUTION_CONTEXT_KEYS, RECONSTRUCTION_ATTRIBUTION_CONTEXT_OPTIONAL_KEYS, RECONSTRUCTION_CONTEXT_FIELDS_MESSAGE);
+	const origin = requirePlainRecord(requireOwnDataField(context, "toolOrigin"), "Tool origin");
+	assertKnownKeys(origin, RECONSTRUCTION_TOOL_ORIGIN_KEYS, RECONSTRUCTION_TOOL_ORIGIN_OPTIONAL_KEYS, RECONSTRUCTION_TOOL_ORIGIN_HAS_UNSUPPORTED_FIELDS_MESSAGE);
+	const namedAPath = requireBoolean(requireOwnDataField(origin, "namedAPath"), "namedAPath");
+	const pathField = ownDataField(origin, "path");
+	const cwdField = ownDataField(origin, "cwd");
+	const pinnedField = ownDataField(context, "pinnedRepositoryKeys");
+	const toolOrigin = privacyMode === "metadata" ? { namedAPath } : {
+		...pathField.present ? { path: requireNonBlankString(pathField.value, "Tool path") } : {},
+		...cwdField.present ? { cwd: requireNonBlankString(cwdField.value, "Tool cwd") } : {},
+		namedAPath
+	};
+	let pinnedRepositoryKeys;
+	if (privacyMode === "full" && pinnedField.present) {
+		pinnedRepositoryKeys = requireStringArray(pinnedField.value, "Pinned repository keys");
+		if (pinnedRepositoryKeys.some((key) => key.trim().length === 0)) throw new TypeError(RECONSTRUCTION_PINNED_BLANK_MESSAGE);
+		if (new Set(pinnedRepositoryKeys).size !== pinnedRepositoryKeys.length) throw new TypeError(RECONSTRUCTION_PINNED_UNIQUE_MESSAGE);
+	}
+	return {
+		toolOrigin,
+		...pinnedRepositoryKeys === void 0 ? {} : { pinnedRepositoryKeys }
+	};
+}
+function validateTurnEvidence(value) {
+	const evidence = requirePlainRecord(value, "Turn evidence");
+	canonicalJson(evidence);
+	const keys = Object.keys(evidence).toSorted();
+	if (RECONSTRUCTION_TURN_EVIDENCE_KEYS.some((key) => !keys.includes(key)) || keys.some((key) => !RECONSTRUCTION_TURN_EVIDENCE_KEYS_WITH_ROOT.includes(key))) throw new TypeError(RECONSTRUCTION_EVIDENCE_STRUCTURAL_MESSAGE);
+	const childRunIds = requireStringArray(requireOwnDataField(evidence, "childRunIds"), "Child run IDs");
+	for (const childRunId of childRunIds) {
+		requireNonBlankString(childRunId, "Child run ID");
+		validateIdentifier(childRunId, "child run ID");
+	}
+	const rootRunIdField = ownDataField(evidence, "rootRunId");
+	const rootRunId = rootRunIdField.present ? requireNonBlankString(rootRunIdField.value, "Root run ID") : void 0;
+	if (rootRunId !== void 0) validateIdentifier(rootRunId, "root run ID");
+	const closureState = requireOwnDataField(evidence, "closureState");
+	if (typeof closureState !== "string" || !RECONSTRUCTION_CLOSURE_STATES.includes(closureState)) throw new TypeError(RECONSTRUCTION_CLOSURE_STATE_MESSAGE);
+	return {
+		...rootRunId === void 0 ? {} : { rootRunId },
+		childRunIds,
+		closureState
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+function snapshotJob(job) {
+	return Object.freeze({
+		...job,
+		sourceRefs: Object.freeze([...job.sourceRefs]),
+		...job.sourceSnapshots === void 0 ? {} : { sourceSnapshots: Object.freeze(job.sourceSnapshots.map((snapshot) => Object.freeze({
+			...snapshot,
+			submission: snapshotData(snapshot.submission),
+			...snapshot.attributionContext === void 0 ? {} : { attributionContext: Object.freeze({
+				toolOrigin: Object.freeze({ ...snapshot.attributionContext.toolOrigin }),
+				...snapshot.attributionContext.pinnedRepositoryKeys === void 0 ? {} : { pinnedRepositoryKeys: Object.freeze([...snapshot.attributionContext.pinnedRepositoryKeys]) }
+			}) }
+		}))) },
+		turnEvidence: Object.freeze({
+			...job.turnEvidence.rootRunId === void 0 ? {} : { rootRunId: job.turnEvidence.rootRunId },
+			childRunIds: Object.freeze([...job.turnEvidence.childRunIds]),
+			closureState: job.turnEvidence.closureState
+		})
+	});
+}
+function jobSourceAgeStartedAtMs(job) {
+	if (job.sourceSnapshots !== void 0) return Math.max(...job.sourceSnapshots.map(({ sourceAgeStartedAtMs }) => sourceAgeStartedAtMs));
+	return job.sourceAgeStartedAtMs;
+}
+function jobRecord(job) {
+	const scope = scopeOf(job);
+	const sourceAgeStartedAtMs = jobSourceAgeStartedAtMs(job);
+	return {
+		...scope,
+		runId: `${RECONSTRUCTION_RUN_ID_PREFIX}${identifierHash(canonicalJson(scope))}`,
+		destinationFingerprint: job.accountFingerprint,
+		eventKind: RECONSTRUCTION_JOB_KIND,
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs },
+		normalizedPayload: canonicalValue({
+			recordVersion: 1,
+			privacyMode: job.privacyMode,
+			sourceRefs: [...job.sourceRefs],
+			...job.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: job.sourceAgeStartedAtMs },
+			...job.sourceSnapshots === void 0 ? {} : { sourceSnapshots: job.sourceSnapshots.map((snapshot) => ({
+				sourceRef: snapshot.sourceRef,
+				submission: snapshot.submission,
+				sourceAgeStartedAtMs: snapshot.sourceAgeStartedAtMs,
+				...snapshot.attributionContext === void 0 ? {} : { attributionContext: snapshot.attributionContext }
+			})) }
+		}, /* @__PURE__ */ new Set()),
+		turnEvidence: canonicalValue(job.turnEvidence, /* @__PURE__ */ new Set()),
+		metadataProvenance: {}
+	};
+}
+function mappingRecord(job, outputs) {
+	const scope = mappingScope(job);
+	return {
+		...scope,
+		runId: scope.eventId,
+		destinationFingerprint: job.accountFingerprint,
+		eventKind: RECONSTRUCTION_MAPPING_KIND,
+		normalizedPayload: {
+			recordVersion: 1,
+			jobEventId: job.eventId,
+			outputs: outputs.map(({ eventId, runId, dependencies, sourceRef, turnEvidence }) => ({
+				eventId,
+				runId,
+				...turnEvidence === void 0 ? {} : { turnEvidence: canonicalValue(turnEvidence, /* @__PURE__ */ new Set()) },
+				...sourceRef === void 0 ? {} : { sourceRef },
+				...dependencies === void 0 ? {} : { dependencies: dependencies.map((dependency) => ({
+					integration: dependency.integration,
+					sessionId: dependency.sessionId,
+					turnId: dependency.turnId,
+					eventId: dependency.eventId
+				})) }
+			}))
+		},
+		turnEvidence: canonicalValue(job.turnEvidence, /* @__PURE__ */ new Set()),
+		metadataProvenance: {}
+	};
+}
+function readStoredSources(payload, integration, privacyMode) {
+	const sourceRefs = requireStringArray(payload["sourceRefs"], "Stored source refs");
+	if (sourceRefs.length === 0) throw new Error(RECONSTRUCTION_STORED_REFS_EMPTY_MESSAGE);
+	if (new Set(sourceRefs).size !== sourceRefs.length) throw new Error(RECONSTRUCTION_STORED_REFS_UNIQUE_MESSAGE);
+	for (const ref of sourceRefs) {
+		requireNonBlankString(ref, "Stored source ref");
+		validateIdentifier(ref, "source ref");
+	}
+	const sourceSnapshotsField = ownDataField(payload, "sourceSnapshots");
+	const sourceAgeField = ownDataField(payload, "sourceAgeStartedAtMs");
+	if (sourceSnapshotsField.present && sourceAgeField.present) throw new Error(RECONSTRUCTION_STORED_SOURCE_CONFLICT_MESSAGE);
+	const sourceAgeStartedAtMs = sourceAgeField.present ? requireSafeEpochMilliseconds(sourceAgeField.value, "Stored source age") : void 0;
+	const sourceSnapshots = sourceSnapshotsField.present ? validateSourceSnapshots(sourceSnapshotsField.value, integration, privacyMode, sourceRefs) : void 0;
+	return {
+		sourceRefs,
+		...sourceSnapshots === void 0 ? {} : { sourceSnapshots },
+		...sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs }
+	};
+}
+function readJob(record, integration) {
+	if (record.integration !== integration || record.eventKind !== "reconstruction-job-v1") throw new Error(RECONSTRUCTION_STORED_NAMESPACE_MESSAGE);
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored reconstruction job");
+	if (payload["recordVersion"] !== 1) throw new Error(RECONSTRUCTION_UNSUPPORTED_RECONSTRUCTION_JOB_MESSAGE);
+	assertKnownKeys(payload, RECONSTRUCTION_STORED_JOB_KEYS, RECONSTRUCTION_STORED_JOB_OPTIONAL_KEYS, RECONSTRUCTION_STORED_FIELDS_MESSAGE);
+	const privacyMode = payload["privacyMode"];
+	if (privacyMode !== "full" && privacyMode !== "metadata") throw new Error(RECONSTRUCTION_STORED_PRIVACY_MESSAGE);
+	const sources = readStoredSources(payload, integration, privacyMode);
+	const turnEvidence = validateTurnEvidence(record.turnEvidence);
+	if (Object.keys(requirePlainRecord(record.metadataProvenance, "Stored metadata provenance")).length > 0) throw new Error(RECONSTRUCTION_PROVENANCE_MESSAGE);
+	if (record.dependencies !== void 0) throw new Error(RECONSTRUCTION_JOB_DEPENDENCIES_MESSAGE);
+	return {
+		integration,
+		sessionId: record.sessionId,
+		turnId: record.turnId,
+		eventId: record.eventId,
+		accountFingerprint: record.destinationFingerprint,
+		privacyMode,
+		turnEvidence,
+		...sources
+	};
+}
+function readMapping(record) {
+	if (record.eventKind !== "reconstruction-map-v1") throw new Error(RECONSTRUCTION_UNSUPPORTED_RECONSTRUCTION_MAPPING_MESSAGE);
+	const payload = requirePlainRecord(record.normalizedPayload, "Stored reconstruction mapping");
+	if (payload["recordVersion"] !== 1) throw new Error(RECONSTRUCTION_UNSUPPORTED_RECONSTRUCTION_MAPPING_MESSAGE);
+	const jobEventId = requireNonBlankString(payload["jobEventId"], "Job event ID");
+	const outputs = payload["outputs"];
+	if (!Array.isArray(outputs) || outputs.length === 0) throw new Error(RECONSTRUCTION_STORED_NO_OUTPUTS_MESSAGE);
+	const seen = /* @__PURE__ */ new Set();
+	return {
+		recordVersion: 1,
+		jobEventId,
+		outputs: outputs.map((value) => {
+			const output = requirePlainRecord(value, "Stored reconstruction output");
+			const eventId = requireNonBlankString(output["eventId"], "Output event ID");
+			const runId = requireNonBlankString(output["runId"], "Output run ID");
+			validateIdentifier(eventId, "output event ID");
+			validateIdentifier(runId, "output run ID");
+			if (seen.has(eventId)) throw new Error(RECONSTRUCTION_STORED_EVENTS_UNIQUE_MESSAGE);
+			seen.add(eventId);
+			const dependenciesField = ownDataField(output, "dependencies");
+			const sourceRefField = ownDataField(output, "sourceRef");
+			const evidenceField = ownDataField(output, "turnEvidence");
+			const turnEvidence = evidenceField.present ? validateTurnEvidence(evidenceField.value) : void 0;
+			let sourceRef;
+			if (sourceRefField.present) {
+				sourceRef = requireNonBlankString(sourceRefField.value, "Output source ref");
+				validateIdentifier(sourceRef, "output source ref");
+			}
+			let dependencies;
+			if (dependenciesField.present) {
+				if (!Array.isArray(dependenciesField.value)) throw new Error(RECONSTRUCTION_STORED_DEPENDENCIES_MESSAGE);
+				dependencies = dependenciesField.value;
+			}
+			return {
+				eventId,
+				runId,
+				...turnEvidence === void 0 ? {} : { turnEvidence },
+				...sourceRef === void 0 ? {} : { sourceRef },
+				...dependencies === void 0 ? {} : { dependencies }
+			};
+		})
+	};
+}
+function sameOutputMapping(mapping, outputs) {
+	return canonicalJson(mapping.outputs) === canonicalJson(outputs.map(({ eventId, runId, dependencies, sourceRef, turnEvidence }) => ({
+		eventId,
+		runId,
+		...turnEvidence === void 0 ? {} : { turnEvidence },
+		...sourceRef === void 0 ? {} : { sourceRef },
+		...dependencies === void 0 ? {} : { dependencies }
+	})));
+}
+function mappingScope(job) {
+	const eventId = `${RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX}${identifierHash(canonicalJson(scopeOf(job)))}`;
+	return {
+		...scopeOf(job),
+		eventId
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+async function processJob(candidate, context) {
+	const { job, scope } = candidate;
+	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
+	if (isWaitingForRetry(retry)) return "deferred";
+	const fail = async () => {
+		await recordFailure(context, scope, job.accountFingerprint, retry);
+		return "complete";
+	};
+	const interpretation = await interpretReconstruction(job, context.reconstruct);
+	if (interpretation === "deferred") return "deferred";
+	if (interpretation === "failed") return fail();
+	const outputs = validateJobOutputs(interpretation.outputs, job, candidate.entry.capturedAtMs);
+	if (outputs === void 0) return fail();
+	if (outputs.length > 0 && !await saveOutputMapping(context.store, job, outputs)) return fail();
+	const captured = outputs.length > 0 ? await captureOutputs(context, job, outputs) : "captured";
+	if (captured === "deferred") return "deferred";
+	if (captured === "failed") return fail();
+	await recordTerminal(context.store, scope, job.accountFingerprint, "delivered");
+	await removeJob(context.store, job);
+	return "complete";
+}
+async function interpretReconstruction(job, reconstruct) {
+	try {
+		const result = requirePlainRecord(await reconstruct(snapshotJob(job)), "Reconstruction result");
+		const status = requireOwnDataField(result, "status");
+		if (status === "deferred") {
+			if (requireOwnDataField(result, "reason") !== "missing-thread-identity") throw new TypeError(RECONSTRUCTION_DEFERRAL_REASON_INVALID_MESSAGE);
+			return "deferred";
+		}
+		if (status !== "ready") throw new TypeError(RECONSTRUCTION_RESULT_STATUS_INVALID_MESSAGE);
+		return {
+			status,
+			outputs: requireOwnDataField(result, "outputs")
+		};
+	} catch {
+		return "failed";
+	}
+}
+function validateJobOutputs(candidates, job, jobCapturedAtMs) {
+	try {
+		return validateOutputs(candidates, job, jobCapturedAtMs);
+	} catch {
+		return;
+	}
+}
+async function saveOutputMapping(store, job, outputs) {
+	const mappingResult = await store.capture(mappingRecord(job, outputs));
+	if (mappingResult.status !== "published" && mappingResult.status !== "duplicate") return false;
+	const storedMapping = readMapping(mappingResult.record);
+	return storedMapping.jobEventId === job.eventId && sameOutputMapping(storedMapping, outputs);
+}
+function lifecycleCaptureInput(job, output) {
+	const evidence = output.turnEvidence ?? job.turnEvidence;
+	const turnEvidence = {
+		...evidence.rootRunId === void 0 ? {} : { rootRunId: evidence.rootRunId },
+		childRunIds: [...evidence.childRunIds],
+		closureState: evidence.closureState
+	};
+	return {
+		turnId: job.turnId,
+		eventId: output.eventId,
+		submission: output.submission,
+		turnEvidence,
+		...output.dependencies === void 0 ? {} : { dependencies: output.dependencies },
+		...output.sourceAgeStartedAtMs === void 0 ? {} : { sourceAgeStartedAtMs: output.sourceAgeStartedAtMs }
+	};
+}
+async function captureOutputs(context, job, outputs) {
+	for (const output of outputs) {
+		const captureInput = lifecycleCaptureInput(job, output);
+		let captureStatus;
+		try {
+			captureStatus = requireOwnDataField(requirePlainRecord(await context.bridge.capture(captureInput), "Lifecycle capture result"), "status");
+		} catch {
+			return "failed";
+		}
+		if (captureStatus === "deferred") return "deferred";
+		if (captureStatus !== "published" && captureStatus !== "duplicate") return "failed";
+		if (captureStatus === "published") context.counts.captured += 1;
+	}
+	return "captured";
+}
+async function removeJob(store, job) {
+	await store.remove(mappingScope(job), { forgetTurn: true });
+	await store.remove(scopeOf(job), { forgetTurn: true });
+}
+async function recordFailure(context, scope, accountFingerprint, previous) {
+	await context.store.recordRetry(scope, accountFingerprint, nextRetry(previous, context.retryBaseMs));
+	context.counts.failed += 1;
+}
+async function recordTerminal(store, scope, accountFingerprint, outcome, reason) {
+	const result = await store.recordOutcome({
+		...scope,
+		destination: accountFingerprint,
+		outcome,
+		...reason === void 0 ? {} : { reason }
+	});
+	if (result.status !== "recorded" && result.status !== "duplicate") throw new Error(`${RECONSTRUCTION_TERMINAL_OUTCOME_MESSAGE} ${result.status}`);
+	if (outcome === "dropped" && result.status === "recorded") console.warn(DELIVERY_DROPPED_WARNING, `${scope.eventId} (${reason})`);
+	return result.status === "recorded";
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+function createReconstructionWorker(options) {
+	const integration = options.integration;
+	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
+	const accountFingerprint = requireNonBlankString(options.bridge.accountFingerprint, "Account fingerprint");
+	const bridge = Object.freeze({
+		accountFingerprint,
+		capture: options.bridge.capture
+	});
+	const reconstruct = options.reconstruct;
+	if (typeof bridge.capture !== "function" || typeof reconstruct !== "function") throw new TypeError(RECONSTRUCTION_CALLBACKS_REQUIRED_MESSAGE);
+	validateIntegration(integration);
+	validateIdentifier(sessionId, "session ID");
+	validateIdentifier(accountFingerprint, "account fingerprint");
+	const policy = resolvePolicy(options.policy);
+	const storageRoot = resolve(options.storageRoot);
+	const captureStore = createCaptureStore(storageRoot, CAPTURE_JOBS_DIRECTORY);
+	const context = {
+		integration,
+		sessionId,
+		accountFingerprint,
+		policy,
+		storageRoot,
+		captureStore,
+		bridge,
+		reconstruct
+	};
+	return {
+		async enqueue(input) {
+			const job = validateJobInput(input, integration, sessionId, accountFingerprint);
+			return captureStore.capture(jobRecord(job));
+		},
+		async readSavedWake(error, input) {
+			const job = validateJobInput(input, integration, sessionId, accountFingerprint);
+			const expected = jobRecord(job);
+			const saved = await readSavedCaptureWake(error, {
+				store: captureStore,
+				integration,
+				sessionId,
+				turnId: job.turnId,
+				destinationFingerprint: accountFingerprint,
+				eventId: job.eventId,
+				runId: expected.runId
+			});
+			if (saved === void 0) return void 0;
+			return captureContentDigest(saved.record) === captureContentDigest(expected) ? saved : void 0;
+		},
+		drain: (request = {}) => drainJobs(context, request)
+	};
+}
+async function drainJobs(context, request) {
+	const now = request.now ?? Date.now();
+	if (!Number.isFinite(now)) throw new RangeError(RECONSTRUCTION_DRAIN_TIME_MESSAGE);
+	const lockDirectory = await ensurePrivateDirectory(context.storageRoot, sessionSegments(identifierHash(context.sessionId)));
+	const lockPath = join(lockDirectory, RECONSTRUCTION_DRAIN_LOCK);
+	const lock = await tryAcquireFileLock(lockPath);
+	if (!lock) return { status: "busy" };
+	const counts = {
+		captured: 0,
+		deferred: 0,
+		failed: 0,
+		dropped: 0
+	};
+	try {
+		counts.dropped += await removeExpiredCaptures({
+			store: context.captureStore,
+			integration: context.integration,
+			destinations: [context.accountFingerprint],
+			accountFingerprint: context.accountFingerprint,
+			now,
+			maxAgeMs: context.policy.maxAgeMs
+		});
+		const candidates = await collectCandidates(context);
+		const overCapacity = Math.max(0, candidates.length - context.policy.maxEntries);
+		await dropOverCapacity(context, candidates.slice(0, overCapacity), counts);
+		await processCandidates(context, candidates.slice(overCapacity), counts);
+	} finally {
+		await lock.release();
+		await removeEmptyLockFolders(lockPath, context.storageRoot);
+	}
+	return {
+		status: "drained",
+		...counts,
+		...await summarizePending(context)
+	};
+}
+async function collectCandidates(context) {
+	const { captureStore, integration, sessionId, accountFingerprint } = context;
+	const entries = await captureStore.enumerate(integration, sessionId);
+	const candidates = [];
+	for (const entry of entries) {
+		if (entry.record.eventKind === "reconstruction-map-v1") {
+			readMapping(entry.record);
+			continue;
+		}
+		if (entry.record.eventKind !== "reconstruction-job-v1") throw new Error(RECONSTRUCTION_RECORD_UNSUPPORTED_MESSAGE);
+		const job = readJob(entry.record, integration);
+		const scope = scopeOf(entry.record);
+		const outcome = await captureStore.readOutcome(scope, job.accountFingerprint);
+		if (outcome.status === "failed") throw new Error(outcome.message);
+		if (outcome.status === "missing-capture") throw new Error(RECONSTRUCTION_JOB_MISSING_MESSAGE);
+		if (outcome.status === "settled") {
+			if (job.accountFingerprint === accountFingerprint && outcome.receipt.outcome === "delivered") await removeJob(captureStore, job);
+			continue;
+		}
+		if (job.accountFingerprint !== accountFingerprint) continue;
+		candidates.push({
+			entry,
+			job,
+			scope
+		});
+	}
+	return candidates;
+}
+async function dropOverCapacity(context, dropped, counts) {
+	for (const candidate of dropped) {
+		counts.dropped += Number(await recordTerminal(context.captureStore, candidate.scope, candidate.job.accountFingerprint, "dropped", DELIVERY_CAPACITY_REASON));
+		await removeJob(context.captureStore, candidate.job);
+	}
+}
+async function processCandidates(context, candidates, counts) {
+	const jobContext = {
+		store: context.captureStore,
+		bridge: context.bridge,
+		reconstruct: context.reconstruct,
+		retryBaseMs: context.policy.retryBaseMs,
+		counts
+	};
+	for (const candidate of candidates) if (await processJob(candidate, jobContext) === "deferred") counts.deferred += 1;
+}
+async function summarizePending(context) {
+	const { captureStore, integration, sessionId, accountFingerprint } = context;
+	const entries = await captureStore.enumerate(integration, sessionId);
+	let pending = 0;
+	let nextRetryAtMs;
+	let accountMismatch = 0;
+	for (const entry of entries) {
+		if (entry.record.eventKind !== "reconstruction-job-v1") continue;
+		const job = readJob(entry.record, integration);
+		const outcome = await captureStore.readOutcome(scopeOf(entry.record), job.accountFingerprint);
+		if (outcome.status === "failed") throw new Error(outcome.message);
+		if (outcome.status !== "settled") {
+			pending += 1;
+			if (job.accountFingerprint !== accountFingerprint) accountMismatch += 1;
+			const retry = entry.record.delivery?.retries[job.accountFingerprint];
+			if (retry !== void 0 && (nextRetryAtMs === void 0 || retry.notBeforeMs < nextRetryAtMs)) nextRetryAtMs = retry.notBeforeMs;
+		}
+	}
+	return {
+		pending,
+		...nextRetryAtMs === void 0 ? {} : { nextRetryAtMs },
+		accountMismatch
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+function reconstructionPassResult(result) {
+	if (result.status === "busy") return "retryable-failure";
+	if (waitingOnBackoff(result)) return "deferred";
+	return result.captured > 0 || result.dropped > 0 ? "progressed" : "idle";
+}
+function lifecyclePassResult(result) {
+	if (result.status === "busy") return "retryable-failure";
+	if (waitingOnBackoff(result)) return "deferred";
+	return result.settlement.captured > 0 || result.delivered > 0 || result.dropped > 0 ? "progressed" : "idle";
+}
+function waitingOnBackoff(result) {
+	return result.pending > 0 && result.nextRetryAtMs !== void 0;
+}
+const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_ERROR = "Background recovery report callback failed";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_SESSION_CALLBACK_ERROR = "Background recovery session callback is required";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR = "Background recovery report callback is required";
+const TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR = "Minimum foreign session age must be a non-negative integer";
+const TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE = "Recovery time must be a valid timestamp";
+const TRACING_ENGINE_SESSION_RECOVERY_OPTIONS_CALLBACK_IS_REQUIRED_MESSAGE = "Session recovery options callback is required";
+const TRACING_ENGINE_RECOVERY_ACCOUNT_FINGERPRINT_DOES_NOT_MATCH_ACTIVE_SESSION_MESSAGE = "Recovery account fingerprint does not match the active session";
+const TRACING_ENGINE_SESSION_RECOVERY_OPTIONS_MUST_BE_OBJECT_MESSAGE = "Session recovery options must be an object";
+const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is required";
+const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
+const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+function snapshotEngineOptions(options) {
+	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
+	return Object.freeze({
+		...options,
+		storageRoot: resolve(options.storageRoot),
+		writer: snapshotWriterOptions(options.writer)
+	});
+}
+function snapshotSessionOptions(options) {
+	if (options.backgroundRecovery !== void 0) {
+		if (typeof options.backgroundRecovery.optionsForSession !== "function") throw new TypeError(TRACING_ENGINE_BACKGROUND_RECOVERY_SESSION_CALLBACK_ERROR);
+		if (typeof options.backgroundRecovery.onReport !== "function") throw new TypeError(TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_CALLBACK_ERROR);
+		if (options.backgroundRecovery.minimumForeignAgeMs !== void 0 && (!Number.isSafeInteger(options.backgroundRecovery.minimumForeignAgeMs) || options.backgroundRecovery.minimumForeignAgeMs < 0)) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR);
+	}
+	return Object.freeze({
+		...options,
+		...options.backgroundRecovery === void 0 ? {} : { backgroundRecovery: Object.freeze({ ...options.backgroundRecovery }) }
+	});
+}
+function snapshotWriterOptions(options) {
+	return Object.freeze({
+		...options,
+		destinations: Object.freeze(options.destinations.map((destination) => Object.freeze({ ...destination }))),
+		...options.replicas === void 0 ? {} : { replicas: Object.freeze(options.replicas.map((replica) => Object.freeze({
+			...replica,
+			...replica.updates === void 0 ? {} : { updates: structuredClone(replica.updates) }
+		}))) },
+		...options.redactExtraRules === void 0 ? {} : { redactExtraRules: Object.freeze(options.redactExtraRules.map((rule) => Object.freeze({ ...rule }))) }
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+var MissingSettlementCaptureError = class extends Error {
+	constructor() {
+		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
+		this.name = "MissingSettlementCaptureError";
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+async function hasUnsettledRecoverySettlement(options) {
+	try {
+		return (await refreshSettlementProgress(await settleCapturedTurns({
+			captures: options.captures,
+			integration: options.integration,
+			sessionId: options.sessionId,
+			destinationFingerprint: options.destinationFingerprint,
+			destinations: options.destinations,
+			capture: async (input) => {
+				const scope = {
+					integration: options.integration,
+					sessionId: options.sessionId,
+					turnId: input.turnId,
+					eventId: input.eventId
+				};
+				const existing = await options.store.read(scope);
+				if (existing === void 0) throw new MissingSettlementCaptureError();
+				const existingContent = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== "capturedAtMs" && key !== "delivery"));
+				const plannedContent = {
+					version: existing.version,
+					integration: options.integration,
+					sessionId: options.sessionId,
+					...input
+				};
+				if (canonicalJson(existingContent) !== canonicalJson(plannedContent)) throw new Error(TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE);
+				return {
+					status: "duplicate",
+					record: existing
+				};
+			},
+			readOutcome: (scope, destination) => options.store.readOutcome(scope, destination),
+			droppedRunIds: (turnId) => options.store.readDroppedRunIds(options.integration, options.sessionId, turnId),
+			settledTurn: (turnId) => options.store.readSettledTurn(options.integration, options.sessionId, turnId)
+		}), options.destinations, (scope, destination) => options.store.readOutcome(scope, destination))).turns.some((turn) => turn.status === "pending");
+	} catch (error) {
+		if (error instanceof MissingSettlementCaptureError) return true;
+		throw error;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+function validateRecoveryRequest(request) {
+	const now = request.now ?? Date.now();
+	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError(TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE);
+	const minimumForeignAgeMs = request.minimumForeignAgeMs ?? 72e5;
+	if (!Number.isSafeInteger(minimumForeignAgeMs) || minimumForeignAgeMs < 0) throw new RangeError(TRACING_ENGINE_BACKGROUND_RECOVERY_MINIMUM_AGE_ERROR);
+	if (typeof request.optionsForSession !== "function") throw new TypeError(TRACING_ENGINE_SESSION_RECOVERY_OPTIONS_CALLBACK_IS_REQUIRED_MESSAGE);
+	return {
+		now,
+		minimumForeignAgeMs,
+		optionsForSession: request.optionsForSession
+	};
+}
+async function loadRecoveryIndex(runtime) {
+	const lifecycleStore = createCaptureStore(runtime.storageRoot);
+	const reconstructionStore = createCaptureStore(runtime.storageRoot, CAPTURE_JOBS_DIRECTORY);
+	const [lifecycleSessions, reconstructionSessions] = await Promise.all([lifecycleStore.enumerateSessions(runtime.integration), reconstructionStore.enumerateSessions(runtime.integration)]);
+	const writer = createLangSmithUploadWriter(runtime.writer);
+	if (writer.accountFingerprint !== runtime.accountFingerprint) throw new Error(TRACING_ENGINE_RECOVERY_ACCOUNT_FINGERPRINT_DOES_NOT_MATCH_ACTIVE_SESSION_MESSAGE);
+	return {
+		lifecycleStore,
+		writer,
+		destinationIds: writer.destinations.map((destination) => destination.id),
+		lifecycleBySession: new Map(lifecycleSessions.map((entry) => [entry.sessionId, entry.captures])),
+		reconstructionBySession: new Map(reconstructionSessions.map((entry) => [entry.sessionId, entry.captures])),
+		savedScopes: new Set(lifecycleSessions.flatMap(({ captures }) => captures.map(({ record }) => scopeKey(record)))),
+		waitingForOtherSetting: lifecycleSessions.flatMap(({ captures }) => captures).filter(({ record }) => isWaitingForOtherSetting(record, runtime.accountFingerprint)).length
+	};
+}
+function isDue(record, destinationId, now) {
+	return record.delivery?.outcomes[destinationId] === void 0 && !isWaitingForRetry(record.delivery?.retries[destinationId], now);
+}
+function isLifecycleKind(kind) {
+	return kind === "run-post" || kind === "run-patch" || kind === "run-settlement-patch";
+}
+async function assessSession(runtime, index, sessionId, now) {
+	const ownEntries = (entries) => (entries ?? []).filter(({ record }) => record.destinationFingerprint === runtime.accountFingerprint);
+	const lifecycle = ownEntries(index.lifecycleBySession.get(sessionId));
+	const reconstruction = ownEntries(index.reconstructionBySession.get(sessionId));
+	const pendingLifecycle = lifecycle.filter(({ record }) => index.destinationIds.some((id) => isDue(record, id, now)) && (record.dependencies ?? []).every((dependency) => index.savedScopes.has(scopeKey(dependency))));
+	const pendingJobs = reconstruction.filter(({ record }) => record.eventKind === "reconstruction-job-v1" && isDue(record, runtime.accountFingerprint, now));
+	const pending = [...pendingLifecycle, ...pendingJobs];
+	const hasUnsettledTurn = lifecycle.some(({ record }) => !isLifecycleKind(record.eventKind)) || pendingLifecycle.length === 0 && lifecycle.length > 0 && await hasUnsettledRecoverySettlement({
+		captures: index.lifecycleBySession.get(sessionId) ?? [],
+		integration: runtime.integration,
+		sessionId,
+		destinationFingerprint: runtime.accountFingerprint,
+		destinations: index.writer.destinations,
+		store: index.lifecycleStore
+	});
+	return {
+		hasPendingWork: pending.length > 0,
+		hasUnsettledTurn,
+		lastActivityAtMs: Math.max(0, ...[...lifecycle, ...reconstruction].map((e) => e.modifiedAtMs)),
+		oldestPendingAtMs: Math.min(Number.POSITIVE_INFINITY, ...pending.map(({ capturedAtMs }) => capturedAtMs))
+	};
+}
+async function wakeForeignSession(runtime, optionsForSession, sessionId, scopeGuard) {
+	const callbacks = await optionsForSession(sessionId);
+	if (callbacks === null || typeof callbacks !== "object") throw new TypeError(TRACING_ENGINE_SESSION_RECOVERY_OPTIONS_MUST_BE_OBJECT_MESSAGE);
+	const sessionOptions = {
+		...callbacks,
+		sessionId
+	};
+	const target = runtime.createSession(sessionOptions);
+	if (scopeGuard && !await scopeGuard()) return void 0;
+	return {
+		sessionId,
+		status: await target.wake()
+	};
+}
+function failureOf(sessionId, error) {
+	return {
+		sessionId,
+		failed: {
+			sessionId,
+			message: error instanceof Error ? error.message : String(error)
+		}
+	};
+}
+function guardedStep(sessionId, wake) {
+	return async () => {
+		try {
+			return {
+				sessionId,
+				scheduled: await wake()
+			};
+		} catch (error) {
+			return failureOf(sessionId, error);
+		}
+	};
+}
+function oldestPendingFirst(left, right) {
+	return left.oldestPendingAtMs - right.oldestPendingAtMs || compareText(left.sessionId, right.sessionId);
+}
+async function planRecoverySteps(plan) {
+	const { runtime, index, request, now, minimumForeignAgeMs, wakeForeign } = plan;
+	const sessionIds = /* @__PURE__ */ new Set([
+		...index.lifecycleBySession.keys(),
+		...index.reconstructionBySession.keys(),
+		runtime.currentSessionId
+	]);
+	const steps = [];
+	const foreign = [];
+	for (const sessionId of [...sessionIds].toSorted()) {
+		const isCurrentSession = sessionId === runtime.currentSessionId;
+		if (request.excludeCurrentSession && isCurrentSession) continue;
+		try {
+			const assessment = await assessSession(runtime, index, sessionId, now);
+			if (!assessment.hasUnsettledTurn && !assessment.hasPendingWork) continue;
+			if (isCurrentSession) steps.push(guardedStep(sessionId, async () => ({
+				sessionId,
+				status: await runtime.wakeCurrent()
+			})));
+			else if (Math.max(0, now - assessment.lastActivityAtMs) >= minimumForeignAgeMs) foreign.push({
+				sessionId,
+				oldestPendingAtMs: assessment.oldestPendingAtMs
+			});
+		} catch (error) {
+			steps.push(async () => failureOf(sessionId, error));
+		}
+	}
+	for (const { sessionId } of foreign.toSorted(oldestPendingFirst).slice(0, 25)) steps.push(guardedStep(sessionId, () => wakeForeign(sessionId)));
+	return steps;
+}
+async function recoverTracingSessions(runtime, request, scopeGuard) {
+	const { now, minimumForeignAgeMs, optionsForSession } = validateRecoveryRequest(request);
+	const index = await loadRecoveryIndex(runtime);
+	if (index.waitingForOtherSetting > 0) console.warn(fillTemplate(DELIVERY_ACCOUNT_MISMATCH_WARNING, { count: index.waitingForOtherSetting }));
+	const steps = await planRecoverySteps({
+		runtime,
+		index,
+		request,
+		now,
+		minimumForeignAgeMs,
+		wakeForeign: (id) => wakeForeignSession(runtime, optionsForSession, id, scopeGuard)
+	});
+	const results = await Promise.all(steps.map((step) => step()));
+	const scheduled = [];
+	const failed = [];
+	for (const result of results) if (result.failed !== void 0) failed.push(result.failed);
+	else if (result.scheduled === void 0) return {
+		scheduled,
+		failed
+	};
+	else scheduled.push(result.scheduled);
+	return {
+		scheduled,
+		failed
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+function retryableFailure(error) {
+	return {
+		status: "failed",
+		message: describe(error),
+		retryable: true
+	};
+}
+function worse(previous, next) {
+	if (previous.kind === "failed") return previous;
+	if (next.kind === "ok") return previous;
+	return next.kind === "failed" || previous.kind === "ok" ? next : previous;
+}
+function verdictResult(verdict) {
+	if (verdict.kind === "failed") return retryableFailure(verdict.error);
+	return verdict.kind === "mismatch" ? { status: "scope-mismatch" } : void 0;
+}
+async function runBackgroundRecovery(runtime, options, scopeGuard) {
+	let verdict = { kind: "ok" };
+	const checkScope = scopeGuard ? async () => {
+		try {
+			const matches = await scopeGuard();
+			verdict = worse(verdict, matches ? { kind: "ok" } : { kind: "mismatch" });
+			return matches;
+		} catch (error) {
+			verdict = worse(verdict, {
+				kind: "failed",
+				error
+			});
+			return false;
+		}
+	} : void 0;
+	try {
+		if (checkScope && !await checkScope()) return verdictResult(verdict);
+		const report = await recoverTracingSessions(runtime, {
+			optionsForSession: options.optionsForSession,
+			minimumForeignAgeMs: options.minimumForeignAgeMs ?? 72e5,
+			now: Date.now(),
+			excludeCurrentSession: true
+		}, checkScope);
+		if (checkScope && verdict.kind === "ok") await checkScope();
+		const stopped = verdictResult(verdict);
+		if (stopped !== void 0) return stopped;
+		return report.failed.length === 0 ? {
+			status: "completed",
+			report
+		} : {
+			status: "partial",
+			report,
+			retryable: true
+		};
+	} catch (error) {
+		return retryableFailure(error);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+async function drainThroughBackoff(drain) {
+	let waitedMs = 0;
+	let result = await drain();
+	for (let pass = 0; pass < 8; pass += 1) {
+		if (result.status !== "drained" || result.pending === 0 || result.nextRetryAtMs === void 0) break;
+		const wait = Math.max(0, result.nextRetryAtMs - Date.now());
+		if (waitedMs + wait > 12e4) break;
+		waitedMs += wait;
+		await setTimeout$1(wait);
+		const waitedFor = result.nextRetryAtMs;
+		result = await drain();
+		if (result.status === "drained" && result.nextRetryAtMs === waitedFor) break;
+	}
+	return result;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+function createTracingEngine(options) {
+	const config = snapshotEngineOptions(options);
+	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
+	return Object.freeze({ forSession });
+}
+function createSession(config, session) {
+	const state = { droppedWork: false };
+	const lifecycleBridge = createLifecycleBridge({
+		storageRoot: config.storageRoot,
+		integration: config.integration,
+		sessionId: session.sessionId,
+		writer: config.writer,
+		wake: async () => state.backgroundWorker?.wake()
+	});
+	const reconstructionWorker = createReconstructionWorker({
+		storageRoot: config.storageRoot,
+		integration: config.integration,
+		sessionId: session.sessionId,
+		bridge: lifecycleBridge,
+		reconstruct: session.reconstruct
+	});
+	const context = {
+		config,
+		session,
+		scope: Object.freeze({
+			integration: config.integration,
+			sessionId: session.sessionId,
+			accountFingerprint: lifecycleBridge.accountFingerprint
+		}),
+		lifecycleBridge,
+		reconstructionWorker,
+		state
+	};
+	state.backgroundWorker = createSessionWorker(context);
+	return Object.freeze({
+		async capture(input) {
+			return lifecycleBridge.capture(input);
+		},
+		async wake() {
+			return state.backgroundWorker.wake();
+		},
+		async queueReconstruction(input) {
+			const result = await reconstructionWorker.enqueue(input);
+			if (result.status === "published" || result.status === "duplicate") await wakeCapturedWork(result, () => state.backgroundWorker?.wake());
+			return result;
+		},
+		async readSavedReconstructionWake(error, input) {
+			return reconstructionWorker.readSavedWake(error, input);
+		},
+		drain: () => drainSession(context),
+		async recoverSessions(request) {
+			return recoverTracingSessions(recoveryRuntime(context), request);
+		}
+	});
+}
+function createSessionWorker(context) {
+	const { config, session, scope, lifecycleBridge, reconstructionWorker, state } = context;
+	return createBackgroundWorker({
+		storageRoot: config.storageRoot,
+		scope,
+		resolveScope: () => session.resolveScope(scope),
+		launchWorker: session.scheduleWake,
+		...session.startupWaitMs === void 0 ? {} : { startupWaitMs: session.startupWaitMs },
+		reconstructPending: async () => {
+			const result = await drainThroughBackoff(() => reconstructionWorker.drain());
+			state.droppedWork ||= result.status === "drained" && result.dropped > 0;
+			return reconstructionPassResult(result);
+		},
+		drainPending: async () => {
+			const result = await drainThroughBackoff(() => lifecycleBridge.drain());
+			state.droppedWork ||= result.status === "drained" && result.dropped > 0;
+			return lifecyclePassResult(result);
+		}
+	});
+}
+function recoveryRuntime(context) {
+	const { config, session, lifecycleBridge, state } = context;
+	return {
+		storageRoot: config.storageRoot,
+		integration: config.integration,
+		accountFingerprint: lifecycleBridge.accountFingerprint,
+		writer: config.writer,
+		currentSessionId: session.sessionId,
+		wakeCurrent: () => state.backgroundWorker.wake(),
+		createSession: (recoveredOptions) => createSession(config, snapshotSessionOptions({
+			...recoveredOptions,
+			...session.backgroundRecovery === void 0 ? {} : { backgroundRecovery: session.backgroundRecovery }
+		}))
+	};
+}
+async function reportBackgroundRecovery(context, backgroundRecovery) {
+	const { session, scope } = context;
+	let recoveryResult;
+	const checkScope = () => matchesScope(() => session.resolveScope(scope), scope);
+	try {
+		recoveryResult = await checkScope() ? await runBackgroundRecovery(recoveryRuntime(context), backgroundRecovery, checkScope) : { status: "scope-mismatch" };
+	} catch (error) {
+		recoveryResult = {
+			status: "failed",
+			message: describe(error),
+			retryable: true
+		};
+	}
+	try {
+		await backgroundRecovery.onReport(recoveryResult);
+	} catch (error) {
+		console.error(TRACING_ENGINE_BACKGROUND_RECOVERY_REPORT_ERROR, describe(error));
+	}
+}
+async function drainSession(context) {
+	const { session, state } = context;
+	state.droppedWork = false;
+	const run = await state.backgroundWorker.run();
+	const result = state.droppedWork && (run === "completed" || run === "idle" || run === "deferred") ? "dropped" : run;
+	const backgroundRecovery = session.backgroundRecovery;
+	if (backgroundRecovery && (run === "completed" || run === "idle")) await reportBackgroundRecovery(context, backgroundRecovery);
+	return result;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+function resolveUploadDestinationFingerprint(options) {
+	return resolveUploadDestinationIdentities(options).accountFingerprint;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/session.js
+function openPluginSession(options) {
+	const { storageRoot, integration, sessionId, writer } = options;
+	const callbacks = (id) => ({
+		reconstruct: options.reconstruct,
+		scheduleWake: () => options.scheduleWake(id),
+		resolveScope: async (expected) => ({
+			...expected,
+			accountFingerprint: fingerprintOf(await options.currentWriter())
+		})
+	});
+	return {
+		session: createTracingEngine({
+			storageRoot,
+			integration,
+			writer
+		}).forSession({
+			sessionId,
+			...callbacks(sessionId),
+			...options.startupWaitMs === void 0 ? {} : { startupWaitMs: options.startupWaitMs },
+			...options.onRecoveryReport === void 0 ? {} : { backgroundRecovery: {
+				optionsForSession: callbacks,
+				onReport: options.onRecoveryReport
+			} }
+		}),
+		sessionId,
+		store: createCaptureStore(storageRoot),
+		fingerprint: resolveUploadDestinationFingerprint(writer),
+		callbacks
+	};
+}
+function fingerprintOf(writer) {
+	if (writer === void 0) return UNAVAILABLE_ACCOUNT_FINGERPRINT;
+	try {
+		return resolveUploadDestinationFingerprint(writer);
+	} catch {
+		return UNAVAILABLE_ACCOUNT_FINGERPRINT;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+function builtAsBinary() {
+	return typeof LS_COMPILED_BINARY !== "undefined";
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
+const SYSTEM_CERTIFICATE_STORE = "system";
+const CERTIFICATE_FILE_ENCODING = "utf8";
+const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
+const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
+	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
+	if (existing === file) return { environment };
+	try {
+		const system = readSystem();
+		if (system.length === 0) return { environment };
+		writeIfChanged(file, bundle([...existing === void 0 ? [] : [readFileSync(existing, CERTIFICATE_FILE_ENCODING)], ...system]));
+		return { environment: {
+			...environment,
+			[EXTRA_CERTIFICATES_VARIABLE]: file
+		} };
+	} catch (error) {
+		return {
+			environment,
+			warning: `${SYSTEM_CERTIFICATES_WARNING} ${describe(error)}`
+		};
+	}
+}
+function readSystemStore() {
+	return typeof tls.getCACertificates === "function" ? tls.getCACertificates(SYSTEM_CERTIFICATE_STORE) : [];
+}
+function bundle(sources) {
+	return [...new Set(sources.flatMap((source) => source.match(CERTIFICATE_PATTERN) ?? []))].map((certificate) => `${certificate}\n`).join("");
+}
+function writeIfChanged(file, contents) {
+	if (readIfPresent(file) !== contents) writeFileSync(file, contents);
+}
+function readIfPresent(file) {
+	try {
+		return readFileSync(file, CERTIFICATE_FILE_ENCODING);
+	} catch {
+		return;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+function launchDetachedWorker(args, options = {}) {
+	const root = options.storageRoot;
+	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
+	const certificates = root === void 0 ? void 0 : trustSystemCertificates(join(root, SYSTEM_CERTIFICATES_FILE_NAME), process.env);
+	if (log !== void 0 && certificates?.warning !== void 0) logWarning(log, certificates.warning);
+	const child = spawn(options.executable ?? process.execPath, [...scriptArguments(), ...args], {
+		detached: true,
+		env: certificates?.environment ?? process.env,
+		stdio: log === void 0 ? "ignore" : [
+			"ignore",
+			log,
+			log
+		],
+		windowsHide: true
+	});
+	if (log !== void 0) closeSync(log);
+	return new Promise((resolve, reject) => {
+		child.once("error", reject);
+		child.once("spawn", () => {
+			if (child.pid === void 0) {
+				reject(/* @__PURE__ */ new Error(WORKER_NO_PID_MESSAGE));
+				return;
+			}
+			child.unref();
+			resolve(child.pid);
+		});
+	});
+}
+function scriptArguments() {
+	const entry = process.argv[1];
+	return builtAsBinary() || entry === void 0 || COMPILED_BINARY_ENTRY_PREFIXES.some((prefix) => entry.startsWith(prefix)) ? [] : [entry];
+}
+function openLog(path) {
+	try {
+		mkdirSync(dirname(path), { recursive: true });
+		const flag = (statSync(path, { throwIfNoEntry: false })?.size ?? 0) > 1048576 ? "w" : "a";
+		return openSync(path, flag, 384);
+	} catch {
+		return;
+	}
+}
+function logWarning(log, warning) {
+	try {
+		writeSync(log, `${warning}\n`);
+	} catch {
+		return;
+	}
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/settings/constants.js
@@ -12537,12 +19887,31 @@ const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
 const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
 const GIT_PATH_PREFIX_PATTERN = /^\/+/;
 const GIT_SUFFIX_PATTERN = /\.git$/;
-const KNOWN_FLAGS = /* @__PURE__ */ new Set([
-	"--help",
-	"-h",
-	"--version",
-	"-v"
-]);
+const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
+	"start_time",
+	"end_time",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"tags",
+	"error",
+	"serialized",
+	"events",
+	"reference_example_id"
+];
+const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
+const ENGINE_WORKER_FLAG = "--engine-worker";
+const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+const TRACE_RUN_EVENT_PREFIX = "codex-run:";
+const RECONSTRUCTION_EVENT_PREFIX = "codex-reconstruction:";
+const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
+const CONTEXT_LOCATOR_PREFIX = "codex-context:";
+const JOB_STATE_FILE_NAME = "langsmith_state.json";
+const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
+const STATE_FILE_MAX_AGE_MS = 216e5;
+const WARNING_FILE_NAME = "langsmith_warning.txt";
+const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.2.0";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
@@ -12656,520 +20025,81 @@ async function getConfig({ home, cwd, env }) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/constants.js
-const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/target.js
-function resolveTarget(options) {
-	for (const field of [
-		"executableName",
-		"repository",
-		"userAgent"
-	]) if (typeof options[field] !== "string" || options[field].trim() === "") throw new Error(`the binary target needs a ${field}`);
-	return {
-		executableName: options.executableName,
-		repository: options.repository,
-		userAgent: options.userAgent,
-		releasesApiOverrideEnvVar: options.releasesApiOverrideEnvVar,
-		publishedTargets: options.publishedTargets ?? DEFAULT_PUBLISHED_TARGETS
-	};
+//#region src/tracing-engine-locator.ts
+function transcriptSourceRef(transcriptPath) {
+	return `${TRANSCRIPT_LOCATOR_PREFIX}${Buffer.from(nodePath.resolve(transcriptPath)).toString("base64url")}`;
 }
-function isPublishedTarget(target, platform, arch) {
-	return target.publishedTargets[platform]?.includes(arch) ?? false;
+function transcriptPathFromRef(sourceRef) {
+	if (!sourceRef.startsWith("codex-transcript:")) throw new Error("Codex reconstruction source is not a transcript locator");
+	const value = Buffer.from(sourceRef.slice(17), "base64url").toString("utf8");
+	if (!nodePath.isAbsolute(value) || transcriptSourceRef(value) !== sourceRef) throw new Error("Codex transcript locator is invalid");
+	return value;
 }
-function releaseAssetName(target, platform, arch, version) {
-	return `${target.executableName}-${platform}-${arch}-${version}`;
+function reconstructionDigest(sessionId, turnId, sourceRef, mode) {
+	return createHash("sha256").update(JSON.stringify([
+		sessionId,
+		turnId,
+		sourceRef,
+		mode
+	])).digest("hex");
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/binary.js
-function defineBinaryTarget(options) {
-	const target = resolveTarget(options);
-	return {
-		target,
-		supportsHost: (platform$1 = platform(), arch$1 = arch()) => isPublishedTarget(target, platform$1, arch$1),
-		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version)
-	};
+function reconstructionEventId(sessionId, turnId, sourceRef, mode) {
+	return `${RECONSTRUCTION_EVENT_PREFIX}${reconstructionDigest(sessionId, turnId, sourceRef, mode)}`;
+}
+function contextSourceRef(sessionId, turnId, sourceRef, mode) {
+	return `${CONTEXT_LOCATOR_PREFIX}${reconstructionDigest(sessionId, turnId, sourceRef, mode)}`;
+}
+function contextDigestFromRef(contextRef) {
+	const digest = contextRef.startsWith("codex-context:") ? contextRef.slice(14) : "";
+	if (!CONTEXT_DIGEST_PATTERN.test(digest)) throw new Error("Codex reconstruction context locator is invalid");
+	return digest;
 }
 //#endregion
-//#region src/binary.ts
-const binary = defineBinaryTarget({
-	executableName: "langsmith-codex-tracing",
-	repository: "langchain-ai/langsmith-codex-plugins",
-	userAgent: "langsmith-codex",
-	releasesApiOverrideEnvVar: "LANGSMITH_CODEX_RELEASE_API"
-});
-//#endregion
-//#region src/messages.ts
-function tracingFailed(error) {
-	return `LangSmith tracing failed for this turn: ${error}`;
+//#region src/job-context.ts
+function jobStore(home) {
+	return createStateStore({ path: nodePath.join(home, CODEX_CONFIG_DIRECTORY, JOB_STATE_FILE_NAME) });
 }
-function usage(executableName) {
-	return `Usage:
-  ${executableName} --version
-
-Options:
-  --help, -h     Show this help and exit
-  --version, -v  Print the version this build carries and exit`;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/constants.js
-const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
-const CODING_AGENT_PURPOSE = "coding";
-const GIT_METADATA_KEYS = {
-	repository: "ls_git_repo",
-	repositoryUrl: "ls_git_repo_url",
-	provider: "ls_repo_provider",
-	branch: "ls_git_branch",
-	commit: "ls_git_commit_hash"
-};
-const LEGACY_GIT_METADATA_KEYS = {
-	repository: "repository_name",
-	repositoryUrl: "repository_url",
-	provider: "repository_provider",
-	branch: "git_branch",
-	commit: "git_commit_sha"
-};
-const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
-GIT_METADATA_KEYS.repository, GIT_METADATA_KEYS.provider, GIT_METADATA_KEYS.repositoryUrl, GIT_METADATA_KEYS.branch, GIT_METADATA_KEYS.commit, LEGACY_GIT_METADATA_KEYS.repository, LEGACY_GIT_METADATA_KEYS.provider, LEGACY_GIT_METADATA_KEYS.repositoryUrl, LEGACY_GIT_METADATA_KEYS.branch, LEGACY_GIT_METADATA_KEYS.commit;
-const CODING_AGENT_RUN_TYPES = [
-	"root",
-	"llm",
-	"tool",
-	"subagent",
-	"interrupted"
-];
-const CODING_AGENT_RUN_SCOPES = {
-	all: CODING_AGENT_RUN_TYPES,
-	rootInterrupted: ["root", "interrupted"],
-	subagent: ["subagent"],
-	tool: ["tool"],
-	llmTool: ["llm", "tool"],
-	chain: [
-		"root",
-		"subagent",
-		"interrupted"
-	]
-};
-const CODING_AGENT_AGENT_TYPES = [
-	"root",
-	"subagent",
-	"middleware",
-	"compaction"
-];
-const CODING_AGENT_SCHEMA_INTEGRATIONS = [
-	"claude-code",
-	"openai-codex",
-	"deepagents-code",
-	"cursor",
-	"pi"
-];
-const CODING_AGENT_CORE_INTEGRATIONS = [
-	"claude-code",
-	"cursor",
-	"openai-codex"
-];
-const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
-const CODING_AGENT_RUNTIME_NAMES = {
-	"claude-code": "Claude Code",
-	"openai-codex": "Codex",
-	"deepagents-code": "Deep Agents Code",
-	cursor: "Cursor",
-	pi: "Pi"
-};
-const CODING_AGENT_INTEGRATION_POLICIES = {
-	"claude-code": {
-		fullModePrecedence: "custom-wins",
-		metadataModeUsesDirectMetadata: true,
-		metadataModePreservesToolName: false,
-		legacyAliases: true
-	},
-	cursor: {
-		fullModePrecedence: "custom-wins",
-		metadataModeUsesDirectMetadata: true,
-		metadataModePreservesToolName: true,
-		legacyAliases: false
-	},
-	"openai-codex": {
-		fullModePrecedence: "structural-wins",
-		metadataModeUsesDirectMetadata: false,
-		metadataModePreservesToolName: false,
-		legacyAliases: false
-	}
-};
-const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
-const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
-	requirement: "where_known",
-	requiredWhereKnown: true
-};
-const CODING_AGENT_FIELD_DEFAULTS = {
-	appliesTo: CODING_AGENT_RUN_TYPES,
-	type: "string",
-	allowedValues: null,
-	requirement: "contextual",
-	requiredWhereKnown: false,
-	metadataModeIntegrations: []
-};
-const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-	metadataSource: "structural"
-};
-const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
-	metadataSource: "provider",
-	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-};
-const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-const METADATA_MODE_NAME = "metadata";
-const METADATA_MODE_STATUS_VALUES = [
-	"running",
-	"completed",
-	"error"
-];
-const CODING_AGENT_RUNTIME_LIBRARY = "langsmith";
-const CODING_AGENT_RUNTIME_SDK = "langsmith-js";
-const CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES = [
-	"VERCEL_GIT_COMMIT_SHA",
-	"NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
-	"COMMIT_REF",
-	"RENDER_GIT_COMMIT",
-	"CI_COMMIT_SHA",
-	"CIRCLE_SHA1",
-	"CF_PAGES_COMMIT_SHA",
-	"REACT_APP_GIT_SHA",
-	"SOURCE_VERSION",
-	"GITHUB_SHA",
-	"TRAVIS_COMMIT",
-	"GIT_COMMIT",
-	"BUILD_VCS_NUMBER",
-	"bamboo_planRepository_revision",
-	"Build.SourceVersion",
-	"BITBUCKET_COMMIT",
-	"DRONE_COMMIT_SHA",
-	"SEMAPHORE_GIT_SHA",
-	"BUILDKITE_COMMIT"
-];
-const CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES = ["LANGCHAIN_", "LANGSMITH_"];
-const CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED = [
-	"LANGCHAIN_API_KEY",
-	"LANGCHAIN_ENDPOINT",
-	"LANGCHAIN_TRACING_V2",
-	"LANGCHAIN_PROJECT",
-	"LANGCHAIN_SESSION",
-	"LANGSMITH_API_KEY",
-	"LANGSMITH_ENDPOINT",
-	"LANGSMITH_TRACING_V2",
-	"LANGSMITH_CONFIG_FILE",
-	"LANGSMITH_PROJECT",
-	"LANGSMITH_SESSION",
-	"LANGSMITH_AGENT_ID",
-	"LANGSMITH_AGENT_ENVIRONMENT"
-];
-const CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS = [
-	"key",
-	"secret",
-	"token",
-	"password",
-	"passwd",
-	"pwd",
-	"credential",
-	"email"
-];
-const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
-	"endpoint",
-	"proxy",
-	"url",
-	"auth",
-	"header"
-];
-const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
-const CODING_AGENT_REVISION_ID_KEY = "revision_id";
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/contract.js
-function field(key, options = {}) {
-	return {
-		key,
-		...CODING_AGENT_FIELD_DEFAULTS,
-		...options
-	};
-}
-const structural = (key, options = {}) => field(key, {
-	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
-	...options
-});
-const provider = (key, options = {}) => field(key, {
-	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
-	...options
-});
-const CODING_AGENT_V1_CONTRACT = {
-	schemaVersion: CODING_AGENT_SCHEMA_VERSION,
-	integrations: CODING_AGENT_SCHEMA_INTEGRATIONS,
-	runtimeNames: CODING_AGENT_RUNTIME_NAMES,
-	keys: [
-		structural("ls_agent_purpose", {
-			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: [CODING_AGENT_PURPOSE]
-		}),
-		structural("ls_integration", {
-			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
-		}),
-		structural("ls_agent_runtime", {
-			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: Object.values(CODING_AGENT_RUNTIME_NAMES)
-		}),
-		structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS),
-		structural("ls_trace_schema_version", {
-			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: [CODING_AGENT_SCHEMA_VERSION]
-		}),
-		structural("ls_agent_type", {
-			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-			allowedValues: CODING_AGENT_AGENT_TYPES
-		}),
-		structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		structural("turn_number", {
-			...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
-			type: "integer"
-		}),
-		field(GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(LEGACY_GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(LEGACY_GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(LEGACY_GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(LEGACY_GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field(LEGACY_GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
-		field("ls_skill_name", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-		}),
-		field(ATTRIBUTION_IDENTIFIER_KEY),
-		field("user_id"),
-		field("local_username"),
-		field("user_email"),
-		field("sandbox_type"),
-		field("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }),
-		field("ls_subagent_id", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-		}),
-		field("ls_subagent_type", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-		}),
-		field("ls_tool_name", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-		}),
-		provider("ls_provider", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
-		}),
-		provider("ls_model_type", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-		}),
-		provider("ls_message_format", {
-			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-		}),
-		provider("codex_cli_version", {
-			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-		}),
-		provider("ls_raw_aggregated_usage", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.chain,
-			type: "object",
-			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-		}),
-		provider("ls_invocation_params", {
-			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-			type: "object"
-		}),
-		field("usage_metadata", {
-			type: "object",
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-			metadataSource: "explicit"
-		}),
-		field("ls_model_name", {
-			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-			metadataSource: "explicit"
-		})
-	],
-	runtime: {
-		library: CODING_AGENT_RUNTIME_LIBRARY,
-		sdk: CODING_AGENT_RUNTIME_SDK,
-		releaseEnvironmentVariables: CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES,
-		environmentMetadata: {
-			prefixes: CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES,
-			excluded: CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED,
-			sensitiveSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS,
-			endpointSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS,
-			revisionId: {
-				variable: CODING_AGENT_REVISION_ID_VARIABLE,
-				key: CODING_AGENT_REVISION_ID_KEY
+async function saveJobContext(home, sessionId, contextRef, context) {
+	const job = contextDigestFromRef(contextRef);
+	await mkdir(nodePath.join(home, CODEX_CONFIG_DIRECTORY), {
+		recursive: true,
+		mode: 448
+	});
+	await jobStore(home).update((state) => {
+		const fresh = pruneStateEntries(state, STATE_FILE_MAX_AGE_MS);
+		const queued = Object.hasOwn(fresh, sessionId) ? fresh[sessionId].queued_jobs : {};
+		return {
+			...fresh,
+			[sessionId]: {
+				updated: (/* @__PURE__ */ new Date()).toISOString(),
+				queued_jobs: {
+					...queued,
+					[job]: context
+				}
 			}
-		}
-	},
-	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
-};
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
-function withBothGitMetadataNames(metadata) {
-	const both = { ...metadata };
-	for (const role of Object.keys(GIT_METADATA_KEYS)) {
-		const value = both[GIT_METADATA_KEYS[role]] ?? both[LEGACY_GIT_METADATA_KEYS[role]];
-		if (value === void 0) continue;
-		both[GIT_METADATA_KEYS[role]] ??= value;
-		both[LEGACY_GIT_METADATA_KEYS[role]] ??= value;
-	}
-	return both;
+		};
+	});
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/constants.js
-const FILE_MISSING_CODE = "ENOENT";
-const FILE_EXISTS_CODE = "EEXIST";
-const PERMISSION_DENIED_CODE = "EPERM";
-const FILE_ACCESS_DENIED_CODE = "EACCES";
-const FILE_BUSY_CODE = "EBUSY";
-const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
-function isPlainRecord(value) {
-	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+function readJobContext(home, sessionId, contextRef) {
+	const state = jobStore(home).read();
+	const queued = Object.hasOwn(state, sessionId) ? state[sessionId].queued_jobs : {};
+	const job = contextDigestFromRef(contextRef);
+	return Object.hasOwn(queued, job) ? queued[job] : void 0;
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/validation.js
-function metadataFieldTypeIssue(field, value) {
-	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
-}
-function metadataFieldValueIssue(field, value) {
-	const typeIssue = metadataFieldTypeIssue(field, value);
-	if (typeIssue) return typeIssue;
-	if (field.allowedValues && !field.allowedValues.includes(value)) return "value";
-}
-function validateProviderMetadata(value, integration, runType) {
-	if (!isPlainRecord(value)) return [{
-		key: "",
-		reason: "type"
-	}];
-	const issues = [];
-	for (const [key, entry] of Object.entries(value)) {
-		const field = CODING_AGENT_V1_CONTRACT.keys.find((candidate) => candidate.key === key);
-		if (field?.metadataSource !== "provider") {
-			issues.push({
-				key,
-				reason: "scope"
-			});
-			continue;
-		}
-		if (!field.providerIntegrations?.includes(integration)) {
-			issues.push({
-				key,
-				reason: "integration"
-			});
-			continue;
-		}
-		if (!field.appliesTo.includes(runType)) {
-			issues.push({
-				key,
-				reason: "scope"
-			});
-			continue;
-		}
-		const reason = metadataFieldValueIssue(field, entry);
-		if (reason) issues.push({
-			key,
-			reason
-		});
-	}
-	return issues;
-}
-function normalizeProviderMetadata(value, integration, runType) {
-	if (!isPlainRecord(value)) return {};
-	const issues = new Map(validateProviderMetadata(value, integration, runType).map((issue) => [issue.key, issue]));
-	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/builder.js
-function buildCodingAgentMetadata(options) {
-	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
-	const identity = {
-		ls_agent_purpose: CODING_AGENT_PURPOSE,
-		ls_integration: options.integration,
-		ls_agent_runtime: CODING_AGENT_V1_CONTRACT.runtimeNames[options.integration],
-		ls_trace_schema_version: CODING_AGENT_SCHEMA_VERSION,
-		ls_agent_type: options.agentType,
-		thread_id: options.threadId
-	};
-	if (options.integrationVersion) identity.ls_integration_version = options.integrationVersion;
-	if (options.runtimeVersion) identity.ls_agent_runtime_version = options.runtimeVersion;
-	if (options.turnId) identity.turn_id = options.turnId;
-	if (typeof options.turnNumber === "number") identity.turn_number = options.turnNumber;
-	if (options.approvalPolicy) identity.approval_policy = options.approvalPolicy;
-	if (options.clearSubagent) {
-		identity.ls_subagent_id = void 0;
-		identity.ls_subagent_type = void 0;
-	} else {
-		if (options.subagentId) identity.ls_subagent_id = options.subagentId;
-		if (options.subagentType) identity.ls_subagent_type = options.subagentType;
-	}
-	if (options.toolName) {
-		if (policy.legacyAliases) identity.tool_name = options.toolName;
-		if (options.runName && options.toolName !== options.runName) identity.ls_tool_name = options.toolName;
-	}
-	if (options.skillName) identity.ls_skill_name = options.skillName;
-	if (policy.legacyAliases && options.subagentId) identity.agent_id = options.subagentId;
-	if (policy.legacyAliases && options.subagentType) identity.agent_type = options.subagentType;
-	const explicit = {};
-	if (options.modelName !== void 0) explicit.ls_model_name = options.modelName;
-	if (options.usageMetadata !== void 0) explicit.usage_metadata = options.usageMetadata;
-	const provider = normalizeProviderMetadata(options.providerMetadata, options.integration, options.runType);
-	const trusted = {
-		...identity,
-		...explicit,
-		...provider
-	};
-	if (policy.metadataModePreservesToolName && options.toolName) trusted.ls_tool_name = options.toolName;
-	const pieces = [
-		identity,
-		explicit,
-		provider,
-		options.runSpecific,
-		options.base
-	];
-	const full = policy.fullModePrecedence === "custom-wins" ? pieces : pieces.toReversed();
-	const merged = {};
-	for (const piece of full) if (piece) Object.assign(merged, piece);
-	const result = withBothGitMetadataNames(merged);
-	Object.defineProperty(result, TRUSTED_METADATA, { value: trusted });
-	return result;
-}
-function trustedCodingAgentMetadata(metadata) {
-	return metadata?.[TRUSTED_METADATA];
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
-function projectCodingAgentMetadata(metadata, integration, status) {
-	const safe = {};
-	for (const [key, value] of Object.entries(metadata ?? {})) {
-		const field = CODING_AGENT_V1_CONTRACT.keys.find((entry) => entry.key === key);
-		if (!field?.metadataModeIntegrations.includes(integration) || value === void 0 || metadataFieldTypeIssue(field, value) !== void 0) continue;
-		safe[key] = value;
-	}
-	safe.status = METADATA_MODE_STATUS_VALUES.includes(status) ? status : "running";
-	safe.ls_tracing_mode = METADATA_MODE_NAME;
-	return safe;
-}
-function metadataForMode(metadata, integration, mode = "full", status) {
-	if (mode === "full") return metadata;
-	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
+async function removeJobContext(home, sessionId, contextRef) {
+	const job = contextDigestFromRef(contextRef);
+	await jobStore(home).update((state) => {
+		if (!Object.hasOwn(state, sessionId)) return state;
+		const { [job]: _done, ...queued } = state[sessionId].queued_jobs;
+		const { [sessionId]: session, ...others } = state;
+		return Object.keys(queued).length === 0 ? others : {
+			...others,
+			[sessionId]: {
+				...session,
+				queued_jobs: queued
+			}
+		};
+	});
 }
 //#endregion
 //#region src/codex-git.ts
@@ -13253,25 +20183,6 @@ const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
 //#endregion
-//#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch {
-		return false;
-	}
-}
-//#endregion
 //#region src/skills.ts
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
@@ -13304,131 +20215,6 @@ function skillNamesFromToolCall(toolName, args) {
 //#region src/utils/isPrimitive.ts
 function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/constants.js
-const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
-const METADATA_MODE_RUN_CONFIG_FIELDS = [
-	"client",
-	"id",
-	"name",
-	"run_type",
-	"project_name",
-	"start_time",
-	"end_time",
-	"parent_run",
-	"parent_run_id",
-	"trace_id",
-	"dotted_order",
-	"distributedParentId"
-];
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
-function mutedContent(role) {
-	return { messages: [{
-		role,
-		content: MUTED_TRACE_CONTENT
-	}] };
-}
-function statusOfRun(run) {
-	const metadataStatus = run.extra?.metadata?.status;
-	if (run.error != null || metadataStatus === "error") return "error";
-	if (run.end_time != null || metadataStatus === "completed") return "completed";
-	return "running";
-}
-function projectReplica(replica) {
-	if (!replica || typeof replica !== "object") return replica;
-	if (Array.isArray(replica)) return { projectName: replica[0] };
-	const { updates: _updates, ...safe } = replica;
-	return safe;
-}
-function extraForMode(metadata, integration, status) {
-	return {
-		metadata,
-		toJSON() {
-			const currentStatus = this.metadata?.status;
-			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
-			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
-		}
-	};
-}
-function configForMetadataMode(config, integration, privacyContext) {
-	const source = config;
-	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
-	const originalExtra = source.extra;
-	const safe = {};
-	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
-	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
-	if (Array.isArray(source.tags) && source.tags.length === 0) safe.tags = [];
-	safe.inputs = mutedContent("user");
-	safe.outputs = mutedContent("assistant");
-	safe.extra = extraForMode(metadataForMode(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
-	return safe;
-}
-function sanitizeRunTree(run, integration) {
-	const status = statusOfRun(run);
-	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
-	run.inputs = mutedContent("user");
-	run.outputs = mutedContent("assistant");
-	delete run.error;
-	run.serialized = {};
-	if (!Array.isArray(run.tags) || run.tags.length > 0) delete run.tags;
-	delete run.reference_example_id;
-	delete run.attachments;
-	delete run.events;
-	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
-	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
-	run.extra = extraForMode(metadata, integration, status);
-}
-function protectRunTree(run, integration) {
-	sanitizeRunTree(run, integration);
-	const createChild = run.createChild.bind(run);
-	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
-	const postRun = run.postRun.bind(run);
-	run.postRun = async (excludeChildRuns = true) => {
-		sanitizeRunTree(run, integration);
-		if (!excludeChildRuns) {
-			const childRuns = [...run.child_runs];
-			await postRun(true);
-			for (const childRun of childRuns) await childRun.postRun(false);
-			return;
-		}
-		return postRun(excludeChildRuns);
-	};
-	const patchRun = run.patchRun.bind(run);
-	run.patchRun = (options) => {
-		sanitizeRunTree(run, integration);
-		return patchRun({
-			excludeInputs: false,
-			...options
-		});
-	};
-	const end = run.end.bind(run);
-	run.end = (outputs, error, endTime, metadata) => {
-		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
-		const safeMetadata = metadataForMode(metadata, integration, "metadata", status) ?? { status };
-		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
-	};
-	const toJSON = run.toJSON.bind(run);
-	run.toJSON = () => {
-		sanitizeRunTree(run, integration);
-		return toJSON();
-	};
-	return run;
-}
-function preserveFullModePatchInputs(run) {
-	const createChild = run.createChild.bind(run);
-	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
-	const patchRun = run.patchRun.bind(run);
-	run.patchRun = (options) => patchRun({
-		excludeInputs: false,
-		...options
-	});
-	return run;
-}
-function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
-	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
-	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
 }
 //#endregion
 //#region src/privacy.ts
@@ -13483,726 +20269,6 @@ function createRunTree(config, mode = MODE_FULL, parent) {
 	if (mode === "metadata") metadataProtectedRunTrees.add(run);
 	return run;
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/errors.js
-function describe(error) {
-	return error instanceof Error ? error.message : String(error);
-}
-function errorCode(error) {
-	return error !== null && typeof error === "object" && "code" in error && typeof error.code === "string" ? error.code : void 0;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/constants.js
-const POLICY_LOCK_TIMEOUT_MS = 2e3;
-const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
-const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
-const POLICY_UNREADABLE_MESSAGE = "Refusing to overwrite them; repair the file or its permissions before retrying. No preferences were changed.";
-const POLICY_NOT_REGULAR_MESSAGE = "Tracing preferences must be a regular, non-symlink file";
-const POLICY_ASYNC_UPDATE_MESSAGE = "A policy update must change the policy synchronously";
-const POLICY_FILE_ENCODING = "utf8";
-const POLICY_TEMP_CLOSE_WARNING = "Temporary file close failed";
-const POLICY_TEMP_CLEANUP_WARNING = "Temporary file cleanup failed";
-const POLICY_DIRECTORY_CLOSE_WARNING = "Directory close cleanup failed";
-const POLICY_LOCK_CLEANUP_FAILED_PREFIX = "Preference lock cleanup failed at";
-const POLICY_CANNOT_READ_PREFIX = "Cannot read tracing preferences at";
-const POLICY_DURABILITY_WARNING = "Preference is effective, but crash durability could not be confirmed; retry saving";
-const POLICY_LOCK_RELEASE_WARNING = "Before retrying, remove the lock only after confirming no preference writer is running";
-const POLICY_PARSE_RESULT_MESSAGE = "A policy parser must return a policy";
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
-const CLEANUP_IGNORED_DIRECTORY_CODES = [
-	FILE_MISSING_CODE,
-	DIRECTORY_NOT_EMPTY_CODE,
-	FILE_EXISTS_CODE,
-	PERMISSION_DENIED_CODE,
-	FILE_BUSY_CODE,
-	FILE_ACCESS_DENIED_CODE
-];
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
-async function removeDirectoryBestEffort(path, warning) {
-	try {
-		await rmdir(path);
-	} catch (error) {
-		if (errorCode(error) !== "ENOENT") console.warn(warning, describe(error));
-	}
-}
-async function removeEmptyAncestors(directory, root) {
-	for (let current = directory; current !== root && current !== dirname(current);) {
-		try {
-			await rmdir(current);
-		} catch (error) {
-			const code = errorCode(error);
-			if (CLEANUP_IGNORED_DIRECTORY_CODES.some((ignored) => ignored === code)) return;
-			throw error;
-		}
-		current = dirname(current);
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/constants.js
-const FILE_LOCK_CLAIM_EXTENSION = ".json";
-const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
-const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
-const FILE_LOCK_TIMEOUT_ERROR_NAME = "FileLockTimeoutError";
-const FILE_LOCK_TEMP_SUFFIX = ".tmp";
-const FILE_LOCK_ENCODING = "utf-8";
-const FILE_LOCK_TIMEOUT_MESSAGE = "Timed out waiting for file lock";
-const FILE_LOCK_TICKET_LIMIT_MESSAGE = "File lock ticket limit reached";
-const FILE_LOCK_RELEASE_MESSAGE = "Could not release file lock claim";
-const FILE_LOCK_INVALID_TIMEOUT_MESSAGE = "timeoutMs must be a finite positive number";
-const FILE_LOCK_ACQUIRE_MESSAGE = "Could not acquire file lock claim";
-const FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE = "Unsafe file lock claims directory";
-const FILE_LOCK_STALE_CLAIM_MS = 3e3;
-const FILE_LOCK_TRY_CHOOSING_WAIT_MS = 1e3;
-const FILE_LOCK_DIRECTORY_CONTENTION_CODES = [PERMISSION_DENIED_CODE, FILE_ACCESS_DENIED_CODE];
-const FILE_LOCK_BUSY_FILE_CODES = [...FILE_LOCK_DIRECTORY_CONTENTION_CODES, FILE_BUSY_CODE];
-const FILE_LOCK_HEARTBEAT_WARNING = "Could not refresh a file lock claim:";
-const FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE = "Could not release the legacy lock gate after shared lock acquisition failed";
-const FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE = "Could not release compatible file lock";
-const FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE = "Legacy file lock gate changed before release";
-const FILE_LOCK_COMPATIBLE_OWNER_FILE = "owner";
-const FILE_LOCK_COMPATIBLE_OWNER_MESSAGE = "Could not record the legacy file lock gate owner";
-const FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN = /^[1-9]\d*$/u;
-const FILE_LOCK_COMPATIBLE_STALE_SUFFIX = ".stale";
-const FILE_LOCK_GATE_CLEANUP_WARNING = "Could not remove a half-created lock folder:";
-const FILE_LOCK_STALE_GATE_CLEANUP_WARNING = "Could not remove an old lock folder:";
-const STORAGE_NOT_WRITABLE_ERROR_NAME = "StorageNotWritableError";
-const STORAGE_NOT_WRITABLE_MESSAGE = "LangSmith can't write to its storage folder";
-const STORAGE_NOT_WRITABLE_FIX = "Fix that folder's permissions so your user account can create files in it, and tracing will resume.";
-const FILE_LOCK_LOST_MESSAGE = "The file lock was taken over before the write finished";
-const STORAGE_UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-new RegExp(`^\\.${STORAGE_UUID}(\\.${STORAGE_UUID})?\\.tmp$`, "u"), new RegExp(`^wake-[0-9a-f]{64}\\.active\\.${STORAGE_UUID}(\\.attempt\\.[1-9]\\d*)?\\.json$`, "u");
-new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
-async function removeEmptyLockFolders(lockPath, root) {
-	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/errors.js
-var FileLockTimeoutError = class extends Error {
-	blockedPath;
-	constructor(blockedPath) {
-		super(`${FILE_LOCK_TIMEOUT_MESSAGE}: ${resolve(blockedPath)}`);
-		this.name = FILE_LOCK_TIMEOUT_ERROR_NAME;
-		this.blockedPath = resolve(blockedPath);
-	}
-};
-var StorageNotWritableError = class extends Error {
-	folder;
-	code;
-	constructor(folder, cause) {
-		super(`${STORAGE_NOT_WRITABLE_MESSAGE} ${resolve(folder)}. ${STORAGE_NOT_WRITABLE_FIX}`, { cause });
-		this.name = STORAGE_NOT_WRITABLE_ERROR_NAME;
-		this.folder = resolve(folder);
-		this.code = errorCode(cause);
-	}
-};
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
-const heartbeats = /* @__PURE__ */ new Map();
-function startHeartbeat(path, id) {
-	const timer = setInterval(() => {
-		const now = /* @__PURE__ */ new Date();
-		utimes(path, now, now).catch(warnUnlessMissing);
-	}, 500);
-	timer.unref();
-	heartbeats.set(id, timer);
-}
-function stopHeartbeat(id) {
-	clearInterval(heartbeats.get(id));
-	heartbeats.delete(id);
-}
-function warnUnlessMissing(error) {
-	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
-function processIsAlive(pid) {
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch (error) {
-		if (errorCode(error) === "ESRCH") return false;
-		return;
-	}
-}
-async function removeFile(filePath) {
-	try {
-		await unlink(filePath);
-		return true;
-	} catch (error) {
-		if (errorCode(error) === "ENOENT") return true;
-		return false;
-	}
-}
-function isBusyFileError(error) {
-	return FILE_LOCK_BUSY_FILE_CODES.includes(errorCode(error) ?? "");
-}
-function timeoutMs(options) {
-	const value = options?.timeoutMs ?? 5e3;
-	if (!Number.isFinite(value) || value <= 0) throw new RangeError(FILE_LOCK_INVALID_TIMEOUT_MESSAGE);
-	return value;
-}
-function waitForNextScan(deadline, blockedPath) {
-	const remaining = deadline - performance$1.now();
-	if (remaining <= 0) return Promise.reject(new FileLockTimeoutError(blockedPath));
-	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
-async function createLegacyGate(gatePath) {
-	await mkdir(gatePath, { mode: 448 });
-	const stat = await lstat(gatePath);
-	if (!stat.isDirectory()) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
-	await recordLegacyGateOwner(gatePath);
-	startHeartbeat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), gatePath);
-	return {
-		path: gatePath,
-		dev: stat.dev,
-		ino: stat.ino,
-		birthtimeMs: stat.birthtimeMs
-	};
-}
-function resetMissingPermission(attempt) {
-	attempt.missingPermissionError = void 0;
-	attempt.windowsDeniedRetries = 0;
-}
-async function waitOutContention(attempt, error) {
-	const { gatePath, filePath, deadline, tryAcquire } = attempt;
-	const code = errorCode(error);
-	const permissionDenied = FILE_LOCK_DIRECTORY_CONTENTION_CODES.includes(code ?? "");
-	if (code !== "EEXIST" && !permissionDenied) throw error;
-	let isContended = false;
-	try {
-		const gate = await lstat(gatePath);
-		const isDirectory = gate.isDirectory();
-		isContended = isDirectory || gate.isFile() && code === "EEXIST";
-		if (isContended && await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) {
-			if (!await reclaimLegacyGate(gatePath, filePath, tryAcquire)) await waitForNextScan(deadline, gatePath);
-			return;
-		}
-	} catch (statError) {
-		if (errorCode(statError) === "ENOENT") {
-			if (code === "EEXIST") {
-				resetMissingPermission(attempt);
-				await waitForNextScan(deadline, gatePath);
-				return;
-			}
-			if (permissionDenied) {
-				const firstRetry = attempt.missingPermissionError === void 0;
-				attempt.missingPermissionError = new StorageNotWritableError(dirname(gatePath), error);
-				if (firstRetry) return;
-				if (process.platform !== "win32" || code !== "EPERM" || attempt.windowsDeniedRetries >= 5) throw attempt.missingPermissionError;
-				attempt.windowsDeniedRetries += 1;
-				const denied = attempt.missingPermissionError;
-				await waitForNextScan(deadline, gatePath).catch(() => Promise.reject(denied));
-				return;
-			}
-		}
-		throw error;
-	}
-	if (!isContended) throw error;
-	resetMissingPermission(attempt);
-	await waitForNextScan(deadline, gatePath);
-}
-async function acquireLegacyDirectoryGate(filePath, deadline, tryAcquire) {
-	const gatePath = `${filePath}${FILE_LOCK_LEGACY_DIRECTORY_SUFFIX}`;
-	await mkdir(dirname(filePath), {
-		recursive: true,
-		mode: 448
-	});
-	const attempt = {
-		gatePath,
-		filePath,
-		deadline,
-		tryAcquire,
-		windowsDeniedRetries: 0
-	};
-	for (;;) {
-		if (performance$1.now() >= deadline) throw attempt.missingPermissionError ?? new FileLockTimeoutError(gatePath);
-		try {
-			return await createLegacyGate(gatePath);
-		} catch (error) {
-			await waitOutContention(attempt, error);
-		}
-	}
-}
-async function releaseLegacyDirectoryGate(gate) {
-	stopHeartbeat(gate.path);
-	let stat;
-	try {
-		stat = await lstat(gate.path);
-	} catch (error) {
-		if (errorCode(error) === "ENOENT") return;
-		throw error;
-	}
-	if (!stat.isDirectory() || stat.dev !== gate.dev || stat.ino !== gate.ino || stat.birthtimeMs !== gate.birthtimeMs) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
-	await removeFile(join(gate.path, FILE_LOCK_COMPATIBLE_OWNER_FILE));
-	await rmdir(gate.path);
-}
-async function recordLegacyGateOwner(gatePath) {
-	try {
-		await writeFile(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE), String(process.pid), {
-			flag: "wx",
-			mode: 384
-		});
-	} catch (error) {
-		await removeDirectoryBestEffort(gatePath, FILE_LOCK_GATE_CLEANUP_WARNING);
-		throw new Error(FILE_LOCK_COMPATIBLE_OWNER_MESSAGE, { cause: error });
-	}
-}
-async function legacyGateIsAbandoned(gatePath, isDirectory, modifiedAtMs) {
-	let contents;
-	try {
-		contents = await readFile(isDirectory ? join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE) : gatePath, FILE_LOCK_ENCODING);
-	} catch (error) {
-		if (errorCode(error) !== "ENOENT") return false;
-		contents = "";
-	}
-	const pid = FILE_LOCK_COMPATIBLE_OWNER_PID_PATTERN.test(contents.trim()) ? Number(contents.trim()) : void 0;
-	if (pid !== void 0 && Number.isSafeInteger(pid) && pid > 0) return processIsAlive(pid) === false || isDirectory && await ownerHeartbeatStopped(gatePath);
-	return !isDirectory && Date.now() - modifiedAtMs >= 5e3;
-}
-async function ownerHeartbeatStopped(gatePath) {
-	try {
-		const owner = await lstat(join(gatePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
-		return Date.now() - owner.mtimeMs >= FILE_LOCK_STALE_CLAIM_MS;
-	} catch {
-		return false;
-	}
-}
-async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
-	const takeover = await tryAcquire(filePath);
-	if (!takeover) return false;
-	try {
-		let gate;
-		try {
-			gate = await lstat(gatePath);
-		} catch (error) {
-			if (errorCode(error) === "ENOENT") return true;
-			throw error;
-		}
-		const isDirectory = gate.isDirectory();
-		if (!await legacyGateIsAbandoned(gatePath, isDirectory, gate.mtimeMs)) return false;
-		const stalePath = `${gatePath}.${randomUUID()}${FILE_LOCK_COMPATIBLE_STALE_SUFFIX}`;
-		try {
-			await rename(gatePath, stalePath);
-		} catch (error) {
-			if (isBusyFileError(error)) return false;
-			throw error;
-		}
-		if (!isDirectory) {
-			await removeFile(stalePath);
-			return true;
-		}
-		await removeFile(join(stalePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
-		await removeDirectoryBestEffort(stalePath, FILE_LOCK_STALE_GATE_CLEANUP_WARNING);
-		return true;
-	} finally {
-		await takeover.release();
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
-function parseClaim(value, id) {
-	if (!isPlainRecord(value)) return void 0;
-	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
-	return value;
-}
-async function publishClaim(filePath, claim, create, deadline) {
-	const temporaryPath = join(dirname(filePath), `.${claim.id}.${randomUUID()}${FILE_LOCK_TEMP_SUFFIX}`);
-	try {
-		await writeFile(temporaryPath, JSON.stringify(claim), {
-			flag: "wx",
-			mode: 384
-		});
-		if (create) await link(temporaryPath, filePath);
-		else {
-			const replacementDeadline = deadline ?? performance$1.now() + 100;
-			for (;;) try {
-				await rename(temporaryPath, filePath);
-				break;
-			} catch (error) {
-				if (errorCode(error) !== "EPERM") throw error;
-				await waitForNextScan(replacementDeadline, dirname(filePath));
-			}
-		}
-	} finally {
-		await removeFile(temporaryPath);
-	}
-}
-async function createClaim(claimDirectory) {
-	for (;;) {
-		const id = randomUUID();
-		const claim = {
-			version: 1,
-			id,
-			pid: process.pid,
-			choosing: true,
-			ticket: 0
-		};
-		try {
-			const path = join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
-			await publishClaim(path, claim, true);
-			startHeartbeat(path, id);
-			return claim;
-		} catch (error) {
-			if (errorCode(error) !== "EEXIST") throw error;
-		}
-	}
-}
-async function scanClaims(claimDirectory, ownPath) {
-	const entries = await readdir(claimDirectory, { withFileTypes: true });
-	const claims = [];
-	const reference = ownPath === void 0 ? void 0 : await modifiedAt(ownPath);
-	const abandoned = async (path) => {
-		if (reference === void 0) return false;
-		const modified = await modifiedAt(path);
-		if (modified === void 0 || reference - modified < 3e3) return false;
-		return removeFile(path);
-	};
-	for (const entry of entries) {
-		if (!entry.name.endsWith(".json")) continue;
-		const id = entry.name.slice(0, -5);
-		const path = join(claimDirectory, entry.name);
-		if (!entry.isFile()) return {
-			claims,
-			blocked: true
-		};
-		let value;
-		try {
-			value = JSON.parse(await readFile(path, FILE_LOCK_ENCODING));
-		} catch (error) {
-			if (errorCode(error) === "ENOENT") continue;
-			if (await abandoned(path)) continue;
-			return {
-				claims,
-				blocked: true,
-				transient: isBusyFileError(error)
-			};
-		}
-		const claim = parseClaim(value, id);
-		if (!claim) {
-			if (await abandoned(path)) continue;
-			return {
-				claims,
-				blocked: true
-			};
-		}
-		const alive = processIsAlive(claim.pid);
-		if (alive === false) {
-			if (!await removeFile(path)) return {
-				claims,
-				blocked: true
-			};
-			continue;
-		}
-		if (await abandoned(path)) continue;
-		if (alive === void 0) return {
-			claims,
-			blocked: true
-		};
-		claims.push(claim);
-	}
-	return {
-		claims,
-		blocked: false
-	};
-}
-async function modifiedAt(path) {
-	try {
-		return (await lstat(path)).mtimeMs;
-	} catch (error) {
-		if (errorCode(error) === "ENOENT") return void 0;
-		throw error;
-	}
-}
-function claimPath(claimDirectory, id) {
-	return join(claimDirectory, `${id}${FILE_LOCK_CLAIM_EXTENSION}`);
-}
-function hasClaimState(claims, id, choosing, ticket) {
-	const claim = claims.find((peer) => peer.id === id);
-	return claim?.choosing === choosing && claim.ticket === ticket;
-}
-function makeHandle(claimDirectory, claim) {
-	let releasePromise;
-	return {
-		async assertHeld() {
-			if (await modifiedAt(claimPath(claimDirectory, claim.id)) === void 0) throw new Error(FILE_LOCK_LOST_MESSAGE);
-		},
-		release() {
-			stopHeartbeat(claim.id);
-			releasePromise ??= removeFile(claimPath(claimDirectory, claim.id)).then((removed) => {
-				if (!removed) throw new Error(FILE_LOCK_RELEASE_MESSAGE);
-			});
-			return releasePromise;
-		}
-	};
-}
-async function beginClaim(filePath) {
-	const claimDirectory = `${resolve(filePath)}${FILE_LOCK_DIRECTORY_SUFFIX}`;
-	for (;;) try {
-		await assertSafeClaimDirectory(claimDirectory);
-		await mkdir(claimDirectory, {
-			recursive: true,
-			mode: 448
-		});
-		await assertSafeClaimDirectory(claimDirectory);
-		await chmod(claimDirectory, 448);
-		return {
-			claimDirectory,
-			claim: await createClaim(claimDirectory)
-		};
-	} catch (error) {
-		if (errorCode(error) !== "ENOENT") throw error;
-	}
-}
-async function assertSafeClaimDirectory(claimDirectory) {
-	let stat;
-	try {
-		stat = await lstat(claimDirectory);
-	} catch (error) {
-		if (errorCode(error) === "ENOENT") return;
-		throw error;
-	}
-	if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error(FILE_LOCK_UNSAFE_DIRECTORY_MESSAGE);
-}
-function isStillBusy(attempt, scan) {
-	return !attempt.waitForPeers && scan.blocked && scan.transient === true && performance$1.now() < attempt.busyDeadline;
-}
-async function waitOrReleaseClaim(attempt) {
-	if (!attempt.waitForPeers) {
-		await makeHandle(attempt.claimDirectory, attempt.claim).release();
-		return false;
-	}
-	await waitForNextScan(attempt.deadline, attempt.claimDirectory);
-	return true;
-}
-async function observePeers(attempt, expectedChoosing, expectedTicket) {
-	for (;;) {
-		const scan = await scanClaims(attempt.claimDirectory, attempt.ownPath);
-		if (isStillBusy(attempt, scan)) {
-			await setTimeout$1(10);
-			continue;
-		}
-		if (scan.blocked || !hasClaimState(scan.claims, attempt.claim.id, expectedChoosing, expectedTicket)) {
-			if (!await waitOrReleaseClaim(attempt)) return void 0;
-			continue;
-		}
-		return scan.claims;
-	}
-}
-async function takeTicket(attempt) {
-	const { claim, claimDirectory, ownPath, waitForPeers } = attempt;
-	const claims = await observePeers(attempt, true, 0);
-	if (claims === void 0) return void 0;
-	if (!waitForPeers && claims.some((peer) => peer.id !== claim.id && !peer.choosing)) {
-		await makeHandle(claimDirectory, claim).release();
-		return;
-	}
-	let maxTicket = 0;
-	for (const peer of claims) maxTicket = Math.max(maxTicket, peer.ticket);
-	if (maxTicket >= Number.MAX_SAFE_INTEGER) throw new Error(FILE_LOCK_TICKET_LIMIT_MESSAGE);
-	const ticketedClaim = {
-		...claim,
-		choosing: false,
-		ticket: maxTicket + 1
-	};
-	await publishClaim(ownPath, ticketedClaim, false, waitForPeers ? attempt.deadline : attempt.busyDeadline);
-	return ticketedClaim;
-}
-async function waitForTurn(attempt, ticketedClaim) {
-	const { claim, claimDirectory, waitForPeers } = attempt;
-	const choosingDeadline = performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS;
-	for (;;) {
-		const claims = await observePeers(attempt, false, ticketedClaim.ticket);
-		if (claims === void 0) return void 0;
-		const peers = claims.filter((peer) => peer.id !== claim.id);
-		if (!waitForPeers && !peers.some((peer) => !peer.choosing && precedes(peer, ticketedClaim)) && peers.some((peer) => peer.choosing) && performance$1.now() < choosingDeadline) {
-			await setTimeout$1(10);
-			continue;
-		}
-		if (peers.some((peer) => precedes(peer, ticketedClaim))) {
-			if (!await waitOrReleaseClaim(attempt)) return void 0;
-			continue;
-		}
-		if (waitForPeers && performance$1.now() > attempt.deadline) throw new FileLockTimeoutError(claimDirectory);
-		return {
-			claimDirectory,
-			claim: ticketedClaim
-		};
-	}
-}
-async function acquireClaim(filePath, waitForPeers, deadline) {
-	const { claimDirectory, claim } = await beginClaim(filePath);
-	const attempt = {
-		filePath,
-		claimDirectory,
-		claim,
-		ownPath: claimPath(claimDirectory, claim.id),
-		waitForPeers,
-		deadline,
-		busyDeadline: performance$1.now() + FILE_LOCK_TRY_CHOOSING_WAIT_MS
-	};
-	try {
-		const ticketedClaim = await takeTicket(attempt);
-		if (!ticketedClaim) return void 0;
-		return await waitForTurn(attempt, ticketedClaim);
-	} catch (error) {
-		await makeHandle(claimDirectory, claim).release();
-		throw error;
-	}
-}
-async function tryAcquireFileLock(filePath) {
-	const acquired = await acquireClaim(filePath, false, 0);
-	if (!acquired) return void 0;
-	return makeHandle(acquired.claimDirectory, acquired.claim);
-}
-async function acquireCompatibleDirectoryFileLock(filePath, options) {
-	const resolvedPath = resolve(filePath);
-	const deadline = performance$1.now() + timeoutMs(options);
-	const gate = await acquireLegacyDirectoryGate(resolvedPath, deadline, tryAcquireFileLock);
-	let acquired;
-	try {
-		acquired = await acquireClaim(resolvedPath, true, deadline);
-		if (!acquired) throw new Error(FILE_LOCK_ACQUIRE_MESSAGE);
-	} catch (error) {
-		try {
-			await releaseLegacyDirectoryGate(gate);
-		} catch (cleanupError) {
-			throw new AggregateError([error, cleanupError], FILE_LOCK_COMPATIBLE_ACQUIRE_CLEANUP_MESSAGE, { cause: cleanupError });
-		}
-		throw error;
-	}
-	const sharedHandle = makeHandle(acquired.claimDirectory, acquired.claim);
-	let releasePromise;
-	return {
-		assertHeld: () => sharedHandle.assertHeld(),
-		release() {
-			releasePromise ??= (async () => {
-				const errors = [];
-				try {
-					await sharedHandle.release();
-				} catch (error) {
-					errors.push(error);
-				}
-				try {
-					await releaseLegacyDirectoryGate(gate);
-				} catch (error) {
-					errors.push(error);
-				}
-				if (errors.length === 1) throw errors[0];
-				if (errors.length > 1) throw new AggregateError(errors, FILE_LOCK_COMPATIBLE_RELEASE_MESSAGE);
-			})();
-			return releasePromise;
-		}
-	};
-}
-function precedes(left, right) {
-	return left.ticket < right.ticket || left.ticket === right.ticket && left.id < right.id;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
-function readPolicyFile(path, options) {
-	let raw;
-	try {
-		if (options.requireRegularFile && !lstatSync(path).isFile()) throw new Error(POLICY_NOT_REGULAR_MESSAGE);
-		raw = readFileSync(path, POLICY_FILE_ENCODING);
-	} catch (error) {
-		if (errorCode(error) === "ENOENT") try {
-			lstatSync(path);
-		} catch (statError) {
-			if (errorCode(statError) === "ENOENT") return options.empty();
-			throw statError;
-		}
-		throw error;
-	}
-	const policy = options.parse(JSON.parse(raw));
-	if (policy === void 0) throw new TypeError(POLICY_PARSE_RESULT_MESSAGE);
-	return policy;
-}
-async function updatePolicyFile(path, options, update) {
-	const lockPath = `${path}${FILE_LOCK_DIRECTORY_SUFFIX}`;
-	const lock = await acquirePolicyLock(path);
-	const warnings = [];
-	try {
-		const policy = readPolicyForUpdate(path, options);
-		const updated = update(policy);
-		if (isThenable(updated)) throw new TypeError(POLICY_ASYNC_UPDATE_MESSAGE);
-		await replacePolicyFile(path, updated === void 0 ? policy : updated, warnings);
-		if (process.platform !== "win32") await syncPolicyDirectory(path, warnings);
-	} finally {
-		await bestEffort(warnings, async () => {
-			await lock.release();
-			await removeEmptyLockFolders(path, dirname(path));
-		}, `${POLICY_LOCK_CLEANUP_FAILED_PREFIX} ${lockPath}. ${POLICY_LOCK_RELEASE_WARNING}`);
-	}
-	return warnings.length ? { warning: warnings.join("; ") } : {};
-}
-async function bestEffort(warnings, action, message) {
-	try {
-		await action();
-	} catch (error) {
-		warnings.push(`${message}: ${describe(error)}`);
-	}
-}
-function acquirePolicyLock(path) {
-	return acquireCompatibleDirectoryFileLock(path, { timeoutMs: POLICY_LOCK_TIMEOUT_MS }).catch((error) => {
-		const timeout = findLockTimeout(error);
-		if (timeout !== void 0) throw new Error(`${POLICY_LOCK_TIMEOUT_ERROR} ${timeout.blockedPath}. ${POLICY_LOCK_TIMEOUT_MESSAGE}`, { cause: error });
-		throw error;
-	});
-}
-function readPolicyForUpdate(path, options) {
-	try {
-		return readPolicyFile(path, options);
-	} catch (error) {
-		throw new Error(`${POLICY_CANNOT_READ_PREFIX} ${path}. ${POLICY_UNREADABLE_MESSAGE}`, { cause: error });
-	}
-}
-async function writePolicyTemp(tempPath, policy, warnings) {
-	const temp = await open(tempPath, "wx", 384);
-	try {
-		await temp.writeFile(`${JSON.stringify(policy)}\n`, POLICY_FILE_ENCODING);
-		await temp.sync();
-	} catch (error) {
-		await bestEffort(warnings, () => temp.close(), POLICY_TEMP_CLOSE_WARNING);
-		throw error;
-	}
-	await temp.close();
-}
-async function replacePolicyFile(path, policy, warnings) {
-	const tempPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-	try {
-		await writePolicyTemp(tempPath, policy, warnings);
-		await rename(tempPath, path);
-	} catch (error) {
-		await bestEffort(warnings, () => unlink(tempPath), POLICY_TEMP_CLEANUP_WARNING);
-		throw error;
-	}
-}
-async function syncPolicyDirectory(path, warnings) {
-	await bestEffort(warnings, async () => {
-		const directory = await open(dirname(path), "r");
-		try {
-			await directory.sync();
-		} finally {
-			await bestEffort(warnings, () => directory.close(), POLICY_DIRECTORY_CLOSE_WARNING);
-		}
-	}, POLICY_DURABILITY_WARNING);
-}
-function isThenable(value) {
-	return typeof Reflect.get(Object(value), "then") === "function";
-}
-function findLockTimeout(error) {
-	if (error instanceof FileLockTimeoutError) return error;
-	if (!(error instanceof AggregateError)) return void 0;
-	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
-}
-Buffer.from("6ba7b810-9dad-11d1-80b4-00c04fd430c8".replaceAll("-", ""), "hex");
-GIT_METADATA_KEYS.repository;
 //#endregion
 //#region src/utils/home.ts
 function homeDirectory() {
@@ -14645,7 +20711,6 @@ function getUsageMetadata(counts) {
 		}
 	};
 }
-const PROMISE_QUEUE = [];
 function getSystemMessage(session, task) {
 	if (session?.base_instructions == null || task?.turnId == null) return [];
 	return [{
@@ -14661,8 +20726,9 @@ function getSystemMessage(session, task) {
 		subagentThreads: []
 	}];
 }
-async function resolveTurnMode(task, sessionMeta, privacyTurnId, rolloutFile) {
-	const mode = sessionMeta?.session_id ? await rolloutTurnMode(rolloutFile, sessionMeta.session_id, privacyTurnId) : MODE_METADATA;
+async function resolveTurnMode(task, sessionMeta, privacyTurnId, request) {
+	const nativeMode = sessionMeta?.session_id ? await rolloutTurnMode(request.rolloutFile, sessionMeta.session_id, privacyTurnId) : MODE_METADATA;
+	const mode = nativeMode === "off" ? "off" : request.options.privacyMode === "metadata" || nativeMode === "metadata" ? MODE_METADATA : MODE_FULL;
 	for (const child of task.subagentThreads) try {
 		await inheritThreadMode(defaultPrivacyPath(), child, mode);
 	} catch {}
@@ -14688,7 +20754,7 @@ async function turnMetadata(task, sessionMeta, mode, options) {
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
 	const repository = parseRepository(git?.repository_url);
 	const metadataBase = {
-		...options?.metadata,
+		...options.metadata,
 		...omitKey(task.context, "approval_policy"),
 		...cwd === void 0 ? {} : { cwd },
 		...sandboxType === void 0 ? {} : { sandbox_type: sandboxType },
@@ -14718,7 +20784,7 @@ function parentProviderMetadata(task, sessionMeta) {
 		ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
 	};
 }
-function createParentRun(draft, user, agent) {
+async function createParentRun(draft, user, agent) {
 	const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
 	const { mode, parentStartTime } = draft;
 	const options = draft.request.options;
@@ -14736,19 +20802,20 @@ function createParentRun(draft, user, agent) {
 		}
 	};
 	const parent = createRunTree({
+		id: options.nextRunId(),
 		name: "openai.codex",
-		client: options?.client,
-		project_name: options?.projectName,
+		client: options.client,
+		project_name: options.projectName,
 		run_type: "chain",
-		replicas: options?.replicas,
+		replicas: options.replicas,
 		inputs: { messages: user != null ? [user.message] : [] },
 		outputs: { messages: agent.map((i) => i.message) },
 		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
 		extra: { metadata: Object.assign(buildCodingAgentMetadata(parentMetadata), isSubagent ? SUBAGENT_SCOPE_RESET : {}) }
-	}, mode, options?.parentRunTree);
-	PROMISE_QUEUE.push(parent.postRun());
+	}, mode, options.parentRunTree);
+	await options.captureRun(parent, mode, parentMetadata);
 	return parent;
 }
 function modelSpans(fullMessages) {
@@ -14786,9 +20853,10 @@ async function postSubagentThread(context, subagentThread) {
 		replayHistory: true
 	});
 }
-function postModelRun(context, fullMessages, output) {
+async function postModelRun(context, fullMessages, output) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const { parentStartTime } = context;
+	const options = context.request.options;
 	const inputMessages = fullMessages.slice(0, output.start);
 	const aiMessage = fullMessages.slice(output.start, output.start + 1);
 	const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -14810,6 +20878,7 @@ function postModelRun(context, fullMessages, output) {
 		base: childMetadataBase
 	};
 	const llmChild = createRunTree({
+		id: options.nextRunId(),
 		name: "openai.codex.turn",
 		run_type: "llm",
 		start_time: outputStartTime,
@@ -14818,16 +20887,17 @@ function postModelRun(context, fullMessages, output) {
 		outputs: { messages: aiMessage.map((i) => i.message) },
 		extra: { metadata: buildChildRunMetadata(llmMetadata) }
 	}, mode, parent);
-	PROMISE_QUEUE.push(llmChild.postRun());
+	await options.captureRun(llmChild, mode, llmMetadata);
 	return {
 		aiMessage,
 		toolMessages,
 		subagentThreads
 	};
 }
-function postSkillRuns(context, skillNames, window, toolCall) {
+async function postSkillRuns(context, skillNames, window, toolCall) {
 	const { metadataContext, childMetadataBase, mode, parent } = context;
 	const { min, max } = window;
+	const options = context.request.options;
 	for (const skillName of skillNames) {
 		const skillMetadata = {
 			...metadataContext,
@@ -14837,6 +20907,7 @@ function postSkillRuns(context, skillNames, window, toolCall) {
 			base: childMetadataBase
 		};
 		const skillRun = createRunTree({
+			id: options.nextRunId(),
 			name: "Skill",
 			run_type: "tool",
 			start_time: min,
@@ -14848,11 +20919,12 @@ function postSkillRuns(context, skillNames, window, toolCall) {
 			} },
 			extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
 		}, mode, parent);
-		PROMISE_QUEUE.push(skillRun.postRun());
+		await options.captureRun(skillRun, mode, skillMetadata);
 	}
 }
-function postToolRuns(context, aiMessage, toolMessages) {
+async function postToolRuns(context, aiMessage, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
+	const options = context.request.options;
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -14887,6 +20959,7 @@ function postToolRuns(context, aiMessage, toolMessages) {
 			base: childMetadataBase
 		};
 		const toolRun = createRunTree({
+			id: options.nextRunId(),
 			name: runName,
 			run_type: "tool",
 			start_time: min,
@@ -14899,8 +20972,8 @@ function postToolRuns(context, aiMessage, toolMessages) {
 			error: toolCall.error,
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
-		PROMISE_QUEUE.push(toolRun.postRun());
-		postSkillRuns(context, skillNames, {
+		await options.captureRun(toolRun, mode, toolMetadata);
+		await postSkillRuns(context, skillNames, {
 			min,
 			max
 		}, toolCall);
@@ -14909,13 +20982,13 @@ function postToolRuns(context, aiMessage, toolMessages) {
 async function postModelAndToolRuns(context, messages) {
 	const fullMessages = mergeMessages([...getSystemMessage(context.sessionMeta, context.task), ...messages]);
 	for (const output of modelSpans(fullMessages)) {
-		const { aiMessage, toolMessages, subagentThreads } = postModelRun(context, fullMessages, output);
-		postToolRuns(context, aiMessage, toolMessages);
+		const { aiMessage, toolMessages, subagentThreads } = await postModelRun(context, fullMessages, output);
+		await postToolRuns(context, aiMessage, toolMessages);
 		for (const subagentThread of subagentThreads ?? []) await postSubagentThread(context, subagentThread);
 	}
 }
 async function postTurn(task, sessionMeta, privacyTurnId, request) {
-	const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request.rolloutFile);
+	const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request);
 	if (mode === "off") return;
 	const fallbackTime = Date.now();
 	const messages = convertToStandardMessages(task.messages);
@@ -14936,7 +21009,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 			...draft.metadataBase,
 			...parentProviderMetadata(task, sessionMeta)
 		} : draft.metadataBase,
-		parent: createParentRun(draft, user, agent),
+		parent: await createParentRun(draft, user, agent),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
 	await postModelAndToolRuns(context, messages);
@@ -15121,21 +21194,402 @@ async function walkCompletedTurns(input, onTurn) {
 	}
 }
 async function convertToRunTree(input, options) {
-	const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
-	const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
+	const seenTurnIds = /* @__PURE__ */ new Set();
+	const skipBacklog = options.replayHistory !== true;
 	await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
-		const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+		const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
 		const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-		if (!alreadyUploaded && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
+		if (!alreadySeen && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
 			rolloutFile: input.transcript_path,
 			options
 		});
-		if (completedTurnId != null && !alreadyUploaded) {
-			uploadedTurnIds.add(completedTurnId);
-			await markTurnUploaded(input.transcript_path, completedTurnId);
-		}
+		if (completedTurnId != null) seenTurnIds.add(completedTurnId);
 	});
-	await Promise.all(PROMISE_QUEUE);
+}
+async function listCompletedTurnIds(input) {
+	const turnIds = [];
+	await walkCompletedTurns(input, async ({ completedTurnId }) => {
+		if (completedTurnId != null && !turnIds.includes(completedTurnId)) turnIds.push(completedTurnId);
+	});
+	return turnIds;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/regex.js
+var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/validate.js
+function validate(uuid) {
+	return typeof uuid === "string" && regex_default.test(uuid);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/parse.js
+function parse(uuid) {
+	if (!validate(uuid)) throw TypeError("Invalid UUID");
+	let v;
+	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/stringify.js
+const byteToHex = [];
+for (let i = 0; i < 256; ++i) byteToHex.push((i + 256).toString(16).slice(1));
+function unsafeStringify(arr, offset = 0) {
+	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/v35.js
+function stringToBytes(str) {
+	str = unescape(encodeURIComponent(str));
+	const bytes = new Uint8Array(str.length);
+	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
+	return bytes;
+}
+const DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const URL$1 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+function v35(version, hash, value, namespace, buf, offset) {
+	const valueBytes = typeof value === "string" ? stringToBytes(value) : value;
+	const namespaceBytes = typeof namespace === "string" ? parse(namespace) : namespace;
+	if (typeof namespace === "string") namespace = parse(namespace);
+	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
+	let bytes = new Uint8Array(16 + valueBytes.length);
+	bytes.set(namespaceBytes);
+	bytes.set(valueBytes, namespaceBytes.length);
+	bytes = hash(bytes);
+	bytes[6] = bytes[6] & 15 | version;
+	bytes[8] = bytes[8] & 63 | 128;
+	if (buf) {
+		offset ??= 0;
+		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
+		return buf;
+	}
+	return unsafeStringify(bytes);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/sha1.js
+function sha1(bytes) {
+	if (Array.isArray(bytes)) bytes = Buffer.from(bytes);
+	else if (typeof bytes === "string") bytes = Buffer.from(bytes, "utf8");
+	return createHash("sha1").update(bytes).digest();
+}
+//#endregion
+//#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/v5.js
+function v5(value, namespace, buf, offset) {
+	return v35(80, sha1, value, namespace, buf, offset);
+}
+v5.DNS = DNS;
+v5.URL = URL$1;
+//#endregion
+//#region src/utils/plainObject.ts
+function toPlainObject(value) {
+	return JSON.parse(JSON.stringify(value));
+}
+//#endregion
+//#region src/tracing-engine-payload.ts
+function postSubmission(run, privacyMode, metadataOptions) {
+	const payload = toPlainObject(run.toJSON());
+	const provenance = prepareCodingAgentMetadataProvenance(toPlainObject(metadataOptions), LS_INTEGRATION, privacyMode, runStatus(run));
+	if (provenance.status !== "ready") throw new Error("Codex trace metadata has no trusted thread ID");
+	return {
+		operation: "post",
+		integration: LS_INTEGRATION,
+		privacyMode,
+		metadata: provenance.value,
+		privacyContext: { status: runStatus(run) },
+		run: normalizedSnapshot(payload)
+	};
+}
+function runIdGenerator(sessionId, turnId) {
+	let index = 0;
+	return () => v5(`${TRACE_RUN_ID_PREFIX}${sessionId}:${turnId}:${index++}`, TRACE_RUN_ID_NAMESPACE);
+}
+function createRunClient(config) {
+	return new Client({
+		apiKey: config.api_key,
+		apiUrl: config.api_url
+	});
+}
+function normalizedSnapshot(payload) {
+	if (typeof payload.id !== "string" || typeof payload.name !== "string" || typeof payload.run_type !== "string" || !isRecord(payload.inputs)) throw new Error("Codex run identity or inputs are unavailable");
+	const result = {
+		id: payload.id,
+		name: payload.name,
+		run_type: payload.run_type,
+		inputs: payload.inputs
+	};
+	for (const key of NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS) {
+		const value = payload[key];
+		if (value !== void 0) Object.assign(result, { [key]: value });
+	}
+	if (isRecord(payload.outputs)) result.outputs = payload.outputs;
+	return result;
+}
+function runStatus(run) {
+	const status = run.extra?.metadata?.status;
+	if (run.error != null || status === "error") return "error";
+	return run.end_time != null || status === "completed" ? "completed" : "running";
+}
+//#endregion
+//#region src/warnings.ts
+function warningPath(home) {
+	return nodePath.join(home, CODEX_CONFIG_DIRECTORY, WARNING_FILE_NAME);
+}
+async function recordWarning(home, message) {
+	await writeFile(warningPath(home), message, { mode: 384 });
+}
+async function showPendingWarning(home) {
+	try {
+		const stale = Date.now() - (await stat(warningPath(home))).mtimeMs > STATE_FILE_MAX_AGE_MS;
+		const message = await readFile(warningPath(home), "utf8");
+		await rm(warningPath(home), { force: true });
+		if (message && !stale) console.error(message);
+	} catch {
+		return;
+	}
+}
+//#endregion
+//#region src/tracing-engine.ts
+function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory()) {
+	const writer = writerOptions(config);
+	if (!writer) return void 0;
+	const storageRoot = nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+	return openPluginSession({
+		storageRoot,
+		integration: LS_INTEGRATION,
+		sessionId,
+		writer,
+		currentWriter: async () => writerOptions(await getConfig({
+			home,
+			cwd,
+			env: process.env
+		})),
+		reconstruct: (job) => reconstructTranscript(job, config, home),
+		scheduleWake: (wakeSessionId) => launchDetachedWorker([
+			ENGINE_WORKER_FLAG,
+			wakeSessionId,
+			cwd
+		], { storageRoot }),
+		onRecoveryReport: reportRecovery
+	});
+}
+function reportRecovery(result) {
+	if (result.status === "completed") return;
+	console.error(`Shared Codex trace recovery did not finish: ${JSON.stringify(result)}`);
+}
+async function runCodexEngineWorker(sessionId, cwd) {
+	const home = homeDirectory();
+	const session = createCodexTracingSession(await getConfig({
+		home,
+		cwd,
+		env: process.env
+	}), sessionId, cwd, home);
+	if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
+	const result = await session.session.drain();
+	if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
+		if (result !== "scope-mismatch") await recordWarning(home, DROPPED_WORK_WARNING);
+		throw new Error(`Shared Codex trace worker stopped with ${result}`);
+	}
+	if (result === "deferred" || result === "busy") console.error(`Shared Codex trace worker left saved work for a later run: ${result}`);
+}
+async function reconstructTranscript(job, workerConfig, home) {
+	const [transcriptRef, contextRef, ...extra] = job.sourceRefs;
+	if (transcriptRef === void 0 || contextRef === void 0 || extra.length > 0) throw new Error("Codex reconstruction needs a transcript and a context locator");
+	const transcriptPath = transcriptPathFromRef(transcriptRef);
+	const context = readJobContext(home, job.sessionId, contextRef);
+	if (!context) console.error("Codex reconstruction context is missing; using the current settings");
+	const config = context ? {
+		...await getConfig({
+			home,
+			cwd: context.cwd,
+			env: process.env
+		}),
+		project: context.project,
+		metadata: context.metadata,
+		parent_headers: context.parent_headers
+	} : workerConfig;
+	const runs = [];
+	const client = createRunClient(config);
+	const parentRunTree = parentRunTreeFor(config, client);
+	await convertToRunTree({
+		transcript_path: transcriptPath,
+		turn_id: job.turnId
+	}, {
+		client,
+		projectName: config.project,
+		metadata: config.metadata,
+		replicas: toSdkReplicas(config.replicas),
+		parentRunTree,
+		captureRun: async (run, mode, metadata) => {
+			runs.push({
+				metadata,
+				run,
+				mode
+			});
+		},
+		nextRunId: runIdGenerator(job.sessionId, job.turnId),
+		privacyMode: job.privacyMode
+	});
+	const [root, ...children] = runs;
+	if (root === void 0) throw new Error("Codex transcript has no completed target turn");
+	const outputs = runs.map(({ metadata, mode, run }) => ({
+		eventId: `${TRACE_RUN_EVENT_PREFIX}${run.id}`,
+		sourceRef: transcriptRef,
+		turnEvidence: {
+			rootRunId: root.run.id,
+			childRunIds: children.map(({ run: child }) => child.id),
+			closureState: "authoritative"
+		},
+		submission: postSubmission(run, mode, metadata)
+	}));
+	await removeJobContext(home, job.sessionId, contextRef);
+	return {
+		status: "ready",
+		outputs
+	};
+}
+function parentRunTreeFor(config, client) {
+	return config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
+		client,
+		project_name: config.project
+	}) : void 0;
+}
+function writerOptions(config) {
+	if (!config.api_key?.trim() && !config.replicas?.length) return void 0;
+	return {
+		destinations: [{
+			apiKey: config.api_key ?? "",
+			apiUrl: config.api_url ?? "https://api.smith.langchain.com",
+			projectName: parentRunTreeFor(config)?.project_name ?? config.project ?? "codex"
+		}],
+		...config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {},
+		redact: config.redact,
+		...config.redact_extra_rules === void 0 ? {} : { redactExtraRules: config.redact_extra_rules }
+	};
+}
+//#endregion
+//#region src/sidecar.ts
+async function loadUploadedTurnIds(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
+		return new Set(data.split("\n").filter(Boolean));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		throw error;
+	}
+}
+async function markTurnUploaded(rolloutFile, turnId) {
+	try {
+		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
+		return true;
+	} catch {
+		return false;
+	}
+}
+//#endregion
+//#region src/turn-queue.ts
+async function queueCodexTurns(session, config, request) {
+	const handled = await loadUploadedTurnIds(request.transcriptPath);
+	const firstStop = handled.size === 0;
+	const completed = await listCompletedTurnIds({
+		transcript_path: request.transcriptPath,
+		turn_id: request.turnId
+	});
+	for (const turnId of completed) {
+		if (handled.has(turnId)) continue;
+		const mode = savedTurnMode(defaultPrivacyPath(), session.sessionId, turnId);
+		if (mode === "off" || firstStop && turnId !== request.turnId) {
+			await markTurnUploaded(request.transcriptPath, turnId);
+			continue;
+		}
+		await queueCodexTurn(session, config, {
+			...request,
+			turnId
+		}, mode);
+	}
+}
+async function queueCodexTurn(session, config, request, mode) {
+	const { transcriptPath, turnId } = request;
+	const sourceRef = transcriptSourceRef(transcriptPath);
+	const contextRef = contextSourceRef(session.sessionId, turnId, sourceRef, mode);
+	await saveJobContext(homeDirectory(), session.sessionId, contextRef, {
+		cwd: request.cwd,
+		project: config.project,
+		metadata: config.metadata,
+		parent_headers: config.parent_headers
+	});
+	const input = {
+		turnId,
+		eventId: reconstructionEventId(session.sessionId, turnId, sourceRef, mode),
+		sourceRefs: [sourceRef, contextRef],
+		privacyMode: mode,
+		turnEvidence: {
+			childRunIds: [],
+			closureState: "authoritative"
+		}
+	};
+	try {
+		const result = await session.session.queueReconstruction(input);
+		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Shared Codex reconstruction queue failed: ${result.status}`);
+	} catch (error) {
+		if (!await session.session.readSavedReconstructionWake(error, input)) throw error;
+		console.error(`Shared Codex reconstruction was saved but its worker wake failed: ${error}`);
+	}
+	await markTurnUploaded(transcriptPath, turnId);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/constants.js
+const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/target.js
+function resolveTarget(options) {
+	for (const field of [
+		"executableName",
+		"repository",
+		"userAgent"
+	]) if (typeof options[field] !== "string" || options[field].trim() === "") throw new Error(`the binary target needs a ${field}`);
+	return {
+		executableName: options.executableName,
+		repository: options.repository,
+		userAgent: options.userAgent,
+		releasesApiOverrideEnvVar: options.releasesApiOverrideEnvVar,
+		publishedTargets: options.publishedTargets ?? DEFAULT_PUBLISHED_TARGETS
+	};
+}
+function isPublishedTarget(target, platform, arch) {
+	return target.publishedTargets[platform]?.includes(arch) ?? false;
+}
+function releaseAssetName(target, platform, arch, version) {
+	return `${target.executableName}-${platform}-${arch}-${version}`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/binary.js
+function defineBinaryTarget(options) {
+	const target = resolveTarget(options);
+	return {
+		target,
+		supportsHost: (platform$1 = platform(), arch$1 = arch()) => isPublishedTarget(target, platform$1, arch$1),
+		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version)
+	};
+}
+//#endregion
+//#region src/binary.ts
+const binary = defineBinaryTarget({
+	executableName: "langsmith-codex-tracing",
+	repository: "langchain-ai/langsmith-codex-plugins",
+	userAgent: "langsmith-codex",
+	releasesApiOverrideEnvVar: "LANGSMITH_CODEX_RELEASE_API"
+});
+//#endregion
+//#region src/messages.ts
+function tracingFailed(error) {
+	return `LangSmith tracing failed for this turn: ${error}`;
+}
+function usage(executableName) {
+	return `Usage:
+  ${executableName} --version
+
+Options:
+  --help, -h     Show this help and exit
+  --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
 //#region src/user-prompt-submit.ts
@@ -15178,14 +21632,6 @@ async function handlePromptSubmit(input) {
 	}
 }
 //#endregion
-//#region src/utils/argv.ts
-function wasInvokedWith(argv, flag) {
-	return argv.includes(flag);
-}
-function unknownFlags(argv) {
-	return argv.filter((arg) => arg.startsWith("-") && !KNOWN_FLAGS.has(arg));
-}
-//#endregion
 //#region src/utils/stdin.ts
 function readStdin() {
 	let buffer = "";
@@ -15207,6 +21653,7 @@ function readStdin() {
 //#region src/index.ts
 async function runHook() {
 	const content = await readStdin();
+	await showPendingWarning(homeDirectory());
 	if (content.hook_event_name === "UserPromptSubmit") {
 		const result = await handlePromptSubmit(content);
 		if (result) console.log(JSON.stringify(result));
@@ -15219,37 +21666,41 @@ async function runHook() {
 		env: process.env
 	});
 	if (!config.enabled) return;
-	const anonymizer = config.redact ? createSecretAnonymizer(config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : void 0) : void 0;
-	const client = new Client({
-		apiKey: config.api_key,
-		apiUrl: config.api_url,
-		anonymizer,
-		hideMetadata: anonymizer
-	});
-	const parentRunTree = config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
-		client,
-		project_name: config.project
-	}) : void 0;
-	await convertToRunTree(content, {
-		client,
-		projectName: config.project,
-		metadata: config.metadata,
-		replicas: toSdkReplicas(config.replicas),
-		parentRunTree
+	if (!content.session_id || !content.turn_id || !content.transcript_path) return;
+	await access(content.transcript_path, constants.R_OK);
+	const session = createCodexTracingSession(config, content.session_id, content.cwd);
+	if (!session) return;
+	await queueCodexTurns(session, config, {
+		transcriptPath: content.transcript_path,
+		turnId: content.turn_id,
+		cwd: content.cwd
 	});
 }
-const invocationArguments = process.argv.slice(1);
-const invoked = (flag) => wasInvokedWith(invocationArguments, flag);
 const USAGE = usage(binary.target.executableName);
-const unrecognised = unknownFlags(invocationArguments);
-if (invoked("--help") || invoked("-h")) console.log(USAGE);
-else if (invoked("--version") || invoked("-v")) console.log("0.2.0");
-else if (unrecognised.length > 0) {
-	console.error(`unknown option: ${unrecognised[0]}`);
-	console.error(USAGE);
-	process.exitCode = 1;
-} else runHook().catch((error) => {
+const args = process.argv.slice(2);
+if (args.length === 0) runHook().catch((error) => {
 	console.error(tracingFailed(error));
+});
+else await dispatchHookCommand(args, {
+	usage: USAGE,
+	version: "0.2.0",
+	hooks: {},
+	worker: {
+		command: ENGINE_WORKER_FLAG,
+		run: ([sessionId, cwd]) => {
+			if (!sessionId || !cwd) throw new Error("shared trace worker needs a session ID and working directory");
+			return runCodexEngineWorker(sessionId, cwd);
+		}
+	},
+	onHookError: (_name, error) => {
+		console.error(tracingFailed(error));
+		process.exitCode = 1;
+	},
+	onUnknown: (argument) => {
+		console.error(`unknown option: ${argument}`);
+		console.error(USAGE);
+		process.exitCode = 1;
+	}
 });
 //#endregion
 export {};

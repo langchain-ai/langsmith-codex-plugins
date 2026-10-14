@@ -26,7 +26,7 @@ import type {
   TurnRunContext,
 } from "./models/trace-conversion.js";
 import type { TurnMode } from "./models/tracing-policy.js";
-import { RunTree, type RunTreeConfig } from "langsmith";
+import type { RunTree, RunTreeConfig } from "langsmith";
 import {
   buildCodingAgentMetadata,
   type CodingAgentMetadataOptions,
@@ -34,7 +34,6 @@ import {
 import { parseRepository, resolveGitInfo } from "./codex-git.js";
 
 import { findLast } from "./utils/findLast.js";
-import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
@@ -263,8 +262,6 @@ function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknow
   };
 }
 
-const PROMISE_QUEUE: Promise<void>[] = [];
-
 function getSystemMessage(
   session: Session | undefined,
   task: Task | undefined,
@@ -290,11 +287,17 @@ async function resolveTurnMode(
   task: Task,
   sessionMeta: Session | undefined,
   privacyTurnId: string | undefined,
-  rolloutFile: string,
+  request: TurnRequest,
 ): Promise<TurnMode> {
-  const mode = sessionMeta?.session_id
-    ? await rolloutTurnMode(rolloutFile, sessionMeta.session_id, privacyTurnId)
+  const nativeMode = sessionMeta?.session_id
+    ? await rolloutTurnMode(request.rolloutFile, sessionMeta.session_id, privacyTurnId)
     : MODE_METADATA;
+  const mode: TurnMode =
+    nativeMode === MODE_OFF
+      ? MODE_OFF
+      : request.options.privacyMode === MODE_METADATA || nativeMode === MODE_METADATA
+        ? MODE_METADATA
+        : MODE_FULL;
   // Persist launch inheritance even when master-off evidence skips this turn.
   for (const child of task.subagentThreads) {
     try {
@@ -310,7 +313,7 @@ async function turnMetadata(
   task: Task,
   sessionMeta: Session | undefined,
   mode: TurnMode,
-  options: TraceConversionOptions | undefined,
+  options: TraceConversionOptions,
 ): Promise<TurnMetadata> {
   // Codex turn-context carries the workspace + policy details for this turn.
   const cwd =
@@ -344,7 +347,7 @@ async function turnMetadata(
   // coding-agent-v1 base contract, stamped onto every run below.
   const repository = parseRepository(git?.repository_url);
   const metadataBase = {
-    ...options?.metadata,
+    ...options.metadata,
     ...omitKey(task.context, "approval_policy"),
     ...(cwd === undefined ? {} : { cwd }),
     ...(sandboxType === undefined ? {} : { sandbox_type: sandboxType }),
@@ -375,11 +378,11 @@ function parentProviderMetadata(task: Task, sessionMeta: Session | undefined) {
   };
 }
 
-function createParentRun(
+async function createParentRun(
   draft: TurnDraft,
   user: AggregateMessage<StandardMessage> | undefined,
   agent: MergedMessage<StandardMessage>[],
-): RunTree {
+): Promise<RunTree> {
   const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
   const { mode, parentStartTime } = draft;
   const options = draft.request.options;
@@ -400,11 +403,12 @@ function createParentRun(
     },
   };
   const parentConfig: RunTreeConfig = {
+    id: options.nextRunId(),
     name: "openai.codex",
-    client: options?.client,
-    project_name: options?.projectName,
+    client: options.client,
+    project_name: options.projectName,
     run_type: "chain",
-    replicas: options?.replicas,
+    replicas: options.replicas,
     inputs: { messages: user != null ? [user.message] : [] },
     outputs: { messages: agent.map((i) => i.message) },
     error: task.error,
@@ -417,9 +421,9 @@ function createParentRun(
       ),
     },
   };
-  const parent = createRunTree(parentConfig, mode, options?.parentRunTree);
+  const parent = createRunTree(parentConfig, mode, options.parentRunTree);
 
-  PROMISE_QUEUE.push(parent.postRun());
+  await options.captureRun(parent, mode, parentMetadata);
   return parent;
 }
 
@@ -467,13 +471,14 @@ async function postSubagentThread(context: TurnRunContext, subagentThread: strin
   );
 }
 
-function postModelRun(
+async function postModelRun(
   context: TurnRunContext,
   fullMessages: MergedMessage<StandardMessage>[],
   output: ModelSpan,
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
   const { parentStartTime } = context;
+  const options = context.request.options;
   const inputMessages = fullMessages.slice(0, output.start);
   const aiMessage = fullMessages.slice(output.start, output.start + 1);
   const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -507,6 +512,7 @@ function postModelRun(
   };
   const llmChild = createRunTree(
     {
+      id: options.nextRunId(),
       name: "openai.codex.turn",
       run_type: "llm",
       start_time: outputStartTime,
@@ -520,12 +526,12 @@ function postModelRun(
     mode,
     parent,
   );
-  PROMISE_QUEUE.push(llmChild.postRun());
+  await options.captureRun(llmChild, mode, llmMetadata);
 
   return { aiMessage, toolMessages, subagentThreads };
 }
 
-function postSkillRuns(
+async function postSkillRuns(
   context: TurnRunContext,
   skillNames: string[],
   window: TimeWindow,
@@ -533,6 +539,7 @@ function postSkillRuns(
 ) {
   const { metadataContext, childMetadataBase, mode, parent } = context;
   const { min, max } = window;
+  const options = context.request.options;
   for (const skillName of skillNames) {
     const skillMetadata: CodingAgentMetadataOptions = {
       ...metadataContext,
@@ -543,6 +550,7 @@ function postSkillRuns(
     };
     const skillRun = createRunTree(
       {
+        id: options.nextRunId(),
         name: "Skill",
         run_type: "tool",
         // Only the call's own window is known, not when each read ran inside it.
@@ -559,16 +567,17 @@ function postSkillRuns(
       mode,
       parent,
     );
-    PROMISE_QUEUE.push(skillRun.postRun());
+    await options.captureRun(skillRun, mode, skillMetadata);
   }
 }
 
-function postToolRuns(
+async function postToolRuns(
   context: TurnRunContext,
   aiMessage: MergedMessage<StandardMessage>[],
   toolMessages: MergedMessage<StandardMessage>[],
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
+  const options = context.request.options;
   for (const toolMessage of toolMessages) {
     if (toolMessage.message.role !== "tool") continue;
     const toolCallId =
@@ -619,6 +628,7 @@ function postToolRuns(
     };
     const toolRun = createRunTree(
       {
+        id: options.nextRunId(),
         name: runName,
         run_type: "tool",
         start_time: min,
@@ -633,9 +643,9 @@ function postToolRuns(
       mode,
       parent,
     );
-    PROMISE_QUEUE.push(toolRun.postRun());
+    await options.captureRun(toolRun, mode, toolMetadata);
 
-    postSkillRuns(context, skillNames, { min, max }, toolCall);
+    await postSkillRuns(context, skillNames, { min, max }, toolCall);
   }
 }
 
@@ -649,12 +659,12 @@ async function postModelAndToolRuns(
   ]);
 
   for (const output of modelSpans(fullMessages)) {
-    const { aiMessage, toolMessages, subagentThreads } = postModelRun(
+    const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
       context,
       fullMessages,
       output,
     );
-    postToolRuns(context, aiMessage, toolMessages);
+    await postToolRuns(context, aiMessage, toolMessages);
 
     for (const subagentThread of subagentThreads ?? []) {
       await postSubagentThread(context, subagentThread);
@@ -668,7 +678,7 @@ async function postTurn(
   privacyTurnId: string | undefined,
   request: TurnRequest,
 ) {
-  const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request.rolloutFile);
+  const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request);
   if (mode === MODE_OFF) return;
   const fallbackTime = Date.now();
 
@@ -696,7 +706,7 @@ async function postTurn(
       mode === MODE_FULL
         ? { ...draft.metadataBase, ...parentProviderMetadata(task, sessionMeta) }
         : draft.metadataBase,
-    parent: createParentRun(draft, user, agent),
+    parent: await createParentRun(draft, user, agent),
     postedSubagentThreads: new Set<string>(),
   };
 
@@ -964,25 +974,27 @@ async function walkCompletedTurns(
   }
 }
 
-export async function convertToRunTree(input: TraceInput, options?: TraceConversionOptions) {
-  // Turns a previous Stop already uploaded, so a resumed thread doesn't replay them.
-  const uploadedTurnIds = await loadUploadedTurnIds(input.transcript_path);
-  // On a thread's first Stop, skip older turns, since uploading that backlog times the hook out.
-  const skipBacklog = options?.replayHistory !== true && uploadedTurnIds.size === 0;
+export async function convertToRunTree(input: TraceInput, options: TraceConversionOptions) {
+  const seenTurnIds = new Set<string>();
+  const skipBacklog = options.replayHistory !== true;
   await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
-    const alreadyUploaded = completedTurnId != null && uploadedTurnIds.has(completedTurnId);
+    const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
     const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-    if (!alreadyUploaded && !isBacklog) {
+    if (!alreadySeen && !isBacklog) {
       await postTurn(task, sessionMeta, privacyTurnId, {
         rolloutFile: input.transcript_path,
         options,
       });
     }
-    if (completedTurnId != null && !alreadyUploaded) {
-      uploadedTurnIds.add(completedTurnId);
-      await markTurnUploaded(input.transcript_path, completedTurnId);
-    }
+    if (completedTurnId != null) seenTurnIds.add(completedTurnId);
   });
+}
 
-  await Promise.all(PROMISE_QUEUE);
+export async function listCompletedTurnIds(input: TraceInput): Promise<string[]> {
+  const turnIds: string[] = [];
+  await walkCompletedTurns(input, async ({ completedTurnId }) => {
+    if (completedTurnId != null && !turnIds.includes(completedTurnId))
+      turnIds.push(completedTurnId);
+  });
+  return turnIds;
 }

@@ -13,7 +13,7 @@ const result = spawnSync(
   ["node_modules/vitest/vitest.mjs", "run", ...selectedTests],
   {
     cwd: repositoryRoot,
-    env: cleanEnvironment("codex-tests-"),
+    env: cleanEnvironment("codex-tests-", ["CODEX_TEST_BINARY"]),
     stdio: "inherit",
   },
 );

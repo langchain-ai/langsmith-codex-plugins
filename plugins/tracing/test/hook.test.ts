@@ -124,6 +124,39 @@ it("still refuses a command line it does not recognise", async () => {
   expect(result).toBe(1);
 });
 
+async function bundle(...args: string[]) {
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      [fileURLToPath(new URL("../dist/index.mjs", import.meta.url)), ...args],
+      { env: { ...process.env, HOME: home }, cwd: home },
+    );
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, stdout, stderr }));
+  });
+}
+
+it("prints the plugin version it was built with", async () => {
+  const manifest = JSON.parse(
+    await fs.readFile(new URL("../.codex-plugin/plugin.json", import.meta.url), "utf8"),
+  );
+  expect((await bundle("--version")).stdout.trim()).toBe(manifest.version);
+});
+
+it("exits 1 with a message when the background worker is started without a session", async () => {
+  const result = await bundle("--engine-worker");
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain("needs a session ID and working directory");
+});
+
 it("the installed hook definition is synchronous and preserves Stop timing", async () => {
   const definition = JSON.parse(
     await fs.readFile(new URL("../hooks/hooks.json", import.meta.url), "utf8"),

@@ -1,19 +1,21 @@
-import { Client, RunTree } from "langsmith";
-import { createSecretAnonymizer } from "langsmith/anonymizer";
+import { access } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { dispatchHookCommand } from "@langchain/plugins-base/plugin";
+import { createCodexTracingSession, runCodexEngineWorker } from "./tracing-engine.js";
+import { queueCodexTurns } from "./turn-queue.js";
 import { getConfig } from "./config.js";
-import { LS_INTEGRATION_VERSION } from "./constants.js";
+import { ENGINE_WORKER_FLAG, LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
-import { toSdkReplicas } from "@langchain/plugins-base/settings";
-import { convertToRunTree } from "./trace.js";
 import type { CodexHookInput } from "./models/hook-input.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
-import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { homeDirectory } from "./utils/home.js";
+import { showPendingWarning } from "./warnings.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
   const content = await readStdin<CodexHookInput>();
+  await showPendingWarning(homeDirectory());
 
   if (content.hook_event_name === "UserPromptSubmit") {
     const result = await handlePromptSubmit(content);
@@ -26,55 +28,46 @@ async function runHook() {
   // Skip entirely if tracing is disabled
   if (!config.enabled) return;
 
-  // Redact secrets before upload (on by default). The anonymizer is set on the
-  // single Client, so it also covers replica destinations, which reuse it.
-  const anonymizer = config.redact
-    ? createSecretAnonymizer(
-        config.redact_extra_rules ? { extraRules: config.redact_extra_rules } : undefined,
-      )
-    : undefined;
-
-  const client = new Client({
-    apiKey: config.api_key,
-    apiUrl: config.api_url,
-    anonymizer,
-    hideMetadata: anonymizer,
-  });
-
-  // (Optionally) reconstruct the distributed parent so Codex runs attach to the target trace.
-  const parentRunTree = config.parent_headers
-    ? RunTree.fromHeaders(config.parent_headers, {
-        client,
-        project_name: config.project,
-      })
-    : undefined;
-
-  await convertToRunTree(content, {
-    client,
-    projectName: config.project,
-    metadata: config.metadata,
-    replicas: toSdkReplicas(config.replicas),
-    parentRunTree,
+  if (!content.session_id || !content.turn_id || !content.transcript_path) return;
+  await access(content.transcript_path, fsConstants.R_OK);
+  const session = createCodexTracingSession(config, content.session_id, content.cwd);
+  if (!session) return;
+  await queueCodexTurns(session, config, {
+    transcriptPath: content.transcript_path,
+    turnId: content.turn_id,
+    cwd: content.cwd,
   });
 }
 
-const invocationArguments = process.argv.slice(1);
-const invoked = (flag: string) => wasInvokedWith(invocationArguments, flag);
-
 const USAGE = usage(binary.target.executableName);
+const args = process.argv.slice(2);
 
-const unrecognised = unknownFlags(invocationArguments);
-
-if (invoked("--help") || invoked("-h")) {
-  console.log(USAGE);
-} else if (invoked("--version") || invoked("-v")) {
-  console.log(LS_INTEGRATION_VERSION ?? "development");
-} else if (unrecognised.length > 0) {
-  console.error(`unknown option: ${unrecognised[0]}`);
-  console.error(USAGE);
-  process.exitCode = 1;
-} else {
+if (args.length === 0) {
   runHook().catch((error: unknown) => {
     console.error(tracingFailed(error));
+  });
+} else {
+  await dispatchHookCommand(args, {
+    usage: USAGE,
+    version: LS_INTEGRATION_VERSION ?? "development",
+    hooks: {},
+    worker: {
+      command: ENGINE_WORKER_FLAG,
+      run: ([sessionId, cwd]) => {
+        if (!sessionId || !cwd) {
+          throw new Error("shared trace worker needs a session ID and working directory");
+        }
+        return runCodexEngineWorker(sessionId, cwd);
+      },
+    },
+    onHookError: (_name, error) => {
+      console.error(tracingFailed(error));
+      process.exitCode = 1;
+    },
+    onUnknown: (argument) => {
+      console.error(`unknown option: ${argument}`);
+      console.error(USAGE);
+      process.exitCode = 1;
+    },
   });
 }
