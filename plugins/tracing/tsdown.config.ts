@@ -12,7 +12,7 @@ export default defineConfig({
   deps: {
     // Regex so subpath imports (e.g. langsmith/anonymizer) are bundled too; the
     // cached plugin has no node_modules, so nothing may stay external.
-    alwaysBundle: [/^langsmith(\/.*)?$/],
+    alwaysBundle: [/^langsmith(\/.*)?$/, /^uuid$/],
     onlyBundle: false,
   },
   define: {
