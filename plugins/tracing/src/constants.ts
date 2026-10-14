@@ -1,16 +1,7 @@
 // Frozen literals for the Codex integration (see validator.json).
 
-/** What the traced agent is for, per the coding-agent-v1 contract. */
-export const LS_AGENT_PURPOSE = "coding";
-
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
-
-/** Display name of the harness the trace came from. */
-export const LS_AGENT_RUNTIME = "Codex";
-
-/** Metadata contract the emitted runs conform to. */
-export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 
 export const CODEX_CONFIG_DIRECTORY = ".codex";
 export const PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
@@ -59,6 +50,22 @@ export const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 export const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
 export const MUTE_COMMAND = "langsmith-tracing:mute";
 export const UNMUTE_COMMAND = "langsmith-tracing:unmute";
+
+export const SUBAGENT_SCOPE_RESET = {
+  approval_policy: undefined,
+  ls_is_error_interrupt: undefined,
+} as const;
+
+export const SKILL_SCOPE_RESET = {
+  ...CHILD_SCOPE_RESET,
+  usage_metadata: undefined,
+} as const;
+
+export const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
+export const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
+export const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
+export const GIT_PATH_PREFIX_PATTERN = /^\/+/;
+export const GIT_SUFFIX_PATTERN = /\.git$/;
 
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 

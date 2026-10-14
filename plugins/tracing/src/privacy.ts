@@ -1,153 +1,69 @@
-import { RunTree, type RunTreeConfig } from "langsmith";
+import { createCodingAgentRunTree } from "@langchain/plugins-base/privacy";
+import { LS_INTEGRATION, MODE_FULL, MODE_METADATA, RESETTABLE_METADATA_KEYS } from "./constants.js";
 import type { TracingMode } from "./models/tracing-policy.js";
-import { trustedCodingAgentMetadata } from "./metadata.js";
+import type { RunTree, RunTreeConfig } from "langsmith";
 
-export const MUTED_TRACE_CONTENT =
-  "[LangSmith system notice: content omitted because tracing is muted.]";
+const metadataProtectedRunTrees = new WeakSet<RunTree>();
 
-const METADATA_KEYS = new Set([
-  "thread_id",
-  "turn_number",
-  "turn_id",
-  "status",
-  "ls_tracing_mode",
-  "ls_agent_purpose",
-  "ls_agent_type",
-  "ls_agent_runtime",
-  "ls_agent_runtime_version",
-  "ls_integration",
-  "ls_integration_version",
-  "ls_trace_schema_version",
-  "ls_model_name",
-  "ls_provider",
-  "ls_model_type",
-  "ls_message_format",
-  "codex_cli_version",
-  "ls_raw_aggregated_usage",
-  "ls_tool_name",
-  "ls_skill_name",
-  "usage_metadata",
-  "ls_subagent_id",
-  "ls_subagent_type",
-]);
-
-/** Usage metadata is extensible; validate only its outer object shape. */
-function usageForMetadata(value: unknown): Record<string, unknown> | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-  return value as Record<string, unknown>;
-}
-
-// Also used at the wire boundary, on CURRENT (possibly anonymized) metadata.
-// It must not retrieve provenance there and restore pre-anonymization values.
-function projectMetadata(
-  metadata: Record<string, unknown> | undefined,
-  status?: string,
-): Record<string, unknown> {
-  const safe: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(metadata ?? {})) {
-    if (!METADATA_KEYS.has(key)) continue;
-    if (key === "usage_metadata" || key === "ls_raw_aggregated_usage") {
-      const usage = usageForMetadata(value);
-      if (usage) safe[key] = usage;
-    } else if (key === "turn_number") {
-      if (typeof value === "number" && Number.isSafeInteger(value) && value >= 1) safe[key] = value;
-    } else if (typeof value === "string" && value.length) {
-      safe[key] = value;
-    }
+function applyMetadataResets(run: RunTree, config: RunTreeConfig): void {
+  const source = config.extra?.metadata;
+  if (!source) return;
+  const resets: Record<string, undefined> = {};
+  for (const key of RESETTABLE_METADATA_KEYS) {
+    if (Object.hasOwn(source, key) && source[key] === undefined) resets[key] = undefined;
   }
-  safe.status = status === "error" || status === "completed" ? status : "running";
-  safe.ls_tracing_mode = "metadata";
-  return safe;
+  if (Object.keys(resets).length === 0) return;
+  run.extra = { ...run.extra, metadata: { ...run.extra?.metadata, ...resets } };
 }
 
-export function metadataForMode(
-  metadata: Record<string, unknown> | undefined,
-  mode: TracingMode = "full",
-  status?: string,
-): Record<string, unknown> | undefined {
-  if (mode === "full") return metadata;
-  // Only builder provenance is trusted. Plain/custom metadata cannot impersonate
-  // structural fields, even by choosing a key from the allowlist.
-  return projectMetadata(trustedCodingAgentMetadata(metadata), status);
-}
-
-function sanitizeReplica(replica: unknown, mode: TracingMode): unknown {
-  if (mode === "full" || !replica || typeof replica !== "object") return replica;
-  // The SDK also accepts [projectName, updates] tuples.
-  if (Array.isArray(replica)) return { projectName: replica[0] };
-  const { updates: _updates, ...safe } = replica as Record<string, unknown>;
-  return safe;
-}
-
-export function runConfigForMode<T extends Record<string, unknown>>(
-  config: T,
-  mode: TracingMode = "full",
-): T {
-  if (mode === "full") return config;
-  const status = config.error ? "error" : config.end_time != null ? "completed" : "running";
-  const extra = config.extra as { metadata?: Record<string, unknown> } | undefined;
-  const safe: Record<string, unknown> = {};
-  for (const key of [
-    "client",
-    "id",
-    "name",
-    "run_type",
-    "project_name",
-    "start_time",
-    "end_time",
-    "parent_run_id",
-    "trace_id",
-    "dotted_order",
-  ]) {
-    if (key in config && config[key] !== undefined) safe[key] = config[key];
-  }
-  if (Array.isArray(config.replicas)) {
-    safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
-  }
-  safe.inputs = { messages: [{ role: "user", content: MUTED_TRACE_CONTENT }] };
-  safe.outputs = { messages: [{ role: "assistant", content: MUTED_TRACE_CONTENT }] };
-  safe.extra = {
-    metadata: metadataForMode(extra?.metadata, mode, status),
-    // RunTree and Client both enrich extra AFTER construction. A client-level
-    // omitTracedRuntimeInfo flag alone does not suppress RunTree's additions,
-    // and replicas may use their own clients. Keep this method enumerable so it
-    // survives SDK object spreads and filters at the REST serialization boundary
-    // (including multipart .extra parts). Wire-payload tests guard this SDK behavior.
-    toJSON(this: { metadata?: Record<string, unknown> }) {
-      return {
-        // Read the current metadata, not the constructor's copy: the client may
-        // have anonymized allowlisted values, which must not be restored here.
-        metadata: projectMetadata(
-          this.metadata,
-          typeof this.metadata?.status === "string" ? this.metadata.status : status,
-        ),
-      };
+function protectedChildRunTree(
+  config: RunTreeConfig,
+  mode: TracingMode,
+  parent: RunTree,
+  child: RunTree,
+): RunTree {
+  const safeChild = createCodingAgentRunTree(
+    {
+      ...config,
+      client: child.client,
+      id: child.id,
+      parent_run: parent,
+      parent_run_id: child.parent_run_id,
+      project_name: child.project_name,
+      replicas: child.replicas,
+      trace_id: child.trace_id,
+      dotted_order: child.dotted_order,
+      start_time: child.start_time,
+      end_time: child.end_time,
     },
-  };
-  return safe as T;
+    LS_INTEGRATION,
+    mode,
+  );
+  applyMetadataResets(safeChild, config);
+  safeChild.execution_order = child.execution_order;
+  safeChild.child_execution_order = child.child_execution_order;
+  parent.child_runs[parent.child_runs.indexOf(child)] = safeChild;
+  metadataProtectedRunTrees.add(safeChild);
+  return safeChild;
 }
 
-/**
- * Payload boundary only: callers retain control of posting, patching, timing and
- * parentage. Reconstruct updates through this wrapper too; do not mutate a muted
- * RunTree with raw payloads after construction. No shared client or mode state is
- * changed, so full and metadata runs can safely share a client.
- */
+function createChildRunTree(config: RunTreeConfig, mode: TracingMode, parent: RunTree): RunTree {
+  const child = parent.createChild(config);
+  applyMetadataResets(child, config);
+  if (mode !== MODE_METADATA || metadataProtectedRunTrees.has(parent)) {
+    if (mode === MODE_METADATA) metadataProtectedRunTrees.add(child);
+    return child;
+  }
+  return protectedChildRunTree(config, mode, parent, child);
+}
+
 export function createRunTree(
   config: RunTreeConfig,
-  mode: TracingMode = "full",
+  mode: TracingMode = MODE_FULL,
   parent?: RunTree,
 ): RunTree {
-  const safe = runConfigForMode(config as RunTreeConfig & Record<string, unknown>, mode);
-  const run = parent?.createChild(safe) ?? new RunTree(safe);
-  if (mode === "metadata") {
-    // createChild merges distributed-parent metadata after construction. Discard
-    // that untrusted merge, but retain normal SDK parentage/execution ordering.
-    run.extra = safe.extra!;
-    if (run.replicas)
-      run.replicas = run.replicas.map((replica) =>
-        sanitizeReplica(replica, mode),
-      ) as typeof run.replicas;
-  }
+  if (parent) return createChildRunTree(config, mode, parent);
+  const run = createCodingAgentRunTree(config, LS_INTEGRATION, mode);
+  if (mode === MODE_METADATA) metadataProtectedRunTrees.add(run);
   return run;
 }
