@@ -5,13 +5,16 @@ const repoRoot = new URL("../../../", import.meta.url);
 const workflow = readFileSync(new URL(".github/workflows/build-binary.yml", repoRoot), "utf8");
 const lockfile = readFileSync(new URL("pnpm-lock.yaml", repoRoot), "utf8");
 
-it("builds with the same commit of the shared pipeline the repository installs", () => {
-  const pinned = /uses: langchain-ai\/langsmith-plugin-binary\/\S+@([0-9a-f]{40})/.exec(
+it("builds with the same release of the shared pipeline the repository installs", () => {
+  const release = /uses: langchain-ai\/langsmith-plugin-binary\/\S+@[0-9a-f]{40} # v(\S+)/.exec(
     workflow,
   )?.[1];
+  const installed = JSON.parse(readFileSync(new URL("package.json", repoRoot), "utf8"))
+    .devDependencies["@langchain/plugins-base"];
 
-  expect(pinned).toBeDefined();
-  expect(lockfile).toContain(`langsmith-plugin-binary/tar.gz/${pinned}`);
+  expect(release).toBeDefined();
+  expect(installed).toBe(release);
+  expect(lockfile).toContain(`'@langchain/plugins-base@${release}`);
 });
 
 it("keeps every setting a release depends on", () => {

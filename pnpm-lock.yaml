@@ -14,13 +14,10 @@ importers:
       uuid:
         specifier: ^14.0.2
         version: 14.0.2
-      zod:
-        specifier: ^4.6.5
-        version: 4.6.5
     devDependencies:
-      '@langchain/langsmith-plugin-binary':
-        specifier: github:langchain-ai/langsmith-plugin-binary#v0.3.0
-        version: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/f0fea706ecbb20ca45519801b510c07157c2bf9f
+      '@langchain/plugins-base':
+        specifier: 0.4.4
+        version: 0.4.4(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
@@ -181,11 +178,12 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@langchain/langsmith-plugin-binary@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/f0fea706ecbb20ca45519801b510c07157c2bf9f':
-    resolution: {tarball: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/f0fea706ecbb20ca45519801b510c07157c2bf9f}
-    version: 0.1.0
-    engines: {node: '>=22'}
+  '@langchain/plugins-base@0.4.4':
+    resolution: {integrity: sha512-8xG9WYnQ97+a/JnWvtZ4YjcmemBd6QLf4cbSukxkPgvRtg3qB0d2HOTTfbgumVEcBz+o1jyn8pCUDdE6Rb8APg==}
+    engines: {node: '>=20'}
     hasBin: true
+    peerDependencies:
+      langsmith: ^0.9.0 || ^0.10.0
 
   '@napi-rs/wasm-runtime@1.2.4':
     resolution: {integrity: sha512-AJxoUD2/15ESHbvpcyjU274nsAPLuOtPHCk0vKJM5pj//Fg/B1FXNWjPnXTT9PymCYYiHo4zPj0ZomXBKhoy7g==}
@@ -1367,9 +1365,6 @@ packages:
   yuku-parser@0.10.2:
     resolution: {integrity: sha512-CgaU0/PPjCAIEZ3WQroosOxTY3eeKldAN3h+vk8pMNz4+jl1CZzBR4pW+K/rRPF112VooCL5FdjJoiMNjDrL2A==}
 
-  zod@4.6.5:
-    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
-
 snapshots:
 
   '@emnapi/core@1.10.0':
@@ -1525,7 +1520,9 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@langchain/langsmith-plugin-binary@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/f0fea706ecbb20ca45519801b510c07157c2bf9f': {}
+  '@langchain/plugins-base@0.4.4(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
+    dependencies:
+      langsmith: 0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
 
   '@napi-rs/wasm-runtime@1.2.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -2344,5 +2341,3 @@ snapshots:
       '@yuku-parser/binding-linux-x64-musl': 0.10.2
       '@yuku-parser/binding-win32-arm64': 0.10.2
       '@yuku-parser/binding-win32-x64': 0.10.2
-
-  zod@4.6.5: {}

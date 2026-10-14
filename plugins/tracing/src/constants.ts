@@ -29,6 +29,29 @@ export const MODE_FULL = "full";
 export const MODE_METADATA = "metadata";
 export const MODE_OFF = "off";
 
+export const DEFAULT_LANGSMITH_PROJECT_NAME = "codex";
+export const ENV_PREFIXES = ["LANGSMITH_CODEX_", "LANGSMITH_"] as const;
+export const ENV_SUFFIXES = {
+  apiKey: "API_KEY",
+  apiUrl: "ENDPOINT",
+  project: "PROJECT",
+  metadata: "METADATA",
+  replicas: "RUNS_ENDPOINTS",
+  redact: "REDACT",
+  redactExtraRules: "REDACT_EXTRA",
+  parentHeaders: "PARENT_HEADERS",
+} as const;
+export const STRICT_TRUE_VALUE = "true";
+export const STRICT_FALSE_VALUE = "false";
+export const PARENT_TRACE_HEADER = "langsmith-trace";
+export const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"] as const;
+export const DEFAULT_MUTED_ENV_KEYS = [
+  "LANGSMITH_CODEX_DEFAULT_MUTED",
+  "LANGSMITH_DEFAULT_MUTED",
+] as const;
+export const ENV_TRUE_VALUES: readonly string[] = ["1", "true", "yes", "on"];
+export const ENV_FALSE_VALUES: readonly string[] = ["0", "false", "no", "off"];
+
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 
 // Plugin version, injected at build time via bundler `define`.
