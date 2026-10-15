@@ -12,6 +12,23 @@ export const LS_AGENT_RUNTIME = "Codex";
 /** Metadata contract the emitted runs conform to. */
 export const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 
+export const CODEX_CONFIG_DIRECTORY = ".codex";
+export const PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
+export const SIDECAR_SUFFIX = ".langsmith";
+
+// Null run-type-scoped keys on llm/tool runs to override langsmith's
+// parent->child metadata inheritance (serialization drops undefined).
+export const CHILD_SCOPE_RESET = {
+  approval_policy: undefined,
+  ls_is_error_interrupt: undefined,
+  ls_subagent_id: undefined,
+  ls_subagent_type: undefined,
+} as const;
+
+export const MODE_FULL = "full";
+export const MODE_METADATA = "metadata";
+export const MODE_OFF = "off";
+
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 
 // Plugin version, injected at build time via bundler `define`.
