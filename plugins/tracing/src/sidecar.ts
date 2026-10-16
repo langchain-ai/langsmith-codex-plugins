@@ -1,5 +1,20 @@
+import { FileLockTimeoutError, withFileLock } from "@langchain/plugins-base/storage";
 import { SIDECAR_SUFFIX } from "./constants.js";
 import * as fs from "node:fs/promises";
+
+export function withSidecarLock<T>(rolloutFile: string, action: () => Promise<T>): Promise<T> {
+  return withFileLock(`${rolloutFile}${SIDECAR_SUFFIX}`, action);
+}
+
+export function withSidecarLockOrWithout<T>(
+  rolloutFile: string,
+  action: () => Promise<T>,
+): Promise<T> {
+  return withSidecarLock(rolloutFile, action).catch((error: unknown) => {
+    if (!(error instanceof FileLockTimeoutError)) throw error;
+    return action();
+  });
+}
 
 export async function loadUploadedTurnIds(rolloutFile: string): Promise<Set<string>> {
   try {

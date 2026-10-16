@@ -17,6 +17,7 @@ let failures: Error[];
 function fakeSession(sessionId = "thread"): PluginSession {
   return {
     sessionId,
+    store: { read: async () => undefined },
     session: {
       queueReconstruction: async (input: (typeof queued)[number]) => {
         const failure = failures.shift();

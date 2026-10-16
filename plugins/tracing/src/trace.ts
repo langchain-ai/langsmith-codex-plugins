@@ -1,5 +1,6 @@
 import type {
   AggregateMessage,
+  EventMsgLine,
   EventMsgPayload,
   MergedMessage,
   ResponseItem,
@@ -51,6 +52,7 @@ import {
   MODE_FULL,
   MODE_METADATA,
   MODE_OFF,
+  OPEN_TURN_END,
   SKILL_SCOPE_RESET,
   SUBAGENT_SCOPE_RESET,
 } from "./constants.js";
@@ -427,7 +429,10 @@ async function createParentRun(
   return parent;
 }
 
-function modelSpans(fullMessages: MergedMessage<StandardMessage>[]): ModelSpan[] {
+function modelSpans(
+  fullMessages: MergedMessage<StandardMessage>[],
+  includeOpenTurn = false,
+): ModelSpan[] {
   const aiMessageIndicies = fullMessages.reduce<number[]>((acc, item, idx) => {
     if (item.message.role === "ai") acc.push(idx);
     return acc;
@@ -447,6 +452,7 @@ function modelSpans(fullMessages: MergedMessage<StandardMessage>[]): ModelSpan[]
     if (nonToolIdx > start) {
       return { start, length: nonToolIdx - start };
     }
+    if (includeOpenTurn && nonToolIdx === -1) return { start, length: fullMessages.length - start };
 
     return { start, length: 1 };
   });
@@ -626,9 +632,10 @@ async function postToolRuns(
       },
       base: childMetadataBase,
     };
+    const sequentialId = options.nextRunId();
     const toolRun = createRunTree(
       {
-        id: options.nextRunId(),
+        id: options.toolRunId?.(toolCallId) ?? sequentialId,
         name: runName,
         run_type: "tool",
         start_time: min,
@@ -658,7 +665,7 @@ async function postModelAndToolRuns(
     ...messages,
   ]);
 
-  for (const output of modelSpans(fullMessages)) {
+  for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
     const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
       context,
       fullMessages,
@@ -704,7 +711,10 @@ async function postTurn(
     ...draft,
     childMetadataBase:
       mode === MODE_FULL
-        ? { ...draft.metadataBase, ...parentProviderMetadata(task, sessionMeta) }
+        ? {
+            ...draft.metadataBase,
+            ...omitKey(parentProviderMetadata(task, sessionMeta), "ls_raw_aggregated_usage"),
+          }
         : draft.metadataBase,
     parent: await createParentRun(draft, user, agent),
     postedSubagentThreads: new Set<string>(),
@@ -937,6 +947,15 @@ async function walkCompletedTurns(
   };
 
   const events = await loadSession(input.transcript_path);
+  const last = events.at(-1);
+  if (input.includeOpenTurn && last !== undefined && last.type !== "event_msg") {
+    const end: EventMsgLine = {
+      timestamp: last.timestamp,
+      type: "event_msg",
+      payload: { type: OPEN_TURN_END },
+    };
+    events.push(end);
+  }
   for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
     if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 
@@ -983,6 +1002,7 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
     if (!alreadySeen && !isBacklog) {
       await postTurn(task, sessionMeta, privacyTurnId, {
         rolloutFile: input.transcript_path,
+        includeOpenTurn: input.includeOpenTurn,
         options,
       });
     }

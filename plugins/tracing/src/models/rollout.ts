@@ -324,6 +324,11 @@ type ItemCompletedPayload = {
   [key: string]: unknown;
 };
 
+type OpenTurnEndPayload = {
+  type: "langsmith_open_turn_end";
+  [key: string]: unknown;
+};
+
 type SubAgentActivityPayload = {
   type: "sub_agent_activity";
   event_id: string;
@@ -355,10 +360,11 @@ export type EventMsgPayload =
   | StreamErrorPayload
   | TurnAbortedPayload
   | ItemCompletedPayload
+  | OpenTurnEndPayload
   | SubAgentActivityPayload
   | CollabAgentSpawnEndPayload;
 
-type EventMsgLine = {
+export type EventMsgLine = {
   timestamp: string;
   type: "event_msg";
   payload: EventMsgPayload;

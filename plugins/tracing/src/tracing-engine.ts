@@ -2,30 +2,52 @@ import { RunTree, type Client } from "langsmith";
 import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import type { PluginSession } from "@langchain/plugins-base/plugin";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
-import type { ReconstructionJob } from "@langchain/plugins-base/tracing/reconstruction";
+import type { StoredCapture } from "@langchain/plugins-base/storage/capture";
+import type { LifecycleCaptureInput } from "@langchain/plugins-base/tracing/lifecycle";
+import type {
+  ReconstructionJob,
+  ReconstructionOutput,
+} from "@langchain/plugins-base/tracing/reconstruction";
 import type { LangSmithUploadWriterOptions } from "@langchain/plugins-base/tracing/upload";
 import * as path from "node:path";
 import type { Config } from "./models/config.js";
 import { getConfig } from "./config.js";
 import {
+  CAPTURE_SAVED_STATUSES,
   CODEX_CONFIG_DIRECTORY,
   DEFAULT_LANGSMITH_API_URL,
   DEFAULT_LANGSMITH_PROJECT_NAME,
   DROPPED_WORK_WARNING,
   ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
+  LIVE_RUN_EVENT_PREFIX,
+  OPEN_CLOSURE,
+  SUBAGENT_AGENT_TYPE,
+  LIVE_RUN_NOT_SAVED_MESSAGE,
   LS_INTEGRATION,
   TRACE_RUN_EVENT_PREFIX,
+  TRACE_RUN_PATCH_EVENT_PREFIX,
 } from "./constants.js";
 import { readJobContext, removeJobContext } from "./job-context.js";
+import type { TraceConversionOptions } from "./models/trace-conversion.js";
 import type {
   CodexReconstructedRun,
   CodexReconstruction,
   CodexRecoveryResult,
+  LiveToolRequest,
+  LiveToolRuns,
 } from "./models/tracing-engine.js";
+import type { TracingMode } from "./models/tracing-policy.js";
 import { convertToRunTree } from "./trace.js";
 import { transcriptPathFromRef } from "./tracing-engine-locator.js";
-import { createRunClient, postSubmission, runIdGenerator } from "./tracing-engine-payload.js";
+import {
+  closingRootSubmission,
+  createRunClient,
+  openRootSubmission,
+  postSubmission,
+  runIdGenerator,
+  toolRunIdGenerator,
+} from "./tracing-engine-payload.js";
 import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
 
@@ -38,17 +60,111 @@ export function createCodexTracingSession(
   const writer = writerOptions(config);
   if (!writer) return undefined;
   const storageRoot = path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
-  return openPluginSession({
+  const plugin: PluginSession = openPluginSession({
     storageRoot,
     integration: LS_INTEGRATION,
     sessionId,
     writer,
     currentWriter: async () => writerOptions(await getConfig({ home, cwd, env: process.env })),
-    reconstruct: (job) => reconstructTranscript(job, config, home),
+    reconstruct: (job) => reconstructTranscript(job, config, home, plugin),
     scheduleWake: (wakeSessionId) =>
       launchDetachedWorker([ENGINE_WORKER_FLAG, wakeSessionId, cwd], { storageRoot }),
     onRecoveryReport: reportRecovery,
   });
+  return plugin;
+}
+
+export async function buildLiveToolRuns(
+  config: Config,
+  request: LiveToolRequest,
+  mode: TracingMode,
+): Promise<LiveToolRuns | undefined> {
+  const runs: CodexReconstructedRun[] = [];
+  const toolRunId = toolRunIdGenerator(request.session_id, request.turn_id)(request.tool_use_id);
+  await convertToRunTree(
+    { transcript_path: request.transcript_path, turn_id: request.turn_id, includeOpenTurn: true },
+    conversionOptions(config, request.session_id, request.turn_id, mode, runs),
+  );
+  const [root] = runs;
+  const tool = runs.find(({ run }) => run.id === toolRunId);
+  if (root === undefined || tool === undefined || root.metadata.agentType === SUBAGENT_AGENT_TYPE) {
+    return undefined;
+  }
+  return { root, tool };
+}
+
+export async function saveLiveToolRuns(
+  plugin: PluginSession,
+  turnId: string,
+  { root, tool }: LiveToolRuns,
+): Promise<void> {
+  if (!(await savedLiveRun(plugin, turnId, root.run.id))) {
+    await saveLiveRun(plugin, {
+      turnId,
+      eventId: `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`,
+      submission: openRootSubmission(root.run, root.mode, root.metadata),
+      turnEvidence: { rootRunId: root.run.id, childRunIds: [], closureState: OPEN_CLOSURE },
+    });
+  }
+  await saveLiveRun(plugin, {
+    turnId,
+    eventId: `${LIVE_RUN_EVENT_PREFIX}${tool.run.id}`,
+    submission: postSubmission(tool.run, tool.mode, tool.metadata),
+    turnEvidence: { childRunIds: [tool.run.id], closureState: OPEN_CLOSURE },
+  });
+}
+
+async function saveLiveRun(plugin: PluginSession, input: LifecycleCaptureInput): Promise<void> {
+  const result = await plugin.session.capture(input);
+  if (!CAPTURE_SAVED_STATUSES.includes(result.status)) {
+    console.error(`${LIVE_RUN_NOT_SAVED_MESSAGE} ${result.status}`);
+  }
+}
+
+export async function hasUnclosedLiveRoot(plugin: PluginSession, turnId: string): Promise<boolean> {
+  const rootRunId = runIdGenerator(plugin.sessionId, turnId)();
+  return (
+    (await savedLiveRun(plugin, turnId, rootRunId)) !== undefined &&
+    (await savedLiveRun(plugin, turnId, rootRunId, TRACE_RUN_PATCH_EVENT_PREFIX)) === undefined
+  );
+}
+
+function savedLiveRun(
+  plugin: PluginSession,
+  turnId: string,
+  runId: string,
+  prefix = LIVE_RUN_EVENT_PREFIX,
+): Promise<StoredCapture | undefined> {
+  const { sessionId } = plugin;
+  return plugin.store.read({
+    integration: LS_INTEGRATION,
+    sessionId,
+    turnId,
+    eventId: `${prefix}${runId}`,
+  });
+}
+
+function conversionOptions(
+  config: Config,
+  sessionId: string,
+  turnId: string,
+  privacyMode: TracingMode,
+  runs: CodexReconstructedRun[],
+): TraceConversionOptions {
+  const client = createRunClient(config);
+  return {
+    client,
+    projectName: config.project,
+    metadata: config.metadata,
+    replicas: toSdkReplicas(config.replicas),
+    parentRunTree: parentRunTreeFor(config, client),
+    captureRun: async (run, mode, metadata) => {
+      runs.push({ metadata, run, mode });
+    },
+    nextRunId: runIdGenerator(sessionId, turnId),
+    toolRunId: toolRunIdGenerator(sessionId, turnId),
+    privacyMode,
+  };
 }
 
 function reportRecovery(result: CodexRecoveryResult): void {
@@ -75,6 +191,7 @@ async function reconstructTranscript(
   job: ReconstructionJob,
   workerConfig: Config,
   home: string,
+  plugin: PluginSession,
 ): Promise<CodexReconstruction> {
   const [transcriptRef, contextRef, ...extra] = job.sourceRefs;
   if (transcriptRef === undefined || contextRef === undefined || extra.length > 0) {
@@ -94,35 +211,39 @@ async function reconstructTranscript(
       }
     : workerConfig;
   const runs: CodexReconstructedRun[] = [];
-  const client = createRunClient(config);
-  const parentRunTree = parentRunTreeFor(config, client);
   await convertToRunTree(
     { transcript_path: transcriptPath, turn_id: job.turnId },
-    {
-      client,
-      projectName: config.project,
-      metadata: config.metadata,
-      replicas: toSdkReplicas(config.replicas),
-      parentRunTree,
-      captureRun: async (run, mode, metadata) => {
-        runs.push({ metadata, run, mode });
-      },
-      nextRunId: runIdGenerator(job.sessionId, job.turnId),
-      privacyMode: job.privacyMode,
-    },
+    conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs),
   );
   const [root, ...children] = runs;
   if (root === undefined) throw new Error("Codex transcript has no completed target turn");
-  const outputs = runs.map(({ metadata, mode, run }) => ({
-    eventId: `${TRACE_RUN_EVENT_PREFIX}${run.id}`,
-    sourceRef: transcriptRef,
-    turnEvidence: {
-      rootRunId: root.run.id,
-      childRunIds: children.map(({ run: child }) => child.id),
-      closureState: "authoritative" as const,
-    },
-    submission: postSubmission(run, mode, metadata),
-  }));
+  const turnEvidence = {
+    rootRunId: root.run.id,
+    childRunIds: children.map(({ run: child }) => child.id),
+    closureState: "authoritative" as const,
+  };
+  const outputs: ReconstructionOutput[] = [];
+  for (const { metadata, mode, run } of runs) {
+    const submission = postSubmission(run, mode, metadata);
+    const saved = await savedLiveRun(plugin, job.turnId, run.id);
+    if (saved === undefined) {
+      outputs.push({
+        eventId: `${TRACE_RUN_EVENT_PREFIX}${run.id}`,
+        sourceRef: transcriptRef,
+        turnEvidence,
+        submission,
+      });
+    } else if (run === root.run) {
+      const { integration, sessionId, turnId, eventId } = saved;
+      outputs.push({
+        eventId: `${TRACE_RUN_PATCH_EVENT_PREFIX}${run.id}`,
+        sourceRef: transcriptRef,
+        turnEvidence: { ...turnEvidence, childRunIds: [] },
+        submission: closingRootSubmission(submission),
+        dependencies: [{ integration, sessionId, turnId, eventId }],
+      });
+    }
+  }
   await removeJobContext(home, job.sessionId, contextRef);
   return { status: "ready", outputs };
 }
