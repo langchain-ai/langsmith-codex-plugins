@@ -436,6 +436,8 @@ export type Task = {
   };
 };
 
+export type ToolCallRecord = Task["toolCalls"][string];
+
 export type StandardMessage = {
   role: string;
   content: { type: string; [key: string]: unknown }[];
