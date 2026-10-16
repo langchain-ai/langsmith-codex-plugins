@@ -13,7 +13,7 @@ vi.mock("@langchain/plugins-base/plugin", async (importOriginal) => ({
   launchDetachedWorker: engine.launch,
   openPluginSession: (options: Record<string, any>) => {
     engine.options = options;
-    return { sessionId: options.sessionId };
+    return { sessionId: options.sessionId, store: { read: async () => undefined } };
   },
 }));
 
