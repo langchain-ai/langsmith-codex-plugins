@@ -1,16 +1,15 @@
 import * as nodeFsPromises from "node:fs/promises";
 import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodeFs from "node:fs";
-import { closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { Worker } from "node:worker_threads";
-import { execFile, spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import * as tls from "node:tls";
-import { promisify } from "node:util";
 import * as os from "node:os";
 import { arch, platform } from "node:os";
 //#region \0rolldown/runtime.js
@@ -8912,7 +8911,7 @@ async function readdir$1(dir) {
 async function stat$1(filePath) {
 	return nodeFsPromises.stat(filePath);
 }
-function existsSync(p) {
+function existsSync$1(p) {
 	return nodeFs.existsSync(p);
 }
 function mkdirSync$1(dir) {
@@ -9139,13 +9138,13 @@ var PromptCache = class {
 		const entries = {};
 		for (const [key, entry] of this.cache.entries()) entries[key] = entry.value;
 		const dir = path.dirname(filePath);
-		if (!existsSync(dir)) mkdirSync$1(dir);
+		if (!existsSync$1(dir)) mkdirSync$1(dir);
 		const tempPath = `${filePath}.tmp`;
 		try {
 			writeFileSync$1(tempPath, JSON.stringify({ entries }, null, 2));
 			renameSync$1(tempPath, filePath);
 		} catch (e) {
-			if (existsSync(tempPath)) unlinkSync(tempPath);
+			if (existsSync$1(tempPath)) unlinkSync(tempPath);
 			throw e;
 		}
 	}
@@ -9157,7 +9156,7 @@ var PromptCache = class {
 	* @returns Number of entries loaded.
 	*/
 	load(filePath) {
-		if (!existsSync(filePath)) return 0;
+		if (!existsSync$1(filePath)) return 0;
 		let entries;
 		try {
 			const content = readFileSync$1(filePath);
@@ -9348,7 +9347,7 @@ function resolveProfileName(config) {
 function loadProfileState() {
 	if (isBrowserLikeRuntime()) return;
 	const configPath = getProfileConfigPath();
-	if (!configPath || !existsSync(configPath)) return;
+	if (!configPath || !existsSync$1(configPath)) return;
 	try {
 		const config = JSON.parse(readFileSync$1(configPath));
 		const profileName = resolveProfileName(config);
@@ -19615,6 +19614,369 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/utils/paths.js
+function nearestExistingDirectory(path) {
+	let current = path;
+	for (;;) {
+		const parent = dirname(current);
+		if (parent === current) return void 0;
+		try {
+			if (statSync(current).isDirectory()) return current;
+		} catch {}
+		current = parent;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/git/constants.js
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const NOT_A_REPOSITORY = /not a git repository \(or any of the parent directories\)/i;
+const REMOTE_PATH_EDGE_SLASHES = /^\/+|\/+$/g;
+const REMOTE_PATH_TRAILING_SLASHES = /\/+$/;
+const REMOTE_GIT_SUFFIX = /\.git$/;
+const REMOTE_LINE_WHITESPACE = /\s+/;
+const SCP_REMOTE_PATTERN = /^(?:[^@]+@)?([^:]+):\/?(.+)$/;
+const GIT_DIRECTORY_NAME = ".git";
+const GIT_FILE_POINTER = /^gitdir:\s*(.+?)\s*$/m;
+const GIT_MARKERS = {
+	REPOSITORY_ROOT: "repository root",
+	ONLY_GIT_CAN_SAY: "only git can say",
+	NOTHING_HERE: "nothing here"
+};
+const GIT_PROVIDERS = {
+	"github.com": "github",
+	"gitlab.com": "gitlab",
+	"bitbucket.org": "bitbucket",
+	"dev.azure.com": "devAzure"
+};
+const SELF_HOSTED_PROVIDER_HINTS = [
+	"github",
+	"gitlab",
+	"bitbucket"
+];
+const PROVIDER_HOSTS = {
+	github: "github.com",
+	gitlab: "gitlab.com",
+	bitbucket: "bitbucket.org",
+	devAzure: "dev.azure.com"
+};
+const GIT_COMMAND_TIMEOUT_MS = 5e3;
+const GH_LOGIN_ARGUMENTS = [
+	"api",
+	"user",
+	"--jq",
+	".login"
+];
+const GH_LOGIN_TIMEOUT_MS = 5e3;
+const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/git/repository.js
+function parseRepoName(remoteUrl) {
+	const value = remoteUrl.trim();
+	try {
+		const url = new URL(value);
+		const name = url.pathname.replace(REMOTE_PATH_EDGE_SLASHES, "").replace(REMOTE_GIT_SUFFIX, "");
+		const repository = repositoryOnHost(url.hostname, name);
+		if (repository) return repository;
+	} catch {}
+	const scpMatch = value.match(SCP_REMOTE_PATTERN);
+	if (scpMatch) {
+		const host = scpMatch[1];
+		const path = scpMatch[2];
+		if (host && path) return repositoryOnHost(host, path.replace(REMOTE_PATH_TRAILING_SLASHES, "").replace(REMOTE_GIT_SUFFIX, ""));
+	}
+}
+function repositoryOnHost(hostname, name) {
+	const host = hostname.toLowerCase();
+	if (!name) return void 0;
+	const provider = GIT_PROVIDERS[host];
+	if (provider) return {
+		provider,
+		name
+	};
+	if (!host.includes(".")) return void 0;
+	return {
+		provider: SELF_HOSTED_PROVIDER_HINTS.find((hint) => host.includes(hint)) ?? host,
+		name,
+		host
+	};
+}
+function gitOutput(args, cwd) {
+	const env = {
+		...process.env,
+		LC_ALL: "C",
+		LANG: "C"
+	};
+	for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
+	return execFileSync("git", args, {
+		cwd,
+		env,
+		encoding: "utf-8",
+		timeout: GIT_COMMAND_TIMEOUT_MS,
+		stdio: [
+			"ignore",
+			"pipe",
+			"pipe"
+		]
+	});
+}
+function getRepoName(cwd) {
+	try {
+		const lines = gitOutput(["remote", "-v"], cwd).trim().split("\n").filter(Boolean);
+		const remotes = [];
+		for (const line of lines) {
+			const parts = line.split(REMOTE_LINE_WHITESPACE);
+			const name = parts[0];
+			const url = parts[1];
+			if (name && url && line.includes("(fetch)")) remotes.push({
+				name,
+				url
+			});
+		}
+		const origin = remotes.find((remote) => remote.name === "origin");
+		if (origin) {
+			const name = parseRepoName(origin.url);
+			if (name) return name;
+		}
+		for (const remote of remotes) {
+			const name = parseRepoName(remote.url);
+			if (name) return name;
+		}
+	} catch {}
+}
+function getRepoUrl(provider, name) {
+	const host = PROVIDER_HOSTS[provider];
+	return host ? `https://${host}/${name}` : void 0;
+}
+function getRepoRoot(cwd) {
+	try {
+		const root = gitOutput(["rev-parse", "--show-toplevel"], cwd).trim();
+		return root ? resolve(root) : void 0;
+	} catch (error) {
+		const stderr = String(error?.stderr ?? "");
+		return NOT_A_REPOSITORY.test(stderr) ? null : void 0;
+	}
+}
+function getGitUserName(cwd, options) {
+	try {
+		const name = gitOutput(["config", "user.name"], cwd).trim();
+		if (name) return name;
+	} catch {}
+	return options?.githubLogin?.();
+}
+function getGitInfo(cwd) {
+	const result = {};
+	try {
+		const branch = gitOutput([
+			"rev-parse",
+			"--abbrev-ref",
+			"HEAD"
+		], cwd).trim();
+		if (branch && branch !== "HEAD") result.branch = branch;
+	} catch {}
+	try {
+		const commit = gitOutput(["rev-parse", "HEAD"], cwd).trim();
+		if (commit) result.commit = commit;
+	} catch {}
+	return result;
+}
+function getRepositoryMetadata(cwd) {
+	const metadata = {};
+	const repoName = getRepoName(cwd);
+	if (repoName) {
+		metadata[GIT_METADATA_KEYS.repository] = repoName.name;
+		metadata[GIT_METADATA_KEYS.provider] = repoName.provider;
+		const url = repoName.host ? `https://${repoName.host}/${repoName.name}` : getRepoUrl(repoName.provider, repoName.name);
+		if (url) metadata[GIT_METADATA_KEYS.repositoryUrl] = url;
+	}
+	const gitInfo = getGitInfo(cwd);
+	if (gitInfo.branch) metadata[GIT_METADATA_KEYS.branch] = gitInfo.branch;
+	if (gitInfo.commit) metadata[GIT_METADATA_KEYS.commit] = gitInfo.commit;
+	return withBothGitMetadataNames(metadata);
+}
+function githubLoginLookup() {
+	return execFileSync("gh", GH_LOGIN_ARGUMENTS, {
+		encoding: "utf-8",
+		timeout: GH_LOGIN_TIMEOUT_MS,
+		stdio: [
+			"ignore",
+			"pipe",
+			"ignore"
+		]
+	}).trim();
+}
+function isGitHubLogin(printed) {
+	return printed !== "null" && GH_LOGIN_PATTERN.test(printed);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/git/github-login.js
+function createGitHubLoginFallback(options) {
+	const now = options.now ?? Date.now;
+	const retryAfterMs = options.retryAfterMs ?? 864e5;
+	let alreadyTried = false;
+	let login;
+	function failedRecently() {
+		try {
+			const marker = JSON.parse(readFileSync(options.markerPath, "utf-8"));
+			const failed = new Date(marker.failed).getTime();
+			const since = now() - failed;
+			return since >= 0 && since < retryAfterMs;
+		} catch {
+			return false;
+		}
+	}
+	function recordFailure() {
+		try {
+			mkdirSync(dirname(options.markerPath), { recursive: true });
+			const partial = `${options.markerPath}.${process.pid}`;
+			const marker = { failed: new Date(now()).toISOString() };
+			writeFileSync(partial, JSON.stringify(marker));
+			renameSync(partial, options.markerPath);
+		} catch {}
+	}
+	return () => {
+		if (alreadyTried) return login;
+		alreadyTried = true;
+		if (failedRecently()) return void 0;
+		try {
+			const printed = githubLoginLookup();
+			if (isGitHubLogin(printed)) login = printed;
+		} catch {}
+		if (login === void 0) recordFailure();
+		return login;
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/git/paths.js
+function gitMarkerAt(directory) {
+	const marker = join(directory, GIT_DIRECTORY_NAME);
+	try {
+		if (statSync(marker).isDirectory()) return GIT_MARKERS.REPOSITORY_ROOT;
+	} catch {
+		return GIT_MARKERS.NOTHING_HERE;
+	}
+	return pointsAtGitDirectory(directory, marker) ? GIT_MARKERS.REPOSITORY_ROOT : GIT_MARKERS.ONLY_GIT_CAN_SAY;
+}
+function pointsAtGitDirectory(directory, marker) {
+	try {
+		const pointer = readFileSync(marker, "utf-8").match(GIT_FILE_POINTER)?.[1];
+		return pointer !== void 0 && statSync(resolve(directory, pointer)).isDirectory();
+	} catch {
+		return false;
+	}
+}
+function rootFromGitMarker(directory) {
+	let current = resolve(directory);
+	for (;;) {
+		const marker = gitMarkerAt(current);
+		if (marker === GIT_MARKERS.REPOSITORY_ROOT) return current;
+		if (marker === GIT_MARKERS.ONLY_GIT_CAN_SAY) return void 0;
+		const parent = dirname(current);
+		if (parent === current) return null;
+		current = parent;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/git/attribution.js
+function createRepositoryAttributor(options) {
+	const rootByDirectory = /* @__PURE__ */ new Map();
+	const attributionByRoot = /* @__PURE__ */ new Map();
+	const identifierByRoot = /* @__PURE__ */ new Map();
+	const githubLogin = createGitHubLoginFallback({ markerPath: options.githubLoginMarkerPath });
+	function rootForPath(path) {
+		const directory = nearestExistingDirectory(path);
+		if (!directory) return void 0;
+		if (rootByDirectory.has(directory)) return rootByDirectory.get(directory);
+		const walked = rootFromGitMarker(directory);
+		const root = walked === void 0 ? getRepoRoot(directory) : walked;
+		rootByDirectory.set(directory, root);
+		return root;
+	}
+	function isSessionsOwnRepository(sessionCwd, root) {
+		return sessionCwd ? rootForPath(sessionCwd) === root : false;
+	}
+	function identifierForRoot(root) {
+		const cached = identifierByRoot.get(root);
+		if (cached) return cached;
+		const userName = getGitUserName(root, { githubLogin });
+		const identifier = userName ? { ls_attribution_identifier: userName } : {};
+		identifierByRoot.set(root, identifier);
+		return identifier;
+	}
+	function attributionForRoot(root) {
+		const cached = attributionByRoot.get(root);
+		if (cached) return cached;
+		const attribution = {
+			...identifierForRoot(root),
+			...getRepositoryMetadata(root)
+		};
+		attributionByRoot.set(root, attribution);
+		return attribution;
+	}
+	function scopedToPath(base, origin, pinned) {
+		if (origin.namedAPath && !origin.path) return base;
+		const path = origin.path ?? origin.cwd;
+		if (!path || !isAbsolute(path)) return base;
+		const root = rootForPath(path);
+		if (root === void 0) return base;
+		if (root === null) return withoutRepositoryKeys(base, pinned);
+		if (isSessionsOwnRepository(origin.cwd, root)) return {
+			...base,
+			...withoutPinnedKeys(identifierForRoot(root), pinned)
+		};
+		return {
+			...withoutRepositoryKeys(base, pinned),
+			...withoutPinnedKeys(attributionForRoot(root), pinned)
+		};
+	}
+	function withSessionRepository(base, sessionCwd) {
+		const sessionRoot = sessionCwd ? rootForPath(sessionCwd) : void 0;
+		if (typeof sessionRoot !== "string") return base;
+		return {
+			...attributionForRoot(sessionRoot),
+			...base
+		};
+	}
+	function toolMetadata(base, origin) {
+		const pinned = new Set(REPOSITORY_METADATA_KEYS.filter((key) => base?.[key] !== void 0));
+		return scopedToPath(withSessionRepository(base, origin.cwd), origin, pinned);
+	}
+	function turnMetadata(base, cwd, toolOrigins) {
+		const sessionCwd = cwd ? { cwd } : {};
+		if (typeof (cwd ? rootForPath(cwd) : void 0) === "string") return toolMetadata(base, {
+			...sessionCwd,
+			namedAPath: false
+		});
+		for (const { path, namedAPath } of toolOrigins) {
+			if (!path) continue;
+			if (typeof rootForPath(path) === "string") return toolMetadata(base, {
+				path,
+				namedAPath,
+				...sessionCwd
+			});
+		}
+		return base;
+	}
+	return {
+		toolMetadata,
+		turnMetadata
+	};
+}
+function withoutPinnedKeys(attribution, pinned) {
+	if (pinned.size === 0) return { ...attribution };
+	return Object.fromEntries(Object.entries(attribution).filter(([key]) => !pinned.has(key)));
+}
+function withoutRepositoryKeys(base, pinned) {
+	const stripped = { ...base };
+	for (const key of REPOSITORY_METADATA_KEYS) if (!pinned.has(key)) delete stripped[key];
+	return stripped;
+}
+//#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_2c61793ff0f1f27ce3e6b8ac9fefd079/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
@@ -19882,10 +20244,14 @@ const SKILL_SCOPE_RESET = {
 	usage_metadata: void 0
 };
 const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
-const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
-const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
-const GIT_PATH_PREFIX_PATTERN = /^\/+/;
-const GIT_SUFFIX_PATTERN = /\.git$/;
+const TOOL_PATH_INPUT_KEYS = [
+	"file_path",
+	"path",
+	"workdir",
+	"cwd"
+];
+const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/m;
+const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
 	"start_time",
 	"end_time",
@@ -20132,82 +20498,6 @@ async function removeJobContext(home, sessionId, contextRef) {
 	});
 }
 //#endregion
-//#region src/codex-git.ts
-const execFileAsync = promisify(execFile);
-function parseRepository(url) {
-	const normalized = url?.trim().replace(GIT_HTTP_CREDENTIALS_PATTERN, "$1");
-	if (!normalized) return {};
-	let host;
-	let pathname;
-	const scp = GIT_SCP_REMOTE_PATTERN.exec(normalized);
-	if (scp) {
-		host = scp[1];
-		pathname = scp[2];
-	} else try {
-		const parsed = new URL(normalized);
-		host = parsed.hostname;
-		pathname = parsed.pathname;
-	} catch {
-		return { repository_url: normalized };
-	}
-	const provider = (() => {
-		const h = (host ?? "").toLowerCase();
-		if (h.includes("github")) return "github";
-		if (h.includes("gitlab")) return "gitlab";
-		if (h.includes("bitbucket")) return "bitbucket";
-		return h || "other";
-	})();
-	const name = (pathname ?? "").replace(GIT_PATH_PREFIX_PATTERN, "").replace(GIT_SUFFIX_PATTERN, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
-	return {
-		repository_url: normalized.replace(GIT_SUFFIX_PATTERN, ""),
-		repository_provider: provider,
-		repository_name: name
-	};
-}
-async function runGit(cwd, args) {
-	try {
-		const { stdout } = await execFileAsync("git", args, {
-			cwd,
-			timeout: 2e3
-		});
-		const out = stdout.trim();
-		return out.length > 0 ? out : void 0;
-	} catch {
-		return;
-	}
-}
-const gitInfoCache = /* @__PURE__ */ new Map();
-async function resolveGitInfo(cwd, sessionGit) {
-	if (sessionGit != null && (sessionGit.repository_url != null || sessionGit.commit_hash != null || sessionGit.branch != null)) return sessionGit;
-	if (!cwd) return void 0;
-	let pending = gitInfoCache.get(cwd);
-	if (pending == null) {
-		pending = (async () => {
-			const [repository_url, branch, commit_hash] = await Promise.all([
-				runGit(cwd, [
-					"remote",
-					"get-url",
-					"origin"
-				]),
-				runGit(cwd, [
-					"rev-parse",
-					"--abbrev-ref",
-					"HEAD"
-				]),
-				runGit(cwd, ["rev-parse", "HEAD"])
-			]);
-			if (repository_url == null && branch == null && commit_hash == null) return;
-			return {
-				repository_url,
-				branch,
-				commit_hash
-			};
-		})();
-		gitInfoCache.set(cwd, pending);
-	}
-	return pending;
-}
-//#endregion
 //#region src/utils/findLast.ts
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
@@ -20397,6 +20687,33 @@ function* enumerate(arr) {
 //#region src/utils/omitKey.ts
 function omitKey(value, key) {
 	return Object.fromEntries(Object.entries(value ?? {}).filter(([entry]) => entry !== key));
+}
+//#endregion
+//#region src/tool-path.ts
+function toolOriginFromArgs(args, cwd) {
+	const session = cwd === void 0 ? {} : { cwd };
+	const named = typeof args === "string" ? [PATCH_FILE_PATTERN.exec(args)?.[1]] : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
+	let namedAPath = false;
+	for (const value of named) {
+		if (typeof value !== "string" || value.length === 0) continue;
+		namedAPath = true;
+		if (isAbsolute(value)) return {
+			path: value,
+			namedAPath,
+			...session
+		};
+		if (!cwd || !isAbsolute(cwd)) continue;
+		const resolved = resolve(cwd, value);
+		if (existsSync(resolved)) return {
+			path: resolved,
+			namedAPath,
+			...session
+		};
+	}
+	return {
+		namedAPath,
+		...session
+	};
 }
 //#endregion
 //#region src/utils/rollout.ts
@@ -20759,7 +21076,7 @@ async function resolveTurnMode(task, sessionMeta, privacyTurnId, request) {
 	} catch {}
 	return mode;
 }
-async function turnMetadata(task, sessionMeta, mode, options) {
+function turnMetadata(task, sessionMeta, options) {
 	const cwd = (typeof task.context?.cwd === "string" ? task.context.cwd : void 0) ?? sessionMeta?.cwd;
 	const sandboxType = (() => {
 		const policy = task.context?.sandbox_policy;
@@ -20774,18 +21091,13 @@ async function turnMetadata(task, sessionMeta, mode, options) {
 		if (typeof policy === "string") return policy;
 		if (policy != null) return JSON.stringify(policy);
 	})();
-	const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : void 0;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
-	const repository = parseRepository(git?.repository_url);
 	const metadataBase = {
 		...options.metadata,
 		...omitKey(task.context, "approval_policy"),
 		...cwd === void 0 ? {} : { cwd },
-		...sandboxType === void 0 ? {} : { sandbox_type: sandboxType },
-		...repository,
-		...git?.branch === void 0 ? {} : { git_branch: git.branch },
-		...git?.commit_hash === void 0 ? {} : { git_commit_sha: git.commit_hash }
+		...sandboxType === void 0 ? {} : { sandbox_type: sandboxType }
 	};
 	return {
 		metadataContext: {
@@ -20799,7 +21111,8 @@ async function turnMetadata(task, sessionMeta, mode, options) {
 		},
 		metadataBase,
 		isSubagent,
-		approvalPolicy
+		approvalPolicy,
+		cwd
 	};
 }
 function parentProviderMetadata(task, sessionMeta) {
@@ -20985,7 +21298,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 				ls_provider: sessionMeta?.model_provider ?? void 0,
 				ls_invocation_params: task.context
 			},
-			base: childMetadataBase
+			base: toolMetadataBase(context, msgToolCall.args)
 		};
 		const sequentialId = options.nextRunId();
 		const toolRun = createRunTree({
@@ -21025,8 +21338,12 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : void 0;
 	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
+	const unattributed = turnMetadata(task, sessionMeta, request.options);
+	const attributor = mode === "full" ? request.options.attributor : void 0;
+	const origins = attributor ? toolOrigins(messages, unattributed.cwd) : [];
 	const draft = {
-		...await turnMetadata(task, sessionMeta, mode, request.options),
+		...unattributed,
+		metadataBase: attributor?.turnMetadata(unattributed.metadataBase, unattributed.cwd, origins) ?? unattributed.metadataBase,
 		task,
 		sessionMeta,
 		request,
@@ -21035,15 +21352,28 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	};
 	const context = {
 		...draft,
-		childMetadataBase: mode === "full" ? {
-			...draft.metadataBase,
-			...parentProviderMetadata(task, sessionMeta)
-		} : draft.metadataBase,
+		childMetadataBase: childBase(draft.metadataBase, draft),
+		unattributedChildBase: childBase(unattributed.metadataBase, draft),
 		parent: await createParentRun(draft, user, agent),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
 	await postModelAndToolRuns(context, messages);
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(context, subagentThread);
+}
+function childBase(base, draft) {
+	return draft.mode === "full" ? {
+		...base,
+		...parentProviderMetadata(draft.task, draft.sessionMeta)
+	} : base;
+}
+function toolOrigins(messages, cwd) {
+	return messages.flatMap(({ message }) => message.role === "ai" ? message.content.filter((c) => c.type === "tool_call").map((c) => toolOriginFromArgs(c.args, cwd)) : []);
+}
+function toolMetadataBase(context, args) {
+	const attributor = context.mode === "full" ? context.request.options.attributor : void 0;
+	if (!attributor) return context.childMetadataBase;
+	const origin = toolOriginFromArgs(args, context.cwd);
+	return attributor.toolMetadata(context.unattributedChildBase, origin) ?? context.childMetadataBase;
 }
 function createTask() {
 	return {
@@ -21075,7 +21405,6 @@ function readSessionMeta(payload) {
 		base_instructions: payload.base_instructions?.text,
 		cli_version: payload.cli_version,
 		cwd: payload.cwd,
-		git: payload.git,
 		is_subagent: isSubagent,
 		parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? void 0,
 		agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? void 0,
@@ -21466,14 +21795,15 @@ function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory(
 	});
 	return plugin;
 }
-async function buildLiveToolRuns(config, request, mode) {
+let attributor;
+async function buildLiveToolRuns(config, request, mode, home = homeDirectory()) {
 	const runs = [];
 	const toolRunId = toolRunIdGenerator(request.session_id, request.turn_id)(request.tool_use_id);
 	await convertToRunTree({
 		transcript_path: request.transcript_path,
 		turn_id: request.turn_id,
 		includeOpenTurn: true
-	}, conversionOptions(config, request.session_id, request.turn_id, mode, runs));
+	}, conversionOptions(config, request.session_id, request.turn_id, mode, runs, home));
 	const [root] = runs;
 	const tool = runs.find(({ run }) => run.id === toolRunId);
 	if (root === void 0 || tool === void 0 || root.metadata.agentType === "subagent") return;
@@ -21483,9 +21813,10 @@ async function buildLiveToolRuns(config, request, mode) {
 	};
 }
 async function saveLiveToolRuns(plugin, turnId, { root, tool }) {
+	const rootEventId = `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`;
 	if (!await savedLiveRun(plugin, turnId, root.run.id)) await saveLiveRun(plugin, {
 		turnId,
-		eventId: `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`,
+		eventId: rootEventId,
 		submission: openRootSubmission(root.run, root.mode, root.metadata),
 		turnEvidence: {
 			rootRunId: root.run.id,
@@ -21500,7 +21831,13 @@ async function saveLiveToolRuns(plugin, turnId, { root, tool }) {
 		turnEvidence: {
 			childRunIds: [tool.run.id],
 			closureState: OPEN_CLOSURE
-		}
+		},
+		dependencies: [{
+			integration: LS_INTEGRATION,
+			sessionId: plugin.sessionId,
+			turnId,
+			eventId: rootEventId
+		}]
 	});
 }
 async function saveLiveRun(plugin, input) {
@@ -21520,8 +21857,9 @@ function savedLiveRun(plugin, turnId, runId, prefix = LIVE_RUN_EVENT_PREFIX) {
 		eventId: `${prefix}${runId}`
 	});
 }
-function conversionOptions(config, sessionId, turnId, privacyMode, runs) {
+function conversionOptions(config, sessionId, turnId, privacyMode, runs, home) {
 	const client = createRunClient(config);
+	attributor ??= createRepositoryAttributor({ githubLoginMarkerPath: nodePath.join(home, CODEX_CONFIG_DIRECTORY, GITHUB_LOGIN_MARKER_FILE_NAME) });
 	return {
 		client,
 		projectName: config.project,
@@ -21537,7 +21875,8 @@ function conversionOptions(config, sessionId, turnId, privacyMode, runs) {
 		},
 		nextRunId: runIdGenerator(sessionId, turnId),
 		toolRunId: toolRunIdGenerator(sessionId, turnId),
-		privacyMode
+		privacyMode,
+		attributor
 	};
 }
 function reportRecovery(result) {
@@ -21579,7 +21918,7 @@ async function reconstructTranscript(job, workerConfig, home, plugin) {
 	await convertToRunTree({
 		transcript_path: transcriptPath,
 		turn_id: job.turnId
-	}, conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs));
+	}, conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs, home));
 	const [root, ...children] = runs;
 	if (root === void 0) throw new Error("Codex transcript has no completed target turn");
 	const turnEvidence = {
