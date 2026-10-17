@@ -14790,9 +14790,14 @@ async function handlePromptSubmit(input) {
 			reason
 		};
 	} catch (error) {
+		const failure = `Could not save tracing preference/turn evidence: ${error instanceof Error ? error.message : String(error)}`;
+		if (!command) {
+			console.error(failure);
+			return;
+		}
 		return {
 			decision: "block",
-			reason: `Could not save tracing preference/turn evidence: ${error instanceof Error ? error.message : String(error)}. Repair the privacy file or permissions and retry. Command/prompt blocked; no model turn was started.`
+			reason: `${failure}. Repair the privacy file or permissions and retry. Command blocked; no model turn was started.`
 		};
 	}
 }

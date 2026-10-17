@@ -6,20 +6,14 @@ import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
 import { convertToRunTree } from "./trace.js";
+import type { CodexHookInput } from "./models/hook-input.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { unknownFlags, wasInvokedWith } from "./utils/argv.js";
 import { homeDirectory } from "./utils/home.js";
 import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
-  const content = await readStdin<{
-    session_id: string;
-    turn_id: string;
-    transcript_path: string;
-    hook_event_name: "Stop" | "UserPromptSubmit";
-    cwd: string;
-    prompt: string;
-  }>();
+  const content = await readStdin<CodexHookInput>();
 
   if (content.hook_event_name === "UserPromptSubmit") {
     const result = await handlePromptSubmit(content);
