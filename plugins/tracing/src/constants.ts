@@ -84,6 +84,29 @@ export const DEFAULT_LANGSMITH_API_URL = "https://api.smith.langchain.com";
 export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 export const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
 export const TRACE_RUN_EVENT_PREFIX = "codex-run:";
+export const LIVE_RUN_EVENT_PREFIX = "codex-live-run:";
+export const TRACE_RUN_PATCH_EVENT_PREFIX = "codex-run-patch:";
+export const RUN_PATCH_FIELDS = ["outputs", "end_time", "error"] as const;
+export const RUN_CONTEXT_FIELDS = [
+  "start_time",
+  "parent_run_id",
+  "trace_id",
+  "dotted_order",
+] as const;
+export const CAPTURE_SAVED_STATUSES: readonly string[] = ["published", "duplicate"];
+export const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for upload:";
+export const TOOL_RUN_ID_SEGMENT = ":tool:";
+export const TOOL_OUTPUT_WAIT_MS = 3_000;
+export const TOOL_OUTPUT_POLL_MS = 100;
+export const TOOL_END_EVENT_SUFFIX = "_end";
+export const OPEN_TURN_END = "langsmith_open_turn_end";
+export const ITEM_COMPLETED_EVENT = "item_completed";
+export const SUBAGENT_AGENT_TYPE = "subagent";
+export const OPEN_CLOSURE = "open";
+export const PATCH_OPERATION = "patch";
+export const RUN_RUNNING = "running";
+export const RUN_COMPLETED = "completed";
+export const RUN_ERROR = "error";
 export const RECONSTRUCTION_EVENT_PREFIX = "codex-reconstruction:";
 export const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
 export const CONTEXT_LOCATOR_PREFIX = "codex-context:";
@@ -108,6 +131,7 @@ export const LS_INTEGRATION_VERSION: string | undefined =
 
 // Codex 0.153+ calls the shell tool `exec`; older versions call it `exec_command`.
 export const SHELL_TOOL_NAMES = new Set(["exec", "exec_command"]);
+export const TOOLS_WITH_END_EVENTS = new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 
 // A shell word: no whitespace, no quotes.
 export const SHELL_WORD = /[^\s"']+/g;

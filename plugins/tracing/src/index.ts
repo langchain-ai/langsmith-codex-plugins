@@ -8,6 +8,7 @@ import { ENGINE_WORKER_FLAG, LS_INTEGRATION_VERSION } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import type { CodexHookInput } from "./models/hook-input.js";
+import { handlePostToolUse } from "./post-tool-use.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { homeDirectory } from "./utils/home.js";
 import { showPendingWarning } from "./warnings.js";
@@ -15,6 +16,10 @@ import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
   const content = await readStdin<CodexHookInput>();
+  if (content.hook_event_name === "PostToolUse") {
+    await handlePostToolUse(content);
+    return;
+  }
   await showPendingWarning(homeDirectory());
 
   if (content.hook_event_name === "UserPromptSubmit") {
