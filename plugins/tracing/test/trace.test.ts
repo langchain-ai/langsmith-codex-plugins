@@ -1,6 +1,6 @@
 import { seedFullLaunchEvidence } from "./utils/launch.js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { convertToRunTree } from "../src/trace.js";
+import { convertToRunTree } from "./utils/convert.js";
 import { vol } from "memfs";
 
 import * as path from "node:path";
@@ -138,12 +138,6 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
     );
 
     await client.awaitPendingTraceBatches();
-
-    // Sidecar file is created
-    expect.soft(vol.toJSON()).toMatchObject({
-      "/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl.langsmith":
-        expect.stringContaining("019dbc00-ede4-77c2-9e7a-b6876efeab9b"),
-    });
 
     // Assert on trace output
     await expect.soft(getAssumedTreeFromCalls(callSpy.mock.calls, client)).resolves.toMatchObject(
@@ -516,11 +510,6 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
       },
       { client, projectName: "codex" },
     );
-    // Sidecar file is created
-    expect.soft(vol.toJSON()).toMatchObject({
-      "/home/codex-user/.codex/sessions/2026/04/23/rollout-attachments.jsonl.langsmith":
-        expect.stringContaining("019dbc02-53d1-7fc2-8e82-a5419b451d7a"),
-    });
 
     await client.awaitPendingTraceBatches();
 
@@ -646,12 +635,6 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
       },
       { client, projectName: "codex" },
     );
-
-    // Sidecar file is created
-    expect(vol.toJSON()).toMatchObject({
-      "/home/codex-user/.codex/sessions/2026/04/23/rollout-subagents.jsonl.langsmith":
-        expect.stringContaining("019dbc03-4aa2-72a0-8190-c747168c8f1d"),
-    });
 
     await client.awaitPendingTraceBatches();
 
@@ -1112,20 +1095,34 @@ it("traces only the live turn on the first Stop for a resumed rollout", async ()
     .filter((run) => run.name === "openai.codex")
     .map((run) => run.extra?.metadata?.turn_id);
 
-  // The backlog is not replayed...
-  expect.soft(turnIds).toEqual([EDITING_TURN]);
-  // ...but it is recorded, so the next Stop is an ordinary one.
-  expect(vol.toJSON()[`${EDITING_FILE}.langsmith`]).toBe(`${EARLIER_TURN}\n${EDITING_TURN}\n`);
+  expect(turnIds).toEqual([EDITING_TURN]);
 });
 
-it("still traces a backlog turn once the rollout has a traced history", async () => {
+it("fails the conversion when shared capture fails", async () => {
+  vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete: false }));
+  seedFullLaunchEvidence();
+
+  await expect(
+    convertToRunTree(
+      { transcript_path: EDITING_FILE, turn_id: EDITING_TURN },
+      {
+        captureRun: async () => {
+          throw new Error("shared capture failed");
+        },
+      },
+    ),
+  ).rejects.toThrow("shared capture failed");
+});
+
+it("traces a backlog turn when the whole history is replayed", async () => {
   const { client, callSpy } = mockClient();
-  const files = await preloadResumedThread();
-  files[`${EDITING_FILE}.langsmith`] = "some-earlier-turn\n";
-  vol.fromJSON(files);
+  vol.fromJSON(await preloadResumedThread());
 
   seedFullLaunchEvidence();
-  await convertToRunTree({ transcript_path: EDITING_FILE, turn_id: EDITING_TURN }, { client });
+  await convertToRunTree(
+    { transcript_path: EDITING_FILE, turn_id: EDITING_TURN },
+    { client, replayHistory: true },
+  );
   await client.awaitPendingTraceBatches();
 
   const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
@@ -1134,4 +1131,23 @@ it("still traces a backlog turn once the rollout has a traced history", async ()
     .map((run) => run.extra?.metadata?.turn_id);
 
   expect(turnIds).toEqual([EARLIER_TURN, EDITING_TURN]);
+});
+
+it("traces a turn once when the rollout repeats it", async () => {
+  const files = await preloadTestFiles({ makeTurnIncomplete: false });
+  files[EDITING_FILE] += files[EDITING_FILE];
+  vol.fromJSON(files);
+  seedFullLaunchEvidence();
+  const roots: string[] = [];
+
+  await convertToRunTree(
+    { transcript_path: EDITING_FILE, turn_id: EDITING_TURN },
+    {
+      captureRun: async (run) => {
+        if (run.name === "openai.codex") roots.push(run.id);
+      },
+    },
+  );
+
+  expect(roots).toHaveLength(1);
 });

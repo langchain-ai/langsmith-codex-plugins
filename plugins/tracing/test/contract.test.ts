@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
-import { convertToRunTree } from "../src/trace.js";
+import { convertToRunTree } from "./utils/convert.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
 
