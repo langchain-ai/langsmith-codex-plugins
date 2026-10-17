@@ -63,10 +63,9 @@ export const SKILL_SCOPE_RESET = {
 } as const;
 
 export const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
-export const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
-export const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
-export const GIT_PATH_PREFIX_PATTERN = /^\/+/;
-export const GIT_SUFFIX_PATTERN = /\.git$/;
+export const TOOL_PATH_INPUT_KEYS = ["file_path", "path", "workdir", "cwd"] as const;
+export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/m;
+export const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
   "start_time",
   "end_time",
