@@ -52,6 +52,14 @@ export const DEFAULT_MUTED_ENV_KEYS = [
 export const ENV_TRUE_VALUES: readonly string[] = ["1", "true", "yes", "on"];
 export const ENV_FALSE_VALUES: readonly string[] = ["0", "false", "no", "off"];
 
+export const POLICY_VERSION = 1;
+export const POLICY_THREAD_KEYS: readonly string[] = ["preference", "turns", "inherited"];
+export const POLICY_TOP_LEVEL_KEYS: readonly string[] = ["version", "threads"];
+export const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
+export const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
+export const MUTE_COMMAND = "langsmith-tracing:mute";
+export const UNMUTE_COMMAND = "langsmith-tracing:unmute";
+
 export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
 
 // Plugin version, injected at build time via bundler `define`.

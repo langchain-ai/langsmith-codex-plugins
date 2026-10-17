@@ -119,10 +119,20 @@ function expectMuted(runs: any[]) {
   }
 }
 it("whole-rollout Stop and replay never upgrade older muted turns on unmute", async () => {
-  await submitPreference(privacyPath, "root", "control", true, "mute");
-  await submitPreference(privacyPath, "root", "private", true);
-  await submitPreference(privacyPath, "root", "control2", true, "unmute");
-  await submitPreference(privacyPath, "root", "future", true);
+  await submitPreference(privacyPath, {
+    sessionId: "root",
+    turnId: "control",
+    enabled: true,
+    command: "mute",
+  });
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "private", enabled: true });
+  await submitPreference(privacyPath, {
+    sessionId: "root",
+    turnId: "control2",
+    enabled: true,
+    command: "unmute",
+  });
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "future", enabled: true });
   const file = await rollout("root", [
     ...turn("private", "PRIVATE_OLD"),
     ...turn("future", "PUBLIC_FUTURE"),
@@ -143,10 +153,20 @@ it("whole-rollout Stop and replay never upgrade older muted turns on unmute", as
 it.each([false, true])(
   "recursive and direct descendants inherit launch mode, canonical=%s",
   async (canonical) => {
-    await submitPreference(privacyPath, "root", "control", true, "mute");
-    await submitPreference(privacyPath, "root", "launch", true);
-    await submitPreference(privacyPath, "root", "control2", true, "unmute");
-    await submitPreference(privacyPath, "root", "next", true);
+    await submitPreference(privacyPath, {
+      sessionId: "root",
+      turnId: "control",
+      enabled: true,
+      command: "mute",
+    });
+    await submitPreference(privacyPath, { sessionId: "root", turnId: "launch", enabled: true });
+    await submitPreference(privacyPath, {
+      sessionId: "root",
+      turnId: "control2",
+      enabled: true,
+      command: "unmute",
+    });
+    await submitPreference(privacyPath, { sessionId: "root", turnId: "next", enabled: true });
     const root = await rollout("root", turn("launch", "PRIVATE_ROOT", "child"));
     const child = await rollout(
       "child",
@@ -171,8 +191,13 @@ it.each([false, true])(
   },
 );
 it("full launch stays full for direct descendants even after parent mute", async () => {
-  await submitPreference(privacyPath, "root", "launch", true);
-  await submitPreference(privacyPath, "root", "launch", true, "mute");
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "launch", enabled: true });
+  await submitPreference(privacyPath, {
+    sessionId: "root",
+    turnId: "launch",
+    enabled: true,
+    command: "mute",
+  });
   await rollout("root", turn("launch", "PUBLIC_ROOT", "child"));
   const child = await rollout("child", turn("child-turn", "PUBLIC_CHILD"), "root");
   expect(
@@ -182,7 +207,7 @@ it("full launch stays full for direct descendants even after parent mute", async
   ).toBe(true);
 });
 it("off launch uploads nothing, including direct descendants after enabling", async () => {
-  await submitPreference(privacyPath, "root", "launch", false);
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "launch", enabled: false });
   const root = await rollout("root", turn("launch", "PRIVATE_OFF", "child"));
   const child = await rollout("child", turn("child-turn", "PRIVATE_CHILD"), "root");
   expect(await upload(child, "child-turn")).toEqual([]);
@@ -199,18 +224,23 @@ it("no evidence, corrupt policy, or unknown child ancestry is metadata-only", as
 });
 
 it("missing native task_started never borrows full evidence from the Stop turn", async () => {
-  await submitPreference(privacyPath, "root", "current", true);
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "current", enabled: true });
   const file = await rollout("root", turn("historical", "PRIVATE_HISTORY").slice(1));
   expectMuted(await upload(file, "current"));
 });
 it("an inherited launch snapshot survives missing ancestry and child controls", async () => {
-  await submitPreference(privacyPath, "root", "launch", true);
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "launch", enabled: true });
   const root = await rollout("root", turn("launch", "PUBLIC_ROOT", "child"));
   const child = await rollout("child", turn("child-turn", "PUBLIC_CHILD"), "root");
   await upload(child, "child-turn");
   await fs.unlink(root);
   await fs.unlink(`${child}.langsmith`);
-  await submitPreference(privacyPath, "child", "child-turn", true, "mute");
+  await submitPreference(privacyPath, {
+    sessionId: "child",
+    turnId: "child-turn",
+    enabled: true,
+    command: "mute",
+  });
   expect(
     (await upload(child, "child-turn")).some((run: any) =>
       JSON.stringify(run).includes("PUBLIC_CHILD"),
@@ -221,8 +251,18 @@ it("an inherited launch snapshot survives missing ancestry and child controls", 
 it.each([true, false])(
   "default changes do not rewrite launch, descendants, or replay: muted=%s",
   async (muted) => {
-    await submitPreference(privacyPath, "root", "launch", true, undefined, muted);
-    await submitPreference(privacyPath, "root", "next", true, undefined, !muted);
+    await submitPreference(privacyPath, {
+      sessionId: "root",
+      turnId: "launch",
+      enabled: true,
+      defaultMuted: muted,
+    });
+    await submitPreference(privacyPath, {
+      sessionId: "root",
+      turnId: "next",
+      enabled: true,
+      defaultMuted: !muted,
+    });
     const root = await rollout("root", [
       ...turn("launch", muted ? "PRIVATE_ROOT" : "PUBLIC_ROOT", "child"),
       ...turn("next", muted ? "PUBLIC_NEXT" : "PRIVATE_NEXT"),
