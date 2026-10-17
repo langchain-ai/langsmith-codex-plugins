@@ -19921,6 +19921,13 @@ const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for upload:"
 const TOOL_RUN_ID_SEGMENT = ":tool:";
 const TOOL_OUTPUT_WAIT_MS = 3e3;
 const OPEN_TURN_END = "langsmith_open_turn_end";
+const TOOL_ITEM_TYPES = [
+	"CommandExecution",
+	"DynamicToolCall",
+	"FileChange",
+	"McpToolCall"
+];
+const FAILED_TOOL_STATUSES = ["failed", "declined"];
 const OPEN_CLOSURE = "open";
 const PATCH_OPERATION = "patch";
 const RUN_RUNNING = "running";
@@ -21092,34 +21099,54 @@ function recordResponseItem(walk, payload, timestamp) {
 	}
 	if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
 }
-function recordToolCallEvent(task, payload, eventTime) {
-	const callId = payload.call_id;
+function toolCallEntry(task, callId) {
 	task.toolCalls[callId] ??= {
 		error: void 0,
 		timings: [],
 		outputs: {}
 	};
-	task.toolCalls[callId].timings.push(eventTime);
+	return task.toolCalls[callId];
+}
+function recordToolCallEnd(toolCall, payload, outputs) {
+	if (FAILED_TOOL_STATUSES.includes(payload.status)) {
+		const stdout = (() => {
+			if (typeof payload.aggregated_output === "string") return payload.aggregated_output || void 0;
+			const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
+			if (!bestEffort) return void 0;
+			return bestEffort;
+		})();
+		const exitCode = (() => {
+			if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
+		})();
+		const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
+		toolCall.error = error != null ? isPrimitive(error) ? String(error) : JSON.stringify(error) : void 0;
+	}
+	Object.assign(toolCall.outputs, outputs);
+}
+function recordToolCallEvent(task, payload, eventTime) {
+	const toolCall = toolCallEntry(task, payload.call_id);
+	toolCall.timings.push(eventTime);
 	if (payload.type.endsWith("_end")) {
-		if (payload.status === "failed" || payload.status === "declined") {
-			const stdout = (() => {
-				if (typeof payload.aggregated_output === "string") return payload.aggregated_output || void 0;
-				const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
-				if (!bestEffort) return void 0;
-				return bestEffort;
-			})();
-			const exitCode = (() => {
-				if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
-			})();
-			const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
-			task.toolCalls[callId].error = error != null ? isPrimitive(error) ? String(error) : JSON.stringify(error) : void 0;
-		}
 		const outputs = { ...payload };
 		delete outputs.call_id;
 		delete outputs.turn_id;
 		delete outputs.type;
-		Object.assign(task.toolCalls[callId].outputs, outputs);
+		recordToolCallEnd(toolCall, payload, outputs);
 	}
+}
+function recordToolItem(task, item, eventTime) {
+	const toolCall = toolCallEntry(task, item.id);
+	toolCall.timings.push(eventTime);
+	const outputs = { ...item };
+	delete outputs.id;
+	delete outputs.type;
+	recordToolCallEnd(toolCall, item, outputs);
+	if (FAILED_TOOL_STATUSES.includes(item.status)) toolCall.error = toolItemErrorText(item) ?? toolCall.error ?? `Tool ${item.status}`;
+}
+function toolItemErrorText(item) {
+	if (isRecord(item.error) && typeof item.error.message === "string") return item.error.message;
+	if (!isRecord(item.result) || !Array.isArray(item.result.content)) return void 0;
+	return item.result.content.filter((part) => isRecord(part) && typeof part.text === "string").map((part) => part.text).join("\n") || void 0;
 }
 function recordTurnError(task, payload) {
 	if (payload.type === "stream_error") task.error = formatError(payload);
@@ -21147,6 +21174,10 @@ function recordEventMessage(walk, payload, eventTime) {
 	if (typeof payload.call_id === "string") {
 		walk.task ??= createTask();
 		recordToolCallEvent(walk.task, payload, eventTime);
+	}
+	if (payload.type === "item_completed" && isRecord(payload.item) && TOOL_ITEM_TYPES.includes(payload.item.type)) {
+		walk.task ??= createTask();
+		recordToolItem(walk.task, payload.item, eventTime);
 	}
 	if (payload.type === "token_count") {
 		walk.task ??= createTask();
