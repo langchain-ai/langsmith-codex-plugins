@@ -19,12 +19,17 @@ vi.mock("@langchain/plugins-base/plugin", async (importOriginal) => ({
 
 import type { Config } from "../src/models/config.js";
 import { readJobContext, saveJobContext } from "../src/job-context.js";
-import { createCodexTracingSession } from "../src/tracing-engine.js";
+import {
+  buildLiveToolRuns,
+  createCodexTracingSession,
+  saveLiveToolRuns,
+} from "../src/tracing-engine.js";
 import {
   contextSourceRef,
   reconstructionEventId,
   transcriptSourceRef,
 } from "../src/tracing-engine-locator.js";
+import { ids, outputLine, read } from "./utils/live-wire.js";
 import { rolloutText } from "./utils/rollout.js";
 
 const base: Config = { enabled: true, defaultMuted: false, redact: true, api_key: "synthetic-key" };
@@ -176,4 +181,28 @@ it("refuses a job that carries an extra locator", async () => {
 it("fails the job when the transcript has no completed target turn", async () => {
   const { job: queued } = await job({ turn: "unknown-turn" });
   await expect(open().reconstruct(queued)).rejects.toThrow("no completed target turn");
+});
+
+it("names the turn's saved root when saving a tool, so the engine needs no scan to find it", async () => {
+  const rows = await read("04/23/rollout-editing.jsonl");
+  const [session_id, turn_id] = ids(rows);
+  const tool_use_id = "call_VLRlIzWNfD2jSDW47dX5eEMz";
+  const transcript_path = path.join(home, "rollout.jsonl");
+  await writeFile(transcript_path, rows.slice(0, outputLine(tool_use_id, rows) + 1).join("\n"));
+  const request = { session_id, turn_id, transcript_path, tool_use_id };
+  const runs = (await buildLiveToolRuns(base, request, "full"))!;
+  const capture = vi.fn(async (_: Record<string, any>) => ({ status: "published" }));
+  const plugin = {
+    sessionId: session_id,
+    store: { read: async () => undefined },
+    session: { capture },
+  };
+
+  await saveLiveToolRuns(plugin as any, turn_id, runs);
+
+  const [[root], [tool]] = capture.mock.calls;
+  expect(root.submission.run.id).toBe(tool.submission.run.parent_run_id);
+  expect(tool.dependencies).toEqual([
+    { integration: "openai-codex", sessionId: session_id, turnId: turn_id, eventId: root.eventId },
+  ]);
 });
