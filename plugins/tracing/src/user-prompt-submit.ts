@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { homeDirectory } from "./utils/home.js";
 import { defaultPrivacyPath, parseTracingCommand, submitPreference } from "./tracing-policy.js";
 
 export async function handlePromptSubmit(input: {
@@ -9,7 +10,7 @@ export async function handlePromptSubmit(input: {
 }) {
   const command = parseTracingCommand(input.prompt);
   try {
-    const config = await getConfig({ home: process.env.HOME!, cwd: input.cwd, env: process.env });
+    const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
     const result = await submitPreference(
       defaultPrivacyPath(),
       input.session_id,
