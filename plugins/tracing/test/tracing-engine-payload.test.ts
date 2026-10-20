@@ -1,6 +1,10 @@
 import { RunTree } from "langsmith";
 import { expect, it } from "vitest";
-import { postSubmission, runIdGenerator } from "../src/tracing-engine-payload.js";
+import {
+  closingRootSubmission,
+  postSubmission,
+  runIdGenerator,
+} from "../src/tracing-engine-payload.js";
 
 const metadata = {
   integration: "openai-codex",
@@ -49,4 +53,13 @@ it("keeps the run outputs in the upload", () => {
   const done = run();
   done.outputs = { messages: ["done"] };
   expect(postSubmission(done, "full", metadata).run.outputs).toEqual({ messages: ["done"] });
+});
+
+it("closes a failed turn root with an error status and both its error and end time", () => {
+  const failed = run();
+  failed.error = "turn aborted";
+  failed.end_time = Date.now();
+  const closing = closingRootSubmission(postSubmission(failed, "full", metadata));
+  expect(closing.privacyContext).toEqual({ status: "error" });
+  expect(closing.patch.fields).toEqual(["end_time", "error"]);
 });

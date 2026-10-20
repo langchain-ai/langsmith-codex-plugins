@@ -4,8 +4,9 @@ import { saveJobContext } from "./job-context.js";
 import type { Config } from "./models/config.js";
 import type { CodexTurnRequest } from "./models/tracing-engine.js";
 import type { TracingMode } from "./models/tracing-policy.js";
-import { loadUploadedTurnIds, markTurnUploaded } from "./sidecar.js";
+import { loadUploadedTurnIds, markTurnUploaded, withSidecarLockOrWithout } from "./sidecar.js";
 import { listCompletedTurnIds } from "./trace.js";
+import { hasUnclosedLiveRoot } from "./tracing-engine.js";
 import {
   contextSourceRef,
   reconstructionEventId,
@@ -14,7 +15,17 @@ import {
 import { defaultPrivacyPath, savedTurnMode } from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 
-export async function queueCodexTurns(
+export function queueCodexTurns(
+  session: PluginSession,
+  config: Config,
+  request: CodexTurnRequest,
+): Promise<void> {
+  return withSidecarLockOrWithout(request.transcriptPath, () =>
+    queueUnhandledTurns(session, config, request),
+  );
+}
+
+async function queueUnhandledTurns(
   session: PluginSession,
   config: Config,
   request: CodexTurnRequest,
@@ -26,7 +37,7 @@ export async function queueCodexTurns(
     turn_id: request.turnId,
   });
   for (const turnId of completed) {
-    if (handled.has(turnId)) continue;
+    if (handled.has(turnId) && !(await hasUnclosedLiveRoot(session, turnId))) continue;
     const mode = savedTurnMode(defaultPrivacyPath(), session.sessionId, turnId);
     if (mode === MODE_OFF || (firstStop && turnId !== request.turnId)) {
       await markTurnUploaded(request.transcriptPath, turnId);

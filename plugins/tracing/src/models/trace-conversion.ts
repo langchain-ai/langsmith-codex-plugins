@@ -3,6 +3,8 @@ import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadat
 import type { Session, Task } from "./rollout.js";
 import type { TracingMode, TurnMode } from "./tracing-policy.js";
 
+export type ToolRunIdGenerator = (callId: string) => string;
+
 export interface TraceConversionOptions {
   captureRun: (
     run: RunTree,
@@ -10,6 +12,7 @@ export interface TraceConversionOptions {
     metadata: CodingAgentMetadataOptions,
   ) => Promise<void>;
   nextRunId: () => string;
+  toolRunId?: ToolRunIdGenerator;
   parentRunTree?: RunTree;
   client?: Client;
   metadata?: Record<string, unknown>;
@@ -26,10 +29,12 @@ export interface TraceConversionOptions {
 export interface TraceInput {
   transcript_path: string;
   turn_id: string | null;
+  includeOpenTurn?: boolean;
 }
 
 export interface TurnRequest {
   rolloutFile: string;
+  includeOpenTurn?: boolean | undefined;
   options: TraceConversionOptions;
 }
 

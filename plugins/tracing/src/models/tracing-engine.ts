@@ -3,6 +3,7 @@ import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadat
 import type { ReconstructionOutput } from "@langchain/plugins-base/tracing/reconstruction";
 import type { RunTree } from "langsmith";
 import type { ParentHeaders } from "./config.js";
+import type { CodexHookInput } from "./hook-input.js";
 import type { TracingMode } from "./tracing-policy.js";
 
 export type CodexRunStatus = "running" | "completed" | "error";
@@ -29,6 +30,15 @@ export interface CodexJobState {
   updated: string;
   queued_jobs: Record<string, CodexJobContext>;
 }
+
+export interface LiveToolRuns {
+  root: CodexReconstructedRun;
+  tool: CodexReconstructedRun;
+}
+
+export type LiveToolRequest = Required<
+  Pick<CodexHookInput, "session_id" | "turn_id" | "transcript_path" | "tool_use_id">
+>;
 
 export interface CodexTurnRequest {
   transcriptPath: string;
