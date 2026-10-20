@@ -1,14 +1,10 @@
 import { getConfig } from "./config.js";
 import { PREFERENCE_WARNING_PREFIX } from "./constants.js";
+import type { PromptSubmitInput } from "./models/hook-input.js";
 import { homeDirectory } from "./utils/home.js";
 import { defaultPrivacyPath, parseTracingCommand, submitPreference } from "./tracing-policy.js";
 
-export async function handlePromptSubmit(input: {
-  session_id: string;
-  turn_id: string;
-  cwd: string;
-  prompt: string;
-}) {
+export async function handlePromptSubmit(input: PromptSubmitInput) {
   const command = parseTracingCommand(input.prompt);
   try {
     const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
@@ -29,10 +25,14 @@ export async function handlePromptSubmit(input: {
     if (result.warning) reason += ` Warning: ${result.warning}.`;
     return { decision: "block", reason };
   } catch (error) {
-    // Never let a control reach the model, or accept work without durable evidence.
+    const failure = `Could not save tracing preference/turn evidence: ${error instanceof Error ? error.message : String(error)}`;
+    if (!command) {
+      console.error(failure);
+      return;
+    }
     return {
       decision: "block",
-      reason: `Could not save tracing preference/turn evidence: ${error instanceof Error ? error.message : String(error)}. Repair the privacy file or permissions and retry. Command/prompt blocked; no model turn was started.`,
+      reason: `${failure}. Repair the privacy file or permissions and retry. Command blocked; no model turn was started.`,
     };
   }
 }
