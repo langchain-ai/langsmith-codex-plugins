@@ -66,18 +66,27 @@ it("wakes the worker it is asked to wake, with the folder and the engine storage
   expect(options.storageRoot).toBe(path.join(home, ".codex", "langsmith_engine"));
 });
 
-it("opens no session for a blank API key and no replicas", () => {
-  createCodexTracingSession({ ...base, api_key: "  " }, "thread-1", "/work/repo", home);
-  expect(engine.options).toBeUndefined();
-});
+it.each([{ replicas: [] }, { replicas: [{ api_url: "https://replica.example" }] }])(
+  "opens no session with no API key and no replica with its own key: %j",
+  ({ replicas }) => {
+    createCodexTracingSession(
+      { ...base, api_key: undefined, replicas },
+      "thread-1",
+      "/work/repo",
+      home,
+    );
+    expect(engine.options).toBeUndefined();
+  },
+);
 
-it("uploads to the project named by the parent headers, with the configured redaction", () => {
+it("uploads to the project named by the parent headers, with the configured redaction and login browser", () => {
   const parent = "019dbc02-0000-7000-8000-000000000001";
   const { writer } = open({
     ...base,
     project: "configured",
     api_url: "https://api.example",
     redact_extra_rules: [{ pattern: "secret", replace: "[x]" }],
+    login_browser: false,
     parent_headers: {
       "langsmith-trace": `20250101T000000000000Z${parent}`,
       baggage: "langsmith-project=parent-project",
@@ -88,6 +97,7 @@ it("uploads to the project named by the parent headers, with the configured reda
   ]);
   expect(writer.redact).toBe(true);
   expect(writer.redactExtraRules).toEqual([{ pattern: "secret", replace: "[x]" }]);
+  expect(writer.loginBrowser).toBe(false);
 });
 
 it("keeps a project the managed file locks when the parent headers name another", () => {

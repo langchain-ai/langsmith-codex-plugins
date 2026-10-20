@@ -198,6 +198,12 @@ it("enables redaction explicitly via LANGSMITH_CODEX_REDACT", async () => {
   });
 });
 
+it("reads the login browser switch from the environment", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_LOGIN_BROWSER", "false");
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config.login_browser).toBe(false);
+});
+
 it("reads redact_extra_rules from the environment", async () => {
   vi.stubEnv(
     "LANGSMITH_CODEX_REDACT_EXTRA",
@@ -621,6 +627,21 @@ it.skipIf(process.platform === "win32")(
       env: { LANGSMITH_CODEX_PARENT_HEADERS: JSON.stringify({ "langsmith-trace": "env" }) },
     });
     expect(config.parent_headers).toEqual(locked);
+  },
+);
+
+it.skipIf(process.platform === "win32")(
+  "a root-owned managed file keeps the login browser off over the environment and user file",
+  async () => {
+    writeConfigFiles({ global: { login_browser: true } });
+    writeManagedFile({ login_browser: false }, 0);
+    const config = await getConfig({
+      home: HOME,
+      cwd: CWD,
+      env: { LANGSMITH_CODEX_LOGIN_BROWSER: "true" },
+    });
+    expect(config.login_browser).toBe(false);
+    expect(config.locked).toEqual(["login_browser"]);
   },
 );
 

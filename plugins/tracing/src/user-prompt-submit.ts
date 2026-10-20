@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { loginNotices } from "./login-notice.js";
 import { LOCKED_MUTE_REPLY, NOTICE_KIND_MANAGED, PREFERENCE_WARNING_PREFIX } from "./constants.js";
 import type { PromptSubmitInput } from "./models/hook-input.js";
 import { homeDirectory } from "./utils/home.js";
@@ -9,6 +10,7 @@ import {
   parseTracingCommand,
   submitPreference,
 } from "./tracing-policy.js";
+import { uploadCredential } from "./tracing-engine.js";
 
 export async function handlePromptSubmit(input: PromptSubmitInput) {
   const command = parseTracingCommand(input.prompt);
@@ -25,12 +27,12 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
     });
     if (!command) {
       if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
+      const login = loginNotices(homeDirectory(), config, uploadCredential(config));
       const managed = config.managedConfigWarnings ?? [];
-      const notices = await showNotices(
-        homeDirectory(),
-        config,
-        managed.length === 0 ? [] : [{ kind: NOTICE_KIND_MANAGED, text: managed.join("\n") }],
-      );
+      const notices = await showNotices(homeDirectory(), config, [
+        ...(managed.length === 0 ? [] : [{ kind: NOTICE_KIND_MANAGED, text: managed.join("\n") }]),
+        ...login,
+      ]);
       return notices.length === 0 ? undefined : { systemMessage: notices.join("\n") };
     }
     if (mutedLocked && command === "unmute")

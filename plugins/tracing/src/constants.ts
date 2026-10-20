@@ -31,6 +31,7 @@ export const ENV_SUFFIXES = {
   replicas: "RUNS_ENDPOINTS",
   redact: "REDACT",
   redactExtraRules: "REDACT_EXTRA",
+  loginBrowser: "LOGIN_BROWSER",
   parentHeaders: "PARENT_HEADERS",
   noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
@@ -125,10 +126,15 @@ export const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 export const STATE_FILE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const WARNING_FILE_NAME = "langsmith_warning.txt";
 export const NOTICE_KIND_MANAGED = "managed";
+export const NOTICE_KIND_CREDENTIAL = "credential";
+export const NOTICE_KIND_REPLICA = "replica";
 export const NOTICE_COOLDOWN_OFF = "off";
 export const PARENT_HEADERS_FIELD = "parent_headers";
+export const LOGIN_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"] as const;
 export const DROPPED_WORK_WARNING =
   "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
+export const DROPPED_LOGIN_WORK_WARNING =
+  "LangSmith could not accept a Codex trace upload and dropped it. Run `langsmith auth login` to sign in again; details are in the Codex LangSmith log.";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.

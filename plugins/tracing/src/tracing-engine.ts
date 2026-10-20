@@ -1,4 +1,10 @@
 import { RunTree, type Client } from "langsmith";
+import {
+  loginReplicaRefusal,
+  resolveUploadCredential,
+  sdkSetting,
+  type UploadCredential,
+} from "@langchain/plugins-base/auth";
 import { createRepositoryAttributor, type RepositoryAttributor } from "@langchain/plugins-base/git";
 import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import type { PluginSession } from "@langchain/plugins-base/plugin";
@@ -18,6 +24,7 @@ import {
   CODEX_CONFIG_DIRECTORY,
   DEFAULT_LANGSMITH_API_URL,
   DEFAULT_LANGSMITH_PROJECT_NAME,
+  DROPPED_LOGIN_WORK_WARNING,
   DROPPED_WORK_WARNING,
   ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
@@ -63,15 +70,16 @@ export function createCodexTracingSession(
   cwd: string,
   home = homeDirectory(),
 ): PluginSession | undefined {
-  const writer = writerOptions(config);
-  if (!writer) return undefined;
   const storageRoot = engineStorageRoot(home);
+  const writer = writerOptions(config, storageRoot);
+  if (!writer) return undefined;
   const plugin: PluginSession = openPluginSession({
     storageRoot,
     integration: LS_INTEGRATION,
     sessionId,
     writer,
-    currentWriter: async () => writerOptions(await getConfig({ home, cwd, env: process.env })),
+    currentWriter: async () =>
+      writerOptions(await getConfig({ home, cwd, env: process.env }), storageRoot),
     reconstruct: (job) => reconstructTranscript(job, config, home, plugin),
     scheduleWake: (wakeSessionId) =>
       launchDetachedWorker([ENGINE_WORKER_FLAG, wakeSessionId, cwd], { storageRoot }),
@@ -197,7 +205,9 @@ export async function runCodexEngineWorker(sessionId: string, cwd: string): Prom
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
   if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
-    if (result !== "scope-mismatch") await recordWarning(home, DROPPED_WORK_WARNING);
+    const login = uploadCredential(config).kind === "login";
+    const warning = login ? DROPPED_LOGIN_WORK_WARNING : DROPPED_WORK_WARNING;
+    if (result !== "scope-mismatch") await recordWarning(home, warning);
     throw new Error(`Shared Codex trace worker stopped with ${result}`);
   }
   if (result === "deferred" || result === "busy") {
@@ -272,23 +282,45 @@ function parentRunTreeFor(config: Config, client?: Client): RunTree | undefined 
     : undefined;
 }
 
-function writerOptions(config: Config): LangSmithUploadWriterOptions | undefined {
+export function uploadCredential(config: Config): UploadCredential {
+  return resolveUploadCredential({ apiKey: config.api_key, apiUrl: config.api_url });
+}
+
+function writerOptions(
+  config: Config,
+  storageRoot: string,
+): LangSmithUploadWriterOptions | undefined {
   if (config.managedConfigProblem !== undefined) return undefined;
-  if (!config.api_key?.trim() && !config.replicas?.length) return undefined;
+  if (config.api_key !== undefined && sdkSetting(config.api_key) === undefined) return undefined;
+  const credential = uploadCredential(config);
+  const keyedReplica = config.replicas?.some((replica) => sdkSetting(replica.api_key));
+  if (credential.kind === "none" && !keyedReplica) return undefined;
+  const refusal =
+    credential.kind === "login"
+      ? loginReplicaRefusal(toSdkReplicas(config.replicas), credential.apiUrl)
+      : undefined;
+  if (refusal !== undefined) return undefined;
+  const { kind, ...auth } =
+    credential.kind === "none"
+      ? { kind: credential.kind, apiKey: "", apiUrl: config.api_url ?? DEFAULT_LANGSMITH_API_URL }
+      : credential.kind === "api-key"
+        ? { ...credential, apiKey: config.api_key ?? credential.apiKey }
+        : credential;
   const headerProject = config.locked.includes("project")
     ? undefined
     : parentRunTreeFor(config)?.project_name;
   return {
     destinations: [
       {
-        apiKey: config.api_key ?? "",
-        apiUrl: config.api_url ?? DEFAULT_LANGSMITH_API_URL,
+        ...auth,
         projectName: headerProject ?? config.project ?? DEFAULT_LANGSMITH_PROJECT_NAME,
       },
     ],
     ...(config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {}),
     redact: config.redact,
     projectLocked: config.locked.includes("project"),
+    loginBrowser: config.login_browser,
+    storageRoot,
     ...(config.redact_extra_rules === undefined
       ? {}
       : { redactExtraRules: config.redact_extra_rules }),

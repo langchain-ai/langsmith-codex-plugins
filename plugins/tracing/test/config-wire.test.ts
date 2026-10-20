@@ -5,7 +5,7 @@ import { v5 as uuidV5 } from "uuid";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { withFileLock } from "@langchain/plugins-base/storage";
 import { rolloutText } from "./utils/rollout.js";
@@ -18,7 +18,7 @@ let cwd: string;
 let server: Server;
 let api: string;
 type Payload = Record<string, any>;
-let requests: { path: string; key?: string; body: Payload }[];
+let requests: { path: string; key?: string; auth?: string; body: Payload }[];
 let failStatus: number;
 const LAUNCH_NOTE_SUFFIX = "wake.launching";
 const CLAIMS_SUFFIX = ".claims";
@@ -43,6 +43,7 @@ beforeEach(async () => {
     requests.push({
       path: req.url!,
       key: typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"] : undefined,
+      auth: req.headers.authorization,
       body: JSON.parse(Buffer.concat(chunks).toString("utf8")),
     });
     if (failStatus) res.statusCode = failStatus;
@@ -71,7 +72,8 @@ async function hook(
   event: Record<string, unknown>,
   env: Record<string, string> = {},
   args: string[] = [],
-  expectedStderr = "",
+  expectedStderr: unknown = "",
+  expectedStdout: unknown = "",
 ) {
   const cleanEnv = Object.fromEntries(
     Object.entries(process.env).filter(
@@ -85,7 +87,11 @@ async function hook(
     binary ? args : [fileURLToPath(new URL("../dist/index.mjs", import.meta.url)), ...args],
     {
       cwd: dir, // Discovery must use the payload cwd, not the process/plugin cwd.
-      env: { ...cleanEnv, HOME: home, ...env },
+      env: {
+        ...cleanEnv,
+        HOME: home,
+        ...env,
+      },
     },
   );
   let stdout = "";
@@ -105,9 +111,10 @@ async function hook(
     child.on("error", reject);
     child.on("close", resolve);
   });
-  expect({ code, stdout }).toEqual({ code: 0, stdout: "" });
-  expect(stderr).toContain(expectedStderr);
-  if (!expectedStderr) expect(stderr).toBe("");
+  expect({ code, stdout }).toEqual({ code: 0, stdout: expectedStdout });
+  if (typeof expectedStderr !== "string") expect(stderr).toEqual(expectedStderr);
+  else if (expectedStderr) expect(stderr).toContain(expectedStderr);
+  else expect(stderr).toBe("");
 }
 
 async function writeRollout(
@@ -511,7 +518,7 @@ it("does not upload a turn again on a later Stop once it was delivered", async (
   expect(requests).toHaveLength(delivered);
 });
 
-it("tells the next hook once when an upload was refused and dropped", async () => {
+it("tells the next hook once when an upload was refused and dropped, and that the API key was rejected", async () => {
   failStatus = 401;
   const transcript_path = await writeRollout();
   await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, reachable());
@@ -524,12 +531,280 @@ it("tells the next hook once when an upload was refused and dropped", async () =
     reachable(),
     [],
     "dropped it",
+    expect.stringContaining("LangSmith API key was rejected"),
   );
   await hook(
     { hook_event_name: "UserPromptSubmit", prompt: "work", turn_id: "later" },
     reachable(),
   );
 }, 60_000);
+
+it.skipIf(process.env.CODEX_TEST_BINARY)(
+  "uploads with the CLI login and says once per cooldown that the token expired",
+  async () => {
+    failStatus = 401;
+    const log = join(dir, "spawned.log");
+    const preload = join(dir, "stub-spawn.mjs");
+    await fs.writeFile(
+      preload,
+      `import childProcess from "node:child_process";
+import { appendFileSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+const spawn = childProcess.spawn;
+const record = (entry) => appendFileSync(${JSON.stringify(log)}, JSON.stringify(entry) + "\\n");
+childProcess.spawn = (command, args, options) => {
+  if (!/(^|[\\\\/])(osascript|notify-send|powershell\\.exe|langsmith)$/.test(command)) return spawn(command, args, options);
+  record([command, ...args]);
+  return spawn(process.execPath, ["-e", ""], options);
+};
+syncBuiltinESMExports();
+const warn = console.warn;
+console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
+`,
+    );
+    const bin = join(dir, "bin");
+    await fs.mkdir(bin);
+    await fs.writeFile(join(bin, "langsmith"), "#!/bin/sh\n", { mode: 0o755 });
+    await fs.mkdir(join(home, ".langsmith"));
+    const login = (access_token: string) =>
+      fs.writeFile(
+        join(home, ".langsmith", "config.json"),
+        JSON.stringify({
+          current_profile: "work",
+          profiles: { work: { api_url: api, oauth: { access_token } } },
+        }),
+      );
+    const renewals = async (count: number) => {
+      let entries: string[][] = [];
+      await vi.waitFor(
+        async () => {
+          entries = (await fs.readFile(log, "utf8").catch(() => ""))
+            .split("\n")
+            .filter(Boolean)
+            .map((line) => JSON.parse(line));
+          expect(
+            entries.filter(([kind, line]) => kind === "warn" && line?.includes("token expired")),
+          ).toHaveLength(count);
+        },
+        { timeout: 20_000, interval: 100 },
+      );
+      return entries;
+    };
+    const env = {
+      TRACE_TO_LANGSMITH: "true",
+      LANGSMITH_CODEX_LOGIN_BROWSER: "false",
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ${pathToFileURL(preload).href}`,
+      PATH: `${bin}:/usr/bin:/bin`,
+      DISPLAY: ":0",
+    };
+    const prompt = (turn_id: string, session_id = "thread") => ({
+      hook_event_name: "UserPromptSubmit",
+      prompt: "work",
+      turn_id,
+      session_id,
+    });
+    const notice = expect.stringContaining("LangSmith token expired. Run `langsmith auth login`");
+    const dropped = join(home, ".codex", "langsmith_warning.txt");
+    await login("synthetic-expired");
+    await hook(prompt("turn"), env);
+    await hook({ hook_event_name: "Stop", transcript_path: await writeRollout() }, env);
+    await renewals(1);
+    await vi.waitFor(() => fs.access(dropped), { timeout: 20_000, interval: 100 });
+
+    expect(requests[0]).toMatchObject({ auth: "Bearer synthetic-expired", key: undefined });
+    const loginDropped = expect.stringMatching(/dropped it\. Run `langsmith auth login`/);
+    await hook(
+      prompt("key", "key-thread"),
+      { ...env, LANGSMITH_API_KEY: "wire-key" },
+      [],
+      loginDropped,
+    );
+    await hook(prompt("next"), env, [], "", notice);
+    await hook(prompt("other", "other-thread"), env);
+    const spawned = await renewals(1);
+
+    expect(spawned.filter(([kind]) => kind !== "warn")).toEqual([]);
+  },
+  60_000,
+);
+
+it("says once per cooldown why an existing CLI login can't be used while tracing is on", async () => {
+  const prompt = (turn_id: string) => ({
+    hook_event_name: "UserPromptSubmit",
+    prompt: "work",
+    turn_id,
+  });
+  const exported = { TRACE_TO_LANGSMITH: "true", LANGCHAIN_API_KEY: "sdk-key" };
+  const elsewhere = { TRACE_TO_LANGSMITH: "true", LANGSMITH_ENDPOINT: "https://other.example" };
+  await fs.mkdir(join(home, ".langsmith"));
+  await fs.writeFile(
+    join(home, ".langsmith", "config.json"),
+    JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+  );
+  await hook(prompt("off"), { ...exported, TRACE_TO_LANGSMITH: "false" });
+  await hook(
+    prompt("one"),
+    exported,
+    [],
+    "",
+    expect.stringContaining("LANGCHAIN_API_KEY is overriding"),
+  );
+  await hook(prompt("two"), exported);
+  await hook(
+    prompt("three"),
+    { ...elsewhere, LANGSMITH_CODEX_NOTICE_COOLDOWN: "0" },
+    [],
+    "",
+    expect.stringContaining("login is for"),
+  );
+  await fs.rm(join(home, ".langsmith", "config.json"));
+  await hook(
+    prompt("no-login"),
+    { ...exported, LANGSMITH_CODEX_NOTICE_COOLDOWN: "0" },
+    [],
+    "",
+    expect.stringContaining("LangSmith isn't signed in"),
+  );
+});
+
+it("says once per cooldown that LangSmith isn't signed in after the CLI login is removed", async () => {
+  const login = join(home, ".langsmith", "config.json");
+  await fs.mkdir(join(home, ".langsmith"));
+  await fs.writeFile(
+    login,
+    JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+  );
+  const env = { TRACE_TO_LANGSMITH: "true" };
+  const prompt = (turn_id: string) => ({
+    hook_event_name: "UserPromptSubmit",
+    prompt: "work",
+    turn_id,
+  });
+  await hook(prompt("signed-in"), env);
+  await fs.rm(login);
+  await hook(prompt("signed-out"), env, [], "", expect.stringContaining("langsmith auth login"));
+  await hook(prompt("again"), env);
+});
+
+it("uploads nothing and says once per cooldown when every replica is refused for the login", async () => {
+  await fs.mkdir(join(home, ".langsmith"));
+  await fs.writeFile(
+    join(home, ".langsmith", "config.json"),
+    JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+  );
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({ replicas: [{ api_url: "https://other.example", project: "copy" }] }),
+  );
+  const env = { TRACE_TO_LANGSMITH: "true" };
+  const prompt = (turn_id: string) => ({
+    hook_event_name: "UserPromptSubmit",
+    prompt: "work",
+    turn_id,
+  });
+  const skipped = expect.stringContaining(
+    "LangSmith replicas on https://other.example need their own API key",
+  );
+  await hook(prompt("one"), env, [], "", skipped);
+  await hook({ hook_event_name: "Stop", transcript_path: await writeRollout() }, env);
+  const transcript_path = await writeRollout("thread", "rollout.jsonl", ["turn", "two"]);
+  await hook(prompt("two"), env);
+  await hook({ hook_event_name: "Stop", transcript_path, turn_id: "two" }, env);
+  expect(requests).toEqual([]);
+});
+
+it("still uploads to a replica with its own key and says once why the CLI login can't be used", async () => {
+  await fs.mkdir(join(home, ".langsmith"));
+  await fs.writeFile(
+    join(home, ".langsmith", "config.json"),
+    JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+  );
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({ replicas: [{ api_url: api, api_key: "replica-key", project: "replica" }] }),
+  );
+  const env = { TRACE_TO_LANGSMITH: "true", LANGCHAIN_API_KEY: "sdk-key" };
+  const reason = expect.stringContaining("LANGCHAIN_API_KEY is overriding");
+  const transcript_path = await writeRollout();
+  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env, [], "", reason);
+  await hook({ hook_event_name: "Stop", transcript_path }, env);
+  await hook({}, env, ["--engine-worker", "thread", cwd]);
+  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work", turn_id: "next" }, env);
+
+  expect(requests.length).toBeGreaterThan(0);
+  expect(requests.every(({ key, auth }) => key === "replica-key" && auth === undefined)).toBe(true);
+});
+
+it.each(
+  ['""', "   ", '" "'].flatMap((blank) => [
+    { blank, settings: { api_key: blank, api_url: "API" } },
+    { blank, settings: { replicas: [{ api_url: "API", api_key: blank, project: "copy" }] } },
+  ]),
+)(
+  "never sends the CLI login to a repository's server for blank key $blank in $settings",
+  async ({ settings }) => {
+    await fs.mkdir(join(home, ".langsmith"));
+    await fs.writeFile(
+      join(home, ".langsmith", "config.json"),
+      JSON.stringify({
+        profiles: { default: { api_url: "https://login.example", oauth: { access_token: "t" } } },
+      }),
+    );
+    await fs.writeFile(
+      join(cwd, "langsmith-plugins.json"),
+      JSON.stringify(settings).replaceAll('"API"', JSON.stringify(api)),
+    );
+    const env = { TRACE_TO_LANGSMITH: "true", LANGSMITH_CODEX_NOTICE_COOLDOWN: "off" };
+    const transcript_path = await writeRollout();
+    await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env);
+    await hook({ hook_event_name: "Stop", transcript_path }, env, [], expect.anything());
+    await uploadersFinished();
+
+    expect(requests.filter(({ auth }) => auth !== undefined)).toEqual([]);
+  },
+);
+
+it("opens no upload when the only replica key is a quoted blank and there is no login", async () => {
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({ replicas: [{ api_url: api, api_key: '""', project: "copy" }] }),
+  );
+  const env = { TRACE_TO_LANGSMITH: "true", LANGSMITH_CODEX_NOTICE_COOLDOWN: "off" };
+  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env);
+  await hook({ hook_event_name: "Stop", transcript_path: await writeRollout() }, env);
+
+  expect(requests).toEqual([]);
+});
+
+it.each([
+  { key: '""', sent: undefined },
+  { key: "' '", sent: undefined },
+  { key: "''''", sent: "''" },
+  { key: `'""'`, sent: '""' },
+])(
+  "sends key $key as the SDK reads it and never falls back to the CLI login",
+  async ({ key, sent }) => {
+    await fs.mkdir(join(home, ".langsmith"));
+    await fs.writeFile(
+      join(home, ".langsmith", "config.json"),
+      JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+    );
+    await fs.writeFile(
+      join(cwd, "langsmith-plugins.json"),
+      JSON.stringify({ api_key: key, api_url: api }),
+    );
+    const env = { TRACE_TO_LANGSMITH: "true", LANGSMITH_CODEX_NOTICE_COOLDOWN: "off" };
+    const transcript_path = await writeRollout();
+    await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env);
+    await hook({ hook_event_name: "Stop", transcript_path }, env, [], expect.anything());
+    await uploadersFinished();
+
+    expect(requests.filter(({ auth }) => auth !== undefined)).toEqual([]);
+    expect(new Set(requests.map(({ key: header }) => header))).toEqual(
+      new Set(sent === undefined ? [] : [sent]),
+    );
+  },
+);
 
 const stateFiles = async () => [
   ...(await fs.readdir(join(home, ".codex"))).filter(
