@@ -102,6 +102,14 @@ export const TOOL_OUTPUT_POLL_MS = 100;
 export const TOOL_END_EVENT_SUFFIX = "_end";
 export const OPEN_TURN_END = "langsmith_open_turn_end";
 export const ITEM_COMPLETED_EVENT = "item_completed";
+export const TOOL_ITEM_TYPES: readonly unknown[] = [
+  "CommandExecution",
+  "DynamicToolCall",
+  "FileChange",
+  "McpToolCall",
+];
+export const FAILED_TOOL_STATUSES: readonly unknown[] = ["failed", "declined"];
+export const TOOL_STATUS_ERROR_PREFIX = "Tool ";
 export const SUBAGENT_AGENT_TYPE = "subagent";
 export const OPEN_CLOSURE = "open";
 export const PATCH_OPERATION = "patch";

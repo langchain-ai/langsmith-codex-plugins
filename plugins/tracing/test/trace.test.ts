@@ -2,6 +2,7 @@ import { seedFullLaunchEvidence } from "./utils/launch.js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convertToRunTree } from "./utils/convert.js";
 import { vol } from "memfs";
+import type { RunTree } from "langsmith";
 
 import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
@@ -1069,6 +1070,26 @@ it("discovers subagents from current Codex v2 activity items", async () => {
   ]);
 });
 
+it("keeps subagent activity out of the spawn tool's outputs", async () => {
+  const { client, callSpy } = mockClient();
+  vol.fromJSON(await preloadTestFiles({ makeTurnIncomplete: false, subagentProtocol: "v2" }));
+
+  seedFullLaunchEvidence();
+  await convertToRunTree(
+    {
+      transcript_path: "/home/codex-user/.codex/sessions/2026/04/23/rollout-subagents.jsonl",
+      turn_id: "019dbc03-4aa2-72a0-8190-c747168c8f1d",
+    },
+    { client, projectName: "codex" },
+  );
+
+  const tree = await getAssumedTreeFromCalls(callSpy.mock.calls, client);
+  const spawns = Object.values(tree.data).filter((run) => run.name === "spawn_agent");
+
+  expect(spawns).not.toHaveLength(0);
+  for (const spawn of spawns) expect(spawn.outputs).not.toHaveProperty("agent_thread_id");
+});
+
 const EDITING_FILE = path.join("/home/codex-user/.codex/sessions/2026/04/23/rollout-editing.jsonl");
 const EDITING_TURN = "019dbc00-ede4-77c2-9e7a-b6876efeab9b";
 const EARLIER_TURN = "019dbc00-1111-77c2-9e7a-b6876efeab9b";
@@ -1150,4 +1171,155 @@ it("traces a turn once when the rollout repeats it", async () => {
   );
 
   expect(roots).toHaveLength(1);
+});
+
+const CURRENT_CODEX_FILE = "/home/codex-user/.codex/sessions/2026/10/16/rollout-codex-0162.jsonl";
+const CURRENT_CODEX_TURN = "01a142f4-b6d5-7770-ad03-44e116aea04b";
+
+async function traceCurrentCodexExec(
+  reshape: (item: Record<string, unknown>) => Record<string, unknown> = (item) => item,
+  timestamp?: string,
+) {
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const source = path.join(__dirname, "sessions/2026/10/16/rollout-codex-0162.jsonl");
+  const lines = (await fs.readFile(source, "utf-8"))
+    .trim()
+    .split("\n")
+    .map((line) => {
+      const event = JSON.parse(line);
+      if (event.payload.item?.id === "call_s2") {
+        event.payload.item = reshape(event.payload.item);
+        event.timestamp = timestamp ?? event.timestamp;
+      }
+      return JSON.stringify(event);
+    });
+  lines.push(
+    JSON.stringify({
+      timestamp: "2026-10-16T04:24:58.400Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "assistant",
+        content: [{ type: "output_text", text: "done" }],
+      },
+    }),
+    JSON.stringify({
+      timestamp: "2026-10-16T04:24:58.500Z",
+      type: "event_msg",
+      payload: { type: "task_complete", turn_id: CURRENT_CODEX_TURN },
+    }),
+  );
+  vol.fromJSON({ [CURRENT_CODEX_FILE]: lines.join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: CURRENT_CODEX_FILE, turn_id: CURRENT_CODEX_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  return runs.find((run) => run.name === "exec_command");
+}
+
+it("ends a current Codex tool at its completion event", async () => {
+  const finishedAt = "2026-10-16T04:24:58.000Z";
+  const exec = await traceCurrentCodexExec(undefined, finishedAt);
+
+  expect(exec?.end_time).toBe(Date.parse(finishedAt));
+});
+
+it("keeps a current Codex exec's details in its outputs", async () => {
+  const exec = await traceCurrentCodexExec();
+
+  expect(Object.keys(exec?.outputs ?? {}).sort()).toEqual([
+    "aggregated_output",
+    "command",
+    "cwd",
+    "duration",
+    "exit_code",
+    "messages",
+    "parsed_cmd",
+    "process_id",
+    "source",
+    "status",
+  ]);
+});
+
+it.each([
+  { case: "a failed exec", item: {}, error: "bad\n" },
+  {
+    case: "a passing exec",
+    item: { status: "completed", aggregated_output: "ok\n", exit_code: 0 },
+    error: undefined,
+  },
+  {
+    case: "a declined exec",
+    item: { status: "declined", aggregated_output: "rejected by user", exit_code: -1 },
+    error: "rejected by user",
+  },
+  {
+    case: "a failed patch",
+    item: { type: "FileChange", changes: {}, status: "failed", stdout: "", stderr: "no match" },
+    error: "no match",
+  },
+  {
+    case: "an MCP tool that reports an error",
+    item: {
+      type: "McpToolCall",
+      server: "t",
+      tool: "bad",
+      arguments: {},
+      status: "failed",
+      result: {
+        content: [
+          { type: "image", data: "", mimeType: "image/png" },
+          { type: "text", text: "bad input" },
+        ],
+        isError: true,
+      },
+    },
+    error: "bad input",
+  },
+  {
+    case: "an MCP call that errors",
+    item: {
+      type: "McpToolCall",
+      server: "t",
+      tool: "boom",
+      arguments: {},
+      status: "failed",
+      error: { message: "Mcp error: -32000: boom" },
+    },
+    error: "Mcp error: -32000: boom",
+  },
+  {
+    case: "a failed MCP call with no text",
+    item: {
+      type: "McpToolCall",
+      server: "t",
+      tool: "quiet",
+      arguments: {},
+      status: "failed",
+      result: { content: [], isError: true },
+    },
+    error: "Tool failed",
+  },
+  {
+    case: "a failed dynamic tool with no text",
+    item: {
+      type: "DynamicToolCall",
+      tool: "lookup",
+      arguments: {},
+      status: "failed",
+      content_items: [],
+      success: false,
+    },
+    error: "Tool failed",
+  },
+])("traces the error of $case on a current Codex transcript", async ({ item, error }) => {
+  const exec = await traceCurrentCodexExec((original) =>
+    "type" in item ? { id: original.id, ...item } : { ...original, ...item },
+  );
+
+  expect(exec?.error).toBe(error);
 });

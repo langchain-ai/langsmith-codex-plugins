@@ -11,6 +11,7 @@ import type {
   SubagentSource,
   Task,
   TokenCount,
+  ToolCallRecord,
 } from "./models/rollout.js";
 import type {
   CompletedTurn,
@@ -47,6 +48,8 @@ import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subage
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
   CHILD_SCOPE_RESET,
+  FAILED_TOOL_STATUSES,
+  ITEM_COMPLETED_EVENT,
   LS_INTEGRATION,
   LS_INTEGRATION_VERSION,
   MODE_FULL,
@@ -55,6 +58,9 @@ import {
   OPEN_TURN_END,
   SKILL_SCOPE_RESET,
   SUBAGENT_SCOPE_RESET,
+  TOOL_END_EVENT_SUFFIX,
+  TOOL_ITEM_TYPES,
+  TOOL_STATUS_ERROR_PREFIX,
 } from "./constants.js";
 
 function formatError(value: unknown): string | undefined {
@@ -813,41 +819,78 @@ function recordResponseItem(walk: RolloutWalk, payload: ResponseItem, timestamp:
   }
 }
 
-function recordToolCallEvent(task: Task, payload: EventMsgPayload, eventTime: number) {
-  const callId = payload.call_id as string;
+function toolCallEntry(task: Task, callId: string) {
   task.toolCalls[callId] ??= { error: undefined, timings: [], outputs: {} };
-  task.toolCalls[callId].timings.push(eventTime);
+  return task.toolCalls[callId];
+}
 
-  if (payload.type.endsWith("_end")) {
-    // attempt to find an error message
-    if (payload.status === "failed" || payload.status === "declined") {
-      const stdout = (() => {
-        if (typeof payload.aggregated_output === "string") {
-          return payload.aggregated_output || undefined;
-        }
+function recordToolCallEnd(
+  toolCall: ToolCallRecord,
+  payload: Record<string, unknown>,
+  outputs: Record<string, unknown>,
+) {
+  // attempt to find an error message
+  if (FAILED_TOOL_STATUSES.includes(payload.status)) {
+    const stdout = (() => {
+      if (typeof payload.aggregated_output === "string") {
+        return payload.aggregated_output || undefined;
+      }
 
-        const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
-        if (!bestEffort) return undefined;
-        return bestEffort;
-      })();
+      const bestEffort = [payload.stdout, payload.stderr].filter(Boolean).join("\n");
+      if (!bestEffort) return undefined;
+      return bestEffort;
+    })();
 
-      const exitCode = (() => {
-        if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
-        return undefined;
-      })();
+    const exitCode = (() => {
+      if (typeof payload.exit_code === "number") return `Exit code: ${payload.exit_code}`;
+      return undefined;
+    })();
 
-      const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
-      task.toolCalls[callId].error =
-        error != null ? (isPrimitive(error) ? String(error) : JSON.stringify(error)) : undefined;
-    }
+    const error = payload.error ?? payload.codex_error_info ?? stdout ?? exitCode;
+    toolCall.error =
+      error != null ? (isPrimitive(error) ? String(error) : JSON.stringify(error)) : undefined;
+  }
 
+  Object.assign(toolCall.outputs, outputs);
+}
+
+function recordToolCallEvent(task: Task, payload: EventMsgPayload, eventTime: number) {
+  const toolCall = toolCallEntry(task, payload.call_id as string);
+  toolCall.timings.push(eventTime);
+
+  if (payload.type.endsWith(TOOL_END_EVENT_SUFFIX)) {
     const outputs: Record<string, unknown> = { ...payload };
     delete outputs.call_id;
     delete outputs.turn_id;
     delete outputs.type;
 
-    Object.assign(task.toolCalls[callId].outputs, outputs);
+    recordToolCallEnd(toolCall, payload, outputs);
   }
+}
+
+function recordToolItem(task: Task, item: Record<string, unknown>, eventTime: number) {
+  const toolCall = toolCallEntry(task, item.id as string);
+  toolCall.timings.push(eventTime);
+
+  const outputs: Record<string, unknown> = { ...item };
+  delete outputs.id;
+  delete outputs.type;
+
+  recordToolCallEnd(toolCall, item, outputs);
+  if (FAILED_TOOL_STATUSES.includes(item.status)) {
+    toolCall.error =
+      toolItemErrorText(item) ?? toolCall.error ?? `${TOOL_STATUS_ERROR_PREFIX}${item.status}`;
+  }
+}
+
+function toolItemErrorText(item: Record<string, unknown>) {
+  if (isRecord(item.error) && typeof item.error.message === "string") return item.error.message;
+  if (!isRecord(item.result) || !Array.isArray(item.result.content)) return undefined;
+  const text = item.result.content
+    .filter((part) => isRecord(part) && typeof part.text === "string")
+    .map((part) => part.text)
+    .join("\n");
+  return text || undefined;
 }
 
 function recordTurnError(task: Task, payload: EventMsgPayload) {
@@ -883,6 +926,15 @@ function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTi
   if (typeof payload.call_id === "string") {
     walk.task ??= createTask();
     recordToolCallEvent(walk.task, payload, eventTime);
+  }
+
+  if (
+    payload.type === ITEM_COMPLETED_EVENT &&
+    isRecord(payload.item) &&
+    TOOL_ITEM_TYPES.includes(payload.item.type)
+  ) {
+    walk.task ??= createTask();
+    recordToolItem(walk.task, payload.item, eventTime);
   }
 
   if (payload.type === "token_count") {
