@@ -32,6 +32,17 @@ const GIT = {
   branch: "main",
   repository_url: "https://github.com/langchain-ai/langsmith-codex-plugins.git",
 };
+const REPOSITORY = {
+  repository_url: "https://github.com/langchain-ai/langsmith-codex-plugins",
+  repository_provider: "github",
+  repository_name: "langchain-ai/langsmith-codex-plugins",
+  git_branch: GIT.branch,
+  git_commit_sha: GIT.commit_hash,
+};
+const attributor = {
+  toolMetadata: (base?: Record<string, unknown>) => ({ ...REPOSITORY, ...base }),
+  turnMetadata: (base?: Record<string, unknown>) => ({ ...REPOSITORY, ...base }),
+};
 const CLI_VERSION = "0.123.0";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
@@ -221,7 +232,7 @@ async function buildRuns() {
       transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
       turn_id: PARENT_TURN,
     },
-    { client, projectName: "codex" },
+    { client, projectName: "codex", attributor },
   );
   await client.awaitPendingTraceBatches();
 

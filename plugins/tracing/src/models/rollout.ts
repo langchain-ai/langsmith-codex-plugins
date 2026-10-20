@@ -14,18 +14,6 @@ import type { Dirent } from "node:fs";
 
 type StringRecord = Record<string, unknown>;
 
-export type GitInfo = {
-  commit_hash?: string;
-  branch?: string;
-  repository_url?: string;
-};
-
-export type RepositoryInfo = {
-  repository_url?: string;
-  repository_provider?: string;
-  repository_name?: string;
-};
-
 // `session_meta.source` for a spawned subagent thread.
 export type SubagentSource = {
   subagent: {
@@ -57,7 +45,6 @@ export type SessionMetaPayload = {
   base_instructions?: { text: string } | null;
   dynamic_tools?: unknown[];
   memory_mode?: string;
-  git?: GitInfo;
 };
 
 export type SessionMetaLine = {
@@ -385,7 +372,6 @@ export type Session = {
   base_instructions: string | undefined;
   cli_version: string;
   cwd?: string;
-  git?: GitInfo;
   // Derived from `session_meta.source` (root vs spawned subagent thread).
   is_subagent?: boolean;
   // Parent (root, for depth-1) thread that this subagent groups under.

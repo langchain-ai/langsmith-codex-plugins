@@ -1,4 +1,5 @@
 import { RunTree, type Client } from "langsmith";
+import { createRepositoryAttributor, type RepositoryAttributor } from "@langchain/plugins-base/git";
 import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import type { PluginSession } from "@langchain/plugins-base/plugin";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
@@ -20,6 +21,7 @@ import {
   DROPPED_WORK_WARNING,
   ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
+  GITHUB_LOGIN_MARKER_FILE_NAME,
   LIVE_RUN_EVENT_PREFIX,
   OPEN_CLOSURE,
   SUBAGENT_AGENT_TYPE,
@@ -74,16 +76,19 @@ export function createCodexTracingSession(
   return plugin;
 }
 
+let attributor: RepositoryAttributor | undefined;
+
 export async function buildLiveToolRuns(
   config: Config,
   request: LiveToolRequest,
   mode: TracingMode,
+  home = homeDirectory(),
 ): Promise<LiveToolRuns | undefined> {
   const runs: CodexReconstructedRun[] = [];
   const toolRunId = toolRunIdGenerator(request.session_id, request.turn_id)(request.tool_use_id);
   await convertToRunTree(
     { transcript_path: request.transcript_path, turn_id: request.turn_id, includeOpenTurn: true },
-    conversionOptions(config, request.session_id, request.turn_id, mode, runs),
+    conversionOptions(config, request.session_id, request.turn_id, mode, runs, home),
   );
   const [root] = runs;
   const tool = runs.find(({ run }) => run.id === toolRunId);
@@ -98,10 +103,11 @@ export async function saveLiveToolRuns(
   turnId: string,
   { root, tool }: LiveToolRuns,
 ): Promise<void> {
+  const rootEventId = `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`;
   if (!(await savedLiveRun(plugin, turnId, root.run.id))) {
     await saveLiveRun(plugin, {
       turnId,
-      eventId: `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`,
+      eventId: rootEventId,
       submission: openRootSubmission(root.run, root.mode, root.metadata),
       turnEvidence: { rootRunId: root.run.id, childRunIds: [], closureState: OPEN_CLOSURE },
     });
@@ -111,6 +117,9 @@ export async function saveLiveToolRuns(
     eventId: `${LIVE_RUN_EVENT_PREFIX}${tool.run.id}`,
     submission: postSubmission(tool.run, tool.mode, tool.metadata),
     turnEvidence: { childRunIds: [tool.run.id], closureState: OPEN_CLOSURE },
+    dependencies: [
+      { integration: LS_INTEGRATION, sessionId: plugin.sessionId, turnId, eventId: rootEventId },
+    ],
   });
 }
 
@@ -150,8 +159,12 @@ function conversionOptions(
   turnId: string,
   privacyMode: TracingMode,
   runs: CodexReconstructedRun[],
+  home: string,
 ): TraceConversionOptions {
   const client = createRunClient(config);
+  attributor ??= createRepositoryAttributor({
+    githubLoginMarkerPath: path.join(home, CODEX_CONFIG_DIRECTORY, GITHUB_LOGIN_MARKER_FILE_NAME),
+  });
   return {
     client,
     projectName: config.project,
@@ -164,6 +177,7 @@ function conversionOptions(
     nextRunId: runIdGenerator(sessionId, turnId),
     toolRunId: toolRunIdGenerator(sessionId, turnId),
     privacyMode,
+    attributor,
   };
 }
 
@@ -213,7 +227,7 @@ async function reconstructTranscript(
   const runs: CodexReconstructedRun[] = [];
   await convertToRunTree(
     { transcript_path: transcriptPath, turn_id: job.turnId },
-    conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs),
+    conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs, home),
   );
   const [root, ...children] = runs;
   if (root === undefined) throw new Error("Codex transcript has no completed target turn");

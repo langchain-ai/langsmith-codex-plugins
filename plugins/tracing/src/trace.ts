@@ -29,11 +29,11 @@ import type {
 } from "./models/trace-conversion.js";
 import type { TurnMode } from "./models/tracing-policy.js";
 import type { RunTree, RunTreeConfig } from "langsmith";
+import type { ReconstructionToolOrigin } from "@langchain/plugins-base/tracing/reconstruction";
 import {
   buildCodingAgentMetadata,
   type CodingAgentMetadataOptions,
 } from "@langchain/plugins-base/metadata";
-import { parseRepository, resolveGitInfo } from "./codex-git.js";
 
 import { findLast } from "./utils/findLast.js";
 import { skillNamesFromToolCall } from "./skills.js";
@@ -43,6 +43,7 @@ import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
 import { omitKey } from "./utils/omitKey.js";
+import { toolOriginFromArgs } from "./tool-path.js";
 import { loadSession, findRolloutFileByThreadId } from "./utils/rollout.js";
 import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
@@ -317,12 +318,11 @@ async function resolveTurnMode(
   return mode;
 }
 
-async function turnMetadata(
+function turnMetadata(
   task: Task,
   sessionMeta: Session | undefined,
-  mode: TurnMode,
   options: TraceConversionOptions,
-): Promise<TurnMetadata> {
+): TurnMetadata {
   // Codex turn-context carries the workspace + policy details for this turn.
   const cwd =
     (typeof task.context?.cwd === "string" ? task.context.cwd : undefined) ?? sessionMeta?.cwd;
@@ -344,8 +344,6 @@ async function turnMetadata(
     return undefined;
   })();
 
-  const git = mode === MODE_FULL ? await resolveGitInfo(cwd, sessionMeta?.git) : undefined;
-
   const isSubagent = sessionMeta?.is_subagent === true;
 
   // Subagents are separate rollouts; group under the parent thread, not their own.
@@ -353,15 +351,11 @@ async function turnMetadata(
     (isSubagent ? sessionMeta?.parent_thread_id : undefined) ?? sessionMeta?.session_id;
 
   // coding-agent-v1 base contract, stamped onto every run below.
-  const repository = parseRepository(git?.repository_url);
   const metadataBase = {
     ...options.metadata,
     ...omitKey(task.context, "approval_policy"),
     ...(cwd === undefined ? {} : { cwd }),
     ...(sandboxType === undefined ? {} : { sandbox_type: sandboxType }),
-    ...repository,
-    ...(git?.branch === undefined ? {} : { git_branch: git.branch }),
-    ...(git?.commit_hash === undefined ? {} : { git_commit_sha: git.commit_hash }),
   };
   const metadataContext: MetadataContext = {
     integration: LS_INTEGRATION,
@@ -373,7 +367,7 @@ async function turnMetadata(
     agentType: isSubagent ? ("subagent" as const) : ("root" as const),
   };
 
-  return { metadataContext, metadataBase, isSubagent, approvalPolicy };
+  return { metadataContext, metadataBase, isSubagent, approvalPolicy, cwd };
 }
 
 function parentProviderMetadata(task: Task, sessionMeta: Session | undefined) {
@@ -636,7 +630,7 @@ async function postToolRuns(
         ls_provider: sessionMeta?.model_provider ?? undefined,
         ls_invocation_params: task.context,
       },
-      base: childMetadataBase,
+      base: toolMetadataBase(context, msgToolCall.args),
     };
     const sequentialId = options.nextRunId();
     const toolRun = createRunTree(
@@ -705,8 +699,14 @@ async function postTurn(
 
   const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
 
+  const unattributed = turnMetadata(task, sessionMeta, request.options);
+  const attributor = mode === MODE_FULL ? request.options.attributor : undefined;
+  const origins = attributor ? toolOrigins(messages, unattributed.cwd) : [];
   const draft: TurnDraft = {
-    ...(await turnMetadata(task, sessionMeta, mode, request.options)),
+    ...unattributed,
+    metadataBase:
+      attributor?.turnMetadata(unattributed.metadataBase, unattributed.cwd, origins) ??
+      unattributed.metadataBase,
     task,
     sessionMeta,
     request,
@@ -715,13 +715,8 @@ async function postTurn(
   };
   const context: TurnRunContext = {
     ...draft,
-    childMetadataBase:
-      mode === MODE_FULL
-        ? {
-            ...draft.metadataBase,
-            ...omitKey(parentProviderMetadata(task, sessionMeta), "ls_raw_aggregated_usage"),
-          }
-        : draft.metadataBase,
+    childMetadataBase: childBase(draft.metadataBase, draft),
+    unattributedChildBase: childBase(unattributed.metadataBase, draft),
     parent: await createParentRun(draft, user, agent),
     postedSubagentThreads: new Set<string>(),
   };
@@ -732,6 +727,40 @@ async function postTurn(
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(context, subagentThread);
   }
+}
+
+function childBase(base: Record<string, unknown>, draft: TurnDraft): Record<string, unknown> {
+  return draft.mode === MODE_FULL
+    ? {
+        ...base,
+        ...omitKey(
+          parentProviderMetadata(draft.task, draft.sessionMeta),
+          "ls_raw_aggregated_usage",
+        ),
+      }
+    : base;
+}
+
+function toolOrigins(
+  messages: AggregateMessage<StandardMessage>[],
+  cwd: string | undefined,
+): ReconstructionToolOrigin[] {
+  return messages.flatMap(({ message }) =>
+    message.role === "ai"
+      ? message.content
+          .filter((c) => c.type === "tool_call")
+          .map((c) => toolOriginFromArgs(c.args, cwd))
+      : [],
+  );
+}
+
+function toolMetadataBase(context: TurnRunContext, args: unknown): Record<string, unknown> {
+  const attributor = context.mode === MODE_FULL ? context.request.options.attributor : undefined;
+  if (!attributor) return context.childMetadataBase;
+  const origin = toolOriginFromArgs(args, context.cwd);
+  return (
+    attributor.toolMetadata(context.unattributedChildBase, origin) ?? context.childMetadataBase
+  );
 }
 
 function createTask(): Task {
@@ -777,7 +806,6 @@ function readSessionMeta(payload: SessionMetaPayload): Session {
     base_instructions: payload.base_instructions?.text,
     cli_version: payload.cli_version,
     cwd: payload.cwd,
-    git: payload.git,
     is_subagent: isSubagent,
     parent_thread_id: threadSpawn?.parent_thread_id ?? payload.parent_thread_id ?? undefined,
     agent_role: threadSpawn?.agent_role ?? payload.agent_role ?? undefined,
