@@ -16,8 +16,8 @@ importers:
         version: 14.0.2
     devDependencies:
       '@langchain/plugins-base':
-        specifier: 0.4.4
-        version: 0.4.4(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
+        specifier: github:langchain-ai/langsmith-plugin-binary#bbee665375e2df6e89b88ae19a14df54fb705fcb
+        version: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/bbee665375e2df6e89b88ae19a14df54fb705fcb(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
@@ -178,8 +178,9 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@langchain/plugins-base@0.4.4':
-    resolution: {integrity: sha512-8xG9WYnQ97+a/JnWvtZ4YjcmemBd6QLf4cbSukxkPgvRtg3qB0d2HOTTfbgumVEcBz+o1jyn8pCUDdE6Rb8APg==}
+  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/bbee665375e2df6e89b88ae19a14df54fb705fcb':
+    resolution: {tarball: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/bbee665375e2df6e89b88ae19a14df54fb705fcb}
+    version: 0.4.5
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -1520,7 +1521,7 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@langchain/plugins-base@0.4.4(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
+  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/bbee665375e2df6e89b88ae19a14df54fb705fcb(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
     dependencies:
       langsmith: 0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
 

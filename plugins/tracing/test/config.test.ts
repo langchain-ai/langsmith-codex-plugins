@@ -57,7 +57,13 @@ afterEach(() => {
 
 it("returns defaults and omits missing optional properties", async () => {
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config).toEqual({ defaultMuted: false, enabled: false, project: "codex", redact: true });
+  expect(config).toEqual({
+    locked: [],
+    defaultMuted: false,
+    enabled: false,
+    project: "codex",
+    redact: true,
+  });
 });
 
 it("loads environment config", async () => {
@@ -77,6 +83,7 @@ it("loads environment config", async () => {
   vi.stubEnv("LANGSMITH_CODEX_PARENT_HEADERS", JSON.stringify(parentHeaders));
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: true,
     api_key: "env-key",
@@ -117,6 +124,7 @@ it("applies all environment values over config files", async () => {
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: true,
     api_key: "env-key",
@@ -154,6 +162,7 @@ it("prefers Codex-specific environment values over standard LangSmith values", a
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: true,
     api_key: "codex-key",
@@ -168,13 +177,25 @@ it("prefers Codex-specific environment values over standard LangSmith values", a
 it("disables redaction when LANGSMITH_CODEX_REDACT is falsy", async () => {
   vi.stubEnv("LANGSMITH_CODEX_REDACT", "false");
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config).toEqual({ defaultMuted: false, enabled: false, project: "codex", redact: false });
+  expect(config).toEqual({
+    locked: [],
+    defaultMuted: false,
+    enabled: false,
+    project: "codex",
+    redact: false,
+  });
 });
 
 it("enables redaction explicitly via LANGSMITH_CODEX_REDACT", async () => {
   vi.stubEnv("LANGSMITH_CODEX_REDACT", "true");
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config).toEqual({ defaultMuted: false, enabled: false, project: "codex", redact: true });
+  expect(config).toEqual({
+    locked: [],
+    defaultMuted: false,
+    enabled: false,
+    project: "codex",
+    redact: true,
+  });
 });
 
 it("reads redact_extra_rules from the environment", async () => {
@@ -184,6 +205,7 @@ it("reads redact_extra_rules from the environment", async () => {
   );
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: false,
     project: "codex",
@@ -198,13 +220,20 @@ it("falls back to defaults when an env value fails schema validation", async () 
   // whole env layer is dropped (try/catch) rather than crashing the hook.
   vi.stubEnv("LANGSMITH_CODEX_REDACT_EXTRA", JSON.stringify([{ pattern: 123 }]));
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config).toEqual({ defaultMuted: false, enabled: true, project: "codex", redact: true });
+  expect(config).toEqual({
+    locked: [],
+    defaultMuted: false,
+    enabled: true,
+    project: "codex",
+    redact: true,
+  });
 });
 
 it("drops the whole environment layer when the parent headers are malformed", async () => {
   vi.stubEnv("LANGSMITH_CODEX_API_KEY", "env-key");
   vi.stubEnv("LANGSMITH_CODEX_PARENT_HEADERS", JSON.stringify({ "langsmith-trace": 1 }));
   expect(await getConfig({ home: HOME, cwd: CWD, env: process.env })).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: false,
     project: "codex",
@@ -277,6 +306,7 @@ it("normalizes replica camelCase aliases", async () => {
 
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
   expect(config).toEqual({
+    locked: [],
     defaultMuted: false,
     enabled: false,
     project: "codex",
@@ -412,6 +442,7 @@ it("all existing file-supported fields use the same root overlay and environment
   writeConfigFiles({ global, root });
   const options = { home: HOME, cwd: CWD, env: {} };
   expect(await getConfig(options)).toEqual({
+    locked: [],
     enabled: false,
     defaultMuted: false,
     ...root,
@@ -420,6 +451,7 @@ it("all existing file-supported fields use the same root overlay and environment
   // Omitted fields fall through; arrays replace and metadata merges per key.
   writeConfigFiles({ root: { metadata: root.metadata, replicas: root.replicas } });
   expect(await getConfig(options)).toEqual({
+    locked: [],
     enabled: false,
     defaultMuted: false,
     ...global,
@@ -428,6 +460,7 @@ it("all existing file-supported fields use the same root overlay and environment
   });
   writeConfigFiles({ root, local });
   expect(await getConfig(options)).toEqual({
+    locked: [],
     enabled: false,
     defaultMuted: false,
     ...local,
@@ -461,6 +494,7 @@ it("all existing file-supported fields use the same root overlay and environment
       },
     }),
   ).toEqual({
+    locked: [],
     enabled: false,
     defaultMuted: false,
     ...env,
@@ -483,6 +517,7 @@ it.each([[], { "langsmith-trace": 1 }, { "langsmith-trace": "ok", baggage: 1 }])
       },
     });
     expect(await getConfig({ home: HOME, cwd: CWD, env: {} })).toEqual({
+      locked: [],
       enabled: true,
       defaultMuted: false,
       api_key: "kept",
@@ -512,6 +547,7 @@ it("home parent headers validate independently of common fields and higher inval
     local: { parent_headers: { "langsmith-trace": 1 } },
   });
   expect(await getConfig({ home: HOME, cwd: CWD, env: {} })).toEqual({
+    locked: [],
     enabled: false,
     defaultMuted: true,
     redact: true,
@@ -520,9 +556,80 @@ it("home parent headers validate independently of common fields and higher inval
   });
   writeConfigFiles({ homeRoot: { enabled: true, project: "home", parent_headers: [] } });
   expect(await getConfig({ home: HOME, cwd: CWD, env: {} })).toEqual({
+    locked: [],
     enabled: true,
     defaultMuted: false,
     redact: true,
     project: "home",
   });
 });
+
+function writeManagedFile(contents: unknown, owner: number) {
+  const directory = path.join(process.env.LS_TEST_ACCOUNT_HOME!, ".langsmith-plugins");
+  vol.fromJSON({ [path.join(directory, "managed.json")]: JSON.stringify(contents) });
+  vol.chmodSync(directory, 0o755);
+  vol.chownSync(directory, owner, owner);
+  vol.chmodSync(path.join(directory, "managed.json"), 0o644);
+  vol.chownSync(path.join(directory, "managed.json"), owner, owner);
+}
+
+it.skipIf(process.platform === "win32")(
+  "a root-owned managed file beats every environment variable that could reroute or unredact",
+  async () => {
+    writeConfigFiles({ root: { project: "root-project", redact: false } });
+    writeManagedFile(
+      {
+        api_url: "https://locked.example",
+        project: "locked",
+        redact_extra_rules: [{ pattern: "x" }],
+      },
+      0,
+    );
+    const config = await getConfig({
+      home: HOME,
+      cwd: CWD,
+      env: {
+        LANGSMITH_CODEX_ENDPOINT: "https://env.example",
+        LANGSMITH_CODEX_PROJECT: "env-project",
+        LANGSMITH_CODEX_RUNS_ENDPOINTS: JSON.stringify([{ api_url: "https://replica.example" }]),
+        LANGSMITH_CODEX_REDACT: "false",
+        LANGSMITH_CODEX_REDACT_EXTRA: "[]",
+      },
+    });
+    expect(config).toMatchObject({
+      api_url: "https://locked.example",
+      project: "locked",
+      replicas: [],
+      redact: true,
+      redact_extra_rules: [{ pattern: "x" }],
+    });
+    expect(config.locked.sort()).toEqual(
+      ["api_url", "project", "redact", "redact_extra_rules", "replicas"].sort(),
+    );
+  },
+);
+
+it.skipIf(process.platform === "win32")(
+  "a root-owned managed file locks the parent headers over the environment and files",
+  async () => {
+    const locked = { "langsmith-trace": "20250101T000000000000Zlocked" };
+    writeConfigFiles({ global: { parent_headers: { "langsmith-trace": "file" } } });
+    writeManagedFile({ parent_headers: locked }, 0);
+    const config = await getConfig({
+      home: HOME,
+      cwd: CWD,
+      env: { LANGSMITH_CODEX_PARENT_HEADERS: JSON.stringify({ "langsmith-trace": "env" }) },
+    });
+    expect(config.parent_headers).toEqual(locked);
+  },
+);
+
+it.skipIf(process.platform === "win32")(
+  "a managed file anyone but root can change turns tracing off and says why",
+  async () => {
+    writeManagedFile({ api_url: "https://locked.example" }, process.getuid!());
+    const config = await getConfig({ home: HOME, cwd: CWD, env: { TRACE_TO_LANGSMITH: "true" } });
+    expect(config.enabled).toBe(false);
+    expect(config.managedConfigProblem).toContain("aren't owned by root");
+  },
+);

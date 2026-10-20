@@ -20,7 +20,14 @@ it("runs every hook from a cached plugin folder that has no node_modules", () =>
     const result = spawnSync(process.execPath, [path.join(cached, "dist", "index.mjs")], {
       cwd: home,
       encoding: "utf8",
-      env: { PATH: process.env.PATH ?? "", HOME: home, USERPROFILE: home, TMPDIR: home },
+      env: {
+        PATH: process.env.PATH ?? "",
+        HOME: home,
+        USERPROFILE: home,
+        TMPDIR: home,
+        NODE_OPTIONS: process.env.NODE_OPTIONS ?? "",
+        LS_TEST_ACCOUNT_HOME: process.env.LS_TEST_ACCOUNT_HOME ?? "",
+      },
       input: JSON.stringify({ session_id: "s", turn_id: "t", cwd: home, ...event }),
     });
     expect({ event: event.hook_event_name, status: result.status, stderr: result.stderr }).toEqual({

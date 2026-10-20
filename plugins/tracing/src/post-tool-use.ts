@@ -18,7 +18,7 @@ import {
   createCodexTracingSession,
   saveLiveToolRuns,
 } from "./tracing-engine.js";
-import { defaultPrivacyPath, savedTurnMode } from "./tracing-policy.js";
+import { lockedTurnMode } from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 import { isRecord } from "./utils/isRecord.js";
 import { loadSession } from "./utils/rollout.js";
@@ -28,7 +28,7 @@ export async function handlePostToolUse(input: CodexHookInput): Promise<void> {
   if (!session_id || !turn_id || !transcript_path || !tool_use_id) return;
   const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
   if (!config.enabled) return;
-  const mode = savedTurnMode(defaultPrivacyPath(), session_id, turn_id);
+  const mode = lockedTurnMode(config, session_id, turn_id);
   if (mode === MODE_OFF) return;
   const plugin = createCodexTracingSession(config, session_id, input.cwd);
   if (!plugin) return;

@@ -7,7 +7,13 @@ import type { Config } from "../src/models/config.js";
 import { queueCodexTurns } from "../src/turn-queue.js";
 import { rolloutText } from "./utils/rollout.js";
 
-const config: Config = { enabled: true, defaultMuted: false, redact: false, project: "queue" };
+const config: Config = {
+  enabled: true,
+  defaultMuted: false,
+  redact: false,
+  locked: [],
+  project: "queue",
+};
 
 let dir: string;
 let transcript: string;
@@ -55,6 +61,21 @@ afterEach(async () => {
 });
 
 const request = (turnId: string) => ({ transcriptPath: transcript, turnId, cwd: dir });
+
+it("queues a helper thread that inherited full content as metadata-only once muting is locked", async () => {
+  await writeFile(transcript, rolloutText("thread", ["a"]));
+  const file = path.join(dir, ".codex", "langsmith_state_privacy.json");
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(
+    file,
+    JSON.stringify({ version: 1, threads: { thread: { inherited: "full", turns: {} } } }),
+  );
+  const locked: Config = { ...config, defaultMuted: true, locked: ["defaultMuted"] };
+
+  await queueCodexTurns(fakeSession(), locked, request("a"));
+
+  expect(queued.map(({ privacyMode }) => privacyMode)).toEqual(["metadata"]);
+});
 
 it("on the first Stop queues only the live turn and records the earlier turns as handled", async () => {
   await writeFile(transcript, rolloutText("thread", ["a", "b", "c"]));

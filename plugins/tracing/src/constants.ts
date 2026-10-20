@@ -32,6 +32,7 @@ export const ENV_SUFFIXES = {
   redact: "REDACT",
   redactExtraRules: "REDACT_EXTRA",
   parentHeaders: "PARENT_HEADERS",
+  noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
 export const STRICT_TRUE_VALUE = "true";
 export const STRICT_FALSE_VALUE = "false";
@@ -51,6 +52,7 @@ export const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 export const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
 export const MUTE_COMMAND = "langsmith-tracing:mute";
 export const UNMUTE_COMMAND = "langsmith-tracing:unmute";
+export const LOCKED_MUTE_REPLY = "Thread tracing stays muted because your admin locked muting.";
 
 export const SUBAGENT_SCOPE_RESET = {
   approval_policy: undefined,
@@ -122,6 +124,9 @@ export const JOB_STATE_FILE_NAME = "langsmith_state.json";
 export const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 export const STATE_FILE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const WARNING_FILE_NAME = "langsmith_warning.txt";
+export const NOTICE_KIND_MANAGED = "managed";
+export const NOTICE_COOLDOWN_OFF = "off";
+export const PARENT_HEADERS_FIELD = "parent_headers";
 export const DROPPED_WORK_WARNING =
   "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
 

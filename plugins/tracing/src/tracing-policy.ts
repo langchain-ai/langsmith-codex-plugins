@@ -14,6 +14,7 @@ import {
   PRIVACY_FILE_NAME,
   UNMUTE_COMMAND,
 } from "./constants.js";
+import type { Config } from "./models/config.js";
 import type {
   PreferenceRequest,
   ThreadPolicy,
@@ -64,6 +65,15 @@ export function savedTurnMode(file: string, sessionId: string, turnId?: string):
   }
 }
 
+export function muteLocked(config: Config): boolean {
+  return config.defaultMuted && config.locked.includes("defaultMuted");
+}
+
+export function lockedTurnMode(config: Config, sessionId: string, turnId: string): TurnMode {
+  const mode = savedTurnMode(defaultPrivacyPath(), sessionId, turnId);
+  return mode === MODE_FULL && muteLocked(config) ? MODE_METADATA : mode;
+}
+
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
 export function parseTracingCommand(prompt: string): "mute" | "unmute" | undefined {
   if (prompt === MUTE_COMMAND) return "mute";
@@ -84,7 +94,15 @@ export async function submitPreference(
   file: string,
   request: PreferenceRequest,
 ): Promise<PolicyUpdateResult> {
-  const { sessionId, turnId, enabled, command, defaultMuted = false } = request;
+  const {
+    sessionId,
+    turnId,
+    enabled,
+    command,
+    defaultMuted = false,
+    mutedLocked = false,
+  } = request;
+  const lockedMode = mutedLocked && enabled ? MODE_METADATA : undefined;
   requireIds(sessionId, turnId);
   return updatePolicyFile(adoptLegacyPreferences(file), POLICY_FILE, (policy) => {
     const thread: ThreadPolicy = threadPolicy(policy, sessionId) ?? { turns: {} };
@@ -92,6 +110,7 @@ export async function submitPreference(
       thread.turns = {
         ...thread.turns,
         [turnId]:
+          lockedMode ??
           thread.inherited ??
           (enabled ? (thread.preference ?? (defaultMuted ? MODE_METADATA : MODE_FULL)) : MODE_OFF),
       };
