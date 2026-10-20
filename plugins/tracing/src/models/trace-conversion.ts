@@ -1,4 +1,5 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
+import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import type { Session, Task } from "./rollout.js";
 import type { TracingMode } from "./tracing-policy.js";
 
@@ -25,13 +26,26 @@ export interface TurnRequest {
   options?: TraceConversionOptions;
 }
 
+export type MetadataContext = Pick<
+  CodingAgentMetadataOptions,
+  | "integration"
+  | "integrationVersion"
+  | "runtimeVersion"
+  | "threadId"
+  | "turnId"
+  | "turnNumber"
+  | "agentType"
+>;
+
 export interface TurnMetadata {
-  base: Record<string, unknown>;
+  metadataContext: MetadataContext;
+  metadataBase: Record<string, unknown>;
   isSubagent: boolean;
   approvalPolicy: string | undefined;
 }
 
 export interface TurnRunContext extends TurnMetadata {
+  childMetadataBase: Record<string, unknown>;
   task: Task;
   sessionMeta: Session | undefined;
   request: TurnRequest;
@@ -41,7 +55,10 @@ export interface TurnRunContext extends TurnMetadata {
   postedSubagentThreads: Set<string>;
 }
 
-export type TurnDraft = Omit<TurnRunContext, "parent" | "postedSubagentThreads">;
+export type TurnDraft = Omit<
+  TurnRunContext,
+  "childMetadataBase" | "parent" | "postedSubagentThreads"
+>;
 
 export interface ModelSpan {
   start: number;

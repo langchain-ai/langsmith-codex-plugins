@@ -12476,14 +12476,8 @@ function toSdkReplicas(replicas) {
 }
 //#endregion
 //#region src/constants.ts
-/** What the traced agent is for, per the coding-agent-v1 contract. */
-const LS_AGENT_PURPOSE = "coding";
 /** Identifies this plugin as the trace source. */
 const LS_INTEGRATION = "openai-codex";
-/** Display name of the harness the trace came from. */
-const LS_AGENT_RUNTIME = "Codex";
-/** Metadata contract the emitted runs conform to. */
-const LS_TRACE_SCHEMA_VERSION = "coding-agent-v1";
 const CODEX_CONFIG_DIRECTORY = ".codex";
 const PRIVACY_FILE_NAME = "langsmith_state_privacy.json";
 const LEGACY_PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
@@ -12530,6 +12524,19 @@ const POLICY_THREAD_KEYS = [
 const POLICY_TOP_LEVEL_KEYS = ["version", "threads"];
 const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
+const SUBAGENT_SCOPE_RESET = {
+	approval_policy: void 0,
+	ls_is_error_interrupt: void 0
+};
+const SKILL_SCOPE_RESET = {
+	...CHILD_SCOPE_RESET,
+	usage_metadata: void 0
+};
+const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
+const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
+const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
+const GIT_PATH_PREFIX_PATTERN = /^\/+/;
+const GIT_SUFFIX_PATTERN = /\.git$/;
 const KNOWN_FLAGS = /* @__PURE__ */ new Set([
 	"--help",
 	"-h",
@@ -12705,41 +12712,474 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
-//#region src/utils/findLast.ts
-const findLast = (array, predicate) => {
-	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
+const CODING_AGENT_PURPOSE = "coding";
+const GIT_METADATA_KEYS = {
+	repository: "ls_git_repo",
+	repositoryUrl: "ls_git_repo_url",
+	provider: "ls_repo_provider",
+	branch: "ls_git_branch",
+	commit: "ls_git_commit_hash"
+};
+const LEGACY_GIT_METADATA_KEYS = {
+	repository: "repository_name",
+	repositoryUrl: "repository_url",
+	provider: "repository_provider",
+	branch: "git_branch",
+	commit: "git_commit_sha"
+};
+const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
+GIT_METADATA_KEYS.repository, GIT_METADATA_KEYS.provider, GIT_METADATA_KEYS.repositoryUrl, GIT_METADATA_KEYS.branch, GIT_METADATA_KEYS.commit, LEGACY_GIT_METADATA_KEYS.repository, LEGACY_GIT_METADATA_KEYS.provider, LEGACY_GIT_METADATA_KEYS.repositoryUrl, LEGACY_GIT_METADATA_KEYS.branch, LEGACY_GIT_METADATA_KEYS.commit;
+const CODING_AGENT_RUN_TYPES = [
+	"root",
+	"llm",
+	"tool",
+	"subagent",
+	"interrupted"
+];
+const CODING_AGENT_RUN_SCOPES = {
+	all: CODING_AGENT_RUN_TYPES,
+	rootInterrupted: ["root", "interrupted"],
+	subagent: ["subagent"],
+	tool: ["tool"],
+	llmTool: ["llm", "tool"],
+	chain: [
+		"root",
+		"subagent",
+		"interrupted"
+	]
+};
+const CODING_AGENT_AGENT_TYPES = [
+	"root",
+	"subagent",
+	"middleware",
+	"compaction"
+];
+const CODING_AGENT_SCHEMA_INTEGRATIONS = [
+	"claude-code",
+	"openai-codex",
+	"deepagents-code",
+	"cursor",
+	"pi"
+];
+const CODING_AGENT_CORE_INTEGRATIONS = [
+	"claude-code",
+	"cursor",
+	"openai-codex"
+];
+const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
+const CODING_AGENT_RUNTIME_NAMES = {
+	"claude-code": "Claude Code",
+	"openai-codex": "Codex",
+	"deepagents-code": "Deep Agents Code",
+	cursor: "Cursor",
+	pi: "Pi"
+};
+const CODING_AGENT_INTEGRATION_POLICIES = {
+	"claude-code": {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: false,
+		legacyAliases: true
+	},
+	cursor: {
+		fullModePrecedence: "custom-wins",
+		metadataModeUsesDirectMetadata: true,
+		metadataModePreservesToolName: true,
+		legacyAliases: false
+	},
+	"openai-codex": {
+		fullModePrecedence: "structural-wins",
+		metadataModeUsesDirectMetadata: false,
+		metadataModePreservesToolName: false,
+		legacyAliases: false
+	}
+};
+const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
+const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
+	requirement: "where_known",
+	requiredWhereKnown: true
+};
+const CODING_AGENT_FIELD_DEFAULTS = {
+	appliesTo: CODING_AGENT_RUN_TYPES,
+	type: "string",
+	allowedValues: null,
+	requirement: "contextual",
+	requiredWhereKnown: false,
+	metadataModeIntegrations: []
+};
+const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
+	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+	metadataSource: "structural"
+};
+const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
+	metadataSource: "provider",
+	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+};
+const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
+const METADATA_MODE_NAME = "metadata";
+const METADATA_MODE_STATUS_VALUES = [
+	"running",
+	"completed",
+	"error"
+];
+const CODING_AGENT_RUNTIME_LIBRARY = "langsmith";
+const CODING_AGENT_RUNTIME_SDK = "langsmith-js";
+const CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES = [
+	"VERCEL_GIT_COMMIT_SHA",
+	"NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
+	"COMMIT_REF",
+	"RENDER_GIT_COMMIT",
+	"CI_COMMIT_SHA",
+	"CIRCLE_SHA1",
+	"CF_PAGES_COMMIT_SHA",
+	"REACT_APP_GIT_SHA",
+	"SOURCE_VERSION",
+	"GITHUB_SHA",
+	"TRAVIS_COMMIT",
+	"GIT_COMMIT",
+	"BUILD_VCS_NUMBER",
+	"bamboo_planRepository_revision",
+	"Build.SourceVersion",
+	"BITBUCKET_COMMIT",
+	"DRONE_COMMIT_SHA",
+	"SEMAPHORE_GIT_SHA",
+	"BUILDKITE_COMMIT"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES = ["LANGCHAIN_", "LANGSMITH_"];
+const CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED = [
+	"LANGCHAIN_API_KEY",
+	"LANGCHAIN_ENDPOINT",
+	"LANGCHAIN_TRACING_V2",
+	"LANGCHAIN_PROJECT",
+	"LANGCHAIN_SESSION",
+	"LANGSMITH_API_KEY",
+	"LANGSMITH_ENDPOINT",
+	"LANGSMITH_TRACING_V2",
+	"LANGSMITH_CONFIG_FILE",
+	"LANGSMITH_PROJECT",
+	"LANGSMITH_SESSION",
+	"LANGSMITH_AGENT_ID",
+	"LANGSMITH_AGENT_ENVIRONMENT"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS = [
+	"key",
+	"secret",
+	"token",
+	"password",
+	"passwd",
+	"pwd",
+	"credential",
+	"email"
+];
+const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
+	"endpoint",
+	"proxy",
+	"url",
+	"auth",
+	"header"
+];
+const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
+const CODING_AGENT_REVISION_ID_KEY = "revision_id";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+function field(key, options = {}) {
+	return {
+		key,
+		...CODING_AGENT_FIELD_DEFAULTS,
+		...options
+	};
+}
+const structural = (key, options = {}) => field(key, {
+	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
+	...options
+});
+const provider = (key, options = {}) => field(key, {
+	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
+	...options
+});
+const CODING_AGENT_V1_CONTRACT = {
+	schemaVersion: CODING_AGENT_SCHEMA_VERSION,
+	integrations: CODING_AGENT_SCHEMA_INTEGRATIONS,
+	runtimeNames: CODING_AGENT_RUNTIME_NAMES,
+	keys: [
+		structural("ls_agent_purpose", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [CODING_AGENT_PURPOSE]
+		}),
+		structural("ls_integration", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
+		}),
+		structural("ls_agent_runtime", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: Object.values(CODING_AGENT_RUNTIME_NAMES)
+		}),
+		structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS),
+		structural("ls_trace_schema_version", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: [CODING_AGENT_SCHEMA_VERSION]
+		}),
+		structural("ls_agent_type", {
+			...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
+			allowedValues: CODING_AGENT_AGENT_TYPES
+		}),
+		structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		structural("turn_number", {
+			...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
+			type: "integer"
+		}),
+		field(GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(LEGACY_GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(LEGACY_GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(LEGACY_GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(LEGACY_GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field(LEGACY_GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS),
+		field("ls_skill_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field(ATTRIBUTION_IDENTIFIER_KEY),
+		field("user_id"),
+		field("local_username"),
+		field("user_email"),
+		field("sandbox_type"),
+		field("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }),
+		field("ls_subagent_id", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field("ls_subagent_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		field("ls_tool_name", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.tool,
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
+		}),
+		provider("ls_provider", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_model_type", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_message_format", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("codex_cli_version", {
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_raw_aggregated_usage", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.chain,
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
+			providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
+		}),
+		provider("ls_invocation_params", {
+			appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
+			type: "object"
+		}),
+		field("usage_metadata", {
+			type: "object",
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		}),
+		field("ls_model_name", {
+			metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
+			metadataSource: "explicit"
+		})
+	],
+	runtime: {
+		library: CODING_AGENT_RUNTIME_LIBRARY,
+		sdk: CODING_AGENT_RUNTIME_SDK,
+		releaseEnvironmentVariables: CODING_AGENT_RELEASE_ENVIRONMENT_VARIABLES,
+		environmentMetadata: {
+			prefixes: CODING_AGENT_ENVIRONMENT_METADATA_PREFIXES,
+			excluded: CODING_AGENT_ENVIRONMENT_METADATA_EXCLUDED,
+			sensitiveSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_SENSITIVE_SUBSTRINGS,
+			endpointSubstrings: CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS,
+			revisionId: {
+				variable: CODING_AGENT_REVISION_ID_VARIABLE,
+				key: CODING_AGENT_REVISION_ID_KEY
+			}
+		}
+	},
+	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region src/sidecar.ts
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+function withBothGitMetadataNames(metadata) {
+	const both = { ...metadata };
+	for (const role of Object.keys(GIT_METADATA_KEYS)) {
+		const value = both[GIT_METADATA_KEYS[role]] ?? both[LEGACY_GIT_METADATA_KEYS[role]];
+		if (value === void 0) continue;
+		both[GIT_METADATA_KEYS[role]] ??= value;
+		both[LEGACY_GIT_METADATA_KEYS[role]] ??= value;
 	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch {
-		return false;
-	}
+	return both;
 }
 //#endregion
-//#region src/metadata.ts
-const execFileAsync = promisify(execFile);
-function stripUndefined(value) {
-	return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== void 0));
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/constants.js
+const FILE_MISSING_CODE = "ENOENT";
+const FILE_EXISTS_CODE = "EEXIST";
+const PERMISSION_DENIED_CODE = "EPERM";
+const FILE_ACCESS_DENIED_CODE = "EACCES";
+const FILE_BUSY_CODE = "EBUSY";
+const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+function isPlainRecord(value) {
+	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+function metadataFieldTypeIssue(field, value) {
+	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
+}
+function metadataFieldValueIssue(field, value) {
+	const typeIssue = metadataFieldTypeIssue(field, value);
+	if (typeIssue) return typeIssue;
+	if (field.allowedValues && !field.allowedValues.includes(value)) return "value";
+}
+function validateProviderMetadata(value, integration, runType) {
+	if (!isPlainRecord(value)) return [{
+		key: "",
+		reason: "type"
+	}];
+	const issues = [];
+	for (const [key, entry] of Object.entries(value)) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((candidate) => candidate.key === key);
+		if (field?.metadataSource !== "provider") {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		if (!field.providerIntegrations?.includes(integration)) {
+			issues.push({
+				key,
+				reason: "integration"
+			});
+			continue;
+		}
+		if (!field.appliesTo.includes(runType)) {
+			issues.push({
+				key,
+				reason: "scope"
+			});
+			continue;
+		}
+		const reason = metadataFieldValueIssue(field, entry);
+		if (reason) issues.push({
+			key,
+			reason
+		});
+	}
+	return issues;
+}
+function normalizeProviderMetadata(value, integration, runType) {
+	if (!isPlainRecord(value)) return {};
+	const issues = new Map(validateProviderMetadata(value, integration, runType).map((issue) => [issue.key, issue]));
+	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+function buildCodingAgentMetadata(options) {
+	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
+	const identity = {
+		ls_agent_purpose: CODING_AGENT_PURPOSE,
+		ls_integration: options.integration,
+		ls_agent_runtime: CODING_AGENT_V1_CONTRACT.runtimeNames[options.integration],
+		ls_trace_schema_version: CODING_AGENT_SCHEMA_VERSION,
+		ls_agent_type: options.agentType,
+		thread_id: options.threadId
+	};
+	if (options.integrationVersion) identity.ls_integration_version = options.integrationVersion;
+	if (options.runtimeVersion) identity.ls_agent_runtime_version = options.runtimeVersion;
+	if (options.turnId) identity.turn_id = options.turnId;
+	if (typeof options.turnNumber === "number") identity.turn_number = options.turnNumber;
+	if (options.approvalPolicy) identity.approval_policy = options.approvalPolicy;
+	if (options.clearSubagent) {
+		identity.ls_subagent_id = void 0;
+		identity.ls_subagent_type = void 0;
+	} else {
+		if (options.subagentId) identity.ls_subagent_id = options.subagentId;
+		if (options.subagentType) identity.ls_subagent_type = options.subagentType;
+	}
+	if (options.toolName) {
+		if (policy.legacyAliases) identity.tool_name = options.toolName;
+		if (options.runName && options.toolName !== options.runName) identity.ls_tool_name = options.toolName;
+	}
+	if (options.skillName) identity.ls_skill_name = options.skillName;
+	if (policy.legacyAliases && options.subagentId) identity.agent_id = options.subagentId;
+	if (policy.legacyAliases && options.subagentType) identity.agent_type = options.subagentType;
+	const explicit = {};
+	if (options.modelName !== void 0) explicit.ls_model_name = options.modelName;
+	if (options.usageMetadata !== void 0) explicit.usage_metadata = options.usageMetadata;
+	const provider = normalizeProviderMetadata(options.providerMetadata, options.integration, options.runType);
+	const trusted = {
+		...identity,
+		...explicit,
+		...provider
+	};
+	if (policy.metadataModePreservesToolName && options.toolName) trusted.ls_tool_name = options.toolName;
+	const pieces = [
+		identity,
+		explicit,
+		provider,
+		options.runSpecific,
+		options.base
+	];
+	const full = policy.fullModePrecedence === "custom-wins" ? pieces : pieces.toReversed();
+	const merged = {};
+	for (const piece of full) if (piece) Object.assign(merged, piece);
+	const result = withBothGitMetadataNames(merged);
+	Object.defineProperty(result, TRUSTED_METADATA, { value: trusted });
+	return result;
+}
+function trustedCodingAgentMetadata(metadata) {
+	return metadata?.[TRUSTED_METADATA];
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+function projectCodingAgentMetadata(metadata, integration, status) {
+	const safe = {};
+	for (const [key, value] of Object.entries(metadata ?? {})) {
+		const field = CODING_AGENT_V1_CONTRACT.keys.find((entry) => entry.key === key);
+		if (!field?.metadataModeIntegrations.includes(integration) || value === void 0 || metadataFieldTypeIssue(field, value) !== void 0) continue;
+		safe[key] = value;
+	}
+	safe.status = METADATA_MODE_STATUS_VALUES.includes(status) ? status : "running";
+	safe.ls_tracing_mode = METADATA_MODE_NAME;
+	return safe;
+}
+function metadataForMode(metadata, integration, mode = "full", status) {
+	if (mode === "full") return metadata;
+	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
+}
+//#endregion
+//#region src/codex-git.ts
+const execFileAsync = promisify(execFile);
 function parseRepository(url) {
-	const normalized = url?.trim();
+	const normalized = url?.trim().replace(GIT_HTTP_CREDENTIALS_PATTERN, "$1");
 	if (!normalized) return {};
 	let host;
 	let pathname;
-	const scp = /^[^/@]+@([^:/]+):(.+)$/.exec(normalized);
+	const scp = GIT_SCP_REMOTE_PATTERN.exec(normalized);
 	if (scp) {
 		host = scp[1];
 		pathname = scp[2];
@@ -12757,9 +13197,9 @@ function parseRepository(url) {
 		if (h.includes("bitbucket")) return "bitbucket";
 		return h || "other";
 	})();
-	const name = (pathname ?? "").replace(/^\/+/, "").replace(/\.git$/, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
+	const name = (pathname ?? "").replace(GIT_PATH_PREFIX_PATTERN, "").replace(GIT_SUFFIX_PATTERN, "").split("/").filter(Boolean).slice(-2).join("/") || void 0;
 	return {
-		repository_url: normalized.replace(/\.git$/, ""),
+		repository_url: normalized.replace(GIT_SUFFIX_PATTERN, ""),
 		repository_provider: provider,
 		repository_name: name
 	};
@@ -12807,39 +13247,29 @@ async function resolveGitInfo(cwd, sessionGit) {
 	}
 	return pending;
 }
-function codingAgentMetadata(ctx) {
-	const repo = parseRepository(ctx.git?.repository_url);
-	return stripUndefined({
-		ls_agent_purpose: LS_AGENT_PURPOSE,
-		ls_agent_type: ctx.agentType,
-		ls_integration: LS_INTEGRATION,
-		ls_agent_runtime: LS_AGENT_RUNTIME,
-		thread_id: ctx.threadId,
-		ls_trace_schema_version: LS_TRACE_SCHEMA_VERSION,
-		ls_integration_version: LS_INTEGRATION_VERSION,
-		ls_agent_runtime_version: ctx.cliVersion,
-		turn_id: ctx.turnId,
-		turn_number: ctx.turnNumber,
-		repository_url: repo.repository_url,
-		repository_provider: repo.repository_provider,
-		repository_name: repo.repository_name,
-		git_branch: ctx.git?.branch,
-		git_commit_sha: ctx.git?.commit_hash,
-		cwd: ctx.cwd,
-		sandbox_type: ctx.sandboxType
-	});
+//#endregion
+//#region src/utils/findLast.ts
+const findLast = (array, predicate) => {
+	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
+};
+//#endregion
+//#region src/sidecar.ts
+async function loadUploadedTurnIds(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
+		return new Set(data.split("\n").filter(Boolean));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		throw error;
+	}
 }
-const TRUSTED_METADATA = Symbol("coding-agent trusted metadata");
-function withTrustedMetadata(untrusted, structural) {
-	const merged = {
-		...untrusted,
-		...structural
-	};
-	Object.defineProperty(merged, TRUSTED_METADATA, { value: { ...structural } });
-	return merged;
-}
-function trustedCodingAgentMetadata(metadata) {
-	return metadata?.[TRUSTED_METADATA];
+async function markTurnUploaded(rolloutFile, turnId) {
+	try {
+		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
+		return true;
+	} catch {
+		return false;
+	}
 }
 //#endregion
 //#region src/skills.ts
@@ -12876,110 +13306,181 @@ function isPrimitive(value) {
 	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 //#endregion
-//#region src/privacy.ts
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
-const METADATA_KEYS = /* @__PURE__ */ new Set([
-	"thread_id",
-	"turn_number",
-	"turn_id",
-	"status",
-	"ls_tracing_mode",
-	"ls_agent_purpose",
-	"ls_agent_type",
-	"ls_agent_runtime",
-	"ls_agent_runtime_version",
-	"ls_integration",
-	"ls_integration_version",
-	"ls_trace_schema_version",
-	"ls_model_name",
-	"ls_provider",
-	"ls_model_type",
-	"ls_message_format",
-	"codex_cli_version",
-	"ls_raw_aggregated_usage",
-	"ls_tool_name",
-	"ls_skill_name",
-	"usage_metadata",
-	"ls_subagent_id",
-	"ls_subagent_type"
-]);
-/** Usage metadata is extensible; validate only its outer object shape. */
-function usageForMetadata(value) {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return void 0;
-	return value;
+const METADATA_MODE_RUN_CONFIG_FIELDS = [
+	"client",
+	"id",
+	"name",
+	"run_type",
+	"project_name",
+	"start_time",
+	"end_time",
+	"parent_run",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"distributedParentId"
+];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+function mutedContent(role) {
+	return { messages: [{
+		role,
+		content: MUTED_TRACE_CONTENT
+	}] };
 }
-function projectMetadata(metadata, status) {
-	const safe = {};
-	for (const [key, value] of Object.entries(metadata ?? {})) {
-		if (!METADATA_KEYS.has(key)) continue;
-		if (key === "usage_metadata" || key === "ls_raw_aggregated_usage") {
-			const usage = usageForMetadata(value);
-			if (usage) safe[key] = usage;
-		} else if (key === "turn_number") {
-			if (typeof value === "number" && Number.isSafeInteger(value) && value >= 1) safe[key] = value;
-		} else if (typeof value === "string" && value.length) safe[key] = value;
-	}
-	safe.status = status === "error" || status === "completed" ? status : "running";
-	safe.ls_tracing_mode = "metadata";
-	return safe;
+function statusOfRun(run) {
+	const metadataStatus = run.extra?.metadata?.status;
+	if (run.error != null || metadataStatus === "error") return "error";
+	if (run.end_time != null || metadataStatus === "completed") return "completed";
+	return "running";
 }
-function metadataForMode(metadata, mode = "full", status) {
-	if (mode === "full") return metadata;
-	return projectMetadata(trustedCodingAgentMetadata(metadata), status);
-}
-function sanitizeReplica(replica, mode) {
-	if (mode === "full" || !replica || typeof replica !== "object") return replica;
+function projectReplica(replica) {
+	if (!replica || typeof replica !== "object") return replica;
 	if (Array.isArray(replica)) return { projectName: replica[0] };
 	const { updates: _updates, ...safe } = replica;
 	return safe;
 }
-function runConfigForMode(config, mode = "full") {
-	if (mode === "full") return config;
-	const status = config.error ? "error" : config.end_time != null ? "completed" : "running";
-	const extra = config.extra;
-	const safe = {};
-	for (const key of [
-		"client",
-		"id",
-		"name",
-		"run_type",
-		"project_name",
-		"start_time",
-		"end_time",
-		"parent_run_id",
-		"trace_id",
-		"dotted_order"
-	]) if (key in config && config[key] !== void 0) safe[key] = config[key];
-	if (Array.isArray(config.replicas)) safe.replicas = config.replicas.map((replica) => sanitizeReplica(replica, mode));
-	safe.inputs = { messages: [{
-		role: "user",
-		content: MUTED_TRACE_CONTENT
-	}] };
-	safe.outputs = { messages: [{
-		role: "assistant",
-		content: MUTED_TRACE_CONTENT
-	}] };
-	safe.extra = {
-		metadata: metadataForMode(extra?.metadata, mode, status),
+function extraForMode(metadata, integration, status) {
+	return {
+		metadata,
 		toJSON() {
-			return { metadata: projectMetadata(this.metadata, typeof this.metadata?.status === "string" ? this.metadata.status : status) };
+			const currentStatus = this.metadata?.status;
+			const safeStatus = currentStatus === "running" || currentStatus === "completed" || currentStatus === "error" ? currentStatus : status;
+			return { metadata: projectCodingAgentMetadata(this.metadata, integration, safeStatus) };
 		}
 	};
+}
+function configForMetadataMode(config, integration, privacyContext) {
+	const source = config;
+	const status = privacyContext?.status ?? (source.error != null ? "error" : source.end_time != null ? "completed" : "running");
+	const originalExtra = source.extra;
+	const safe = {};
+	for (const key of METADATA_MODE_RUN_CONFIG_FIELDS) if (key in source && source[key] !== void 0) safe[key] = source[key];
+	if (Array.isArray(source.replicas)) safe.replicas = source.replicas.map(projectReplica);
+	if (Array.isArray(source.tags) && source.tags.length === 0) safe.tags = [];
+	safe.inputs = mutedContent("user");
+	safe.outputs = mutedContent("assistant");
+	safe.extra = extraForMode(metadataForMode(originalExtra?.metadata, integration, "metadata", status) ?? {}, integration, status);
 	return safe;
 }
-/**
-* Payload boundary only: callers retain control of posting, patching, timing and
-* parentage. Reconstruct updates through this wrapper too; do not mutate a muted
-* RunTree with raw payloads after construction. No shared client or mode state is
-* changed, so full and metadata runs can safely share a client.
-*/
-function createRunTree(config, mode = "full", parent) {
-	const safe = runConfigForMode(config, mode);
-	const run = parent?.createChild(safe) ?? new RunTree(safe);
-	if (mode === "metadata") {
-		run.extra = safe.extra;
-		if (run.replicas) run.replicas = run.replicas.map((replica) => sanitizeReplica(replica, mode));
+function sanitizeRunTree(run, integration) {
+	const status = statusOfRun(run);
+	const metadata = projectCodingAgentMetadata(run.extra?.metadata, integration, status);
+	run.inputs = mutedContent("user");
+	run.outputs = mutedContent("assistant");
+	delete run.error;
+	run.serialized = {};
+	if (!Array.isArray(run.tags) || run.tags.length > 0) delete run.tags;
+	delete run.reference_example_id;
+	delete run.attachments;
+	delete run.events;
+	if (run.replicas) run.replicas = run.replicas.map(projectReplica);
+	for (const child of run.child_runs ?? []) sanitizeRunTree(child, integration);
+	run.extra = extraForMode(metadata, integration, status);
+}
+function protectRunTree(run, integration) {
+	sanitizeRunTree(run, integration);
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => protectRunTree(createChild(configForMetadataMode(config, integration)), integration);
+	const postRun = run.postRun.bind(run);
+	run.postRun = async (excludeChildRuns = true) => {
+		sanitizeRunTree(run, integration);
+		if (!excludeChildRuns) {
+			const childRuns = [...run.child_runs];
+			await postRun(true);
+			for (const childRun of childRuns) await childRun.postRun(false);
+			return;
+		}
+		return postRun(excludeChildRuns);
+	};
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => {
+		sanitizeRunTree(run, integration);
+		return patchRun({
+			excludeInputs: false,
+			...options
+		});
+	};
+	const end = run.end.bind(run);
+	run.end = (outputs, error, endTime, metadata) => {
+		const status = error != null ? "error" : endTime != null ? "completed" : statusOfRun(run);
+		const safeMetadata = metadataForMode(metadata, integration, "metadata", status) ?? { status };
+		return end(mutedContent("assistant"), void 0, endTime, safeMetadata);
+	};
+	const toJSON = run.toJSON.bind(run);
+	run.toJSON = () => {
+		sanitizeRunTree(run, integration);
+		return toJSON();
+	};
+	return run;
+}
+function preserveFullModePatchInputs(run) {
+	const createChild = run.createChild.bind(run);
+	run.createChild = (config) => preserveFullModePatchInputs(createChild(config));
+	const patchRun = run.patchRun.bind(run);
+	run.patchRun = (options) => patchRun({
+		excludeInputs: false,
+		...options
+	});
+	return run;
+}
+function createCodingAgentRunTree(config, integration, mode = "full", privacyContext) {
+	const run = new RunTree(mode === "metadata" ? configForMetadataMode(config, integration, privacyContext) : config);
+	return mode === "metadata" ? protectRunTree(run, integration) : preserveFullModePatchInputs(run);
+}
+//#endregion
+//#region src/privacy.ts
+const metadataProtectedRunTrees = /* @__PURE__ */ new WeakSet();
+function applyMetadataResets(run, config) {
+	const source = config.extra?.metadata;
+	if (!source) return;
+	const resets = {};
+	for (const key of RESETTABLE_METADATA_KEYS) if (Object.hasOwn(source, key) && source[key] === void 0) resets[key] = void 0;
+	if (Object.keys(resets).length === 0) return;
+	run.extra = {
+		...run.extra,
+		metadata: {
+			...run.extra?.metadata,
+			...resets
+		}
+	};
+}
+function protectedChildRunTree(config, mode, parent, child) {
+	const safeChild = createCodingAgentRunTree({
+		...config,
+		client: child.client,
+		id: child.id,
+		parent_run: parent,
+		parent_run_id: child.parent_run_id,
+		project_name: child.project_name,
+		replicas: child.replicas,
+		trace_id: child.trace_id,
+		dotted_order: child.dotted_order,
+		start_time: child.start_time,
+		end_time: child.end_time
+	}, LS_INTEGRATION, mode);
+	applyMetadataResets(safeChild, config);
+	safeChild.execution_order = child.execution_order;
+	safeChild.child_execution_order = child.child_execution_order;
+	parent.child_runs[parent.child_runs.indexOf(child)] = safeChild;
+	metadataProtectedRunTrees.add(safeChild);
+	return safeChild;
+}
+function createChildRunTree(config, mode, parent) {
+	const child = parent.createChild(config);
+	applyMetadataResets(child, config);
+	if (mode !== "metadata" || metadataProtectedRunTrees.has(parent)) {
+		if (mode === "metadata") metadataProtectedRunTrees.add(child);
+		return child;
 	}
+	return protectedChildRunTree(config, mode, parent, child);
+}
+function createRunTree(config, mode = MODE_FULL, parent) {
+	if (parent) return createChildRunTree(config, mode, parent);
+	const run = createCodingAgentRunTree(config, LS_INTEGRATION, mode);
+	if (mode === "metadata") metadataProtectedRunTrees.add(run);
 	return run;
 }
 //#endregion
@@ -13008,17 +13509,10 @@ const POLICY_DURABILITY_WARNING = "Preference is effective, but crash durability
 const POLICY_LOCK_RELEASE_WARNING = "Before retrying, remove the lock only after confirming no preference writer is running";
 const POLICY_PARSE_RESULT_MESSAGE = "A policy parser must return a policy";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/constants.js
-const FILE_MISSING_CODE = "ENOENT";
-const FILE_EXISTS_CODE = "EEXIST";
-const PERMISSION_DENIED_CODE = "EPERM";
-const FILE_ACCESS_DENIED_CODE = "EACCES";
-const FILE_BUSY_CODE = "EBUSY";
-//#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
-	"ENOTEMPTY",
+	DIRECTORY_NOT_EMPTY_CODE,
 	FILE_EXISTS_CODE,
 	PERMISSION_DENIED_CODE,
 	FILE_BUSY_CODE,
@@ -13084,11 +13578,6 @@ new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
-function isPlainRecord(value) {
-	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/storage/errors.js
@@ -13712,168 +14201,6 @@ function findLockTimeout(error) {
 	if (!(error instanceof AggregateError)) return void 0;
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/constants.js
-const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
-const CODING_AGENT_PURPOSE = "coding";
-const GIT_METADATA_KEYS = {
-	repository: "ls_git_repo",
-	repositoryUrl: "ls_git_repo_url",
-	provider: "ls_repo_provider",
-	branch: "ls_git_branch",
-	commit: "ls_git_commit_hash"
-};
-const LEGACY_GIT_METADATA_KEYS = {
-	repository: "repository_name",
-	repositoryUrl: "repository_url",
-	provider: "repository_provider",
-	branch: "git_branch",
-	commit: "git_commit_sha"
-};
-const ATTRIBUTION_IDENTIFIER_KEY = "ls_attribution_identifier";
-GIT_METADATA_KEYS.repository, GIT_METADATA_KEYS.provider, GIT_METADATA_KEYS.repositoryUrl, GIT_METADATA_KEYS.branch, GIT_METADATA_KEYS.commit, LEGACY_GIT_METADATA_KEYS.repository, LEGACY_GIT_METADATA_KEYS.provider, LEGACY_GIT_METADATA_KEYS.repositoryUrl, LEGACY_GIT_METADATA_KEYS.branch, LEGACY_GIT_METADATA_KEYS.commit;
-const CODING_AGENT_RUN_TYPES = [
-	"root",
-	"llm",
-	"tool",
-	"subagent",
-	"interrupted"
-];
-const CODING_AGENT_RUN_SCOPES = {
-	all: CODING_AGENT_RUN_TYPES,
-	rootInterrupted: ["root", "interrupted"],
-	subagent: ["subagent"],
-	tool: ["tool"],
-	llmTool: ["llm", "tool"],
-	chain: [
-		"root",
-		"subagent",
-		"interrupted"
-	]
-};
-const CODING_AGENT_AGENT_TYPES = [
-	"root",
-	"subagent",
-	"middleware",
-	"compaction"
-];
-const CODING_AGENT_SCHEMA_INTEGRATIONS = [
-	"claude-code",
-	"openai-codex",
-	"deepagents-code",
-	"cursor",
-	"pi"
-];
-const CODING_AGENT_CORE_INTEGRATIONS = [
-	"claude-code",
-	"cursor",
-	"openai-codex"
-];
-const CODING_AGENT_CODEX_INTEGRATION = ["openai-codex"];
-const CODING_AGENT_RUNTIME_NAMES = {
-	"claude-code": "Claude Code",
-	"openai-codex": "Codex",
-	"deepagents-code": "Deep Agents Code",
-	cursor: "Cursor",
-	pi: "Pi"
-};
-const CODING_AGENT_ALWAYS_FIELD_OPTIONS = { requirement: "always" };
-const CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS = {
-	requirement: "where_known",
-	requiredWhereKnown: true
-};
-const CODING_AGENT_FIELD_DEFAULTS = {
-	appliesTo: CODING_AGENT_RUN_TYPES,
-	type: "string",
-	allowedValues: null,
-	requirement: "contextual",
-	requiredWhereKnown: false,
-	metadataModeIntegrations: []
-};
-const CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS = {
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-	metadataSource: "structural"
-};
-const CODING_AGENT_PROVIDER_FIELD_DEFAULTS = {
-	metadataSource: "provider",
-	providerIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-};
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.4_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c11e875b3ccaa3b80a861a63dd9765ca/node_modules/@langchain/plugins-base/dist/metadata/contract.js
-function field(key, options = {}) {
-	return {
-		key,
-		...CODING_AGENT_FIELD_DEFAULTS,
-		...options
-	};
-}
-const structural = (key, options = {}) => field(key, {
-	...CODING_AGENT_STRUCTURAL_FIELD_DEFAULTS,
-	...options
-});
-const provider = (key, options = {}) => field(key, {
-	...CODING_AGENT_PROVIDER_FIELD_DEFAULTS,
-	...options
-});
-structural("ls_agent_purpose", {
-	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-	allowedValues: [CODING_AGENT_PURPOSE]
-}), structural("ls_integration", {
-	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-	allowedValues: CODING_AGENT_SCHEMA_INTEGRATIONS
-}), structural("ls_agent_runtime", {
-	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-	allowedValues: Object.values(CODING_AGENT_RUNTIME_NAMES)
-}), structural("thread_id", CODING_AGENT_ALWAYS_FIELD_OPTIONS), structural("ls_trace_schema_version", {
-	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-	allowedValues: [CODING_AGENT_SCHEMA_VERSION]
-}), structural("ls_agent_type", {
-	...CODING_AGENT_ALWAYS_FIELD_OPTIONS,
-	allowedValues: CODING_AGENT_AGENT_TYPES
-}), structural("ls_integration_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("ls_agent_runtime_version", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("turn_id", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), structural("turn_number", {
-	...CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS,
-	type: "integer"
-}), field(GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.repositoryUrl, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.provider, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.repository, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.branch, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field(LEGACY_GIT_METADATA_KEYS.commit, CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field("cwd", CODING_AGENT_WHERE_KNOWN_FIELD_OPTIONS), field("ls_skill_name", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.tool,
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-}), field(ATTRIBUTION_IDENTIFIER_KEY), field("user_id"), field("local_username"), field("user_email"), field("sandbox_type"), field("approval_policy", { appliesTo: CODING_AGENT_RUN_SCOPES.rootInterrupted }), field("ls_subagent_id", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-}), field("ls_subagent_type", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.subagent,
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-}), field("ls_tool_name", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.tool,
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS
-}), provider("ls_provider", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION
-}), provider("ls_model_type", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-}), provider("ls_message_format", {
-	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-}), provider("codex_cli_version", {
-	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-}), provider("ls_raw_aggregated_usage", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.chain,
-	type: "object",
-	metadataModeIntegrations: CODING_AGENT_CODEX_INTEGRATION,
-	providerIntegrations: CODING_AGENT_CODEX_INTEGRATION
-}), provider("ls_invocation_params", {
-	appliesTo: CODING_AGENT_RUN_SCOPES.llmTool,
-	type: "object"
-}), field("usage_metadata", {
-	type: "object",
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-	metadataSource: "explicit"
-}), field("ls_model_name", {
-	metadataModeIntegrations: CODING_AGENT_CORE_INTEGRATIONS,
-	metadataSource: "explicit"
-});
 Buffer.from("6ba7b810-9dad-11d1-80b4-00c04fd430c8".replaceAll("-", ""), "hex");
 GIT_METADATA_KEYS.repository;
 //#endregion
@@ -13976,6 +14303,11 @@ function* enumerate(arr) {
 		arr[i],
 		arr
 	];
+}
+//#endregion
+//#region src/utils/omitKey.ts
+function omitKey(value, key) {
+	return Object.fromEntries(Object.entries(value ?? {}).filter(([entry]) => entry !== key));
 }
 //#endregion
 //#region src/utils/rollout.ts
@@ -14298,6 +14630,9 @@ function convertToStandardMessages(messages) {
 		...rest
 	}));
 }
+function buildChildRunMetadata(options, reset = CHILD_SCOPE_RESET) {
+	return Object.assign(buildCodingAgentMetadata(options), reset);
+}
 function getUsageMetadata(counts) {
 	if (counts == null || Object.values(counts ?? {}).every((value) => value == null)) return;
 	return {
@@ -14333,7 +14668,7 @@ async function resolveTurnMode(task, sessionMeta, privacyTurnId, rolloutFile) {
 	} catch {}
 	return mode;
 }
-async function turnMetadata(task, sessionMeta, mode) {
+async function turnMetadata(task, sessionMeta, mode, options) {
 	const cwd = (typeof task.context?.cwd === "string" ? task.context.cwd : void 0) ?? sessionMeta?.cwd;
 	const sandboxType = (() => {
 		const policy = task.context?.sandbox_policy;
@@ -14351,25 +14686,55 @@ async function turnMetadata(task, sessionMeta, mode) {
 	const git = mode === "full" ? await resolveGitInfo(cwd, sessionMeta?.git) : void 0;
 	const isSubagent = sessionMeta?.is_subagent === true;
 	const conversationThreadId = (isSubagent ? sessionMeta?.parent_thread_id : void 0) ?? sessionMeta?.session_id;
+	const repository = parseRepository(git?.repository_url);
+	const metadataBase = {
+		...options?.metadata,
+		...omitKey(task.context, "approval_policy"),
+		...cwd === void 0 ? {} : { cwd },
+		...sandboxType === void 0 ? {} : { sandbox_type: sandboxType },
+		...repository,
+		...git?.branch === void 0 ? {} : { git_branch: git.branch },
+		...git?.commit_hash === void 0 ? {} : { git_commit_sha: git.commit_hash }
+	};
 	return {
-		base: codingAgentMetadata({
-			agentType: isSubagent ? "subagent" : "root",
-			threadId: conversationThreadId,
+		metadataContext: {
+			integration: LS_INTEGRATION,
+			integrationVersion: LS_INTEGRATION_VERSION,
+			runtimeVersion: sessionMeta?.cli_version,
+			threadId: conversationThreadId ?? "",
 			turnId: task.turnId?.id,
 			turnNumber: task.turnNumber,
-			cliVersion: sessionMeta?.cli_version,
-			cwd,
-			git,
-			sandboxType
-		}),
+			agentType: isSubagent ? "subagent" : "root"
+		},
+		metadataBase,
 		isSubagent,
 		approvalPolicy
 	};
 }
+function parentProviderMetadata(task, sessionMeta) {
+	return {
+		codex_cli_version: sessionMeta?.cli_version,
+		ls_message_format: "anthropic",
+		ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
+	};
+}
 function createParentRun(draft, user, agent) {
-	const { task, sessionMeta, isSubagent, approvalPolicy, base, mode, parentStartTime } = draft;
+	const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
+	const { mode, parentStartTime } = draft;
 	const options = draft.request.options;
 	const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
+	const parentMetadata = {
+		...metadataContext,
+		runType: task.isErrorInterrupt ? "interrupted" : "root",
+		approvalPolicy: isSubagent ? void 0 : approvalPolicy,
+		subagentId: isSubagent ? sessionMeta?.session_id : void 0,
+		subagentType: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
+		providerMetadata: parentProviderMetadata(task, sessionMeta),
+		base: {
+			...metadataBase,
+			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {}
+		}
+	};
 	const parent = createRunTree({
 		name: "openai.codex",
 		client: options?.client,
@@ -14381,19 +14746,7 @@ function createParentRun(draft, user, agent) {
 		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
-		extra: { metadata: withTrustedMetadata({
-			...options?.metadata,
-			...task.context
-		}, {
-			...base,
-			...task.isErrorInterrupt ? { ls_is_error_interrupt: true } : {},
-			approval_policy: isSubagent ? void 0 : approvalPolicy,
-			ls_subagent_id: isSubagent ? sessionMeta?.session_id : void 0,
-			ls_subagent_type: isSubagent ? sessionMeta?.agent_role ?? sessionMeta?.agent_nickname : void 0,
-			codex_cli_version: sessionMeta?.cli_version,
-			ls_message_format: "anthropic",
-			ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
-		}) }
+		extra: { metadata: Object.assign(buildCodingAgentMetadata(parentMetadata), isSubagent ? SUBAGENT_SCOPE_RESET : {}) }
 	}, mode, options?.parentRunTree);
 	PROMISE_QUEUE.push(parent.postRun());
 	return parent;
@@ -14434,8 +14787,8 @@ async function postSubagentThread(context, subagentThread) {
 	});
 }
 function postModelRun(context, fullMessages, output) {
-	const { task, sessionMeta, base, mode, parent, parentStartTime } = context;
-	const options = context.request.options;
+	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
+	const { parentStartTime } = context;
 	const inputMessages = fullMessages.slice(0, output.start);
 	const aiMessage = fullMessages.slice(output.start, output.start + 1);
 	const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
@@ -14443,6 +14796,19 @@ function postModelRun(context, fullMessages, output) {
 	const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
 	const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
 	const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
+	const llmMetadata = {
+		...metadataContext,
+		runType: "llm",
+		clearSubagent: true,
+		modelName: typeof task.context?.model === "string" ? task.context.model : void 0,
+		usageMetadata: getUsageMetadata(tokenCounts),
+		providerMetadata: {
+			ls_model_type: "chat",
+			ls_provider: sessionMeta?.model_provider ?? void 0,
+			ls_invocation_params: task.context
+		},
+		base: childMetadataBase
+	};
 	const llmChild = createRunTree({
 		name: "openai.codex.turn",
 		run_type: "llm",
@@ -14450,15 +14816,7 @@ function postModelRun(context, fullMessages, output) {
 		end_time: outputEndTime,
 		inputs: { messages: inputMessages.map((i) => i.message) },
 		outputs: { messages: aiMessage.map((i) => i.message) },
-		extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-			...base,
-			...CHILD_SCOPE_RESET,
-			ls_model_type: "chat",
-			ls_provider: sessionMeta?.model_provider,
-			ls_model_name: task.context?.model,
-			ls_invocation_params: task.context,
-			usage_metadata: getUsageMetadata(tokenCounts)
-		}) }
+		extra: { metadata: buildChildRunMetadata(llmMetadata) }
 	}, mode, parent);
 	PROMISE_QUEUE.push(llmChild.postRun());
 	return {
@@ -14468,10 +14826,16 @@ function postModelRun(context, fullMessages, output) {
 	};
 }
 function postSkillRuns(context, skillNames, window, toolCall) {
-	const { base, mode, parent } = context;
-	const options = context.request.options;
+	const { metadataContext, childMetadataBase, mode, parent } = context;
 	const { min, max } = window;
 	for (const skillName of skillNames) {
+		const skillMetadata = {
+			...metadataContext,
+			runType: "tool",
+			clearSubagent: true,
+			skillName,
+			base: childMetadataBase
+		};
 		const skillRun = createRunTree({
 			name: "Skill",
 			run_type: "tool",
@@ -14482,19 +14846,13 @@ function postSkillRuns(context, skillNames, window, toolCall) {
 				commandName: skillName,
 				success: toolCall.error == null
 			} },
-			extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-				...base,
-				...CHILD_SCOPE_RESET,
-				usage_metadata: void 0,
-				ls_skill_name: skillName
-			}) }
+			extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
 		}, mode, parent);
 		PROMISE_QUEUE.push(skillRun.postRun());
 	}
 }
 function postToolRuns(context, aiMessage, toolMessages) {
-	const { task, sessionMeta, base, mode, parent } = context;
-	const options = context.request.options;
+	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -14511,6 +14869,23 @@ function postToolRuns(context, aiMessage, toolMessages) {
 		const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 		const runName = nativeToolName ?? "openai.codex.tool";
 		const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+		const toolMetadata = {
+			...metadataContext,
+			runType: "tool",
+			clearSubagent: true,
+			modelName: typeof task.context?.model === "string" ? task.context.model : void 0,
+			usageMetadata: getUsageMetadata(toolMessage.tokenCount),
+			...nativeToolName == null ? {} : {
+				toolName: nativeToolName,
+				runName
+			},
+			providerMetadata: {
+				ls_model_type: "chat",
+				ls_provider: sessionMeta?.model_provider ?? void 0,
+				ls_invocation_params: task.context
+			},
+			base: childMetadataBase
+		};
 		const toolRun = createRunTree({
 			name: runName,
 			run_type: "tool",
@@ -14522,16 +14897,7 @@ function postToolRuns(context, aiMessage, toolMessages) {
 				messages: [toolMessage.message]
 			},
 			error: toolCall.error,
-			extra: { metadata: withTrustedMetadata({ ...options?.metadata }, {
-				...base,
-				...CHILD_SCOPE_RESET,
-				ls_model_type: "chat",
-				ls_provider: sessionMeta?.model_provider,
-				ls_model_name: task.context?.model,
-				ls_invocation_params: task.context,
-				usage_metadata: getUsageMetadata(toolMessage.tokenCount),
-				...nativeToolName != null && runName !== nativeToolName ? { ls_tool_name: nativeToolName } : {}
-			}) }
+			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
 		PROMISE_QUEUE.push(toolRun.postRun());
 		postSkillRuns(context, skillNames, {
@@ -14557,7 +14923,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
 	const draft = {
-		...await turnMetadata(task, sessionMeta, mode),
+		...await turnMetadata(task, sessionMeta, mode, request.options),
 		task,
 		sessionMeta,
 		request,
@@ -14566,6 +14932,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	};
 	const context = {
 		...draft,
+		childMetadataBase: mode === "full" ? {
+			...draft.metadataBase,
+			...parentProviderMetadata(task, sessionMeta)
+		} : draft.metadataBase,
 		parent: createParentRun(draft, user, agent),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
