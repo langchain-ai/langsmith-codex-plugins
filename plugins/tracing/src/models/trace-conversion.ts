@@ -1,9 +1,15 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import type { Session, Task } from "./rollout.js";
-import type { TracingMode } from "./tracing-policy.js";
+import type { TracingMode, TurnMode } from "./tracing-policy.js";
 
 export interface TraceConversionOptions {
+  captureRun: (
+    run: RunTree,
+    mode: TracingMode,
+    metadata: CodingAgentMetadataOptions,
+  ) => Promise<void>;
+  nextRunId: () => string;
   parentRunTree?: RunTree;
   client?: Client;
   metadata?: Record<string, unknown>;
@@ -14,6 +20,7 @@ export interface TraceConversionOptions {
    * Subagent rollouts are walked whole by design; the live Stop hook is not.
    */
   replayHistory?: boolean;
+  privacyMode?: TurnMode;
 }
 
 export interface TraceInput {
@@ -23,7 +30,7 @@ export interface TraceInput {
 
 export interface TurnRequest {
   rolloutFile: string;
-  options?: TraceConversionOptions;
+  options: TraceConversionOptions;
 }
 
 export type MetadataContext = Pick<

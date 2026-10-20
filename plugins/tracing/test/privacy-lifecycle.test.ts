@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { convertToRunTree } from "../src/trace.js";
+import { convertToRunTree } from "./utils/convert.js";
 import { savedTurnMode, submitPreference } from "../src/tracing-policy.js";
 import { MUTED_TRACE_CONTENT } from "@langchain/plugins-base/privacy";
 import { mockClient } from "./utils/mock_client.js";
@@ -86,12 +86,13 @@ async function rollout(
   );
   return file;
 }
-async function upload(file: string, turnId: string) {
+async function upload(file: string, turnId: string, replayHistory = false) {
   const { client, callSpy } = mockClient();
   await convertToRunTree(
     { transcript_path: file, turn_id: turnId },
     {
       client,
+      replayHistory,
       metadata: { ls_tool_name: "PRIVATE_CUSTOM_COLLISION", custom: "PRIVATE_CUSTOM" },
     },
   );
@@ -100,11 +101,6 @@ async function upload(file: string, turnId: string) {
       typeof call[1].body === "string" ? call[1].body : new TextDecoder().decode(call[1].body),
     ),
   );
-}
-// A first Stop for a rollout records its earlier turns without uploading them,
-// so give these cases a traced history to exercise the replay path itself.
-async function seedTracedHistory(file: string) {
-  await fs.writeFile(`${file}.langsmith`, "already-traced-turn\n");
 }
 function expectMuted(runs: any[]) {
   expect(runs.length).toBeGreaterThan(0);
@@ -137,18 +133,71 @@ it("whole-rollout Stop and replay never upgrade older muted turns on unmute", as
     ...turn("private", "PRIVATE_OLD"),
     ...turn("future", "PUBLIC_FUTURE"),
   ]);
-  await seedTracedHistory(file);
-  const runs = await upload(file, "future");
+  const runs = await upload(file, "future", true);
   expectMuted(runs.filter((run: any) => run.extra.metadata.turn_id === "private"));
   expect(
     runs
       .filter((run: any) => run.extra.metadata.turn_id === "future")
       .some((run: any) => JSON.stringify(run).includes("PUBLIC_FUTURE")),
   ).toBe(true);
-  expect(await upload(file, "future")).toEqual([]);
-  await seedTracedHistory(file);
-  const replay = await upload(file, "future");
-  expectMuted(replay.filter((run: any) => run.extra.metadata.turn_id === "private"));
+});
+it("a queued full turn does not widen older muted child captures", async () => {
+  await submitPreference(privacyPath, {
+    sessionId: "root",
+    turnId: "control",
+    enabled: true,
+    command: "mute",
+  });
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "private", enabled: true });
+  await submitPreference(privacyPath, {
+    sessionId: "root",
+    turnId: "control2",
+    enabled: true,
+    command: "unmute",
+  });
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "future", enabled: true });
+  const root = await rollout("root", [
+    ...turn("private", "PRIVATE_ROOT", "child"),
+    ...turn("future", "PUBLIC_FUTURE"),
+  ]);
+  await rollout("child", turn("child-turn", "PRIVATE_CHILD"), "root");
+  const captured: { mode: string; turnId: unknown; run: unknown }[] = [];
+
+  await convertToRunTree(
+    { transcript_path: root, turn_id: "future" },
+    {
+      replayHistory: true,
+      privacyMode: "full",
+      captureRun: async (run, mode) => {
+        captured.push({ mode, turnId: run.extra?.metadata?.turn_id, run: run.toJSON() });
+      },
+    },
+  );
+
+  const privateRuns = captured.filter(
+    ({ turnId }) => turnId === "private" || turnId === "child-turn",
+  );
+  expect(privateRuns.length).toBeGreaterThan(0);
+  expect(privateRuns.every(({ mode }) => mode === "metadata")).toBe(true);
+  expect(JSON.stringify(privateRuns)).not.toContain("PRIVATE_");
+  expect(captured.some(({ turnId, mode }) => turnId === "future" && mode === "full")).toBe(true);
+});
+it("a job queued as metadata-only stays muted even when the turn itself is full", async () => {
+  await submitPreference(privacyPath, { sessionId: "root", turnId: "public", enabled: true });
+  const root = await rollout("root", turn("public", "PRIVATE_ROOT"));
+  const runs: unknown[] = [];
+
+  await convertToRunTree(
+    { transcript_path: root, turn_id: "public" },
+    {
+      privacyMode: "metadata",
+      captureRun: async (run) => {
+        runs.push(run.toJSON());
+      },
+    },
+  );
+
+  expectMuted(runs as any[]);
 });
 it.each([false, true])(
   "recursive and direct descendants inherit launch mode, canonical=%s",
@@ -168,12 +217,7 @@ it.each([false, true])(
     });
     await submitPreference(privacyPath, { sessionId: "root", turnId: "next", enabled: true });
     const root = await rollout("root", turn("launch", "PRIVATE_ROOT", "child"));
-    const child = await rollout(
-      "child",
-      turn("child-turn", "PRIVATE_CHILD", "grandchild"),
-      "root",
-      canonical,
-    );
+    await rollout("child", turn("child-turn", "PRIVATE_CHILD", "grandchild"), "root", canonical);
     const grandchild = await rollout(
       "grandchild",
       turn("grand-turn", "PRIVATE_GRANDCHILD"),
@@ -183,11 +227,9 @@ it.each([false, true])(
     // Direct Stop can beat the parent's Stop; walk native ancestry to the launch.
     expectMuted(await upload(grandchild, "grand-turn"));
     expect(savedTurnMode(privacyPath, "grandchild", "grand-turn")).toBe("metadata");
-    await fs.unlink(`${grandchild}.langsmith`);
     const recursive = await upload(root, "launch");
     expectMuted(recursive);
     expect(recursive.filter((run: any) => run.run_type === "chain")).toHaveLength(3);
-    expect(await upload(child, "child-turn")).toEqual([]);
   },
 );
 it("full launch stays full for direct descendants even after parent mute", async () => {
@@ -217,7 +259,6 @@ it("no evidence, corrupt policy, or unknown child ancestry is metadata-only", as
   const root = await rollout("root", turn("old", "PRIVATE_OLD"));
   expectMuted(await upload(root, "old"));
   await fs.writeFile(privacyPath, "broken");
-  await fs.unlink(`${root}.langsmith`);
   expectMuted(await upload(root, "old"));
   const child = await rollout("child", turn("child-turn", "PRIVATE_ORPHAN"), "missing-parent");
   expectMuted(await upload(child, "child-turn"));
@@ -234,7 +275,6 @@ it("an inherited launch snapshot survives missing ancestry and child controls", 
   const child = await rollout("child", turn("child-turn", "PUBLIC_CHILD"), "root");
   await upload(child, "child-turn");
   await fs.unlink(root);
-  await fs.unlink(`${child}.langsmith`);
   await submitPreference(privacyPath, {
     sessionId: "child",
     turnId: "child-turn",
@@ -275,18 +315,14 @@ it.each([true, false])(
     const direct = await upload(child, "child-turn");
     if (muted) expectMuted(direct);
     else expect(JSON.stringify(direct)).toContain("PUBLIC_CHILD");
-    await fs.unlink(`${child}.langsmith`);
     for (let attempt = 0; attempt < 2; attempt++) {
-      await seedTracedHistory(root);
-      const runs = await upload(root, "next");
+      const runs = await upload(root, "next", true);
       expectMuted(
         runs.filter((run: any) => run.extra.metadata.turn_id === (muted ? "launch" : "next")),
       );
       expect(JSON.stringify(runs)).not.toContain(muted ? "PRIVATE_ROOT" : "PRIVATE_NEXT");
       expect(JSON.stringify(runs)).not.toContain("PRIVATE_CHILD");
       expect(JSON.stringify(runs)).toContain(muted ? "PUBLIC_NEXT" : "PUBLIC_ROOT");
-      await fs.unlink(`${root}.langsmith`);
-      await fs.unlink(`${child}.langsmith`);
     }
   },
 );

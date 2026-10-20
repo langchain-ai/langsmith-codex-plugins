@@ -67,8 +67,33 @@ export const GIT_SCP_REMOTE_PATTERN = /^[^/@]+@([^:/]+):(.+)$/;
 export const GIT_HTTP_CREDENTIALS_PATTERN = /^(https?:\/\/)[^/@]+@/i;
 export const GIT_PATH_PREFIX_PATTERN = /^\/+/;
 export const GIT_SUFFIX_PATTERN = /\.git$/;
-
-export const KNOWN_FLAGS = new Set(["--help", "-h", "--version", "-v"]);
+export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
+  "start_time",
+  "end_time",
+  "parent_run_id",
+  "trace_id",
+  "dotted_order",
+  "tags",
+  "error",
+  "serialized",
+  "events",
+  "reference_example_id",
+] as const;
+export const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
+export const ENGINE_WORKER_FLAG = "--engine-worker";
+export const DEFAULT_LANGSMITH_API_URL = "https://api.smith.langchain.com";
+export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+export const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+export const TRACE_RUN_EVENT_PREFIX = "codex-run:";
+export const RECONSTRUCTION_EVENT_PREFIX = "codex-reconstruction:";
+export const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
+export const CONTEXT_LOCATOR_PREFIX = "codex-context:";
+export const JOB_STATE_FILE_NAME = "langsmith_state.json";
+export const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
+export const STATE_FILE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+export const WARNING_FILE_NAME = "langsmith_warning.txt";
+export const DROPPED_WORK_WARNING =
+  "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.

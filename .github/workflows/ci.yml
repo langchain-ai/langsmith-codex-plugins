@@ -63,7 +63,7 @@ jobs:
         run: pnpm run test
 
   hooks:
-    name: Hook Command on ${{ matrix.os }}
+    name: Native Codex Tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -87,6 +87,19 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Setup Bun 1.4.2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: 1.4.2
+
+      - name: Build standalone binary on this platform
+        run: node .github/scripts/build-native-binary.mjs
+
+      - name: Test the standalone binary and the bundle on this platform
+        env:
+          CODEX_TEST_BINARY: ${{ github.workspace }}/plugins/tracing/bin/langsmith-codex-tracing${{ runner.os == 'Windows' && '.exe' || '' }}
+        run: node .github/scripts/test-in-temp-home.mjs plugins/tracing/test/config-wire.test.ts plugins/tracing/test/hook.test.ts plugins/tracing/test/cached-install.test.ts
 
       - name: Test shared settings on this platform
         run: pnpm exec vitest run plugins/tracing/test/config.test.ts
