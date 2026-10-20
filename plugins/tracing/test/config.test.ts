@@ -384,7 +384,7 @@ it("unrelated invalid env cannot discard the configured mute default", async () 
 
 it("config lookup alone does not create or modify privacy state", async () => {
   const { fs } = await import("memfs");
-  const file = path.join(HOME, ".codex/langsmith-state.privacy.json");
+  const file = path.join(HOME, ".codex/langsmith_state_privacy.json");
   const options = { home: HOME, cwd: CWD, env: { LANGSMITH_CODEX_DEFAULT_MUTED: "true" } };
   await getConfig(options);
   expect(fs.existsSync(file)).toBe(false);

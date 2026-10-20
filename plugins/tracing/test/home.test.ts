@@ -43,7 +43,7 @@ it("reads the user-level config in the prompt hook when HOME is unset", async ()
   vol.fromJSON({
     [path.join(HOME, ".codex", "langsmith.json")]: JSON.stringify({ enabled: true }),
   });
-  const privacyPath = path.join(HOME, ".codex", "langsmith-state.privacy.json");
+  const privacyPath = path.join(HOME, ".codex", "langsmith_state_privacy.json");
   await handlePromptSubmit({
     session_id: "thread",
     turn_id: "turn",

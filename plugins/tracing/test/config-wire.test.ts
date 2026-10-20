@@ -331,7 +331,7 @@ it("master env false suppresses actual hooks despite enabled file", async () => 
   );
   expect(requests).toEqual([]);
   const policy = JSON.parse(
-    await fs.readFile(join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+    await fs.readFile(join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
   );
   expect(policy.threads.thread.turns.turn).toBe("off");
 });
@@ -366,7 +366,7 @@ it("obsolete nonhidden home config cannot enable actual hooks or SDK uploads", a
   await hook({ hook_event_name: "Stop", transcript_path: join(cwd, "not-needed.jsonl") });
   expect(requests).toEqual([]);
   const policy = JSON.parse(
-    await fs.readFile(join(home, ".codex/langsmith-state.privacy.json"), "utf8"),
+    await fs.readFile(join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
   );
   expect(policy.threads.thread.turns.turn).toBe("off");
 });
