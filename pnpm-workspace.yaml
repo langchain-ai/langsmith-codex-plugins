@@ -1,4 +1,6 @@
 minimumReleaseAge: 1440
 packages: ["."]
+overrides:
+  vite: 8.1.6
 allowBuilds:
   protobufjs: true
