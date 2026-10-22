@@ -319,7 +319,6 @@ function writerOptions(
     ...(config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {}),
     redact: config.redact,
     projectLocked: config.locked.includes("project"),
-    loginBrowser: config.login_browser,
     storageRoot,
     ...(config.redact_extra_rules === undefined
       ? {}

@@ -540,7 +540,7 @@ it("tells the next hook once when an upload was refused and dropped, and that th
 }, 60_000);
 
 it.skipIf(process.env.CODEX_TEST_BINARY)(
-  "uploads with the CLI login and says once per cooldown that the token expired",
+  "uploads with the CLI login and says once per cooldown that the login expired",
   async () => {
     failStatus = 401;
     const log = join(dir, "spawned.log");
@@ -583,7 +583,7 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
             .filter(Boolean)
             .map((line) => JSON.parse(line));
           expect(
-            entries.filter(([kind, line]) => kind === "warn" && line?.includes("token expired")),
+            entries.filter(([kind, line]) => kind === "warn" && line?.includes("login expired")),
           ).toHaveLength(count);
         },
         { timeout: 20_000, interval: 100 },
@@ -592,7 +592,6 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
     };
     const env = {
       TRACE_TO_LANGSMITH: "true",
-      LANGSMITH_CODEX_LOGIN_BROWSER: "false",
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ${pathToFileURL(preload).href}`,
       PATH: `${bin}:/usr/bin:/bin`,
       DISPLAY: ":0",
@@ -603,7 +602,7 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
       turn_id,
       session_id,
     });
-    const notice = expect.stringContaining("LangSmith token expired. Run `langsmith auth login`");
+    const notice = expect.stringContaining("Your LangSmith login expired so this session isn't being traced.");
     const dropped = join(home, ".codex", "langsmith_warning.txt");
     await login("synthetic-expired");
     await hook(prompt("turn"), env);

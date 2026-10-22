@@ -32,10 +32,17 @@ export const ENV_SUFFIXES = {
   replicas: "RUNS_ENDPOINTS",
   redact: "REDACT",
   redactExtraRules: "REDACT_EXTRA",
-  loginBrowser: "LOGIN_BROWSER",
+  strictAuth: "STRICT_AUTH",
   parentHeaders: "PARENT_HEADERS",
   noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
+export const LAUNCHER_LOOKUP_COMMAND = "/bin/ps";
+export const LAUNCHER_LOOKUP_ARGUMENTS = ["-o", "ppid=,args=", "-p"] as const;
+export const LAUNCHER_MAX_ANCESTORS = 8;
+export const LAUNCHER_CODEX_PATTERN = /(^|\/)codex(\.js)?$/u;
+export const LAUNCHER_AUTOMATED_SUBCOMMANDS: readonly string[] = ["exec", "e", "mcp-server"];
+export const LAUNCHER_LINE_PATTERN = /^\s*(\d+)\s+(.*)$/u;
+export const LAUNCHER_ARGUMENT_SEPARATOR = /\s+/u;
 export const STRICT_TRUE_VALUE = "true";
 export const STRICT_FALSE_VALUE = "false";
 export const PARENT_TRACE_HEADER = "langsmith-trace";

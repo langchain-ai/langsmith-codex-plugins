@@ -48,7 +48,7 @@ or write them to `~/.codex/langsmith.json`:
 
 Get a key from [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**. Complete a turn, then look for it in the `codex` project.
 
-Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login. Only the plugin's own key in `LANGSMITH_CODEX_API_KEY` or `api_key` beats the login, and a generic `LANGSMITH_API_KEY` or `LANGCHAIN_API_KEY` is only used when there's no login. When the login expires or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you sign in again. Each notice repeats at most once every `notice_cooldown` minutes.
+Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login. Only the plugin's own key in `LANGSMITH_CODEX_API_KEY` or `api_key` beats the login, and a generic `LANGSMITH_API_KEY` or `LANGCHAIN_API_KEY` is only used when there's no login. When the login expires, the key is rejected or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you fix it. Each notice repeats at most once every `notice_cooldown` minutes. Set `strict_auth` to `true` to refuse every prompt until you fix it instead, which never applies to `codex exec` runs, a muted conversation or Windows, where the plugin can't tell who started Codex.
 
 Settings can also live in a project, at `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`, or across every harness at `~/.langsmith-plugins.json`. A setting from your shell beats a project file, which beats a user file, which beats the shared one.
 
@@ -100,7 +100,7 @@ Every setting has a config key and an environment variable. The `LANGSMITH_CODEX
 | `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run              |
 | `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too  |
 | `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`       |
-| `login_browser`      | `LANGSMITH_CODEX_LOGIN_BROWSER`   | `true`                            | Reopen sign-in when the login expires   |
+| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again  |
 
 ### Lock settings with a managed file
 

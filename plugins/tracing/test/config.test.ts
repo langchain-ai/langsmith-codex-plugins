@@ -197,10 +197,10 @@ it("enables redaction explicitly via LANGSMITH_CODEX_REDACT", async () => {
   });
 });
 
-it("reads the login browser switch from the environment", async () => {
-  vi.stubEnv("LANGSMITH_CODEX_LOGIN_BROWSER", "false");
+it("reads the strict auth switch from the environment", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_STRICT_AUTH", "true");
   const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
-  expect(config.login_browser).toBe(false);
+  expect(config.strict_auth).toBe(true);
 });
 
 it("reads redact_extra_rules from the environment", async () => {
@@ -618,17 +618,17 @@ it.skipIf(process.platform === "win32")(
 );
 
 it.skipIf(process.platform === "win32")(
-  "a root-owned managed file keeps the login browser off over the environment and user file",
+  "a root-owned managed file keeps strict auth on over the environment and user file",
   async () => {
-    writeConfigFiles({ global: { login_browser: true } });
-    writeManagedFile({ login_browser: false }, 0);
+    writeConfigFiles({ global: { strict_auth: false } });
+    writeManagedFile({ strict_auth: true }, 0);
     const config = await getConfig({
       home: HOME,
       cwd: CWD,
-      env: { LANGSMITH_CODEX_LOGIN_BROWSER: "true" },
+      env: { LANGSMITH_CODEX_STRICT_AUTH: "false" },
     });
-    expect(config.login_browser).toBe(false);
-    expect(config.locked).toEqual(["login_browser"]);
+    expect(config.strict_auth).toBe(true);
+    expect(config.locked).toEqual(["strict_auth"]);
   },
 );
 

@@ -107,7 +107,7 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
     redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
     redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
     notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown)),
-    login_browser: parseBoolean(envVariable(env, ENV_SUFFIXES.loginBrowser)),
+    strict_auth: parseBoolean(envVariable(env, ENV_SUFFIXES.strictAuth)),
   };
   const parsed = parseCommonConfig(
     Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)),
