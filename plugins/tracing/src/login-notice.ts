@@ -3,6 +3,7 @@ import {
   readLoginNotice,
   refusedLoginReplicas,
   resolveUploadCredential,
+  sdkSetting,
   type UploadCredential,
 } from "@langchain/plugins-base/auth";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
@@ -21,12 +22,15 @@ export function loginNotices(home: string, config: Config, credential: UploadCre
   if (!config.enabled) return [];
   if (credential.kind === "none") {
     const fallback = withoutKeys();
+    const keyedReplica = config.replicas?.some((replica) => sdkSetting(replica.api_key));
+    if (fallback.kind === "none" && keyedReplica) return [];
     const text = fallback.kind === "none" ? fallback.reason : credential.reason;
     return [{ kind: NOTICE_KIND_CREDENTIAL, text }];
   }
   const saved = readLoginNotice(
     engineStorageRoot(home),
-    credential.kind === "api-key" ? {} : process.env,
+    process.env,
+    credential.kind === "api-key" ? config.api_key : undefined,
   );
   const notices = saved === undefined ? [] : [{ kind: LOGIN_NOTICE_KIND, text: saved }];
   if (credential.kind === "api-key") return notices;

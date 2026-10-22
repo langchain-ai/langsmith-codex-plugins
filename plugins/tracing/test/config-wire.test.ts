@@ -806,6 +806,38 @@ it.each([
   },
 );
 
+it("stays quiet about signing in when a replica with its own key can still upload", async () => {
+  await fs.writeFile(
+    join(cwd, "langsmith-plugins.json"),
+    JSON.stringify({ replicas: [{ api_url: api, api_key: "replica-key", project: "copy" }] }),
+  );
+  await hook(
+    { hook_event_name: "UserPromptSubmit", prompt: "work" },
+    { TRACE_TO_LANGSMITH: "true" },
+  );
+});
+
+it("drops the rejected-key notice once the CLI login replaces the key", async () => {
+  failStatus = 401;
+  const transcript_path = await writeRollout();
+  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, reachable());
+  await hook({ hook_event_name: "Stop", transcript_path }, reachable());
+  const warning = join(home, ".codex", "langsmith_warning.txt");
+  await vi.waitFor(() => fs.access(warning), { timeout: 20_000, interval: 200 });
+  await fs.mkdir(join(home, ".langsmith"));
+  await fs.writeFile(
+    join(home, ".langsmith", "config.json"),
+    JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
+  );
+
+  await hook(
+    { hook_event_name: "UserPromptSubmit", prompt: "work", turn_id: "next" },
+    { TRACE_TO_LANGSMITH: "true", LANGSMITH_ENDPOINT: api },
+    [],
+    "dropped it",
+  );
+}, 60_000);
+
 const stateFiles = async () => [
   ...(await fs.readdir(join(home, ".codex"))).filter(
     (n) => n.endsWith("warning.txt") || n.includes("job-context"),

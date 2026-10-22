@@ -23061,13 +23061,15 @@ function loginNotices(home, config, credential) {
 	if (!config.enabled) return [];
 	if (credential.kind === "none") {
 		const fallback = withoutKeys();
+		const keyedReplica = config.replicas?.some((replica) => sdkSetting(replica.api_key));
+		if (fallback.kind === "none" && keyedReplica) return [];
 		const text = fallback.kind === "none" ? fallback.reason : credential.reason;
 		return [{
 			kind: NOTICE_KIND_CREDENTIAL,
 			text
 		}];
 	}
-	const saved = readLoginNotice(engineStorageRoot(home), credential.kind === "api-key" ? {} : process.env);
+	const saved = readLoginNotice(engineStorageRoot(home), process.env, credential.kind === "api-key" ? config.api_key : void 0);
 	const notices = saved === void 0 ? [] : [{
 		kind: LOGIN_NOTICE_KIND,
 		text: saved
