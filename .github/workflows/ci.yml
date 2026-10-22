@@ -88,10 +88,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Bun 1.4.2
+      - name: Setup Bun 1.4.4
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.4
 
       - name: Build standalone binary on this platform
         run: node .github/scripts/build-native-binary.mjs
