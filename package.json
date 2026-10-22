@@ -45,7 +45,7 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
-    "@langchain/plugins-base": "github:langchain-ai/langsmith-plugin-binary#9d86935f573f859c343e4b50586c344f47cad2d2",
+    "@langchain/plugins-base": "github:langchain-ai/langsmith-plugin-binary#e11aa5cf65fd51a491efbcf6b9ba702c6f03c467",
     "@types/node": "^26.6.4",
     "memfs": "^4.80.0",
     "oxfmt": "^0.71.0",
