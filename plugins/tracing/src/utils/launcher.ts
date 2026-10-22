@@ -17,7 +17,7 @@ export function launchedByExec(
   let id = startId;
   for (let depth = 0; depth < LAUNCHER_MAX_ANCESTORS && id > 1; depth++) {
     const info = readProcess(id);
-    if (info === undefined) return false;
+    if (info === undefined) return true;
     const codex = info.args.findIndex((arg) => LAUNCHER_CODEX_PATTERN.test(arg));
     if (codex !== -1)
       return info.args.slice(codex + 1).some((arg) => LAUNCHER_EXEC_SUBCOMMANDS.includes(arg));

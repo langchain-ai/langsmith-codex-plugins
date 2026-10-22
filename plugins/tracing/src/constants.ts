@@ -1,4 +1,5 @@
 // Frozen literals for the Codex integration (see validator.json).
+import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -184,3 +185,4 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];

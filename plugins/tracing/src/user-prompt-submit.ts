@@ -1,10 +1,10 @@
-import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
 import { getConfig } from "./config.js";
 import { loginNotices } from "./login-notice.js";
 import {
   LOCKED_MUTE_REPLY,
   MODE_FULL,
   NOTICE_KIND_MANAGED,
+  STRICT_NOTICE_KINDS,
   PREFERENCE_WARNING_PREFIX,
 } from "./constants.js";
 import type { PromptSubmitInput } from "./models/hook-input.js";
@@ -37,7 +37,7 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
     if (!command) {
       if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
       const login = loginNotices(homeDirectory(), config, uploadCredential(config));
-      const expired = login.find(({ kind }) => kind === LOGIN_NOTICE_KIND);
+      const expired = login.find(({ kind }) => STRICT_NOTICE_KINDS.includes(kind));
       if (
         expired &&
         config.strict_auth &&

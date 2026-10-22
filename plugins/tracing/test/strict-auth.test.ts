@@ -54,6 +54,14 @@ it("refuses every prompt in strict mode until the key is fixed", async () => {
   expect(await submit("three")).toBeUndefined();
 });
 
+it("refuses a prompt in strict mode when nothing is signed in at all", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_API_KEY", undefined);
+  expect(await submit("one")).toEqual({
+    decision: "block",
+    reason: expect.stringContaining("isn't signed in"),
+  });
+});
+
 it("only reminds without strict mode", async () => {
   vi.stubEnv("LANGSMITH_CODEX_STRICT_AUTH", undefined);
   expect(await submit("one")).toEqual({ systemMessage: "key rejected" });
@@ -90,7 +98,7 @@ it("counts only a terminal or editor session as a person typing", async () => {
 });
 
 it.skipIf(process.platform === "win32")(
-  "reads an exec launch, including exec resume, from the real process list",
+  "reads an exec launch, including exec resume, from the real process list, and counts an unknown one as exec",
   async () => {
     const actual = await vi.importActual<typeof import("../src/utils/launcher.js")>(
       "../src/utils/launcher.js",
@@ -104,7 +112,7 @@ it.skipIf(process.platform === "win32")(
     try {
       await vi.waitFor(() => expect(actual.launchedByExec(undefined, resumed.pid!)).toBe(true));
       expect(actual.launchedByExec(undefined, person.pid!)).toBe(false);
-      expect(actual.launchedByExec(() => undefined, resumed.pid!)).toBe(false);
+      expect(actual.launchedByExec(() => undefined, person.pid!)).toBe(true);
     } finally {
       resumed.kill();
       person.kill();
