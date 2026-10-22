@@ -9,6 +9,7 @@ import {
 } from "./constants.js";
 import type { PromptSubmitInput } from "./models/hook-input.js";
 import { homeDirectory } from "./utils/home.js";
+import { launchedByExec } from "./utils/launcher.js";
 import { startedByPerson } from "./utils/rollout.js";
 import { showNotices } from "./notices.js";
 import {
@@ -41,7 +42,8 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
         expired &&
         config.strict_auth &&
         lockedTurnMode(config, input.session_id, input.turn_id) === MODE_FULL &&
-        (await startedByPerson(input.transcript_path))
+        (await startedByPerson(input.transcript_path)) &&
+        !launchedByExec()
       )
         return { decision: "block", reason: expired.text };
       const managed = config.managedConfigWarnings ?? [];
