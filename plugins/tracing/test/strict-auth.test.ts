@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -7,9 +6,9 @@ import { handlePromptSubmit } from "../src/user-prompt-submit.js";
 
 const launch = vi.hoisted(() => ({ person: true, notice: "key rejected" as string | undefined }));
 
-vi.mock("../src/utils/launcher.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/utils/launcher.js")>();
-  return { ...actual, launchedByPerson: vi.fn(() => launch.person) };
+vi.mock("../src/utils/rollout.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/utils/rollout.js")>();
+  return { ...actual, startedByPerson: vi.fn(async () => launch.person) };
 });
 vi.mock("@langchain/plugins-base/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@langchain/plugins-base/auth")>()),
@@ -53,27 +52,19 @@ it("only reminds an exec run or a muted conversation in strict mode", async () =
   expect(await submit("one", "work", "muted")).toBeUndefined();
 });
 
-it.skipIf(process.platform === "win32")(
-  "reads whether Codex was started by exec from the real process list",
-  async () => {
-    const actual = await vi.importActual<typeof import("../src/utils/launcher.js")>(
-      "../src/utils/launcher.js",
-    );
-    const folder = await fs.mkdtemp(path.join(os.tmpdir(), "codex-launcher-"));
-    await fs.writeFile(path.join(folder, "codex"), "#!/bin/sh\nsleep 30\n", { mode: 0o755 });
-    const started = (args: string[]) => {
-      const child = spawn(path.join(folder, "codex"), args, { stdio: "ignore" });
-      return { id: child.pid!, stop: () => child.kill() };
-    };
-    const exec = started(["exec", "say ok"]);
-    const person = started(["--model", "m"]);
-    try {
-      await vi.waitFor(() => expect(actual.launchedByPerson(undefined, person.id)).toBe(true));
-      expect(actual.launchedByPerson(undefined, exec.id)).toBe(false);
-      expect(actual.launchedByPerson(() => undefined, person.id)).toBe(false);
-    } finally {
-      exec.stop();
-      person.stop();
-    }
-  },
-);
+it("counts only a terminal or editor session as a person typing", async () => {
+  const actual =
+    await vi.importActual<typeof import("../src/utils/rollout.js")>("../src/utils/rollout.js");
+  const rollout = async (source: unknown) => {
+    const file = path.join(home, `${JSON.stringify(source)}.jsonl`);
+    const meta = { timestamp: "t", type: "session_meta", payload: { id: "s", source } };
+    await fs.writeFile(file, `${JSON.stringify(meta)}\n{"type":"event_msg"}\n`);
+    return file;
+  };
+  expect(await actual.startedByPerson(await rollout("cli"))).toBe(true);
+  expect(await actual.startedByPerson(await rollout("vscode"))).toBe(true);
+  expect(await actual.startedByPerson(await rollout("exec"))).toBe(false);
+  expect(await actual.startedByPerson(await rollout({ subagent: "review" }))).toBe(false);
+  expect(await actual.startedByPerson(path.join(home, "missing.jsonl"))).toBe(false);
+  expect(await actual.startedByPerson(undefined)).toBe(false);
+});
