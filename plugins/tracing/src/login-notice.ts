@@ -20,7 +20,9 @@ export function loginNotices(home: string, config: Config, credential: UploadCre
   const saved = readLoginNotice(
     engineStorageRoot(home),
     process.env,
-    credential.kind === "api-key" ? (config.api_key ?? credential.apiKey) : undefined,
+    credential.kind === "api-key"
+      ? { apiKey: config.api_key ?? credential.apiKey, apiUrl: credential.apiUrl }
+      : undefined,
   );
   const notices = saved === undefined ? [] : [{ kind: LOGIN_NOTICE_KIND, text: saved }];
   if (credential.kind === "api-key") return notices;
