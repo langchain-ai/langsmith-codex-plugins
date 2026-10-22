@@ -21429,7 +21429,7 @@ async function submitPreference(file, request) {
 			...thread.turns,
 			[turnId]: lockedMode ?? thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
 		};
-		if (command) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
+		if (command && !(mutedLocked && command === "unmute")) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
 		policy.threads = {
 			...policy.threads,
 			[sessionId]: thread

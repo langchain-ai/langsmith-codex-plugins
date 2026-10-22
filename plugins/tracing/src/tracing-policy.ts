@@ -115,7 +115,8 @@ export async function submitPreference(
           (enabled ? (thread.preference ?? (defaultMuted ? MODE_METADATA : MODE_FULL)) : MODE_OFF),
       };
     }
-    if (command) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
+    if (command && !(mutedLocked && command === "unmute"))
+      thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
     policy.threads = { ...policy.threads, [sessionId]: thread };
   });
 }

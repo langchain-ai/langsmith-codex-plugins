@@ -74,3 +74,15 @@ it("traces a helper thread's tool call without content while muting is locked", 
 
   expect(liveModes).toEqual(["metadata"]);
 });
+
+it("forgets an unmute refused under a locked mute once the lock is lifted", async () => {
+  await submit("refused", "langsmith-tracing:unmute");
+  locked.locked = [];
+  try {
+    await submit("unlocked");
+  } finally {
+    locked.locked = ["defaultMuted"];
+  }
+
+  expect(savedTurnMode(defaultPrivacyPath(), "thread", "unlocked")).toBe("metadata");
+});
