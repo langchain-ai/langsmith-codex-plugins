@@ -22,7 +22,8 @@ export const MODE_METADATA = "metadata";
 export const MODE_OFF = "off";
 
 export const DEFAULT_LANGSMITH_PROJECT_NAME = "codex";
-export const ENV_PREFIXES = ["LANGSMITH_CODEX_", "LANGSMITH_"] as const;
+export const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
+export const ENV_PREFIXES = [PLUGIN_ENV_PREFIX, "LANGSMITH_"] as const;
 export const ENV_SUFFIXES = {
   apiKey: "API_KEY",
   apiUrl: "ENDPOINT",
@@ -130,7 +131,6 @@ export const NOTICE_KIND_CREDENTIAL = "credential";
 export const NOTICE_KIND_REPLICA = "replica";
 export const NOTICE_COOLDOWN_OFF = "off";
 export const PARENT_HEADERS_FIELD = "parent_headers";
-export const LOGIN_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"] as const;
 export const DROPPED_WORK_WARNING =
   "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
 export const DROPPED_LOGIN_WORK_WARNING =

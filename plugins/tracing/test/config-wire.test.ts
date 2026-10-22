@@ -615,7 +615,7 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
     const loginDropped = expect.stringMatching(/dropped it\. Run `langsmith auth login`/);
     await hook(
       prompt("key", "key-thread"),
-      { ...env, LANGSMITH_API_KEY: "wire-key" },
+      { ...env, LANGSMITH_CODEX_API_KEY: "wire-key" },
       [],
       loginDropped,
     );
@@ -634,37 +634,15 @@ it("says once per cooldown why an existing CLI login can't be used while tracing
     prompt: "work",
     turn_id,
   });
-  const exported = { TRACE_TO_LANGSMITH: "true", LANGCHAIN_API_KEY: "sdk-key" };
   const elsewhere = { TRACE_TO_LANGSMITH: "true", LANGSMITH_ENDPOINT: "https://other.example" };
   await fs.mkdir(join(home, ".langsmith"));
   await fs.writeFile(
     join(home, ".langsmith", "config.json"),
     JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
   );
-  await hook(prompt("off"), { ...exported, TRACE_TO_LANGSMITH: "false" });
-  await hook(
-    prompt("one"),
-    exported,
-    [],
-    "",
-    expect.stringContaining("LANGCHAIN_API_KEY is overriding"),
-  );
-  await hook(prompt("two"), exported);
-  await hook(
-    prompt("three"),
-    { ...elsewhere, LANGSMITH_CODEX_NOTICE_COOLDOWN: "0" },
-    [],
-    "",
-    expect.stringContaining("login is for"),
-  );
-  await fs.rm(join(home, ".langsmith", "config.json"));
-  await hook(
-    prompt("no-login"),
-    { ...exported, LANGSMITH_CODEX_NOTICE_COOLDOWN: "0" },
-    [],
-    "",
-    expect.stringContaining("LangSmith isn't signed in"),
-  );
+  await hook(prompt("off"), { ...elsewhere, TRACE_TO_LANGSMITH: "false" });
+  await hook(prompt("one"), elsewhere, [], "", expect.stringContaining("login is for"));
+  await hook(prompt("two"), elsewhere);
 });
 
 it("says once per cooldown that LangSmith isn't signed in after the CLI login is removed", async () => {
@@ -713,26 +691,19 @@ it("uploads nothing and says once per cooldown when every replica is refused for
   expect(requests).toEqual([]);
 });
 
-it("still uploads to a replica with its own key and says once why the CLI login can't be used", async () => {
+it("uploads with the CLI login even when a generic LangSmith key is exported", async () => {
   await fs.mkdir(join(home, ".langsmith"));
   await fs.writeFile(
     join(home, ".langsmith", "config.json"),
     JSON.stringify({ profiles: { default: { api_url: api, oauth: { access_token: "t" } } } }),
   );
-  await fs.writeFile(
-    join(cwd, "langsmith-plugins.json"),
-    JSON.stringify({ replicas: [{ api_url: api, api_key: "replica-key", project: "replica" }] }),
-  );
-  const env = { TRACE_TO_LANGSMITH: "true", LANGCHAIN_API_KEY: "sdk-key" };
-  const reason = expect.stringContaining("LANGCHAIN_API_KEY is overriding");
-  const transcript_path = await writeRollout();
-  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" }, env, [], "", reason);
-  await hook({ hook_event_name: "Stop", transcript_path }, env);
-  await hook({}, env, ["--engine-worker", "thread", cwd]);
-  await hook({ hook_event_name: "UserPromptSubmit", prompt: "work", turn_id: "next" }, env);
+  await upload({
+    TRACE_TO_LANGSMITH: "true",
+    LANGSMITH_API_KEY: "generic-key",
+    LANGCHAIN_API_KEY: "generic-key",
+  });
 
-  expect(requests.length).toBeGreaterThan(0);
-  expect(requests.every(({ key, auth }) => key === "replica-key" && auth === undefined)).toBe(true);
+  expect(requests.every(({ key, auth }) => key === undefined && auth === "Bearer t")).toBe(true);
 });
 
 it.each(

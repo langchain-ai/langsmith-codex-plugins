@@ -15,6 +15,7 @@ import {
   ENV_SUFFIXES,
   ENV_TRUE_VALUES,
   NOTICE_COOLDOWN_OFF,
+  PLUGIN_ENV_PREFIX,
   PARENT_HEADERS_FIELD,
   PARENT_TRACE_HEADER,
   STRICT_FALSE_VALUE,
@@ -84,17 +85,21 @@ function nonBlank(value: string | undefined): string | undefined {
   return value === undefined || value.trim() === "" ? undefined : value;
 }
 
-function envVariable(env: ConfigEnv, suffix: string): string | undefined {
-  return ENV_PREFIXES.map((prefix) => nonBlank(env[`${prefix}${suffix}`])).find(
-    (value) => value !== undefined,
-  );
+function envVariable(
+  env: ConfigEnv,
+  suffix: string,
+  prefixes: readonly string[] = ENV_PREFIXES,
+): string | undefined {
+  return prefixes
+    .map((prefix) => nonBlank(env[`${prefix}${suffix}`]))
+    .find((value) => value !== undefined);
 }
 
 function readEnvironment(env: ConfigEnv): EnvironmentLayer {
   const rawParent = parseJson(envVariable(env, ENV_SUFFIXES.parentHeaders));
   const parentHeaders = rawParent === undefined ? undefined : parseParentHeaders(rawParent);
   const fields = {
-    api_key: envVariable(env, ENV_SUFFIXES.apiKey),
+    api_key: envVariable(env, ENV_SUFFIXES.apiKey, [PLUGIN_ENV_PREFIX]),
     api_url: envVariable(env, ENV_SUFFIXES.apiUrl),
     project: envVariable(env, ENV_SUFFIXES.project),
     metadata: parseJson(envVariable(env, ENV_SUFFIXES.metadata)),

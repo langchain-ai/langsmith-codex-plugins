@@ -86,7 +86,6 @@ it("loads environment config", async () => {
     locked: [],
     defaultMuted: false,
     enabled: true,
-    api_key: "env-key",
     api_url: "https://env.example",
     project: "env-project",
     metadata: { source: "env" },
@@ -113,7 +112,7 @@ it("applies all environment values over config files", async () => {
   });
 
   vi.stubEnv("TRACE_TO_LANGSMITH", "true");
-  vi.stubEnv("LANGSMITH_API_KEY", "env-key");
+  vi.stubEnv("LANGSMITH_CODEX_API_KEY", "env-key");
   vi.stubEnv("LANGSMITH_ENDPOINT", "https://env.example");
   vi.stubEnv("LANGSMITH_PROJECT", "env-project");
   vi.stubEnv("LANGSMITH_METADATA", JSON.stringify({ source: "env" }));
@@ -261,18 +260,6 @@ it.each([
     { LANGSMITH_CODEX_PROJECT: "", LANGSMITH_PROJECT: "generic-project" },
     "project",
     "generic-project",
-  ],
-  [
-    "empty API key",
-    { LANGSMITH_CODEX_API_KEY: "", LANGSMITH_API_KEY: "generic-key" },
-    "api_key",
-    "generic-key",
-  ],
-  [
-    "blank API key",
-    { LANGSMITH_CODEX_API_KEY: "  ", LANGSMITH_API_KEY: "generic-key" },
-    "api_key",
-    "generic-key",
   ],
   [
     "empty endpoint",

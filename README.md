@@ -48,7 +48,7 @@ or write them to `~/.codex/langsmith.json`:
 
 Get a key from [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**. Complete a turn, then look for it in the `codex` project.
 
-Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login, though a key still wins if you set one. When the login expires or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you sign in again. An exported `LANGCHAIN_API_KEY` stops the login from being used, so unset it or set it as the plugin's key, and Codex says so too. Each notice repeats at most once every `notice_cooldown` minutes.
+Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login. Only the plugin's own key in `LANGSMITH_CODEX_API_KEY` or `api_key` beats the login, and a generic `LANGSMITH_API_KEY` or `LANGCHAIN_API_KEY` is only used when there's no login. When the login expires or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you sign in again. Each notice repeats at most once every `notice_cooldown` minutes.
 
 Settings can also live in a project, at `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`, or across every harness at `~/.langsmith-plugins.json`. A setting from your shell beats a project file, which beats a user file, which beats the shared one.
 
@@ -86,7 +86,7 @@ Redaction is not a guarantee that what you upload is safe to share.
 
 ## Settings
 
-Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one.
+Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one, except that a plain `LANGSMITH_API_KEY` only counts when there's no login.
 
 | Config key           | Environment variable              | Default                           | What it does                            |
 | -------------------- | --------------------------------- | --------------------------------- | --------------------------------------- |
