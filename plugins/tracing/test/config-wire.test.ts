@@ -602,7 +602,9 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
       turn_id,
       session_id,
     });
-    const notice = expect.stringContaining("Your LangSmith login expired so this session isn't being traced.");
+    const notice = expect.stringContaining(
+      "Your LangSmith login expired so this session isn't being traced.",
+    );
     const dropped = join(home, ".codex", "langsmith_warning.txt");
     await login("synthetic-expired");
     await hook(prompt("turn"), env);
