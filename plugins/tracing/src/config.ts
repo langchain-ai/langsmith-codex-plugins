@@ -104,7 +104,11 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
 export async function getConfig({ home, cwd, env }: ConfigOptions): Promise<Config> {
   const files = readCommonConfigFiles({ cwd, home, harnessDirectory: CODEX_CONFIG_DIRECTORY });
   const environment = readEnvironment(env);
-  const common = mergeCommonConfig(
+  const {
+    diagnostics: _diagnostics,
+    locked: _locked,
+    ...common
+  } = mergeCommonConfig(
     {
       userRoot: files.userRoot.common,
       user: files.user.common,
