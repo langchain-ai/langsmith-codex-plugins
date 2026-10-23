@@ -15,6 +15,7 @@ export default defineConfig({
     __LS_INTEGRATION_VERSION__: JSON.stringify(pluginVersion),
   },
   test: {
+    setupFiles: ["plugins/tracing/test/utils/no-managed-config-setup.ts"],
     server: {
       deps: {
         inline: ["@langchain/plugins-base"],

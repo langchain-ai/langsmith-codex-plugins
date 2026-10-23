@@ -86,17 +86,22 @@ Redaction is not a guarantee that what you upload is safe to share.
 
 Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one.
 
-| Config key           | Environment variable             | Default                           | What it does                            |
-| -------------------- | -------------------------------- | --------------------------------- | --------------------------------------- |
-| `enabled`            | `TRACE_TO_LANGSMITH`             | `false`                           | Whether to trace at all                 |
-| `api_key`            | `LANGSMITH_CODEX_API_KEY`        | none                              | Your LangSmith key                      |
-| `project`            | `LANGSMITH_CODEX_PROJECT`        | `codex`                           | Where runs land                         |
-| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`       | `https://api.smith.langchain.com` | Which server to send to                 |
-| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`  | `false`                           | Leave content out unless told otherwise |
-| `redact`             | `LANGSMITH_CODEX_REDACT`         | `true`                            | Strip secrets before upload             |
-| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`   | none                              | Extra patterns to strip                 |
-| `metadata`           | `LANGSMITH_CODEX_METADATA`       | none                              | Custom fields on every run              |
-| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS` | none                              | Send the same trace somewhere else too  |
+| Config key           | Environment variable              | Default                           | What it does                            |
+| -------------------- | --------------------------------- | --------------------------------- | --------------------------------------- |
+| `enabled`            | `TRACE_TO_LANGSMITH`              | `false`                           | Whether to trace at all                 |
+| `api_key`            | `LANGSMITH_CODEX_API_KEY`         | none                              | Your LangSmith key                      |
+| `project`            | `LANGSMITH_CODEX_PROJECT`         | `codex`                           | Where runs land                         |
+| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`        | `https://api.smith.langchain.com` | Which server to send to                 |
+| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`   | `false`                           | Leave content out unless told otherwise |
+| `redact`             | `LANGSMITH_CODEX_REDACT`          | `true`                            | Strip secrets before upload             |
+| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`    | none                              | Extra patterns to strip                 |
+| `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run              |
+| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too  |
+| `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`       |
+
+### Lock settings with a managed file
+
+An admin can lock any of these settings for each user through a managed file at `~/.langsmith-plugins/managed.json` in each user's home, which overrides every other file and environment variable. If that file is broken or not owned by root, tracing stops and Codex says why, at most once every `notice_cooldown` minutes. Windows has no managed file, so the lock is skipped there. See [the settings guide](https://github.com/langchain-ai/langsmith-plugin-binary/blob/main/docs/settings.md) to set it up.
 
 ## Send a trace to more than one place
 

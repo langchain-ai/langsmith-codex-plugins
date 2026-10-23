@@ -53,6 +53,10 @@ import {
 import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
 
+export function engineStorageRoot(home: string): string {
+  return path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+}
+
 export function createCodexTracingSession(
   config: Config,
   sessionId: string,
@@ -61,7 +65,7 @@ export function createCodexTracingSession(
 ): PluginSession | undefined {
   const writer = writerOptions(config);
   if (!writer) return undefined;
-  const storageRoot = path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+  const storageRoot = engineStorageRoot(home);
   const plugin: PluginSession = openPluginSession({
     storageRoot,
     integration: LS_INTEGRATION,
@@ -269,20 +273,22 @@ function parentRunTreeFor(config: Config, client?: Client): RunTree | undefined 
 }
 
 function writerOptions(config: Config): LangSmithUploadWriterOptions | undefined {
+  if (config.managedConfigProblem !== undefined) return undefined;
   if (!config.api_key?.trim() && !config.replicas?.length) return undefined;
+  const headerProject = config.locked.includes("project")
+    ? undefined
+    : parentRunTreeFor(config)?.project_name;
   return {
     destinations: [
       {
         apiKey: config.api_key ?? "",
         apiUrl: config.api_url ?? DEFAULT_LANGSMITH_API_URL,
-        projectName:
-          parentRunTreeFor(config)?.project_name ??
-          config.project ??
-          DEFAULT_LANGSMITH_PROJECT_NAME,
+        projectName: headerProject ?? config.project ?? DEFAULT_LANGSMITH_PROJECT_NAME,
       },
     ],
     ...(config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {}),
     redact: config.redact,
+    projectLocked: config.locked.includes("project"),
     ...(config.redact_extra_rules === undefined
       ? {}
       : { redactExtraRules: config.redact_extra_rules }),
