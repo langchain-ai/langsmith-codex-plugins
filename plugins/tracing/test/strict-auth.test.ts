@@ -58,7 +58,7 @@ it("refuses a prompt in strict mode when nothing is signed in at all", async () 
   vi.stubEnv("LANGSMITH_CODEX_API_KEY", undefined);
   expect(await submit("one")).toEqual({
     decision: "block",
-    reason: expect.stringContaining("isn't signed in"),
+    reason: expect.stringContaining("not signed in to LangSmith"),
   });
 });
 
