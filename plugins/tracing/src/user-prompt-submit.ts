@@ -8,8 +8,6 @@ import {
 } from "./constants.js";
 import type { PromptSubmitInput } from "./models/hook-input.js";
 import { homeDirectory } from "./utils/home.js";
-import { launchedByExec } from "./utils/launcher.js";
-import { startedByPerson } from "./utils/rollout.js";
 import { showNotices } from "./notices.js";
 import {
   defaultPrivacyPath,
@@ -36,13 +34,7 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
       if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
       const login = loginNotices(homeDirectory(), config, uploadCredential(config));
       const expired = login.find(({ kind }) => STRICT_NOTICE_KINDS.includes(kind));
-      if (
-        expired &&
-        config.strict_auth &&
-        (await startedByPerson(input.transcript_path)) &&
-        !launchedByExec()
-      )
-        return { decision: "block", reason: expired.text };
+      if (expired && config.strict_auth) return { decision: "block", reason: expired.text };
       const managed = config.managedConfigWarnings ?? [];
       const notices = await showNotices(homeDirectory(), config, [
         ...(managed.length === 0 ? [] : [{ kind: NOTICE_KIND_MANAGED, text: managed.join("\n") }]),

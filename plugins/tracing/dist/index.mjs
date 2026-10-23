@@ -1,7 +1,7 @@
 import * as nodeFsPromises from "node:fs/promises";
 import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodeFs from "node:fs";
-import { accessSync, closeSync, constants, copyFileSync, createReadStream, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { accessSync, closeSync, constants, copyFileSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
@@ -13,7 +13,6 @@ import * as tls from "node:tls";
 import * as os from "node:os";
 import { arch, homedir, platform, userInfo } from "node:os";
 import { isDeepStrictEqual } from "node:util";
-import { createInterface } from "node:readline";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -20862,17 +20861,6 @@ const ENV_SUFFIXES = {
 	parentHeaders: "PARENT_HEADERS",
 	noticeCooldown: "NOTICE_COOLDOWN"
 };
-const PERSON_SESSION_SOURCES = ["cli", "vscode"];
-const LAUNCHER_LOOKUP_COMMAND = "/bin/ps";
-const LAUNCHER_LOOKUP_ARGUMENTS = [
-	"-o",
-	"ppid=,args=",
-	"-p"
-];
-const LAUNCHER_CODEX_PATTERN = /(^|\/)codex(\.js)?$/u;
-const LAUNCHER_EXEC_SUBCOMMANDS = ["exec", "e"];
-const LAUNCHER_LINE_PATTERN = /^\s*(\d+)\s+(.*)$/u;
-const LAUNCHER_ARGUMENT_SEPARATOR = /\s+/u;
 const PARENT_TRACE_HEADER = "langsmith-trace";
 const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"];
 const DEFAULT_MUTED_ENV_KEYS = ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"];
@@ -21424,24 +21412,6 @@ function toolOriginFromArgs(args, cwd) {
 //#region src/utils/rollout.ts
 async function loadSession(name) {
 	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
-async function startedByPerson(file) {
-	if (!file) return false;
-	const lines = createInterface({
-		input: createReadStream(file),
-		crlfDelay: Infinity
-	});
-	try {
-		for await (const line of lines) {
-			const meta = JSON.parse(line);
-			return PERSON_SESSION_SOURCES.includes(meta.payload?.source);
-		}
-	} catch {
-		return false;
-	} finally {
-		lines.close();
-	}
-	return false;
 }
 function resolveSessionsRoot(parentFileName) {
 	let dir = nodePath.dirname(nodePath.resolve(parentFileName));
@@ -22931,38 +22901,6 @@ function loginNotices(home, config, credential) {
 	}]];
 }
 //#endregion
-//#region src/utils/launcher.ts
-function launchedByExec(readProcess = processInfo, startId = process.ppid) {
-	let id = startId;
-	for (let depth = 0; depth < 8 && id > 1; depth++) {
-		const info = readProcess(id);
-		if (info === void 0) return true;
-		const codex = info.args.findIndex((arg) => LAUNCHER_CODEX_PATTERN.test(arg));
-		if (codex !== -1) return info.args.slice(codex + 1).some((arg) => LAUNCHER_EXEC_SUBCOMMANDS.includes(arg));
-		id = info.parentId;
-	}
-	return false;
-}
-function processInfo(id) {
-	try {
-		const line = execFileSync(LAUNCHER_LOOKUP_COMMAND, [...LAUNCHER_LOOKUP_ARGUMENTS, String(id)], {
-			encoding: "utf8",
-			stdio: [
-				"ignore",
-				"pipe",
-				"ignore"
-			]
-		});
-		const match = LAUNCHER_LINE_PATTERN.exec(line.trim());
-		return match ? {
-			parentId: Number(match[1]),
-			args: match[2].split(LAUNCHER_ARGUMENT_SEPARATOR)
-		} : void 0;
-	} catch {
-		return;
-	}
-}
-//#endregion
 //#region src/notices.ts
 async function showNotices(home, config, notices) {
 	const shown = [];
@@ -22997,7 +22935,7 @@ async function handlePromptSubmit(input) {
 			if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
 			const login = loginNotices(homeDirectory(), config, uploadCredential(config));
 			const expired = login.find(({ kind }) => STRICT_NOTICE_KINDS.includes(kind));
-			if (expired && config.strict_auth && await startedByPerson(input.transcript_path) && !launchedByExec()) return {
+			if (expired && config.strict_auth) return {
 				decision: "block",
 				reason: expired.text
 			};

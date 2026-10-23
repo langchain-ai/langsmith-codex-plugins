@@ -8,5 +8,4 @@ export interface CodexHookInput {
   tool_use_id?: string;
 }
 
-export type PromptSubmitInput = Pick<CodexHookInput, "session_id" | "turn_id" | "cwd" | "prompt"> &
-  Partial<Pick<CodexHookInput, "transcript_path">>;
+export type PromptSubmitInput = Pick<CodexHookInput, "session_id" | "turn_id" | "cwd" | "prompt">;

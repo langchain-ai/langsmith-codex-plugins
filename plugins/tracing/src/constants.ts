@@ -37,14 +37,6 @@ export const ENV_SUFFIXES = {
   parentHeaders: "PARENT_HEADERS",
   noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
-export const PERSON_SESSION_SOURCES: readonly string[] = ["cli", "vscode"];
-export const LAUNCHER_LOOKUP_COMMAND = "/bin/ps";
-export const LAUNCHER_LOOKUP_ARGUMENTS = ["-o", "ppid=,args=", "-p"] as const;
-export const LAUNCHER_MAX_ANCESTORS = 8;
-export const LAUNCHER_CODEX_PATTERN = /(^|\/)codex(\.js)?$/u;
-export const LAUNCHER_EXEC_SUBCOMMANDS: readonly string[] = ["exec", "e"];
-export const LAUNCHER_LINE_PATTERN = /^\s*(\d+)\s+(.*)$/u;
-export const LAUNCHER_ARGUMENT_SEPARATOR = /\s+/u;
 export const STRICT_TRUE_VALUE = "true";
 export const STRICT_FALSE_VALUE = "false";
 export const PARENT_TRACE_HEADER = "langsmith-trace";

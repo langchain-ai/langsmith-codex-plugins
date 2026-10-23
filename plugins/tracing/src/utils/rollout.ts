@@ -1,9 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
-import { CODEX_CONFIG_DIRECTORY, PERSON_SESSION_SOURCES } from "../constants.js";
-import type { DirectoryEntry, LineSchema, SessionMetaLine } from "../models/rollout.js";
+import { CODEX_CONFIG_DIRECTORY } from "../constants.js";
+import type { DirectoryEntry, LineSchema } from "../models/rollout.js";
 import { homeDirectory } from "./home.js";
 
 export async function loadSession(name: string) {
@@ -15,22 +13,6 @@ export async function loadSession(name: string) {
     .map((line) => JSON.parse(line) as LineSchema);
 
   return result;
-}
-
-export async function startedByPerson(file: string | undefined): Promise<boolean> {
-  if (!file) return false;
-  const lines = createInterface({ input: createReadStream(file), crlfDelay: Infinity });
-  try {
-    for await (const line of lines) {
-      const meta = JSON.parse(line) as SessionMetaLine;
-      return PERSON_SESSION_SOURCES.includes(meta.payload?.source as string);
-    }
-  } catch {
-    return false;
-  } finally {
-    lines.close();
-  }
-  return false;
 }
 
 // Anchor at the real sessions root (nearest `sessions` ancestor, or
