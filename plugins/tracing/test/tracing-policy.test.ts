@@ -27,6 +27,7 @@ beforeEach(async () => {
   for (const key of Object.keys(process.env)) {
     if (/^(LANGCHAIN_|LANGSMITH_|TRACE_TO_LANGSMITH)/.test(key)) vi.stubEnv(key, undefined);
   }
+  vi.stubEnv("LANGSMITH_CODEX_NOTICE_COOLDOWN", "off");
   file = defaultPrivacyPath();
 });
 

@@ -7,7 +7,7 @@ Sends your Codex turns, tool calls and subagent threads to [LangSmith](https://s
 - **On a Mac, nothing.** The plugin carries its own build and runs it directly.
 - **Everywhere else, including Windows,** Node.js 22 or newer.
 - Codex 0.153.4 or newer.
-- A LangSmith account and API key.
+- A LangSmith account, and either an API key or a login from the LangSmith CLI.
 
 If the carried Mac build cannot start, the plugin hands the turn to Node instead of losing it, so Node is still worth having.
 
@@ -32,7 +32,7 @@ Codex remembers your answer against the exact wording of each hook, so any relea
 
 ## Turn on tracing
 
-Tracing is off until you give it a key and switch it on. Either set these in your shell:
+Tracing is off until you give it a key or a login and switch it on. Either set these in your shell:
 
 ```bash
 export LANGSMITH_CODEX_API_KEY="lsv2_pt_..."
@@ -47,6 +47,8 @@ or write them to `~/.codex/langsmith.json`:
 ```
 
 Get a key from [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**. Complete a turn, then look for it in the `codex` project.
+
+Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login. Only the plugin's own key in `LANGSMITH_CODEX_API_KEY` or `api_key` beats the login, and a generic `LANGSMITH_API_KEY` or `LANGCHAIN_API_KEY` is only used when there's no login. When the login expires, the key is rejected or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you fix it. Each notice repeats at most once every `notice_cooldown` minutes. Set `strict_auth` to `true` to refuse every prompt until you fix it instead, including when you haven't signed in or set a key at all. That never applies when tracing is off.
 
 Settings can also live in a project, at `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`, or across every harness at `~/.langsmith-plugins.json`. A setting from your shell beats a project file, which beats a user file, which beats the shared one.
 
@@ -84,7 +86,7 @@ Redaction is not a guarantee that what you upload is safe to share.
 
 ## Settings
 
-Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one.
+Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one, except that a plain `LANGSMITH_API_KEY` only counts when there's no login.
 
 | Config key           | Environment variable              | Default                           | What it does                            |
 | -------------------- | --------------------------------- | --------------------------------- | --------------------------------------- |
@@ -98,6 +100,7 @@ Every setting has a config key and an environment variable. The `LANGSMITH_CODEX
 | `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run              |
 | `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too  |
 | `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`       |
+| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again  |
 
 ### Lock settings with a managed file
 
