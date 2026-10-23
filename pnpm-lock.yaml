@@ -16,8 +16,8 @@ importers:
         version: 14.0.2
     devDependencies:
       '@langchain/plugins-base':
-        specifier: github:langchain-ai/langsmith-plugin-binary#c71725393a161fd5ed1003d2de9f9ee423b0b06f
-        version: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/c71725393a161fd5ed1003d2de9f9ee423b0b06f(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
+        specifier: github:langchain-ai/langsmith-plugin-binary#86e520503256fd4f672da5ab1b58e7fdaee9d6d8
+        version: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/86e520503256fd4f672da5ab1b58e7fdaee9d6d8(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
@@ -178,8 +178,8 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/c71725393a161fd5ed1003d2de9f9ee423b0b06f':
-    resolution: {tarball: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/c71725393a161fd5ed1003d2de9f9ee423b0b06f}
+  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/86e520503256fd4f672da5ab1b58e7fdaee9d6d8':
+    resolution: {tarball: https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/86e520503256fd4f672da5ab1b58e7fdaee9d6d8}
     version: 0.4.5
     engines: {node: '>=20'}
     hasBin: true
@@ -1521,7 +1521,7 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/c71725393a161fd5ed1003d2de9f9ee423b0b06f(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
+  '@langchain/plugins-base@https://codeload.github.com/langchain-ai/langsmith-plugin-binary/tar.gz/86e520503256fd4f672da5ab1b58e7fdaee9d6d8(langsmith@0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
     dependencies:
       langsmith: 0.10.8(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
 
