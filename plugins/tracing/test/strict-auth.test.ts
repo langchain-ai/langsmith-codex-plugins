@@ -72,12 +72,15 @@ it("only reminds an exec run, even one resuming a person's session", async () =>
   expect(await submit("one")).toEqual({ systemMessage: "key rejected" });
 });
 
-it("only reminds a session a script started or a muted conversation in strict mode", async () => {
+it("only reminds a session a script started, but refuses a muted conversation in strict mode", async () => {
   launch.person = false;
   expect(await submit("one")).toEqual({ systemMessage: "key rejected" });
   launch.person = true;
   await submit("mute", "langsmith-tracing:mute", "muted");
-  expect(await submit("one", "work", "muted")).toBeUndefined();
+  expect(await submit("one", "work", "muted")).toEqual({
+    decision: "block",
+    reason: "key rejected",
+  });
 });
 
 it("counts only a terminal or editor session as a person typing", async () => {

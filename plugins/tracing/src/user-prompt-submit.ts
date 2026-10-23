@@ -2,7 +2,6 @@ import { getConfig } from "./config.js";
 import { loginNotices } from "./login-notice.js";
 import {
   LOCKED_MUTE_REPLY,
-  MODE_FULL,
   NOTICE_KIND_MANAGED,
   STRICT_NOTICE_KINDS,
   PREFERENCE_WARNING_PREFIX,
@@ -14,7 +13,6 @@ import { startedByPerson } from "./utils/rollout.js";
 import { showNotices } from "./notices.js";
 import {
   defaultPrivacyPath,
-  lockedTurnMode,
   muteLocked,
   parseTracingCommand,
   submitPreference,
@@ -41,7 +39,6 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
       if (
         expired &&
         config.strict_auth &&
-        lockedTurnMode(config, input.session_id, input.turn_id) === MODE_FULL &&
         (await startedByPerson(input.transcript_path)) &&
         !launchedByExec()
       )
