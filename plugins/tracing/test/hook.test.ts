@@ -32,6 +32,7 @@ async function hook(
         env: {
           ...env,
           HOME: home,
+          LANGSMITH_CODEX_NOTICE_COOLDOWN: "off",
           ...(options.configOnly
             ? {}
             : {

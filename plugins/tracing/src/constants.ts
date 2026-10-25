@@ -1,4 +1,5 @@
 // Frozen literals for the Codex integration (see validator.json).
+import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -22,7 +23,8 @@ export const MODE_METADATA = "metadata";
 export const MODE_OFF = "off";
 
 export const DEFAULT_LANGSMITH_PROJECT_NAME = "codex";
-export const ENV_PREFIXES = ["LANGSMITH_CODEX_", "LANGSMITH_"] as const;
+export const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
+export const ENV_PREFIXES = [PLUGIN_ENV_PREFIX, "LANGSMITH_"] as const;
 export const ENV_SUFFIXES = {
   apiKey: "API_KEY",
   apiUrl: "ENDPOINT",
@@ -31,6 +33,7 @@ export const ENV_SUFFIXES = {
   replicas: "RUNS_ENDPOINTS",
   redact: "REDACT",
   redactExtraRules: "REDACT_EXTRA",
+  strictAuth: "STRICT_AUTH",
   parentHeaders: "PARENT_HEADERS",
   noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
@@ -125,10 +128,14 @@ export const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 export const STATE_FILE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const WARNING_FILE_NAME = "langsmith_warning.txt";
 export const NOTICE_KIND_MANAGED = "managed";
+export const NOTICE_KIND_CREDENTIAL = "credential";
+export const NOTICE_KIND_REPLICA = "replica";
 export const NOTICE_COOLDOWN_OFF = "off";
 export const PARENT_HEADERS_FIELD = "parent_headers";
 export const DROPPED_WORK_WARNING =
   "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
+export const DROPPED_LOGIN_WORK_WARNING =
+  "LangSmith could not accept a Codex trace upload and dropped it. Run `langsmith auth login` to sign in again; details are in the Codex LangSmith log.";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.
@@ -170,3 +177,20 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+// Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs.
+export const CONTEXTUAL_USER_FRAGMENTS: readonly RegExp[] = [
+  /^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+  /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+];
+export const QUESTION_REPLY_PATTERN =
+  /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
+export const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;
+export const XML_ENTITY_PATTERN = /&(?:lt|gt|quot|apos|amp);/g;
+export const XML_ENTITIES: Record<string, string> = {
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&amp;": "&",
+};

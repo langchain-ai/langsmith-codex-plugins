@@ -42,6 +42,7 @@ import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
+import { withoutCodexMarkup } from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
 import { toolOriginFromArgs } from "./tool-path.js";
 import { loadSession, findRolloutFileByThreadId } from "./utils/rollout.js";
@@ -116,6 +117,25 @@ function mergeMessages(result: AggregateMessage<StandardMessage>[]) {
   );
 }
 
+function convertContent(c: Record<string, unknown>): StandardMessage["content"][number] {
+  if (c.type === "input_text") return { type: "text", text: c.text };
+
+  if (c.type === "output_text") return { type: "text", text: c.text };
+
+  if (c.type === "text") {
+    return { type: "text", text: c.text };
+  }
+
+  if (c.type === "input_image") {
+    return {
+      type: "image_url",
+      image_url: c.image_url,
+    };
+  }
+
+  return { type: "non_standard", value: c };
+}
+
 function convertMessage(message: ResponseItemOf<"message">): StandardMessage {
   const role = (() => {
     if (message.role === "developer") return "system";
@@ -123,24 +143,7 @@ function convertMessage(message: ResponseItemOf<"message">): StandardMessage {
     return message.role;
   })();
 
-  const content = message.content.map((c) => {
-    if (c.type === "input_text") return { type: "text", text: c.text };
-
-    if (c.type === "output_text") return { type: "text", text: c.text };
-
-    if (c.type === "text") {
-      return { type: "text", text: c.text };
-    }
-
-    if (c.type === "input_image") {
-      return {
-        type: "image_url",
-        image_url: c.image_url,
-      };
-    }
-
-    return { type: "non_standard", value: c };
-  });
+  const content = message.content.map(convertContent);
 
   return { role, content };
 }
@@ -166,11 +169,19 @@ function convertFunctionCall(message: ResponseItemOf<"function_call">): Standard
 function convertToolOutput(
   message: ResponseItemOf<"function_call_output"> | ResponseItemOf<"custom_tool_call_output">,
 ): StandardMessage {
-  const text = typeof message.output === "string" ? message.output : JSON.stringify(message.output);
+  const content = Array.isArray(message.output)
+    ? message.output.filter(isRecord).map(convertContent)
+    : [
+        {
+          type: "text",
+          text:
+            typeof message.output === "string" ? message.output : JSON.stringify(message.output),
+        },
+      ];
 
   return {
     role: "tool",
-    content: [{ type: "text", text }],
+    content,
     tool_call_id: message.call_id,
   };
 }
@@ -181,7 +192,7 @@ function convertCustomToolCall(message: ResponseItemOf<"custom_tool_call">): Sta
 
   return {
     role: "ai",
-    content: [{ type: "tool_call", name, id, args: message.input }],
+    content: [{ type: "tool_call", name, id, args: { input: message.input } }],
   };
 }
 
@@ -813,9 +824,11 @@ function readSessionMeta(payload: SessionMetaPayload): Session {
   };
 }
 
-function recordResponseItem(walk: RolloutWalk, payload: ResponseItem, timestamp: string) {
+function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: string) {
   walk.task ??= createTask();
   const task = walk.task;
+  const payload = withoutCodexMarkup(item);
+  if (payload == null) return;
   const message = {
     timestamp: Date.parse(timestamp),
     message: payload,
