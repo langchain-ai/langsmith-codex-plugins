@@ -66,10 +66,18 @@ it("wakes the worker it is asked to wake, with the folder and the engine storage
   expect(options.storageRoot).toBe(path.join(home, ".codex", "langsmith_engine"));
 });
 
-it("opens no session for a blank API key and no replicas", () => {
-  createCodexTracingSession({ ...base, api_key: "  " }, "thread-1", "/work/repo", home);
-  expect(engine.options).toBeUndefined();
-});
+it.each([{ replicas: [] }, { replicas: [{ api_url: "https://replica.example" }] }])(
+  "opens no session with no API key and no replica with its own key: %j",
+  ({ replicas }) => {
+    createCodexTracingSession(
+      { ...base, api_key: undefined, replicas },
+      "thread-1",
+      "/work/repo",
+      home,
+    );
+    expect(engine.options).toBeUndefined();
+  },
+);
 
 it("uploads to the project named by the parent headers, with the configured redaction", () => {
   const parent = "019dbc02-0000-7000-8000-000000000001";

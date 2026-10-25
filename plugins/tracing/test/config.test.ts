@@ -86,7 +86,6 @@ it("loads environment config", async () => {
     locked: [],
     defaultMuted: false,
     enabled: true,
-    api_key: "env-key",
     api_url: "https://env.example",
     project: "env-project",
     metadata: { source: "env" },
@@ -113,7 +112,7 @@ it("applies all environment values over config files", async () => {
   });
 
   vi.stubEnv("TRACE_TO_LANGSMITH", "true");
-  vi.stubEnv("LANGSMITH_API_KEY", "env-key");
+  vi.stubEnv("LANGSMITH_CODEX_API_KEY", "env-key");
   vi.stubEnv("LANGSMITH_ENDPOINT", "https://env.example");
   vi.stubEnv("LANGSMITH_PROJECT", "env-project");
   vi.stubEnv("LANGSMITH_METADATA", JSON.stringify({ source: "env" }));
@@ -198,6 +197,12 @@ it("enables redaction explicitly via LANGSMITH_CODEX_REDACT", async () => {
   });
 });
 
+it("reads the strict auth switch from the environment", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_STRICT_AUTH", "true");
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config.strict_auth).toBe(true);
+});
+
 it("reads redact_extra_rules from the environment", async () => {
   vi.stubEnv(
     "LANGSMITH_CODEX_REDACT_EXTRA",
@@ -255,18 +260,6 @@ it.each([
     { LANGSMITH_CODEX_PROJECT: "", LANGSMITH_PROJECT: "generic-project" },
     "project",
     "generic-project",
-  ],
-  [
-    "empty API key",
-    { LANGSMITH_CODEX_API_KEY: "", LANGSMITH_API_KEY: "generic-key" },
-    "api_key",
-    "generic-key",
-  ],
-  [
-    "blank API key",
-    { LANGSMITH_CODEX_API_KEY: "  ", LANGSMITH_API_KEY: "generic-key" },
-    "api_key",
-    "generic-key",
   ],
   [
     "empty endpoint",
@@ -621,6 +614,21 @@ it.skipIf(process.platform === "win32")(
       env: { LANGSMITH_CODEX_PARENT_HEADERS: JSON.stringify({ "langsmith-trace": "env" }) },
     });
     expect(config.parent_headers).toEqual(locked);
+  },
+);
+
+it.skipIf(process.platform === "win32")(
+  "a root-owned managed file keeps strict auth on over the environment and user file",
+  async () => {
+    writeConfigFiles({ global: { strict_auth: false } });
+    writeManagedFile({ strict_auth: true }, 0);
+    const config = await getConfig({
+      home: HOME,
+      cwd: CWD,
+      env: { LANGSMITH_CODEX_STRICT_AUTH: "false" },
+    });
+    expect(config.strict_auth).toBe(true);
+    expect(config.locked).toEqual(["strict_auth"]);
   },
 );
 

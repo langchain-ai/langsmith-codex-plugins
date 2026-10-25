@@ -3183,7 +3183,11 @@ function sdkProfileValue(value) {
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/constants.js
+const LOGIN_CONFIG_FILE_VARIABLE = "LANGSMITH_CONFIG_FILE";
+const LOGIN_HOME_VARIABLES = ["HOME", "USERPROFILE"];
 const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
+const LOGIN_CONFIG_DIRECTORY = ".langsmith";
+const LOGIN_CONFIG_FILE_NAME = "config.json";
 const LOGIN_CONFIG_KEYS = {
 	profiles: "profiles",
 	currentProfile: "current_profile",
@@ -3199,12 +3203,12 @@ const LOGIN_TOKEN_HASH = "sha256";
 const LOGIN_EXPIRED_MARKER_PREFIX = "login-expired-";
 const LOGIN_CONFIG_FILE_ENCODING = "utf8";
 const LOGIN_NOTICE_HEADING = "⚠️ LANGSMITH TRACING IS PAUSED ⚠️";
-[
+const LOGIN_NONE_REASON = [
 	LOGIN_NOTICE_HEADING,
 	"You're not signed in to LangSmith so this session isn't being traced.",
 	"▶ Run the following command: langsmith auth login"
 ].join("\n");
-[
+const LOGIN_ENDPOINT_MISMATCH_REASON = [
 	LOGIN_NOTICE_HEADING,
 	"Your LangSmith login is for {loginUrl} but tracing sends to {apiUrl} so this session isn't being traced.",
 	"▶ Point tracing at {loginUrl}, or set an API key for {apiUrl}"
@@ -3212,6 +3216,10 @@ const LOGIN_NOTICE_HEADING = "⚠️ LANGSMITH TRACING IS PAUSED ⚠️";
 const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/profile.js
+function readLoginProfile(env) {
+	const configPath = loginConfigPath(env);
+	return configPath === void 0 ? void 0 : readProfileAt(configPath, env["LANGSMITH_PROFILE"] || void 0);
+}
 function readProfileAt(configPath, name) {
 	let config;
 	try {
@@ -3255,6 +3263,12 @@ function serverKey(value) {
 		return value;
 	}
 }
+function loginConfigPath(env) {
+	const explicit = env[LOGIN_CONFIG_FILE_VARIABLE];
+	if (explicit) return explicit;
+	const home = LOGIN_HOME_VARIABLES.map((name) => env[name]).find((value) => value !== void 0);
+	return home ? join(home, LOGIN_CONFIG_DIRECTORY, LOGIN_CONFIG_FILE_NAME) : void 0;
+}
 function credentialHash(value) {
 	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
 }
@@ -3279,6 +3293,7 @@ const LOGIN_NO_ACCESS_NOTICE = [
 const LOGIN_MARKER_WARNING = "Could not record the expired LangSmith login:";
 const LOGIN_CLEANUP_WARNING = "Could not clear the LangSmith sign-in marker:";
 const LOGIN_STATE_FILE = "sign-in.json";
+const LOGIN_NOTICE_KIND = "login-expired";
 const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/expiry.js
@@ -3313,6 +3328,14 @@ async function clearRejectedKey(storageRoot, key) {
 	const entry = key === void 0 ? LOGIN_KEY_REJECTED_ENTRY : rejectedKeyEntry(key);
 	if (storageRoot !== void 0) await clearMarkers(storageRoot, entry);
 }
+function readLoginNotice(storageRoot, env = process.env, rejected) {
+	const saved = loginStore(storageRoot).read();
+	const recorded = (key) => unrecorded.has(key) || saved[key] !== void 0;
+	const key = rejected === void 0 ? loginExpiryKey(readLoginProfile(env)) : rejectedKeyEntry(rejected);
+	if (key === void 0) return void 0;
+	if (recorded(key)) return rejected === void 0 ? LOGIN_PAUSED_NOTICE : LOGIN_KEY_REJECTED_NOTICE;
+	return recorded(`${key}.no-access`) ? LOGIN_NO_ACCESS_NOTICE : void 0;
+}
 async function clearLoginExpiry(login, storageRoot) {
 	const prefix = expiredMarkerPrefix(login);
 	for (const key of unrecorded) if (key.startsWith(prefix)) unrecorded.delete(key);
@@ -3335,6 +3358,9 @@ async function claimLogin(profile, key, storageRoot) {
 	}
 	await forgetLogins(storageRoot, expiredMarkerPrefix(profile), key);
 	return "claimed";
+}
+function loginExpiryKey(profile) {
+	return profile && `${expiredMarkerPrefix(profile)}${profile.tokenHash}`;
 }
 function rejectedKeyEntry({ apiKey, apiUrl }) {
 	const credential = `${sdkSetting(apiKey) ?? apiKey}\n${serverKey(apiUrl)}`;
@@ -16205,12 +16231,62 @@ function takeRejectedAccessToken(client) {
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/credential.js
+function resolveUploadCredential(options = {}) {
+	const env = options.env ?? process.env;
+	const workspaceId = sdkSetting(options.workspaceId);
+	const workspace = workspaceId ? { workspaceId } : {};
+	const configuredUrl = sdkSetting(options.apiUrl);
+	const apiUrl = options.apiUrlIsDefault ? void 0 : configuredUrl;
+	const apiKey = sdkSetting(options.apiKey);
+	if (apiKey !== void 0) return keyCredential(apiKey, configuredUrl, workspace);
+	const login = loginCredential(env, apiUrl, workspace);
+	if (login.kind === "login") return login;
+	const envKey = LOGIN_API_KEY_VARIABLES.map((name) => sdkSetting(env[name])).find(Boolean);
+	return envKey === void 0 ? login : keyCredential(envKey, configuredUrl, workspace);
+}
+function keyCredential(apiKey, apiUrl, workspace) {
+	return {
+		kind: "api-key",
+		apiKey,
+		apiUrl: apiUrl ?? "https://api.smith.langchain.com",
+		...workspace
+	};
+}
+function loginCredential(env, apiUrl, workspace) {
+	const profile = readLoginProfile(env);
+	if (profile === void 0) return {
+		kind: "none",
+		reason: LOGIN_NONE_REASON
+	};
+	if (apiUrl !== void 0 && !sameServer(apiUrl, profile.apiUrl)) return {
+		kind: "none",
+		reason: fillTemplate(LOGIN_ENDPOINT_MISMATCH_REASON, {
+			loginUrl: profile.apiUrl,
+			apiUrl
+		})
+	};
+	const { configPath, profile: name, workspaceId: loginWorkspace } = profile;
+	return {
+		kind: "login",
+		login: {
+			configPath,
+			profile: name,
+			...loginWorkspace === void 0 ? {} : { workspaceId: loginWorkspace }
+		},
+		apiUrl: apiUrl ?? profile.apiUrl,
+		...workspace
+	};
+}
 function refusedLoginReplicas(replicas, apiUrl) {
 	const refused = (replicas ?? []).filter((replica) => sdkSetting(replica.apiKey) === void 0 && replica.apiUrl !== void 0).map(({ apiUrl: url }) => url).filter((url) => !sameServer(url, apiUrl));
 	return refused.length === 0 ? void 0 : fillTemplate(LOGIN_REPLICA_REFUSED_REASON, {
 		urls: refused.join(", "),
 		apiUrl
 	});
+}
+function loginReplicaRefusal(replicas, apiUrl) {
+	const configured = replicas ?? [];
+	return configured.some((replica) => sdkSetting(replica.apiKey) !== void 0 || replica.apiUrl === void 0 || sameServer(replica.apiUrl, apiUrl)) ? void 0 : refusedLoginReplicas(configured, apiUrl);
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
@@ -20772,7 +20848,8 @@ const CHILD_SCOPE_RESET = {
 };
 const MODE_FULL = "full";
 const MODE_METADATA = "metadata";
-const ENV_PREFIXES = ["LANGSMITH_CODEX_", "LANGSMITH_"];
+const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
+const ENV_PREFIXES = [PLUGIN_ENV_PREFIX, "LANGSMITH_"];
 const ENV_SUFFIXES = {
 	apiKey: "API_KEY",
 	apiUrl: "ENDPOINT",
@@ -20781,6 +20858,7 @@ const ENV_SUFFIXES = {
 	replicas: "RUNS_ENDPOINTS",
 	redact: "REDACT",
 	redactExtraRules: "REDACT_EXTRA",
+	strictAuth: "STRICT_AUTH",
 	parentHeaders: "PARENT_HEADERS",
 	noticeCooldown: "NOTICE_COOLDOWN"
 };
@@ -20880,8 +20958,11 @@ const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 const STATE_FILE_MAX_AGE_MS = 216e5;
 const WARNING_FILE_NAME = "langsmith_warning.txt";
 const NOTICE_KIND_MANAGED = "managed";
+const NOTICE_KIND_CREDENTIAL = "credential";
+const NOTICE_KIND_REPLICA = "replica";
 const PARENT_HEADERS_FIELD = "parent_headers";
 const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
+const DROPPED_LOGIN_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Run `langsmith auth login` to sign in again; details are in the Codex LangSmith log.";
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.3.2";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
@@ -20899,6 +20980,7 @@ const STRING_ESCAPES = {
 	r: "\r"
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
 //#endregion
 //#region src/utils/console/silence-warnings.ts
 function silenceWarnings(run) {
@@ -20957,21 +21039,22 @@ function envSwitch(env, keys, parse, restrictive) {
 function nonBlank(value) {
 	return value === void 0 || value.trim() === "" ? void 0 : value;
 }
-function envVariable(env, suffix) {
-	return ENV_PREFIXES.map((prefix) => nonBlank(env[`${prefix}${suffix}`])).find((value) => value !== void 0);
+function envVariable(env, suffix, prefixes = ENV_PREFIXES) {
+	return prefixes.map((prefix) => nonBlank(env[`${prefix}${suffix}`])).find((value) => value !== void 0);
 }
 function readEnvironment(env) {
 	const rawParent = parseJson(envVariable(env, ENV_SUFFIXES.parentHeaders));
 	const parentHeaders = rawParent === void 0 ? void 0 : parseParentHeaders(rawParent);
 	const fields = {
-		api_key: envVariable(env, ENV_SUFFIXES.apiKey),
+		api_key: envVariable(env, ENV_SUFFIXES.apiKey, [PLUGIN_ENV_PREFIX]),
 		api_url: envVariable(env, ENV_SUFFIXES.apiUrl),
 		project: envVariable(env, ENV_SUFFIXES.project),
 		metadata: parseJson(envVariable(env, ENV_SUFFIXES.metadata)),
 		replicas: parseJson(envVariable(env, ENV_SUFFIXES.replicas)),
 		redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
 		redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
-		notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown))
+		notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown)),
+		strict_auth: parseBoolean(envVariable(env, ENV_SUFFIXES.strictAuth))
 	};
 	const parsed = parseCommonConfig(Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== void 0)));
 	if (parsed.status !== "valid" || rawParent !== void 0 && parentHeaders === void 0) return { common: {} };
@@ -22384,9 +22467,9 @@ function engineStorageRoot(home) {
 	return nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
 }
 function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory()) {
-	const writer = writerOptions(config);
-	if (!writer) return void 0;
 	const storageRoot = engineStorageRoot(home);
+	const writer = writerOptions(config, storageRoot);
+	if (!writer) return void 0;
 	const plugin = openPluginSession({
 		storageRoot,
 		integration: LS_INTEGRATION,
@@ -22396,7 +22479,7 @@ function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory(
 			home,
 			cwd,
 			env: process.env
-		})),
+		}), storageRoot),
 		reconstruct: (job) => reconstructTranscript(job, config, home, plugin),
 		scheduleWake: (wakeSessionId) => launchDetachedWorker([
 			ENGINE_WORKER_FLAG,
@@ -22497,15 +22580,17 @@ function reportRecovery(result) {
 }
 async function runCodexEngineWorker(sessionId, cwd) {
 	const home = homeDirectory();
-	const session = createCodexTracingSession(await getConfig({
+	const config = await getConfig({
 		home,
 		cwd,
 		env: process.env
-	}), sessionId, cwd, home);
+	});
+	const session = createCodexTracingSession(config, sessionId, cwd, home);
 	if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
 	const result = await session.session.drain();
 	if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
-		if (result !== "scope-mismatch") await recordWarning(home, DROPPED_WORK_WARNING);
+		const warning = uploadCredential(config).kind === "login" ? DROPPED_LOGIN_WORK_WARNING : DROPPED_WORK_WARNING;
+		if (result !== "scope-mismatch") await recordWarning(home, warning);
 		throw new Error(`Shared Codex trace worker stopped with ${result}`);
 	}
 	if (result === "deferred" || result === "busy") console.error(`Shared Codex trace worker left saved work for a later run: ${result}`);
@@ -22579,19 +22664,37 @@ function parentRunTreeFor(config, client) {
 		project_name: config.project
 	}) : void 0;
 }
-function writerOptions(config) {
+function uploadCredential(config) {
+	return resolveUploadCredential({
+		apiKey: config.api_key,
+		apiUrl: config.api_url
+	});
+}
+function writerOptions(config, storageRoot) {
 	if (config.managedConfigProblem !== void 0) return void 0;
-	if (!config.api_key?.trim() && !config.replicas?.length) return void 0;
+	if (config.api_key !== void 0 && sdkSetting(config.api_key) === void 0) return void 0;
+	const credential = uploadCredential(config);
+	const keyedReplica = config.replicas?.some((replica) => sdkSetting(replica.api_key));
+	if (credential.kind === "none" && !keyedReplica) return void 0;
+	if ((credential.kind === "login" ? loginReplicaRefusal(toSdkReplicas(config.replicas), credential.apiUrl) : void 0) !== void 0) return void 0;
+	const { kind, ...auth } = credential.kind === "none" ? {
+		kind: credential.kind,
+		apiKey: "",
+		apiUrl: config.api_url ?? "https://api.smith.langchain.com"
+	} : credential.kind === "api-key" ? {
+		...credential,
+		apiKey: config.api_key ?? credential.apiKey
+	} : credential;
 	const headerProject = config.locked.includes("project") ? void 0 : parentRunTreeFor(config)?.project_name;
 	return {
 		destinations: [{
-			apiKey: config.api_key ?? "",
-			apiUrl: config.api_url ?? "https://api.smith.langchain.com",
+			...auth,
 			projectName: headerProject ?? config.project ?? "codex"
 		}],
 		...config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {},
 		redact: config.redact,
 		projectLocked: config.locked.includes("project"),
+		storageRoot,
 		...config.redact_extra_rules === void 0 ? {} : { redactExtraRules: config.redact_extra_rules }
 	};
 }
@@ -22776,6 +22879,29 @@ async function hasToolEndEvent(transcriptPath, callId) {
 	return (await loadSession(transcriptPath)).some(({ type, payload }) => type === "event_msg" && (payload.call_id === callId && payload.type.endsWith("_end") || payload.type === "item_completed" && isRecord(payload.item) && payload.item.id === callId));
 }
 //#endregion
+//#region src/login-notice.ts
+function loginNotices(home, config, credential) {
+	if (!config.enabled) return [];
+	if (credential.kind === "none") return config.replicas?.some((replica) => sdkSetting(replica.api_key)) ? [] : [{
+		kind: NOTICE_KIND_CREDENTIAL,
+		text: credential.reason
+	}];
+	const saved = readLoginNotice(engineStorageRoot(home), process.env, credential.kind === "api-key" ? {
+		apiKey: config.api_key ?? credential.apiKey,
+		apiUrl: credential.apiUrl
+	} : void 0);
+	const notices = saved === void 0 ? [] : [{
+		kind: LOGIN_NOTICE_KIND,
+		text: saved
+	}];
+	if (credential.kind === "api-key") return notices;
+	const skipped = refusedLoginReplicas(toSdkReplicas(config.replicas), credential.apiUrl);
+	return [...notices, ...skipped === void 0 ? [] : [{
+		kind: NOTICE_KIND_REPLICA,
+		text: skipped
+	}]];
+}
+//#endregion
 //#region src/notices.ts
 async function showNotices(home, config, notices) {
 	const shown = [];
@@ -22808,11 +22934,17 @@ async function handlePromptSubmit(input) {
 		});
 		if (!command) {
 			if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
+			const login = loginNotices(homeDirectory(), config, uploadCredential(config));
+			const expired = login.find(({ kind }) => STRICT_NOTICE_KINDS.includes(kind));
+			if (expired && config.strict_auth) return {
+				decision: "block",
+				reason: expired.text
+			};
 			const managed = config.managedConfigWarnings ?? [];
-			const notices = await showNotices(homeDirectory(), config, managed.length === 0 ? [] : [{
+			const notices = await showNotices(homeDirectory(), config, [...managed.length === 0 ? [] : [{
 				kind: NOTICE_KIND_MANAGED,
 				text: managed.join("\n")
-			}]);
+			}], ...login]);
 			return notices.length === 0 ? void 0 : { systemMessage: notices.join("\n") };
 		}
 		if (mutedLocked && command === "unmute") return {
