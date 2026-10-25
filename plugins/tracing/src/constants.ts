@@ -178,3 +178,19 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+// Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs.
+export const CONTEXTUAL_USER_FRAGMENTS: readonly RegExp[] = [
+  /^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+  /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+];
+export const QUESTION_REPLY_PATTERN =
+  /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
+export const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;
+export const XML_ENTITY_PATTERN = /&(?:lt|gt|quot|apos|amp);/g;
+export const XML_ENTITIES: Record<string, string> = {
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&amp;": "&",
+};

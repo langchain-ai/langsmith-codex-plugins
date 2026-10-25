@@ -2,13 +2,15 @@ import { existsSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import type { ReconstructionToolOrigin } from "@langchain/plugins-base/tracing/reconstruction";
 import { PATCH_FILE_PATTERN, TOOL_PATH_INPUT_KEYS } from "./constants.js";
+import { customToolInput } from "./utils/customToolInput.js";
 import { isRecord } from "./utils/isRecord.js";
 
 export function toolOriginFromArgs(
-  args: unknown,
+  toolArgs: unknown,
   cwd: string | undefined,
 ): ReconstructionToolOrigin {
   const session = cwd === undefined ? {} : { cwd };
+  const args = customToolInput(toolArgs);
   const named =
     typeof args === "string"
       ? [PATCH_FILE_PATTERN.exec(args)?.[1]]

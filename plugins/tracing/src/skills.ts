@@ -12,6 +12,7 @@ import {
   STRING_ESCAPES,
   WRITES_TO_FILE,
 } from "./constants.js";
+import { customToolInput } from "./utils/customToolInput.js";
 
 // Split rather than match: one pattern spanning `/skills/<name>/SKILL.md` backtracks for seconds.
 function skillDirectoryInPath(word: string): string | undefined {
@@ -22,7 +23,8 @@ function skillDirectoryInPath(word: string): string | undefined {
 }
 
 // Codex 0.153+ sends a JS program that may call exec_command more than once; before that, `{cmd}`.
-function shellCommands(args: unknown): string[] {
+function shellCommands(toolArgs: unknown): string[] {
+  const args = customToolInput(toolArgs);
   if (typeof args !== "string") {
     const cmd = (args as { cmd?: unknown } | undefined)?.cmd;
     return typeof cmd === "string" ? [cmd] : [];
