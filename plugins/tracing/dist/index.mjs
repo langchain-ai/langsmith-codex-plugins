@@ -20525,6 +20525,7 @@ const STRING_ESCAPES = {
 	r: "\r"
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+const CONTEXTUAL_USER_FRAGMENTS = [/^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i, /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i];
 //#endregion
 //#region src/utils/isRecord.ts
 function isRecord(value) {
@@ -20704,6 +20705,11 @@ const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
 //#endregion
+//#region src/utils/customToolInput.ts
+function customToolInput(args) {
+	return isRecord(args) && Object.keys(args).length === 1 && typeof args.input === "string" ? args.input : args;
+}
+//#endregion
 //#region src/skills.ts
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
@@ -20711,7 +20717,8 @@ function skillDirectoryInPath(word) {
 	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
 	return parts.slice(0, -2).includes("skills") ? name : void 0;
 }
-function shellCommands(args) {
+function shellCommands(toolArgs) {
+	const args = customToolInput(toolArgs);
 	if (typeof args !== "string") {
 		const cmd = args?.cmd;
 		return typeof cmd === "string" ? [cmd] : [];
@@ -20892,14 +20899,31 @@ function* enumerate(arr) {
 	];
 }
 //#endregion
+//#region src/utils/contextualFragments.ts
+function isContextualFragment(part) {
+	if (part.type !== "input_text" || typeof part.text !== "string") return false;
+	const text = part.text.trim();
+	return CONTEXTUAL_USER_FRAGMENTS.some((pattern) => pattern.test(text));
+}
+function withoutContextualFragments(item) {
+	if (item.type !== "message" || item.role !== "user") return item;
+	const content = item.content.filter((part) => !isContextualFragment(part));
+	if (content.length === item.content.length) return item;
+	return content.length > 0 ? {
+		...item,
+		content
+	} : void 0;
+}
+//#endregion
 //#region src/utils/omitKey.ts
 function omitKey(value, key) {
 	return Object.fromEntries(Object.entries(value ?? {}).filter(([entry]) => entry !== key));
 }
 //#endregion
 //#region src/tool-path.ts
-function toolOriginFromArgs(args, cwd) {
+function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
+	const args = customToolInput(toolArgs);
 	const named = typeof args === "string" ? [PATCH_FILE_PATTERN.exec(args)?.[1]] : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
 	let namedAPath = false;
 	for (const value of named) {
@@ -21110,6 +21134,28 @@ function mergeMessages(result) {
 		return acc;
 	}, []);
 }
+function convertContent(c) {
+	if (c.type === "input_text") return {
+		type: "text",
+		text: c.text
+	};
+	if (c.type === "output_text") return {
+		type: "text",
+		text: c.text
+	};
+	if (c.type === "text") return {
+		type: "text",
+		text: c.text
+	};
+	if (c.type === "input_image") return {
+		type: "image_url",
+		image_url: c.image_url
+	};
+	return {
+		type: "non_standard",
+		value: c
+	};
+}
 function convertMessage(message) {
 	return {
 		role: (() => {
@@ -21117,28 +21163,7 @@ function convertMessage(message) {
 			if (message.role === "assistant") return "ai";
 			return message.role;
 		})(),
-		content: message.content.map((c) => {
-			if (c.type === "input_text") return {
-				type: "text",
-				text: c.text
-			};
-			if (c.type === "output_text") return {
-				type: "text",
-				text: c.text
-			};
-			if (c.type === "text") return {
-				type: "text",
-				text: c.text
-			};
-			if (c.type === "input_image") return {
-				type: "image_url",
-				image_url: c.image_url
-			};
-			return {
-				type: "non_standard",
-				value: c
-			};
-		})
+		content: message.content.map(convertContent)
 	};
 }
 function convertFunctionCall(message) {
@@ -21170,7 +21195,7 @@ function convertFunctionCall(message) {
 function convertToolOutput(message) {
 	return {
 		role: "tool",
-		content: [{
+		content: Array.isArray(message.output) ? message.output.filter(isRecord).map(convertContent) : [{
 			type: "text",
 			text: typeof message.output === "string" ? message.output : JSON.stringify(message.output)
 		}],
@@ -21184,7 +21209,7 @@ function convertCustomToolCall(message) {
 			type: "tool_call",
 			name: message.name,
 			id: message.call_id,
-			args: message.input
+			args: { input: message.input }
 		}]
 	};
 }
@@ -21617,9 +21642,11 @@ function readSessionMeta(payload) {
 		agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 	};
 }
-function recordResponseItem(walk, payload, timestamp) {
+function recordResponseItem(walk, item, timestamp) {
 	walk.task ??= createTask();
 	const task = walk.task;
+	const payload = withoutContextualFragments(item);
+	if (payload == null) return;
 	const message = {
 		timestamp: Date.parse(timestamp),
 		message: payload,

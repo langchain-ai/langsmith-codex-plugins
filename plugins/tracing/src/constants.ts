@@ -165,3 +165,8 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+// Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs.
+export const CONTEXTUAL_USER_FRAGMENTS: readonly RegExp[] = [
+  /^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+  /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+];

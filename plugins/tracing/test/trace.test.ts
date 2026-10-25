@@ -372,7 +372,7 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                     expect.objectContaining({
                       type: "tool_call",
                       name: "apply_patch",
-                      args: expect.stringContaining("Add File"),
+                      args: { input: expect.stringContaining("Add File") },
                     }),
                   ]),
                 },
@@ -1322,4 +1322,118 @@ it.each([
   );
 
   expect(exec?.error).toBe(error);
+});
+
+const SCAFFOLDING_FILE = "/home/codex-user/.codex/sessions/2026/10/24/rollout-scaffolding.jsonl";
+const SCAFFOLDING_TURN = "019900aa-tttt-0112";
+const EXEC_PROGRAM = 'text(await tools.exec_command({cmd:"ls"}));';
+
+async function traceScaffoldedTurn(extraUserTexts: string[] = []) {
+  const user = (...texts: string[]) => ({
+    type: "message",
+    role: "user",
+    content: texts.map((text) => ({ type: "input_text", text })),
+  });
+  const items = [
+    { type: "event_msg", payload: { type: "task_started", turn_id: SCAFFOLDING_TURN } },
+    {
+      type: "response_item",
+      payload: user("<environment_context>\n  <cwd>/w</cwd>\n</environment_context>"),
+    },
+    { type: "turn_context", payload: { turn_id: SCAFFOLDING_TURN, cwd: "/w", model: "m" } },
+    {
+      type: "response_item",
+      payload: user("<environment_context><shell>zsh</shell></environment_context>"),
+    },
+    {
+      type: "response_item",
+      payload: user("Fix the bug", "<skill>\n<name>fixer</name>\n# Fixer\n</skill>"),
+    },
+    {
+      type: "response_item",
+      payload: user("<external_codex_apps_open_page>/a</external_codex_apps_open_page>"),
+    },
+    ...extraUserTexts.map((text) => ({ type: "response_item", payload: user(text) })),
+    {
+      type: "response_item",
+      payload: { type: "custom_tool_call", call_id: "c1", name: "exec", input: EXEC_PROGRAM },
+    },
+    {
+      type: "response_item",
+      payload: {
+        type: "custom_tool_call_output",
+        call_id: "c1",
+        output: [{ type: "input_text", text: "a\nb\n" }],
+      },
+    },
+    {
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "assistant",
+        content: [{ type: "output_text", text: "ok" }],
+      },
+    },
+    { type: "event_msg", payload: { type: "task_complete", turn_id: SCAFFOLDING_TURN } },
+  ];
+  const session = {
+    timestamp: "2026-10-24T00:00:00.000Z",
+    type: "session_meta",
+    payload: {
+      id: "019900aa-0000-7000-8000-scaffolding",
+      timestamp: "2026-10-24T00:00:00.000Z",
+      cwd: "/w",
+      originator: "codex_exec",
+      cli_version: "0.160.0",
+      source: "exec",
+    },
+  };
+  const lines = [
+    session,
+    ...items.map((item, i) => ({
+      timestamp: `2026-10-24T00:00:${String(i + 1).padStart(2, "0")}.000Z`,
+      ...item,
+    })),
+  ];
+  vol.fromJSON({ [SCAFFOLDING_FILE]: lines.map((line) => JSON.stringify(line)).join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: SCAFFOLDING_FILE, turn_id: SCAFFOLDING_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  return runs;
+}
+
+it("keeps Codex scaffolding out of the user message and model inputs", async () => {
+  const runs = await traceScaffoldedTurn();
+  const turn = runs.find((run) => run.name === "openai.codex");
+
+  expect(turn?.inputs).toEqual({
+    messages: [{ role: "user", content: [{ type: "text", text: "Fix the bug" }] }],
+  });
+  expect(JSON.stringify(runs.map((run) => run.inputs))).not.toMatch(
+    /environment_context|<skill>|external_codex/,
+  );
+});
+
+it("keeps a question reply and a hook prompt, which Codex counts as the user's", async () => {
+  const reply =
+    '<send_user_message_question_reply>\n[{"answer":"yes"}]\n</send_user_message_question_reply>';
+  const hook = '<hook_prompt hook_run_id="h1">use staging</hook_prompt>';
+  const runs = await traceScaffoldedTurn([reply, hook]);
+  const model = runs.find((run) => run.run_type === "llm");
+
+  expect(JSON.stringify(model?.inputs)).toContain("send_user_message_question_reply");
+  expect(JSON.stringify(model?.inputs)).toContain("use staging");
+});
+
+it("uploads an exec program as an object and keeps its output's line breaks", async () => {
+  const runs = await traceScaffoldedTurn();
+  const exec = runs.find((run) => run.name === "exec");
+
+  expect(exec?.inputs).toEqual({ input: { input: EXEC_PROGRAM } });
+  expect(exec?.outputs?.messages[0].content).toEqual([{ type: "text", text: "a\nb\n" }]);
 });
