@@ -12,7 +12,7 @@ import {
   reconstructionEventId,
   transcriptSourceRef,
 } from "./tracing-engine-locator.js";
-import { defaultPrivacyPath, savedTurnMode } from "./tracing-policy.js";
+import { lockedTurnMode } from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 
 export function queueCodexTurns(
@@ -38,7 +38,7 @@ async function queueUnhandledTurns(
   });
   for (const turnId of completed) {
     if (handled.has(turnId) && !(await hasUnclosedLiveRoot(session, turnId))) continue;
-    const mode = savedTurnMode(defaultPrivacyPath(), session.sessionId, turnId);
+    const mode = lockedTurnMode(config, session.sessionId, turnId);
     if (mode === MODE_OFF || (firstStop && turnId !== request.turnId)) {
       await markTurnUploaded(request.transcriptPath, turnId);
       continue;

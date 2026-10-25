@@ -12,6 +12,7 @@ import {
   submitPreference,
 } from "../src/tracing-policy.js";
 import { handlePromptSubmit } from "../src/user-prompt-submit.js";
+import { showPendingWarning } from "../src/warnings.js";
 
 vi.mock("@langchain/plugins-base/plugin", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@langchain/plugins-base/plugin")>();
@@ -372,3 +373,37 @@ it("never replaces existing preferences with 0.2.0's older file", async () => {
 
   expect(savedTurnMode(file, "thread", "now")).toBe("full");
 });
+
+it.skipIf(process.platform === "win32")(
+  "names a broken managed file once per cooldown and in a mute reply without blocking a prompt",
+  async () => {
+    vi.stubEnv("TRACE_TO_LANGSMITH", "true");
+    const shown: unknown[] = [];
+    vi.spyOn(console, "warn").mockImplementation((line) => shown.push(line));
+    vi.spyOn(console, "error").mockImplementation((line) => shown.push(line));
+    const submit = async (session_id: string, turn_id: string, prompt = "work") => {
+      const result = await handlePromptSubmit({ session_id, turn_id, cwd: home, prompt });
+      await showPendingWarning(home);
+      return result;
+    };
+    const managed = path.join(process.env.LS_TEST_ACCOUNT_HOME!, ".langsmith-plugins");
+    try {
+      expect(await submit("thread", "healthy")).toBeUndefined();
+      await fs.mkdir(managed, { recursive: true });
+      await fs.writeFile(path.join(managed, "managed.json"), "{}");
+      vi.stubEnv("LANGSMITH_CODEX_NOTICE_COOLDOWN", "off");
+      expect(await submit("thread", "silenced")).toBeUndefined();
+      vi.stubEnv("LANGSMITH_CODEX_NOTICE_COOLDOWN", undefined);
+      expect(await submit("thread", "first")).toEqual({
+        systemMessage: expect.stringContaining("aren't owned by root"),
+      });
+      expect(await submit("other", "first")).toBeUndefined();
+      const reply = await submit("thread", "control", "langsmith-tracing:mute");
+      expect(reply?.reason).toContain("aren't owned by root");
+      expect(reply?.reason).not.toContain("Master tracing is disabled");
+      expect(shown).toEqual([]);
+    } finally {
+      await fs.rm(path.join(managed, "managed.json"));
+    }
+  },
+);

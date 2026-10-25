@@ -1,10 +1,10 @@
 import * as nodeFsPromises from "node:fs/promises";
 import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodeFs from "node:fs";
-import { closeSync, constants, copyFileSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { accessSync, closeSync, constants, copyFileSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import { Worker } from "node:worker_threads";
@@ -36,7 +36,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -49,7 +49,7 @@ function failureStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/constants.js
 const POLICY_LOCK_TIMEOUT_MS = 2e3;
 const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
 const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
@@ -78,8 +78,10 @@ const HOOK_VERSION_FLAGS = ["--version", "-v"];
 const POLICY_PARSE_RESULT_MESSAGE = "A policy parser must return a policy";
 const HOOK_OPTIONS_INVALID_MESSAGE = "Hook options need a hooks table and onHookError and onUnknown callbacks";
 const HOOK_ERROR_HANDLER_WARNING = "The hook error handler failed:";
+const NOTICE_MINUTE_MS = 6e4;
+const NOTICE_STATE_FILE = "notices.json";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
 async function dispatchHookCommand(argv, options) {
 	assertHookOptions(options);
 	const [argument, ...rest] = argv;
@@ -107,8 +109,9 @@ function reportHookError(name, error, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/constants.js
 const FILE_MISSING_CODE = "ENOENT";
+const WINDOWS_PLATFORM = "win32";
 const FILE_EXISTS_CODE = "EEXIST";
 const PERMISSION_DENIED_CODE = "EPERM";
 const FILE_ACCESS_DENIED_CODE = "EACCES";
@@ -117,7 +120,7 @@ const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
 const INVALID_ARGUMENT_CODE = "EINVAL";
 const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
 	DIRECTORY_NOT_EMPTY_CODE,
@@ -127,7 +130,7 @@ const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_ACCESS_DENIED_CODE
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
 async function removeFileIfPresent(path) {
 	try {
 		await unlink(path);
@@ -157,7 +160,7 @@ async function removeEmptyAncestors(directory, root) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -200,12 +203,12 @@ const STORAGE_ENGINE_FILE_PATTERNS = [
 ];
 const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_JOBS_DIRECTORY = "jobs";
 const CAPTURE_SESSIONS_DIRECTORY = "sessions";
 const CAPTURE_TURNS_DIRECTORY = "turns";
@@ -243,7 +246,7 @@ const CAPTURE_FILE_EXTENSION = ".json";
 const CAPTURE_LOCK_EXTENSION = ".lock";
 const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -282,7 +285,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -349,7 +352,7 @@ function parseJsonObject(contents, message) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	blockedPath;
 	constructor(blockedPath) {
@@ -369,7 +372,7 @@ var StorageNotWritableError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
 const heartbeats = /* @__PURE__ */ new Map();
 function startHeartbeat(path, id) {
 	const timer = setInterval(() => {
@@ -387,7 +390,7 @@ function warnUnlessMissing(error) {
 	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
 function processIsAlive(pid) {
 	try {
 		process.kill(pid, 0);
@@ -420,7 +423,7 @@ function waitForNextScan(deadline, blockedPath) {
 	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
 async function createLegacyGate(gatePath) {
 	await mkdir(gatePath, { mode: 448 });
 	const stat = await lstat(gatePath);
@@ -574,7 +577,7 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function parseClaim(value, id) {
 	if (!isPlainRecord(value)) return void 0;
 	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
@@ -884,7 +887,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
 function readPolicyFile(path, options) {
 	let raw;
 	try {
@@ -982,11 +985,11 @@ function findLockTimeout(error) {
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
 var CaptureRecordInvalidError = class extends Error {};
 var CaptureRecordVersionError = class extends Error {};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
 function publishByRename(path, contents, tempSuffix, mode) {
 	const temp = `${path}.${randomUUID()}${tempSuffix}`;
 	const fd = openSync(temp, "wx", mode);
@@ -998,7 +1001,7 @@ function publishByRename(path, contents, tempSuffix, mode) {
 	renameSync(temp, path);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
 const STATE_TEMP_SUFFIX = ".state.tmp";
 const STATE_CORRUPT_SUFFIX = ".corrupt";
 const STATE_FILE_ENCODING = "utf-8";
@@ -1009,8 +1012,9 @@ const STATE_LOCK_WAIT_MS = 1e3;
 const PENDING_STATE_DIR_SUFFIX = ".pending";
 const PENDING_STATE_FILE_SUFFIX = ".json";
 const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
+const STATE_CLAIM_SUFFIX = ".claim";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
 let sequence = 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function diffValue(path, before, after, operations) {
@@ -1166,7 +1170,7 @@ function removePending(stateFilePath, files) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/state-store.js
 function createStateStore(options) {
 	const { path } = options;
 	const warn = options.warn ?? console.warn;
@@ -1246,7 +1250,33 @@ async function withStateFileLock(path, warn, callback, waitMs) {
 	return true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
+async function claimStateEntry(path, key, windowMs) {
+	mkdirSync(dirname(path), {
+		recursive: true,
+		mode: 448
+	});
+	const lock = await tryAcquireFileLock(`${path}${STATE_CLAIM_SUFFIX}`);
+	if (lock === void 0) return false;
+	try {
+		const store = createStateStore({
+			path,
+			warn: () => void 0
+		});
+		const now = Date.now();
+		const age = now - (store.read()[key]?.at ?? -Infinity);
+		if (age > -6e4 && age < windowMs) return false;
+		await store.update((state) => ({
+			...state,
+			[key]: { at: now }
+		}));
+		return true;
+	} finally {
+		await lock.release();
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -1296,7 +1326,7 @@ function recordLockPath(root, scope) {
 	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
 }
@@ -1451,7 +1481,7 @@ async function syncDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -1478,7 +1508,7 @@ async function lstatDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
 function scopeOf(value) {
 	return {
 		integration: value.integration,
@@ -1496,19 +1526,19 @@ function scopeKey(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/compare.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/compare.js
 function compareText(left, right) {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
 function compareCaptureOrder(left, right) {
 	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
 	return compareText(left.eventId, right.eventId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
 function captureContentDigest(record) {
 	const content = { ...record };
 	delete content.version;
@@ -1518,7 +1548,7 @@ function captureContentDigest(record) {
 	return createHash("sha256").update(canonicalJson(content)).digest("hex");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
 function markerPath(root, scope) {
 	const path = eventPath(root, scope);
 	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
@@ -1646,7 +1676,7 @@ async function removeOldMarkers(root, directory, modifiedBeforeMs) {
 	return removed;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
 	const storageRoot = {
 		root: resolve(root),
@@ -2096,17 +2126,17 @@ function failure(code, error) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/format.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
 function isWaitingForOtherSetting(record, accountFingerprint) {
 	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
 function liveTurnSpans(captures) {
 	const spans = /* @__PURE__ */ new Map();
 	for (const { record, capturedAtMs } of captures) {
@@ -2162,7 +2192,7 @@ async function removeExpiredCaptures(options) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_LOCK_FILE = "worker";
 const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
 const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
@@ -2201,7 +2231,7 @@ const BACKGROUND_WORKER_FILE_PREFIX = "wake";
 const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
 const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -2234,13 +2264,13 @@ function scopedWorkerFileName(scope, name) {
 	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
 function assertPlainFile(entry, message) {
 	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
 }
@@ -2328,7 +2358,7 @@ function parseAttempt(contents, markerId, attempt) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const context = createWorkerContext(options);
@@ -2568,7 +2598,7 @@ async function readLaunch(storageRoot, scope) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
 function ifMissing(fallback) {
 	return (error) => {
 		if (errorCode(error) === "ENOENT") return fallback;
@@ -2576,7 +2606,7 @@ function ifMissing(fallback) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
 async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
 	let removed = 0;
 	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
@@ -2622,7 +2652,7 @@ const DELIVERY_CAPACITY_REASON = "capacity";
 const DELIVERY_REJECTED_REASON = "rejected";
 const DELIVERY_DEPENDENCY_DROPPED_REASON = "dependency-dropped";
 const DELIVERY_AUTH_STATUSES = [401, 403];
-const DELIVERY_AUTH_HINT = "Check the LangSmith API key.";
+const DELIVERY_AUTH_HINT = "Check the LangSmith API key or CLI login and its access.";
 const DELIVERY_WRITER_REQUIRED_MESSAGE = "A delivery writer is required";
 const DELIVERY_DESTINATION_REQUIRED_MESSAGE = "At least one delivery destination is required";
 const DELIVERY_DESTINATION_INVALID_MESSAGE = "Invalid delivery destination";
@@ -2638,13 +2668,13 @@ const DELIVERY_DRAIN_LOCK = "delivery";
 const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
 const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
 const PROCESS_STARTED_AT_MS = Date.now();
 function isWaitingForRetry(retry, now = Date.now()) {
 	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
 function createBatch() {
 	return {
 		candidates: [],
@@ -2668,7 +2698,7 @@ function joinBatch(batch, candidate) {
 	batch.bytes += payloadBytes(candidate.entry.record);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
 function isRetryable(error) {
 	return error?.retryable !== false;
 }
@@ -2691,7 +2721,7 @@ function nextRetry(previous, baseMs) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
 function emptyDestinationResult() {
 	return {
 		delivered: 0,
@@ -2772,7 +2802,7 @@ async function settleDroppedDependency(drainCache, candidate, destination, resul
 	result.progressed = true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
 async function trySend(context, destination, candidates) {
 	const { policy, request } = context;
 	const { writer } = request;
@@ -2835,7 +2865,7 @@ async function deliverBatch(context, destination, candidates) {
 	return settleFailed(context, destination, candidates, error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
 function deliveryKey(scope, destination) {
 	return JSON.stringify([scopeKey(scope), destination]);
 }
@@ -2899,7 +2929,7 @@ async function countPending(drainCache, entries, destinations) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
 async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
 	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
@@ -3019,7 +3049,7 @@ async function dropPending(drainCache, candidate, reason) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
 function validateDrainRequest(request) {
 	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
 	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
@@ -3069,7 +3099,7 @@ function resolvePolicy(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 async function drainUnderLock(context, request, drainCache) {
 	const { captureStore, integration, sessionId, storageRoot, policy } = context;
 	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
@@ -3136,7 +3166,193 @@ function createDeliveryCoordinator(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
+const SDK_DOUBLE_QUOTED = /^"(.*)"$/;
+const SDK_SINGLE_QUOTED = /^'(.*)'$/;
+const SDK_PROFILE_QUOTES = /^["']|["']$/g;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
+function sdkSetting(value) {
+	if (typeof value !== "string") return void 0;
+	const trimmed = value.trim().replace(SDK_DOUBLE_QUOTED, "$1").replace(SDK_SINGLE_QUOTED, "$1");
+	return trimmed.trim() === "" ? void 0 : trimmed;
+}
+function sdkProfileValue(value) {
+	if (typeof value !== "string") return void 0;
+	return value.trim().replace(SDK_PROFILE_QUOTES, "") || void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/constants.js
+const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
+const LOGIN_CONFIG_KEYS = {
+	profiles: "profiles",
+	currentProfile: "current_profile",
+	oauth: "oauth",
+	refreshToken: "refresh_token",
+	accessToken: "access_token",
+	apiKey: "api_key",
+	workspaceId: "workspace_id",
+	apiUrl: "api_url"
+};
+const LOGIN_URL_TRAILING_PATTERN = /(\/api\/v1)?\/*$/u;
+const LOGIN_TOKEN_HASH = "sha256";
+const LOGIN_EXPIRED_MARKER_PREFIX = "login-expired-";
+const LOGIN_CONFIG_FILE_ENCODING = "utf8";
+const LOGIN_NOTICE_HEADING = "⚠️ LANGSMITH TRACING IS PAUSED ⚠️";
+[
+	LOGIN_NOTICE_HEADING,
+	"You're not signed in to LangSmith so this session isn't being traced.",
+	"▶ Run the following command: langsmith auth login"
+].join("\n");
+[
+	LOGIN_NOTICE_HEADING,
+	"Your LangSmith login is for {loginUrl} but tracing sends to {apiUrl} so this session isn't being traced.",
+	"▶ Point tracing at {loginUrl}, or set an API key for {apiUrl}"
+].join("\n");
+const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/profile.js
+function readProfileAt(configPath, name) {
+	let config;
+	try {
+		config = JSON.parse(readFileSync(configPath, LOGIN_CONFIG_FILE_ENCODING));
+	} catch {
+		return;
+	}
+	if (!isPlainRecord(config)) return void 0;
+	const profiles = config[LOGIN_CONFIG_KEYS.profiles];
+	const current = config[LOGIN_CONFIG_KEYS.currentProfile];
+	if (!isPlainRecord(profiles)) return void 0;
+	const profile = name ?? (typeof current === "string" ? current || void 0 : void 0) ?? (Object.hasOwn(profiles, "default") ? "default" : void 0);
+	const entry = profile !== void 0 && Object.hasOwn(profiles, profile) ? profiles[profile] : void 0;
+	if (profile === void 0 || !isPlainRecord(entry)) return void 0;
+	const credentials = entry[LOGIN_CONFIG_KEYS.oauth];
+	const oauth = isPlainRecord(credentials) ? credentials : {};
+	const secret = sdkProfileValue(oauth[LOGIN_CONFIG_KEYS.refreshToken]) ?? sdkProfileValue(oauth[LOGIN_CONFIG_KEYS.accessToken]) ?? sdkProfileValue(entry[LOGIN_CONFIG_KEYS.apiKey]);
+	if (secret === void 0) return void 0;
+	const accessToken = sdkProfileValue(oauth[LOGIN_CONFIG_KEYS.accessToken]);
+	const workspaceId = sdkSetting(entry[LOGIN_CONFIG_KEYS.workspaceId]);
+	return {
+		configPath,
+		profile,
+		...workspaceId === void 0 ? {} : { workspaceId },
+		apiUrl: sdkSetting(entry[LOGIN_CONFIG_KEYS.apiUrl]) ?? "https://api.smith.langchain.com",
+		tokenHash: credentialHash(secret),
+		...accessToken === void 0 ? {} : { accessTokenHash: credentialHash(accessToken) }
+	};
+}
+function expiredMarkerPrefix(login) {
+	return `${LOGIN_EXPIRED_MARKER_PREFIX}${credentialHash(`${login.configPath}\n${login.profile}`)}.`;
+}
+function sameServer(left, right) {
+	return serverKey(left) === serverKey(right);
+}
+function serverKey(value) {
+	try {
+		const url = new URL(sdkSetting(value) ?? "");
+		return `${url.origin}${url.pathname.replace(LOGIN_URL_TRAILING_PATTERN, "")}`;
+	} catch {
+		return value;
+	}
+}
+function credentialHash(value) {
+	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
+const LOGIN_PAUSED_NOTICE = [
+	LOGIN_NOTICE_HEADING,
+	"Your LangSmith login expired so this session isn't being traced.",
+	"▶ Run the following command: langsmith auth login"
+].join("\n");
+const LOGIN_KEY_REJECTED_NOTICE = [
+	LOGIN_NOTICE_HEADING,
+	"Your LangSmith API key was rejected so this session isn't being traced.",
+	"▶ Replace the key, or remove it and run: langsmith auth login"
+].join("\n");
+const LOGIN_NO_ACCESS_SUFFIX = ".no-access";
+const LOGIN_NO_ACCESS_NOTICE = [
+	LOGIN_NOTICE_HEADING,
+	"LangSmith denied access to this workspace so this session isn't being traced.",
+	"▶ Check your workspace, or use a key or login that has access"
+].join("\n");
+const LOGIN_MARKER_WARNING = "Could not record the expired LangSmith login:";
+const LOGIN_CLEANUP_WARNING = "Could not clear the LangSmith sign-in marker:";
+const LOGIN_STATE_FILE = "sign-in.json";
+const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/expiry.js
+const unrecorded = /* @__PURE__ */ new Set();
+async function recordExpiredLogin(login, sentTokenHash, storageRoot, denied = false) {
+	try {
+		const profile = readProfileAt(login.configPath, login.profile);
+		if (profile === void 0 || profile.accessTokenHash !== sentTokenHash) return "superseded";
+		const key = `${expiredMarkerPrefix(profile)}${profile.tokenHash}${denied ? LOGIN_NO_ACCESS_SUFFIX : ""}`;
+		const claim = await claimLogin(profile, key, storageRoot);
+		if (claim === "existing" || claim === "unrecorded" && unrecorded.has(key)) return "already-handled";
+		if (claim === "unrecorded") unrecorded.add(key);
+	} catch (error) {
+		console.warn(LOGIN_MARKER_WARNING, describe(error));
+	}
+	console.warn(denied ? LOGIN_NO_ACCESS_NOTICE : LOGIN_PAUSED_NOTICE);
+	return "notice";
+}
+async function recordRejectedKey(key, storageRoot, denied = false) {
+	if (storageRoot === void 0) return;
+	const path = join(storageRoot, LOGIN_STATE_FILE);
+	const entry = `${rejectedKeyEntry(key)}${denied ? LOGIN_NO_ACCESS_SUFFIX : ""}`;
+	try {
+		if (!await claimStateEntry(path, entry, Infinity)) return;
+		await forgetLogins(storageRoot, rejectedKeyEntry(key), entry);
+	} catch {
+		return;
+	}
+	console.warn(denied ? LOGIN_NO_ACCESS_NOTICE : LOGIN_KEY_REJECTED_NOTICE);
+}
+async function clearRejectedKey(storageRoot, key) {
+	const entry = key === void 0 ? LOGIN_KEY_REJECTED_ENTRY : rejectedKeyEntry(key);
+	if (storageRoot !== void 0) await clearMarkers(storageRoot, entry);
+}
+async function clearLoginExpiry(login, storageRoot) {
+	const prefix = expiredMarkerPrefix(login);
+	for (const key of unrecorded) if (key.startsWith(prefix)) unrecorded.delete(key);
+	if (storageRoot !== void 0) await clearMarkers(storageRoot, prefix);
+}
+async function clearMarkers(storageRoot, prefix) {
+	try {
+		await forgetLogins(storageRoot, prefix, void 0);
+	} catch (error) {
+		console.warn(LOGIN_CLEANUP_WARNING, describe(error));
+	}
+}
+async function claimLogin(profile, key, storageRoot) {
+	if (storageRoot === void 0) return "unrecorded";
+	try {
+		if (!await claimStateEntry(join(storageRoot, "sign-in.json"), key, Infinity)) return "existing";
+	} catch (error) {
+		console.warn(LOGIN_MARKER_WARNING, describe(error));
+		return "unrecorded";
+	}
+	await forgetLogins(storageRoot, expiredMarkerPrefix(profile), key);
+	return "claimed";
+}
+function rejectedKeyEntry({ apiKey, apiUrl }) {
+	const credential = `${sdkSetting(apiKey) ?? apiKey}\n${serverKey(apiUrl)}`;
+	return `${LOGIN_KEY_REJECTED_ENTRY}${credentialHash(credential)}`;
+}
+async function forgetLogins(storageRoot, prefix, keep) {
+	const forget = (key) => key.startsWith(prefix) && key !== keep;
+	const store = loginStore(storageRoot);
+	if (Object.keys(store.read()).some(forget)) await store.update((state) => Object.fromEntries(Object.entries(state).filter(([key]) => !forget(key))));
+}
+function loginStore(storageRoot) {
+	return createStateStore({
+		path: join(storageRoot, LOGIN_STATE_FILE),
+		warn: () => void 0
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const GIT_METADATA_KEYS = {
@@ -3352,7 +3568,7 @@ const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
 const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
 const CODING_AGENT_REVISION_ID_KEY = "revision_id";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field$2(key, options = {}) {
 	return {
 		key,
@@ -3489,7 +3705,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
 function withBothGitMetadataNames(metadata) {
 	const both = { ...metadata };
 	for (const role of Object.keys(GIT_METADATA_KEYS)) {
@@ -3501,7 +3717,7 @@ function withBothGitMetadataNames(metadata) {
 	return both;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function metadataFieldTypeIssue(field, value) {
 	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
 }
@@ -3553,7 +3769,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -3611,7 +3827,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
 function forwardsEnvironmentVariable(name, value, environmentMetadata) {
 	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
 }
@@ -3638,7 +3854,7 @@ function buildCodingAgentRuntimeMetadata(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -3655,7 +3871,7 @@ function metadataForMode(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -15725,7 +15941,7 @@ new AsyncLocalStorageProvider();
 //#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/index.js
 const __version__ = "0.10.8";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -15742,7 +15958,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -15860,7 +16076,21 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/env.js
+function withoutEnvVariables(names, run) {
+	const hidden = names.flatMap((name) => {
+		const value = process.env[name];
+		return value === void 0 ? [] : [[name, value]];
+	});
+	for (const [name] of hidden) delete process.env[name];
+	try {
+		return run();
+	} finally {
+		for (const [name, value] of hidden) process.env[name] = value;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -15923,14 +16153,28 @@ const UPLOAD_UNKNOWN_DESTINATION_MESSAGE = "Unknown upload destination";
 const UPLOAD_SAMPLING_RATE_VARIABLES = ["LANGSMITH_TRACING_SAMPLING_RATE", "LANGCHAIN_TRACING_SAMPLING_RATE"];
 const UPLOAD_SAMPLING_HASH = "sha256";
 const UPLOAD_DOTTED_ORDER_ROOT_ID = /^\d{8}T\d+Z([0-9a-f-]{36})/i;
+const UPLOAD_SDK_API_URL_FIELD = "apiUrl";
+const UPLOAD_BEARER_PATTERN = /^Bearer /u;
+const UPLOAD_LOGIN_UNUSABLE_MESSAGE = "The LangSmith SDK would not send this destination's uploads with the CLI login on its own server, so nothing is uploaded to it";
+const UPLOAD_KEY_UNUSABLE_MESSAGE = "The LangSmith SDK read this destination's API key as empty, so nothing is uploaded to it";
+const UPLOAD_CREDENTIAL_REQUIRED_MESSAGE = "An API key or a LangSmith CLI login is required for each upload destination";
+const UPLOAD_LOGIN_INVALID_MESSAGE = "Invalid upload login";
+const UPLOAD_LOGIN_FIELD_NAMES = {
+	configPath: "login config path",
+	profile: "login profile",
+	workspaceId: "login workspace ID"
+};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+const rejectedAuthorizations = /* @__PURE__ */ new WeakMap();
 function createUploadClient(options) {
-	const { apiKey, apiUrl, workspaceId, anonymizer, redactedFields } = options;
-	return new Client({
-		apiKey,
+	const { apiKey, apiUrl, workspaceId, login, anonymizer, redactedFields } = options;
+	const config = {
+		...login === void 0 ? {
+			apiKey: apiKey ?? "",
+			workspaceId: workspaceId ?? ""
+		} : {},
 		apiUrl,
-		workspaceId: workspaceId ?? "",
 		autoBatchTracing: false,
 		manualFlushMode: true,
 		timeout_ms: UPLOAD_REQUEST_TIMEOUT_MS,
@@ -15944,11 +16188,32 @@ function createUploadClient(options) {
 			hideMetadata: anonymizer
 		},
 		...redactedFields?.includes("inputs") ? { hideInputs: false } : {},
-		...redactedFields?.includes("outputs") ? { hideOutputs: false } : {}
+		...redactedFields?.includes("outputs") ? { hideOutputs: false } : {},
+		fetchImplementation: async (input, init) => {
+			const response = await fetch(input, init);
+			if (response.status === 401 || response.status === 403) rejectedAuthorizations.set(client, new Headers(init?.headers).get("Authorization") ?? "");
+			return response;
+		}
+	};
+	const client = withoutEnvVariables(LOGIN_API_KEY_VARIABLES, () => new Client(config));
+	return client;
+}
+function takeRejectedAccessToken(client) {
+	const authorization = rejectedAuthorizations.get(client);
+	rejectedAuthorizations.delete(client);
+	return authorization?.replace(UPLOAD_BEARER_PATTERN, "") || void 0;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/auth/credential.js
+function refusedLoginReplicas(replicas, apiUrl) {
+	const refused = (replicas ?? []).filter((replica) => sdkSetting(replica.apiKey) === void 0 && replica.apiUrl !== void 0).map(({ apiUrl: url }) => url).filter((url) => !sameServer(url, apiUrl));
+	return refused.length === 0 ? void 0 : fillTemplate(LOGIN_REPLICA_REFUSED_REASON, {
+		urls: refused.join(", "),
+		apiUrl
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -15956,7 +16221,8 @@ function resolveUploadDestinationIdentities(options) {
 	const replicas = options.replicas ?? [];
 	if (replicas.length > 0 && options.destinations.length !== 1) throw new TypeError("A replica upload requires exactly one primary destination");
 	const primary = options.destinations[0];
-	const routedReplicas = primary && typeof primary === "object" && !hasApiKey(primary.apiKey) ? replicas.filter((replica) => !replica || typeof replica !== "object" || hasApiKey(replica.apiKey)) : replicas;
+	const routedReplicas = primary && typeof primary === "object" && !hasApiKey(primary.apiKey) ? replicas.filter((replica) => !replica || typeof replica !== "object" || hasApiKey(replica.apiKey) || primary.login !== void 0 && (replica.apiUrl === void 0 || sameServer(replica.apiUrl, primary.apiUrl))) : replicas;
+	if (replicas.length > 0 && routedReplicas.length === 0 && primary?.login !== void 0) throw new TypeError(refusedLoginReplicas(replicas, primary.apiUrl));
 	const primaryProjectName = routedReplicas.length === 0 || primary === void 0 ? void 0 : normalizeRequiredText(primary.projectName, "project name");
 	const destinations = routedReplicas.length === 0 ? options.destinations.map((destination) => resolveDestination(destination)) : routedReplicas.map((replica) => resolveReplicaDestination(replica, primary, primaryProjectName));
 	const ids = /* @__PURE__ */ new Set();
@@ -15976,12 +16242,13 @@ function resolveUploadDestinationIdentities(options) {
 }
 function resolveDestination(config, sourceProjectName, updates, replicaProjectName) {
 	if (!config || typeof config !== "object") throw new TypeError("Invalid upload destination");
-	if (!hasApiKey(config.apiKey)) throw new TypeError("An API key is required for each upload destination");
+	const login = hasApiKey(config.apiKey) ? void 0 : normalizeLogin(config.login);
+	if (login === void 0 && !hasApiKey(config.apiKey)) throw new TypeError(UPLOAD_CREDENTIAL_REQUIRED_MESSAGE);
 	const apiUrl = normalizeApiUrl(config.apiUrl);
 	const projectName = normalizeRequiredText(config.projectName, "project name");
-	const workspaceId = config.workspaceId === void 0 ? void 0 : normalizeRequiredText(config.workspaceId, "workspace ID");
+	const workspaceId = config.workspaceId === void 0 ? void 0 : sdkSetting(normalizeRequiredText(config.workspaceId, "workspace ID"));
 	const identity = JSON.stringify({
-		apiKey: config.apiKey,
+		...login === void 0 ? { apiKey: config.apiKey } : { login },
 		apiUrl,
 		workspaceId: workspaceId ?? null,
 		...sourceProjectName === void 0 ? {} : {
@@ -15991,7 +16258,7 @@ function resolveDestination(config, sourceProjectName, updates, replicaProjectNa
 	});
 	return {
 		id: `${UPLOAD_DESTINATION_ID_PREFIX}${fingerprint(identity)}`,
-		apiKey: config.apiKey,
+		...login === void 0 ? { apiKey: config.apiKey } : { login },
 		apiUrl,
 		projectName,
 		...workspaceId === void 0 ? {} : { workspaceId },
@@ -16003,8 +16270,11 @@ function resolveReplicaDestination(replica, primary, primaryProjectName) {
 	if (!replica || typeof replica !== "object") throw new TypeError("Invalid upload replica");
 	const updates = snapshotReplicaUpdates(replica.updates);
 	const workspaceId = replica.workspaceId ?? primary.workspaceId;
+	const ownKey = hasApiKey(replica.apiKey);
+	const apiKey = ownKey ? replica.apiKey : primary.apiKey;
 	return resolveDestination({
-		apiKey: replica.apiKey ?? primary.apiKey,
+		...apiKey === void 0 ? {} : { apiKey },
+		...!ownKey && primary.login ? { login: primary.login } : {},
 		apiUrl: replica.apiUrl ?? primary.apiUrl,
 		projectName: replica.projectName ?? primary.projectName,
 		...workspaceId === void 0 ? {} : { workspaceId }
@@ -16043,8 +16313,18 @@ function normalizeRequiredText(value, name) {
 	if (typeof value !== "string" || value.trim().length === 0 || UPLOAD_CONTROL_CHARACTER_PATTERN.test(value)) throw new TypeError(`Invalid upload ${name}`);
 	return value.trim();
 }
+function normalizeLogin(login) {
+	if (login === void 0) return void 0;
+	if (!login || typeof login !== "object") throw new TypeError(UPLOAD_LOGIN_INVALID_MESSAGE);
+	const workspaceId = login.workspaceId === void 0 ? void 0 : sdkSetting(normalizeRequiredText(login.workspaceId, UPLOAD_LOGIN_FIELD_NAMES.workspaceId));
+	return {
+		configPath: normalizeRequiredText(login.configPath, UPLOAD_LOGIN_FIELD_NAMES.configPath),
+		profile: normalizeRequiredText(login.profile, UPLOAD_LOGIN_FIELD_NAMES.profile),
+		...workspaceId === void 0 ? {} : { workspaceId }
+	};
+}
 function hasApiKey(value) {
-	return typeof value === "string" && value.trim().length > 0;
+	return sdkSetting(value) !== void 0;
 }
 function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
@@ -16286,7 +16566,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -16307,17 +16587,17 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
 		const anonymizer = createUploadAnonymizer(options.redact, options.redactExtraRules);
 		const client = createUploadClient({
-			apiKey: destination.apiKey,
-			apiUrl: destination.apiUrl,
-			...destination.workspaceId === void 0 ? {} : { workspaceId: destination.workspaceId },
+			...destination,
 			...anonymizer === void 0 ? {} : { anonymizer }
 		});
+		if (destination.login === void 0 && Reflect.get(client, "apiKey") === void 0) throw new TypeError(UPLOAD_KEY_UNUSABLE_MESSAGE);
+		if (destination.login !== void 0 && !usesLogin(destination.login, client)) throw new TypeError(UPLOAD_LOGIN_UNUSABLE_MESSAGE);
 		return {
 			...destination,
 			...anonymizer === void 0 ? {} : { anonymizer },
@@ -16329,8 +16609,14 @@ function resolveUploadDestinations(options) {
 		destinations
 	};
 }
+function usesLogin(login, client) {
+	if (Reflect.get(client, "apiKey") !== void 0) return false;
+	const loginUrl = readProfileAt(login.configPath, login.profile)?.apiUrl;
+	const clientUrl = Reflect.get(client, UPLOAD_SDK_API_URL_FIELD);
+	return loginUrl === void 0 || typeof clientUrl === "string" && sameServer(clientUrl, loginUrl);
+}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
 function createUploadClientCache() {
 	const clientsByMode = /* @__PURE__ */ new Map();
 	return { forSubmission(destination, submission) {
@@ -16349,15 +16635,17 @@ function createUploadClientCache() {
 	} };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
 var UploadError = class extends Error {
 	retryable;
 	status;
-	constructor(cause) {
+	loginRejected;
+	constructor(cause, login = false) {
 		super(UPLOAD_FAILED_MESSAGE, { cause });
 		this.name = UPLOAD_ERROR_NAME;
 		const status = failureStatus(cause);
 		this.status = status;
+		this.loginRejected = login && status === 401;
 		this.retryable = status === void 0 || status >= 500 || UPLOAD_RETRYABLE_STATUSES.includes(status);
 	}
 };
@@ -16365,7 +16653,7 @@ function isAlreadyReceived(cause) {
 	return failureStatus(cause) === 409 && describe(cause).includes("already received");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
 function applyRuntimeMetadata(payload, privacyMode) {
 	if (privacyMode !== "full") return;
 	const added = buildCodingAgentRuntimeMetadata({
@@ -16388,7 +16676,7 @@ function applyRuntimeMetadata(payload, privacyMode) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function contextForDestination(context, destination) {
 	if (destination.sourceProjectName === void 0) return context;
 	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
@@ -16428,7 +16716,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
 function applyReplicaPatchUpdates(payload, destination, privacyMode) {
 	if (privacyMode !== "full" || destination.updates === void 0) return;
 	const mutablePayload = payload;
@@ -16453,7 +16741,7 @@ function mergeReplicaExtra(baseValue, updateValue) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
 async function withDeadline(work) {
 	let timer;
 	const expired = new Promise((_resolve, reject) => {
@@ -16466,7 +16754,7 @@ async function withDeadline(work) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
 function samplingRate(environment) {
 	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
 		const value = environment[name]?.trim();
@@ -16484,7 +16772,7 @@ function traceIdOf(run) {
 	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
 function startTimeFromDottedOrder(dottedOrder) {
 	if (typeof dottedOrder !== "string") return void 0;
 	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
@@ -16499,7 +16787,7 @@ function startTimeText(supplied, dottedOrder) {
 	return startTimeFromDottedOrder(dottedOrder);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -16513,20 +16801,36 @@ function createLangSmithUploadWriter(options) {
 	async function sendBatch(items, destinationId) {
 		const configured = byId.get(destinationId);
 		if (!configured) throw new TypeError(UPLOAD_UNKNOWN_DESTINATION_MESSAGE);
-		const prepared = items.map(({ submission, route }) => prepareItem(clients, route === void 0 ? configured : routedDestination(configured, route), submission));
+		const prepared = items.map(({ submission, route }) => prepareItem(clients, route === void 0 || options.projectLocked ? configured : routedDestination(configured, route), submission));
 		const clientOptions = {
-			apiKey: configured.apiKey,
 			apiUrl: configured.apiUrl,
 			...configured.workspaceId === void 0 ? {} : { workspaceId: configured.workspaceId }
 		};
+		let uploaded = false;
 		for (const [client, group] of segmentByClient(prepared)) {
 			const sampled = group.filter((item) => isSampled(item, rate));
 			try {
 				await withDeadline(client.batchIngestRuns(ingestFor(sampled), clientOptions)).catch(ignoreAlreadyReceived);
+				uploaded ||= sampled.length > 0;
 			} catch (error) {
-				throw new UploadError(error);
+				const failure = new UploadError(error, configured.login !== void 0);
+				const sent = takeRejectedAccessToken(client);
+				const denied = failure.status === 403;
+				if ((failure.loginRejected || denied) && configured.login !== void 0) recordExpiredLogin(configured.login, sent && credentialHash(sent), options.storageRoot, denied);
+				if (configured.apiKey !== void 0 && (failure.status === 401 || denied)) recordRejectedKey({
+					apiKey: configured.apiKey,
+					apiUrl: configured.apiUrl
+				}, options.storageRoot, denied);
+				throw failure;
 			}
 		}
+		if (uploaded && configured.login !== void 0) {
+			clearLoginExpiry(configured.login, options.storageRoot);
+			clearRejectedKey(options.storageRoot);
+		} else if (uploaded && configured.apiKey !== void 0) clearRejectedKey(options.storageRoot, {
+			apiKey: configured.apiKey,
+			apiUrl: configured.apiUrl
+		});
 		return prepared.map(({ submission, operation }) => ({
 			destinationId,
 			runId: submission.run.id,
@@ -16695,11 +16999,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -16732,7 +17036,7 @@ async function readSavedCaptureWake(error, options) {
 	} : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -16771,7 +17075,7 @@ const LIFECYCLE_IDENTITY_FIELD_LABELS = [
 	["dotted_order", "Dotted order"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
 async function captureReadiness(scopes, destinations, readOutcome) {
 	const pending = /* @__PURE__ */ new Set();
 	const dropped = /* @__PURE__ */ new Set();
@@ -16794,7 +17098,7 @@ async function captureReadiness(scopes, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -16895,7 +17199,7 @@ function field$1(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -16955,7 +17259,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
@@ -17204,7 +17508,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
 function projectCapture(record, integration) {
 	const submission = projectSubmission({
 		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
@@ -17298,14 +17602,14 @@ function closureRank(state) {
 	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
 const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
 const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
 function recordRun(events) {
 	const latest = events.at(-1);
 	const run = latest.payload.run;
@@ -17349,7 +17653,7 @@ function mergeMetadataObject(previous, current) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
 function uniqueScopes(scopes) {
 	const unique = /* @__PURE__ */ new Map();
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
@@ -17440,7 +17744,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
 function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
 	const revision = createHash("sha256").update(JSON.stringify({
 		turnId,
@@ -17453,7 +17757,7 @@ function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, 
 	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
 function hasCausalRunError(events) {
 	let hasError = false;
 	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
@@ -17476,7 +17780,7 @@ function retainedEndTime(events) {
 	return endTime;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	const named = withBothGitMetadataNames(metadata ?? {});
@@ -17508,7 +17812,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
 function unsettled(settlementReport) {
 	return {
 		report: settlementReport,
@@ -17734,7 +18038,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}, requiredRunIds, currentByRunId, generated, options);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -17801,7 +18105,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -17832,7 +18136,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
 async function removeSettledTurns(options) {
 	const known = new Set(options.knownScopes.map(turnEventKey));
 	const removable = /* @__PURE__ */ new Map();
@@ -17891,7 +18195,7 @@ function field(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const context = createBridgeContext(options);
 	return Object.freeze({
@@ -17915,7 +18219,10 @@ function createBridgeContext(options) {
 			sessionId,
 			...options.policy === void 0 ? {} : { policy: options.policy }
 		}),
-		writer: createLangSmithUploadWriter(options.writer),
+		writer: createLangSmithUploadWriter({
+			...options.writer,
+			storageRoot: options.storageRoot
+		}),
 		policy: resolvePolicy(options.policy),
 		wake: options.wake
 	};
@@ -18233,7 +18540,7 @@ function restoreSubmission(record, integration) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
@@ -18350,13 +18657,13 @@ const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
 const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
 const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
 function assertKnownKeys(record, required, optional, message) {
 	const keys = Object.keys(record);
 	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
 function readEventId(output, seen) {
 	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
 	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
@@ -18590,7 +18897,7 @@ function validateTurnEvidence(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
 function snapshotJob(job) {
 	return Object.freeze({
 		...job,
@@ -18767,7 +19074,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
 async function processJob(candidate, context) {
 	const { job, scope } = candidate;
 	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
@@ -18870,7 +19177,7 @@ async function recordTerminal(store, scope, accountFingerprint, outcome, reason)
 	return result.status === "recorded";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -19025,7 +19332,7 @@ async function summarizePending(context) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	if (waitingOnBackoff(result)) return "deferred";
@@ -19051,7 +19358,7 @@ const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is requir
 const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
 const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
 	return Object.freeze({
@@ -19083,7 +19390,7 @@ function snapshotWriterOptions(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
 var MissingSettlementCaptureError = class extends Error {
 	constructor() {
 		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
@@ -19091,7 +19398,7 @@ var MissingSettlementCaptureError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	try {
 		return (await refreshSettlementProgress(await settleCapturedTurns({
@@ -19132,7 +19439,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 function validateRecoveryRequest(request) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError(TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE);
@@ -19284,7 +19591,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 function retryableFailure(error) {
 	return {
 		status: "failed",
@@ -19340,7 +19647,7 @@ async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
 async function drainThroughBackoff(drain) {
 	let waitedMs = 0;
 	let result = await drain();
@@ -19357,7 +19664,7 @@ async function drainThroughBackoff(drain) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
@@ -19477,12 +19784,12 @@ async function drainSession(context) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
 function resolveUploadDestinationFingerprint(options) {
 	return resolveUploadDestinationIdentities(options).accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/plugin/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/session.js
 function openPluginSession(options) {
 	const { storageRoot, integration, sessionId, writer } = options;
 	const callbacks = (id) => ({
@@ -19522,19 +19829,19 @@ function fingerprintOf(writer) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
 function builtAsBinary() {
 	return typeof LS_COMPILED_BINARY !== "undefined";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
 const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
 const SYSTEM_CERTIFICATE_STORE = "system";
 const CERTIFICATE_FILE_ENCODING = "utf8";
 const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
 const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
 function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
 	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
 	if (existing === file) return { environment };
@@ -19570,7 +19877,7 @@ function readIfPresent(file) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
 function launchDetachedWorker(args, options = {}) {
 	const root = options.storageRoot;
 	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
@@ -19620,7 +19927,23 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/utils/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
+const shownInProcess = /* @__PURE__ */ new Set();
+async function shouldShowNotice(options) {
+	if (options.cooldown === "off") return false;
+	const windowMs = (options.cooldown ?? 2) * NOTICE_MINUTE_MS;
+	const key = `${options.plugin}
+${options.kind}`;
+	try {
+		return await claimStateEntry(join(options.storageRoot, NOTICE_STATE_FILE), key, windowMs);
+	} catch {
+		if (options.persistentOnly || shownInProcess.has(key)) return false;
+		shownInProcess.add(key);
+		return true;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/paths.js
 function nearestExistingDirectory(path) {
 	let current = path;
 	for (;;) {
@@ -19633,7 +19956,7 @@ function nearestExistingDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/git/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/git/constants.js
 const GIT_LOCATION_ENV_KEYS = [
 	"GIT_DIR",
 	"GIT_WORK_TREE",
@@ -19672,6 +19995,7 @@ const PROVIDER_HOSTS = {
 	devAzure: "dev.azure.com"
 };
 const GIT_COMMAND_TIMEOUT_MS = 5e3;
+const GIT_COMMAND_MISSING = "is not installed in an absolute PATH folder";
 const GH_LOGIN_ARGUMENTS = [
 	"api",
 	"user",
@@ -19680,8 +20004,24 @@ const GH_LOGIN_ARGUMENTS = [
 ];
 const GH_LOGIN_TIMEOUT_MS = 5e3;
 const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
+const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/git/repository.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+function findExecutable(name, env, platform) {
+	const windows = platform === WINDOWS_PLATFORM;
+	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
+	const folders = (DESKTOP_PATH_VARIABLES.map((variable) => env[variable]).find((value) => value !== void 0) ?? "").split(windows ? ";" : ":");
+	const absolute = windows ? win32.isAbsolute : posix.isAbsolute;
+	for (const folder of folders.filter((entry) => entry !== "" && absolute(entry))) for (const extension of extensions) {
+		const candidate = join(folder, `${name}${extension}`);
+		try {
+			accessSync(candidate, constants.X_OK);
+			if (statSync(candidate).isFile()) return candidate;
+		} catch {}
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/git/repository.js
 function parseRepoName(remoteUrl) {
 	const value = remoteUrl.trim();
 	try {
@@ -19719,7 +20059,7 @@ function gitOutput(args, cwd) {
 		LANG: "C"
 	};
 	for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
-	return execFileSync("git", args, {
+	return execFileSync(installedCommand("git"), args, {
 		cwd,
 		env,
 		encoding: "utf-8",
@@ -19806,7 +20146,7 @@ function getRepositoryMetadata(cwd) {
 	return withBothGitMetadataNames(metadata);
 }
 function githubLoginLookup() {
-	return execFileSync("gh", GH_LOGIN_ARGUMENTS, {
+	return execFileSync(installedCommand("gh"), GH_LOGIN_ARGUMENTS, {
 		encoding: "utf-8",
 		timeout: GH_LOGIN_TIMEOUT_MS,
 		stdio: [
@@ -19819,8 +20159,13 @@ function githubLoginLookup() {
 function isGitHubLogin(printed) {
 	return printed !== "null" && GH_LOGIN_PATTERN.test(printed);
 }
+function installedCommand(name) {
+	const found = findExecutable(name, process.env, process.platform);
+	if (found === void 0) throw new Error(`${name} ${GIT_COMMAND_MISSING}`);
+	return found;
+}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/git/github-login.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/git/github-login.js
 function createGitHubLoginFallback(options) {
 	const now = options.now ?? Date.now;
 	const retryAfterMs = options.retryAfterMs ?? 864e5;
@@ -19858,7 +20203,7 @@ function createGitHubLoginFallback(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/git/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/git/paths.js
 function gitMarkerAt(directory) {
 	const marker = join(directory, GIT_DIRECTORY_NAME);
 	try {
@@ -19888,7 +20233,7 @@ function rootFromGitMarker(directory) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/git/attribution.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/git/attribution.js
 function createRepositoryAttributor(options) {
 	const rootByDirectory = /* @__PURE__ */ new Map();
 	const attributionByRoot = /* @__PURE__ */ new Map();
@@ -19983,7 +20328,7 @@ function withoutRepositoryKeys(base, pinned) {
 	return stripped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -19994,6 +20339,8 @@ const COMMON_BOOLEAN_SETTINGS = {
 		restrictive: true
 	}
 };
+const COMMON_STRICT_BOOLEAN_FIELDS = ["redact", "strict_auth"];
+const COMMON_DEFAULT_API_URL = "https://api.smith.langchain.com";
 const COMMON_CONFIG_FILE_NAME = "langsmith.json";
 const COMMON_CONFIG_OPEN_FLAGS = constants.O_RDONLY | (constants.O_NONBLOCK ?? 0);
 const COMMON_CONFIG_ROOT_FILE_NAME = "langsmith-plugins.json";
@@ -20008,8 +20355,9 @@ const MANAGED_CONFIG_OVERRIDE_SOURCES = [
 	"user",
 	"userRoot"
 ];
-const MANAGED_CONFIG_UNSAFE_OWNERSHIP = "Managed config for LangSmith is not owned by root, is writable by other users, or is a symlink. This session's trace will not be captured. Please contact an admin to troubleshoot.";
-const MANAGED_CONFIG_INVALID = "Managed config for LangSmith tracing is unreadable or invalid so this session's trace will not be captured. Contact an admin to troubleshoot.";
+const MANAGED_CONFIG_UNSAFE_OWNERSHIP = "LangSmith managed settings aren't owned by root, so tracing is off. Contact your admin.";
+const MANAGED_CONFIG_INVALID = "LangSmith managed settings are invalid, so tracing is off. Contact your admin.";
+const MANAGED_CONFIG_UNLOCKABLE_WARNING = "The managed config sets {fields}, which this plugin can't lock, so it is ignored.";
 const MANAGED_CONFIG_OVERRIDE_WARNING = "Ignored settings the managed config locks: {overrides}.";
 const ACCOUNT_LOOKUP_TIMEOUT_MS = 2e3;
 const MACOS_ACCOUNT_LOOKUP = "/usr/bin/id";
@@ -20018,12 +20366,12 @@ const LINUX_ACCOUNT_LIST_FILE = "/etc/passwd";
 const LINUX_ACCOUNT_LOOKUPS = ["/usr/bin/getent", "/bin/getent"];
 const UTF8_BOM = /^\uFEFF/;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/parse.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/parse.js
 function invalid(raw) {
 	return {
 		status: "invalid",
@@ -20083,9 +20431,15 @@ function parseCommonConfig(value) {
 		if (typeof value[field] !== "string") return invalid(value);
 		common[field] = value[field];
 	}
-	if (Object.hasOwn(value, "redact")) {
-		if (typeof value.redact !== "boolean") return invalid(value);
-		common.redact = value.redact;
+	for (const field of COMMON_STRICT_BOOLEAN_FIELDS) {
+		if (!Object.hasOwn(value, field)) continue;
+		if (typeof value[field] !== "boolean") return invalid(value);
+		common[field] = value[field];
+	}
+	if (Object.hasOwn(value, "notice_cooldown")) {
+		const cooldown = value.notice_cooldown;
+		if (!(typeof cooldown === "number" && Number.isFinite(cooldown) && cooldown >= 0) && cooldown !== "off") return invalid(value);
+		common.notice_cooldown = cooldown;
 	}
 	if (Object.hasOwn(value, "metadata")) {
 		if (!object(value.metadata)) return invalid(value);
@@ -20128,7 +20482,7 @@ function parseCommonConfig(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
 let cachedBunHome;
 function accountHomeDirectory() {
 	if (process.versions.bun === void 0) return nodeAccountHome();
@@ -20188,7 +20542,17 @@ function homeField(entry, field) {
 	return home !== void 0 && isAbsolute(home) ? home : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
+const warned = /* @__PURE__ */ new Set();
+function warnOnce(lines) {
+	for (const line of lines) {
+		if (warned.has(line)) continue;
+		warned.add(line);
+		console.warn(line);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
 function onlyOwnerCanChange(stats, ownerUid) {
 	return !stats.isSymbolicLink() && stats.uid === ownerUid && (stats.mode & 18) === 0;
 }
@@ -20235,14 +20599,23 @@ function readManagedConfigFile(options = {}) {
 	return {
 		status: "valid",
 		common: parsed.common,
+		raw,
 		diagnostics: parsed.diagnostics
 	};
 }
+function lockPluginFields(managed, fields) {
+	const raw = managed.raw ?? {};
+	const present = (names) => names.filter((name) => Object.hasOwn(raw, name));
+	const ignored = present(fields.unlockable ?? []);
+	if (ignored.length > 0) warnOnce([MANAGED_CONFIG_UNLOCKABLE_WARNING.replace("{fields}", ignored.join(", "))]);
+	return Object.fromEntries(present(fields.lockable).map((name) => [name, raw[name]]));
+}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
 function lockedValues(common) {
 	const lock = { ...common };
-	if (lock.api_url !== void 0) lock.replicas ??= [];
+	if (lock.api_key !== void 0 || lock.replicas !== void 0) lock.api_url ??= COMMON_DEFAULT_API_URL;
+	if (lock.api_url !== void 0 || lock.project !== void 0) lock.replicas ??= [];
 	if (lock.redact_extra_rules !== void 0) lock.redact ??= true;
 	return lock;
 }
@@ -20276,17 +20649,7 @@ function overrideDiagnostics(sources, lock) {
 	return [MANAGED_CONFIG_OVERRIDE_WARNING.replace("{overrides}", list)];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
-const warned = /* @__PURE__ */ new Set();
-function warnOnce(lines) {
-	for (const line of lines) {
-		if (warned.has(line)) continue;
-		warned.add(line);
-		console.warn(line);
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 /** Resolve the first supplied value from sources ordered highest priority first. */
 function resolveField(sources, field) {
 	return sources.find((source) => source[field] !== void 0)?.[field];
@@ -20321,6 +20684,11 @@ function mergeCommonConfig(sources, options = {}) {
 		defaultMuted: false,
 		redact: true,
 		locked: lockedFields(lock),
+		defaulted: Object.keys(defaults).filter((field) => resolveField([
+			lock,
+			env,
+			...files
+		], field) === void 0),
 		diagnostics: [...managed.diagnostics, ...overrideDiagnostics(sources, lock)]
 	};
 	for (const field of ["enabled", "defaultMuted"]) merged[field] = resolveField(switches, field) ?? COMMON_BOOLEAN_SETTINGS[field].default;
@@ -20335,6 +20703,8 @@ function mergeCommonConfig(sources, options = {}) {
 	merged.replicas = resolveField(precedence, "replicas");
 	merged.redact = resolveField(precedence, "redact") ?? true;
 	merged.redact_extra_rules = resolveField(precedence, "redact_extra_rules");
+	merged.strict_auth = resolveField(precedence, "strict_auth");
+	merged.notice_cooldown = resolveField(precedence, "notice_cooldown");
 	if (precedence.some((source) => source.metadata !== void 0)) merged.metadata = [...precedence].reverse().reduce((metadata, source) => ({
 		...metadata,
 		...source.metadata
@@ -20351,7 +20721,7 @@ function toSdkReplicas(replicas) {
 	}));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/settings/config-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/settings/config-files.js
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
 	let fd;
@@ -20411,7 +20781,8 @@ const ENV_SUFFIXES = {
 	replicas: "RUNS_ENDPOINTS",
 	redact: "REDACT",
 	redactExtraRules: "REDACT_EXTRA",
-	parentHeaders: "PARENT_HEADERS"
+	parentHeaders: "PARENT_HEADERS",
+	noticeCooldown: "NOTICE_COOLDOWN"
 };
 const PARENT_TRACE_HEADER = "langsmith-trace";
 const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"];
@@ -20436,6 +20807,7 @@ const POLICY_THREAD_KEYS = [
 const POLICY_TOP_LEVEL_KEYS = ["version", "threads"];
 const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
+const LOCKED_MUTE_REPLY = "Thread tracing stays muted because your admin locked muting.";
 const SUBAGENT_SCOPE_RESET = {
 	approval_policy: void 0,
 	ls_is_error_interrupt: void 0
@@ -20507,6 +20879,8 @@ const JOB_STATE_FILE_NAME = "langsmith_state.json";
 const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 const STATE_FILE_MAX_AGE_MS = 216e5;
 const WARNING_FILE_NAME = "langsmith_warning.txt";
+const NOTICE_KIND_MANAGED = "managed";
+const PARENT_HEADERS_FIELD = "parent_headers";
 const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.3.2";
@@ -20526,6 +20900,17 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 //#endregion
+//#region src/utils/console/silence-warnings.ts
+function silenceWarnings(run) {
+	const warn = console.warn;
+	console.warn = () => void 0;
+	try {
+		return run();
+	} finally {
+		console.warn = warn;
+	}
+}
+//#endregion
 //#region src/utils/isRecord.ts
 function isRecord(value) {
 	return value != null && typeof value === "object" && !Array.isArray(value);
@@ -20537,6 +20922,11 @@ function parseBoolean(value) {
 	if (normalized === void 0) return void 0;
 	if (ENV_TRUE_VALUES.includes(normalized)) return true;
 	if (ENV_FALSE_VALUES.includes(normalized)) return false;
+}
+function parseCooldown(value) {
+	const normalized = value?.trim().toLowerCase();
+	if (normalized === void 0 || normalized === "off") return normalized;
+	return normalized !== "" && Number.isFinite(Number(normalized)) ? Number(normalized) : value;
 }
 function parseStrictBoolean(value) {
 	const normalized = value.toLowerCase();
@@ -20580,7 +20970,8 @@ function readEnvironment(env) {
 		metadata: parseJson(envVariable(env, ENV_SUFFIXES.metadata)),
 		replicas: parseJson(envVariable(env, ENV_SUFFIXES.replicas)),
 		redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
-		redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules))
+		redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
+		notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown))
 	};
 	const parsed = parseCommonConfig(Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== void 0)));
 	if (parsed.status !== "valid" || rawParent !== void 0 && parentHeaders === void 0) return { common: {} };
@@ -20596,7 +20987,9 @@ async function getConfig({ home, cwd, env }) {
 		harnessDirectory: CODEX_CONFIG_DIRECTORY
 	});
 	const environment = readEnvironment(env);
-	const { diagnostics: _diagnostics, locked: _locked, ...common } = mergeCommonConfig({
+	const { managed } = files;
+	const { diagnostics, defaulted, ...common } = silenceWarnings(() => mergeCommonConfig({
+		managed,
 		userRoot: files.userRoot.common,
 		user: files.user.common,
 		root: files.root.common,
@@ -20606,8 +20999,9 @@ async function getConfig({ home, cwd, env }) {
 			enabled: envSwitch(env, ENABLED_ENV_KEYS, parseBoolean, COMMON_BOOLEAN_SETTINGS.enabled.restrictive),
 			defaultMuted: envSwitch(env, DEFAULT_MUTED_ENV_KEYS, parseStrictBoolean, COMMON_BOOLEAN_SETTINGS.defaultMuted.restrictive)
 		}
-	}, { envFirst: true });
-	const parentHeaders = environment.parentHeaders ?? [
+	}, { envFirst: true }));
+	const lockedHeaders = lockPluginFields(managed, { lockable: [PARENT_HEADERS_FIELD] });
+	const parentHeaders = Object.hasOwn(lockedHeaders, "parent_headers") ? parseParentHeaders(lockedHeaders[PARENT_HEADERS_FIELD]) : environment.parentHeaders ?? [
 		files.harness,
 		files.root,
 		files.user,
@@ -20618,7 +21012,8 @@ async function getConfig({ home, cwd, env }) {
 		api_key: nonBlank(common.api_key),
 		api_url: nonBlank(common.api_url),
 		project: nonBlank(common.project) ?? "codex",
-		...parentHeaders === void 0 ? {} : { parent_headers: parentHeaders }
+		...parentHeaders === void 0 ? {} : { parent_headers: parentHeaders },
+		...diagnostics.length === 0 ? {} : { managedConfigWarnings: diagnostics }
 	};
 }
 //#endregion
@@ -20842,6 +21237,13 @@ function savedTurnMode(file, sessionId, turnId) {
 		return MODE_METADATA;
 	}
 }
+function muteLocked(config) {
+	return config.defaultMuted && config.locked.includes("defaultMuted");
+}
+function lockedTurnMode(config, sessionId, turnId) {
+	const mode = savedTurnMode(defaultPrivacyPath(), sessionId, turnId);
+	return mode === "full" && muteLocked(config) ? MODE_METADATA : mode;
+}
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
 function parseTracingCommand(prompt) {
 	if (prompt === "langsmith-tracing:mute") return "mute";
@@ -20852,15 +21254,16 @@ function requireIds(sessionId, turnId) {
 }
 /** One atomic transaction preserves active/queued snapshots before changing preference. */
 async function submitPreference(file, request) {
-	const { sessionId, turnId, enabled, command, defaultMuted = false } = request;
+	const { sessionId, turnId, enabled, command, defaultMuted = false, mutedLocked = false } = request;
+	const lockedMode = mutedLocked && enabled ? MODE_METADATA : void 0;
 	requireIds(sessionId, turnId);
 	return updatePolicyFile(adoptLegacyPreferences(file), POLICY_FILE, (policy) => {
 		const thread = threadPolicy(policy, sessionId) ?? { turns: {} };
 		if (!Object.hasOwn(thread.turns, turnId)) thread.turns = {
 			...thread.turns,
-			[turnId]: thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
+			[turnId]: lockedMode ?? thread.inherited ?? (enabled ? thread.preference ?? (defaultMuted ? "metadata" : "full") : "off")
 		};
-		if (command) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
+		if (command && !(mutedLocked && command === "unmute")) thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;
 		policy.threads = {
 			...policy.threads,
 			[sessionId]: thread
@@ -21977,10 +22380,13 @@ async function showPendingWarning(home) {
 }
 //#endregion
 //#region src/tracing-engine.ts
+function engineStorageRoot(home) {
+	return nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+}
 function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory()) {
 	const writer = writerOptions(config);
 	if (!writer) return void 0;
-	const storageRoot = nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+	const storageRoot = engineStorageRoot(home);
 	const plugin = openPluginSession({
 		storageRoot,
 		integration: LS_INTEGRATION,
@@ -22174,15 +22580,18 @@ function parentRunTreeFor(config, client) {
 	}) : void 0;
 }
 function writerOptions(config) {
+	if (config.managedConfigProblem !== void 0) return void 0;
 	if (!config.api_key?.trim() && !config.replicas?.length) return void 0;
+	const headerProject = config.locked.includes("project") ? void 0 : parentRunTreeFor(config)?.project_name;
 	return {
 		destinations: [{
 			apiKey: config.api_key ?? "",
 			apiUrl: config.api_url ?? "https://api.smith.langchain.com",
-			projectName: parentRunTreeFor(config)?.project_name ?? config.project ?? "codex"
+			projectName: headerProject ?? config.project ?? "codex"
 		}],
 		...config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {},
 		redact: config.redact,
+		projectLocked: config.locked.includes("project"),
 		...config.redact_extra_rules === void 0 ? {} : { redactExtraRules: config.redact_extra_rules }
 	};
 }
@@ -22228,7 +22637,7 @@ async function queueUnhandledTurns(session, config, request) {
 	});
 	for (const turnId of completed) {
 		if (handled.has(turnId) && !await hasUnclosedLiveRoot(session, turnId)) continue;
-		const mode = savedTurnMode(defaultPrivacyPath(), session.sessionId, turnId);
+		const mode = lockedTurnMode(config, session.sessionId, turnId);
 		if (mode === "off" || firstStop && turnId !== request.turnId) {
 			await markTurnUploaded(request.transcriptPath, turnId);
 			continue;
@@ -22269,10 +22678,10 @@ async function queueCodexTurn(session, config, request, mode) {
 	await markTurnUploaded(transcriptPath, turnId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -22294,7 +22703,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.4.7_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_ec05da295134b6697854ae103bf03bb8/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.0_langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+_c61a5eb174cadbb90062697e9fbe986e/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -22335,7 +22744,7 @@ async function handlePostToolUse(input) {
 		env: process.env
 	});
 	if (!config.enabled) return;
-	const mode = savedTurnMode(defaultPrivacyPath(), session_id, turn_id);
+	const mode = lockedTurnMode(config, session_id, turn_id);
 	if (mode === "off") return;
 	const plugin = createCodexTracingSession(config, session_id, input.cwd);
 	if (!plugin) return;
@@ -22367,6 +22776,18 @@ async function hasToolEndEvent(transcriptPath, callId) {
 	return (await loadSession(transcriptPath)).some(({ type, payload }) => type === "event_msg" && (payload.call_id === callId && payload.type.endsWith("_end") || payload.type === "item_completed" && isRecord(payload.item) && payload.item.id === callId));
 }
 //#endregion
+//#region src/notices.ts
+async function showNotices(home, config, notices) {
+	const shown = [];
+	for (const { kind, text } of notices) if (await shouldShowNotice({
+		plugin: "openai-codex",
+		kind,
+		cooldown: config.notice_cooldown,
+		storageRoot: engineStorageRoot(home)
+	})) shown.push(text);
+	return shown;
+}
+//#endregion
 //#region src/user-prompt-submit.ts
 async function handlePromptSubmit(input) {
 	const command = parseTracingCommand(input.prompt);
@@ -22376,19 +22797,31 @@ async function handlePromptSubmit(input) {
 			cwd: input.cwd,
 			env: process.env
 		});
+		const mutedLocked = muteLocked(config);
 		const result = await submitPreference(defaultPrivacyPath(), {
 			sessionId: input.session_id,
 			turnId: input.turn_id,
 			enabled: config.enabled,
 			command,
-			defaultMuted: config.defaultMuted
+			defaultMuted: config.defaultMuted,
+			mutedLocked
 		});
 		if (!command) {
 			if (result.warning) console.error(`${PREFERENCE_WARNING_PREFIX} ${result.warning}`);
-			return;
+			const managed = config.managedConfigWarnings ?? [];
+			const notices = await showNotices(homeDirectory(), config, managed.length === 0 ? [] : [{
+				kind: NOTICE_KIND_MANAGED,
+				text: managed.join("\n")
+			}]);
+			return notices.length === 0 ? void 0 : { systemMessage: notices.join("\n") };
 		}
+		if (mutedLocked && command === "unmute") return {
+			decision: "block",
+			reason: LOCKED_MUTE_REPLY
+		};
 		let reason = `Thread tracing ${command === "mute" ? "muted (metadata-only)" : "unmuted (full content)"}. Preference saved for the next turn; the current turn is unchanged.`;
-		if (!config.enabled) reason += " Master tracing is disabled; this preference does not enable it.";
+		if (config.managedConfigProblem !== void 0) reason += ` ${config.managedConfigProblem}`;
+		else if (!config.enabled) reason += " Master tracing is disabled; this preference does not enable it.";
 		if (result.warning) reason += ` Warning: ${result.warning}.`;
 		return {
 			decision: "block",

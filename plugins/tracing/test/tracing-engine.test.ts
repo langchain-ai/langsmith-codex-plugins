@@ -32,7 +32,13 @@ import {
 import { ids, outputLine, read } from "./utils/live-wire.js";
 import { rolloutText } from "./utils/rollout.js";
 
-const base: Config = { enabled: true, defaultMuted: false, redact: true, api_key: "synthetic-key" };
+const base: Config = {
+  enabled: true,
+  defaultMuted: false,
+  redact: true,
+  locked: [],
+  api_key: "synthetic-key",
+};
 let home: string;
 
 beforeEach(async () => {
@@ -82,6 +88,30 @@ it("uploads to the project named by the parent headers, with the configured reda
   ]);
   expect(writer.redact).toBe(true);
   expect(writer.redactExtraRules).toEqual([{ pattern: "secret", replace: "[x]" }]);
+});
+
+it("keeps a project the managed file locks when the parent headers name another", () => {
+  const { writer } = open({
+    ...base,
+    project: "locked",
+    locked: ["project"],
+    parent_headers: {
+      "langsmith-trace": "20250101T000000000000Z019dbc02-0000-7000-8000-000000000001",
+      baggage: "langsmith-project=parent-project",
+    },
+  });
+  expect(writer.destinations[0].projectName).toBe("locked");
+  expect(writer.projectLocked).toBe(true);
+});
+
+it("opens no session while the managed file is broken, so saved work waits", () => {
+  createCodexTracingSession(
+    { ...base, managedConfigProblem: "broken" },
+    "thread-1",
+    "/work/repo",
+    home,
+  );
+  expect(engine.options).toBeUndefined();
 });
 
 it("sends the configured replicas to the shared uploader", () => {

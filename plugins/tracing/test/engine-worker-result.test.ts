@@ -20,6 +20,7 @@ vi.mock("../src/config.js", () => ({
     api_url: "http://127.0.0.1:9/api/v1",
     project: "worker-result",
     redact: false,
+    locked: [],
   }),
 }));
 

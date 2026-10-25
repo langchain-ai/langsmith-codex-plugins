@@ -1,5 +1,6 @@
 import {
   COMMON_BOOLEAN_SETTINGS,
+  lockPluginFields,
   mergeCommonConfig,
   parseCommonConfig,
   readCommonConfigFiles,
@@ -13,6 +14,8 @@ import {
   ENV_PREFIXES,
   ENV_SUFFIXES,
   ENV_TRUE_VALUES,
+  NOTICE_COOLDOWN_OFF,
+  PARENT_HEADERS_FIELD,
   PARENT_TRACE_HEADER,
   STRICT_FALSE_VALUE,
   STRICT_TRUE_VALUE,
@@ -24,6 +27,7 @@ import type {
   EnvironmentLayer,
   ParentHeaders,
 } from "./models/config.js";
+import { silenceWarnings } from "./utils/console/silence-warnings.js";
 import { isRecord } from "./utils/isRecord.js";
 
 function parseBoolean(value: string | undefined): boolean | undefined {
@@ -32,6 +36,12 @@ function parseBoolean(value: string | undefined): boolean | undefined {
   if (ENV_TRUE_VALUES.includes(normalized)) return true;
   if (ENV_FALSE_VALUES.includes(normalized)) return false;
   return undefined;
+}
+
+function parseCooldown(value: string | undefined): unknown {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === undefined || normalized === NOTICE_COOLDOWN_OFF) return normalized;
+  return normalized !== "" && Number.isFinite(Number(normalized)) ? Number(normalized) : value;
 }
 
 function parseStrictBoolean(value: string): boolean | undefined {
@@ -91,6 +101,7 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
     replicas: parseJson(envVariable(env, ENV_SUFFIXES.replicas)),
     redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
     redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
+    notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown)),
   };
   const parsed = parseCommonConfig(
     Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)),
@@ -104,44 +115,47 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
 export async function getConfig({ home, cwd, env }: ConfigOptions): Promise<Config> {
   const files = readCommonConfigFiles({ cwd, home, harnessDirectory: CODEX_CONFIG_DIRECTORY });
   const environment = readEnvironment(env);
-  const {
-    diagnostics: _diagnostics,
-    locked: _locked,
-    ...common
-  } = mergeCommonConfig(
-    {
-      userRoot: files.userRoot.common,
-      user: files.user.common,
-      root: files.root.common,
-      harness: files.harness.common,
-      env: {
-        ...environment.common,
-        enabled: envSwitch(
-          env,
-          ENABLED_ENV_KEYS,
-          parseBoolean,
-          COMMON_BOOLEAN_SETTINGS.enabled.restrictive,
-        ),
-        defaultMuted: envSwitch(
-          env,
-          DEFAULT_MUTED_ENV_KEYS,
-          parseStrictBoolean,
-          COMMON_BOOLEAN_SETTINGS.defaultMuted.restrictive,
-        ),
+  const { managed } = files;
+  const { diagnostics, defaulted, ...common } = silenceWarnings(() =>
+    mergeCommonConfig(
+      {
+        managed,
+        userRoot: files.userRoot.common,
+        user: files.user.common,
+        root: files.root.common,
+        harness: files.harness.common,
+        env: {
+          ...environment.common,
+          enabled: envSwitch(
+            env,
+            ENABLED_ENV_KEYS,
+            parseBoolean,
+            COMMON_BOOLEAN_SETTINGS.enabled.restrictive,
+          ),
+          defaultMuted: envSwitch(
+            env,
+            DEFAULT_MUTED_ENV_KEYS,
+            parseStrictBoolean,
+            COMMON_BOOLEAN_SETTINGS.defaultMuted.restrictive,
+          ),
+        },
       },
-    },
-    { envFirst: true },
+      { envFirst: true },
+    ),
   );
-  const parentHeaders =
-    environment.parentHeaders ??
-    [files.harness, files.root, files.user, files.userRoot]
-      .map((file) => parseParentHeaders(file.raw?.parent_headers))
-      .find((headers) => headers !== undefined);
+  const lockedHeaders = lockPluginFields(managed, { lockable: [PARENT_HEADERS_FIELD] });
+  const parentHeaders = Object.hasOwn(lockedHeaders, PARENT_HEADERS_FIELD)
+    ? parseParentHeaders(lockedHeaders[PARENT_HEADERS_FIELD])
+    : (environment.parentHeaders ??
+      [files.harness, files.root, files.user, files.userRoot]
+        .map((file) => parseParentHeaders(file.raw?.parent_headers))
+        .find((headers) => headers !== undefined));
   return {
     ...common,
     api_key: nonBlank(common.api_key),
     api_url: nonBlank(common.api_url),
     project: nonBlank(common.project) ?? DEFAULT_LANGSMITH_PROJECT_NAME,
     ...(parentHeaders === undefined ? {} : { parent_headers: parentHeaders }),
+    ...(diagnostics.length === 0 ? {} : { managedConfigWarnings: diagnostics }),
   };
 }

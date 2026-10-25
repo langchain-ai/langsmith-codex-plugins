@@ -4,4 +4,5 @@ packages: ["."]
 overrides:
   vite: 8.1.6
 allowBuilds:
+  "@langchain/plugins-base": true
   protobufjs: true

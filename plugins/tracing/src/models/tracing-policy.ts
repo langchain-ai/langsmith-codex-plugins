@@ -18,4 +18,5 @@ export interface PreferenceRequest {
   enabled: boolean;
   command?: "mute" | "unmute";
   defaultMuted?: boolean;
+  mutedLocked?: boolean;
 }
