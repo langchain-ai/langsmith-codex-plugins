@@ -39,6 +39,8 @@ export const ENV_SUFFIXES = {
 } as const;
 export const STRICT_TRUE_VALUE = "true";
 export const STRICT_FALSE_VALUE = "false";
+export const PARENT_PROJECT_PROBE = "codex-parent-without-project";
+export const AGENT_ADDRESS_PATTERN = /^lrn:agents\/([^/]+)\/environments\/[^/]+$/u;
 export const PARENT_TRACE_HEADER = "langsmith-trace";
 export const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"] as const;
 export const DEFAULT_MUTED_ENV_KEYS = [
@@ -134,8 +136,10 @@ export const NOTICE_COOLDOWN_OFF = "off";
 export const PARENT_HEADERS_FIELD = "parent_headers";
 export const DROPPED_WORK_WARNING =
   "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
-export const DROPPED_LOGIN_WORK_WARNING =
-  "LangSmith could not accept a Codex trace upload and dropped it. Run `langsmith auth login` to sign in again; details are in the Codex LangSmith log.";
+export const DROPPED_LOGIN_WORK_WARNING_PREFIX =
+  "LangSmith could not accept a Codex trace upload and dropped it. Run `";
+export const DROPPED_LOGIN_WORK_WARNING_SUFFIX =
+  "` to sign in again; details are in the Codex LangSmith log.";
 
 // Plugin version, injected at build time via bundler `define`.
 // `typeof` guards the case where the define was not applied.

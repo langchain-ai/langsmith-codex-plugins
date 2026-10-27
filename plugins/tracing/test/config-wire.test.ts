@@ -613,7 +613,9 @@ console.warn = (...parts) => { record(["warn", ...parts]); warn(...parts); };
     await vi.waitFor(() => fs.access(dropped), { timeout: 20_000, interval: 100 });
 
     expect(requests[0]).toMatchObject({ auth: "Bearer synthetic-expired", key: undefined });
-    const loginDropped = expect.stringMatching(/dropped it\. Run `langsmith auth login`/);
+    const loginDropped = expect.stringMatching(
+      /dropped it\. Run `langsmith auth login --profile work`/,
+    );
     await hook(
       prompt("key", "key-thread"),
       { ...env, LANGSMITH_CODEX_API_KEY: "wire-key" },

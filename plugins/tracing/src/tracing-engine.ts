@@ -1,5 +1,6 @@
 import { RunTree, type Client } from "langsmith";
 import {
+  loginCommand,
   loginReplicaRefusal,
   resolveUploadCredential,
   sdkSetting,
@@ -24,7 +25,8 @@ import {
   CODEX_CONFIG_DIRECTORY,
   DEFAULT_LANGSMITH_API_URL,
   DEFAULT_LANGSMITH_PROJECT_NAME,
-  DROPPED_LOGIN_WORK_WARNING,
+  DROPPED_LOGIN_WORK_WARNING_PREFIX,
+  DROPPED_LOGIN_WORK_WARNING_SUFFIX,
   DROPPED_WORK_WARNING,
   ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
@@ -59,6 +61,7 @@ import {
 } from "./tracing-engine-payload.js";
 import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
+import { parentDestination } from "./parent-destination.js";
 
 export function engineStorageRoot(home: string): string {
   return path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
@@ -173,7 +176,7 @@ function conversionOptions(
   runs: CodexReconstructedRun[],
   home: string,
 ): TraceConversionOptions {
-  const client = createRunClient(config);
+  const client = createRunClient(config, uploadCredential(config));
   attributor ??= createRepositoryAttributor({
     githubLoginMarkerPath: path.join(home, CODEX_CONFIG_DIRECTORY, GITHUB_LOGIN_MARKER_FILE_NAME),
   });
@@ -205,8 +208,11 @@ export async function runCodexEngineWorker(sessionId: string, cwd: string): Prom
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
   if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
-    const login = uploadCredential(config).kind === "login";
-    const warning = login ? DROPPED_LOGIN_WORK_WARNING : DROPPED_WORK_WARNING;
+    const credential = uploadCredential(config);
+    const warning =
+      credential.kind === "login"
+        ? `${DROPPED_LOGIN_WORK_WARNING_PREFIX}${loginCommand(credential.login.profile)}${DROPPED_LOGIN_WORK_WARNING_SUFFIX}`
+        : DROPPED_WORK_WARNING;
     if (result !== "scope-mismatch") await recordWarning(home, warning);
     throw new Error(`Shared Codex trace worker stopped with ${result}`);
   }
@@ -283,7 +289,13 @@ function parentRunTreeFor(config: Config, client?: Client): RunTree | undefined 
 }
 
 export function uploadCredential(config: Config): UploadCredential {
-  return resolveUploadCredential({ apiKey: config.api_key, apiUrl: config.api_url });
+  return resolveUploadCredential({
+    apiKey: config.api_key,
+    apiUrl: config.api_url,
+    profile: config.profile,
+    workspaceId: config.workspace_id,
+    agentId: config.agent_id,
+  });
 }
 
 function writerOptions(
@@ -306,14 +318,15 @@ function writerOptions(
       : credential.kind === "api-key"
         ? { ...credential, apiKey: config.api_key ?? credential.apiKey }
         : credential;
-  const headerProject = config.locked.includes("project")
-    ? undefined
-    : parentRunTreeFor(config)?.project_name;
+  const parent = config.locked.includes("project") ? {} : parentDestination(config);
+  const agentId =
+    parent.agentId ?? (parent.projectName === undefined ? config.agent_id : undefined);
   return {
     destinations: [
       {
         ...auth,
-        projectName: headerProject ?? config.project ?? DEFAULT_LANGSMITH_PROJECT_NAME,
+        ...(agentId === undefined ? {} : { agentId }),
+        projectName: parent.projectName ?? config.project ?? DEFAULT_LANGSMITH_PROJECT_NAME,
       },
     ],
     ...(config.replicas?.length ? { replicas: toSdkReplicas(config.replicas) } : {}),

@@ -3,6 +3,7 @@ import type {
   PreparedRunPatchSubmission,
   PreparedRunPostSubmission,
 } from "@langchain/plugins-base/tracing/upload";
+import { withLoginProfile, type UploadCredential } from "@langchain/plugins-base/auth";
 import {
   prepareCodingAgentMetadataProvenance,
   type CodingAgentMetadataOptions,
@@ -98,8 +99,14 @@ export function runIdGenerator(sessionId: string, turnId: string): () => string 
     uuidV5(`${TRACE_RUN_ID_PREFIX}${sessionId}:${turnId}:${index++}`, TRACE_RUN_ID_NAMESPACE);
 }
 
-export function createRunClient(config: Config): Client {
-  return new Client({ apiKey: config.api_key, apiUrl: config.api_url });
+export function createRunClient(config: Config, credential: UploadCredential): Client {
+  const options = { apiKey: config.api_key, apiUrl: config.api_url };
+  return credential.kind === "login"
+    ? withLoginProfile(
+        credential.login,
+        () => new Client({ ...options, workspaceId: credential.login.workspaceId }),
+      )
+    : new Client(options);
 }
 
 function normalizedSnapshot(payload: Record<string, unknown>): NormalizedRunSnapshot {

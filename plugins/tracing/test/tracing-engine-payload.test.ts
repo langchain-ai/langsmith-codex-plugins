@@ -1,7 +1,12 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
 import { RunTree } from "langsmith";
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+import type { Config } from "../src/models/config.js";
 import {
   closingRootSubmission,
+  createRunClient,
   postSubmission,
   runIdGenerator,
 } from "../src/tracing-engine-payload.js";
@@ -62,4 +67,36 @@ it("closes a failed turn root with an error status and both its error and end ti
   const closing = closingRootSubmission(postSubmission(failed, "full", metadata));
   expect(closing.privacyContext).toEqual({ status: "error" });
   expect(closing.patch.fields).toEqual(["end_time", "error"]);
+});
+
+let home: string | undefined;
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  if (home !== undefined) await rm(home, { recursive: true, force: true });
+  home = undefined;
+});
+
+it("builds the run client from the chosen login profile and workspace", async () => {
+  vi.stubEnv("LANGSMITH_API_KEY", undefined);
+  vi.stubEnv("LANGSMITH_PROFILE", undefined);
+  home = await mkdtemp(path.join(tmpdir(), "codex-client-"));
+  const configPath = path.join(home, "config.json");
+  await mkdir(home, { recursive: true });
+  await writeFile(
+    configPath,
+    JSON.stringify({
+      current_profile: "default",
+      profiles: {
+        default: { api_url: "https://one.example", oauth: { access_token: "synthetic-one" } },
+        work: { api_url: "https://two.example", oauth: { access_token: "synthetic-two" } },
+      },
+    }),
+  );
+  const config: Config = { enabled: true, defaultMuted: false, redact: true, locked: [] };
+  const client = createRunClient(config, {
+    kind: "login",
+    login: { configPath, profile: "work", workspaceId: "ws-1" },
+    apiUrl: "https://two.example",
+  });
+  expect(client).toMatchObject({ apiUrl: "https://two.example", workspaceId: "ws-1" });
 });

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const engine = vi.hoisted(() => ({
   result: "completed",
   apiKey: "synthetic-worker-result-key" as string | undefined,
+  profile: undefined as string | undefined,
 }));
 
 vi.mock("@langchain/plugins-base/plugin", async (importOriginal) => ({
@@ -17,6 +18,7 @@ vi.mock("../src/config.js", () => ({
   getConfig: async () => ({
     enabled: true,
     api_key: engine.apiKey,
+    profile: engine.profile,
     api_url: "http://127.0.0.1:9/api/v1",
     project: "worker-result",
     redact: false,
@@ -24,6 +26,7 @@ vi.mock("../src/config.js", () => ({
   }),
 }));
 
+import { loginCommand } from "@langchain/plugins-base/auth";
 import { runCodexEngineWorker } from "../src/tracing-engine.js";
 
 let home: string;
@@ -35,6 +38,7 @@ beforeEach(async () => {
 afterEach(async () => {
   engine.result = "completed";
   engine.apiKey = "synthetic-worker-result-key";
+  engine.profile = undefined;
   vi.unstubAllEnvs();
   await rm(home, { recursive: true, force: true });
 });
@@ -57,3 +61,28 @@ it("fails the worker when there is no credential to upload with", async () => {
   engine.apiKey = undefined;
   await expect(runCodexEngineWorker("thread", process.cwd())).rejects.toThrow("unavailable");
 });
+
+it.each([
+  ["work", "langsmith auth login --profile work"],
+  ["my team", loginCommand("my team")],
+])(
+  "names the %s profile in the warning left after a login upload is dropped",
+  async (profile, command) => {
+    vi.stubEnv("LANGSMITH_API_KEY", undefined);
+    vi.stubEnv("LANGSMITH_PROFILE", undefined);
+    engine.apiKey = undefined;
+    engine.profile = profile;
+    await mkdir(path.join(home, ".langsmith"));
+    await writeFile(
+      path.join(home, ".langsmith", "config.json"),
+      JSON.stringify({
+        profiles: {
+          [profile]: { api_url: "http://127.0.0.1:9/api/v1", oauth: { access_token: "synthetic" } },
+        },
+      }),
+    );
+    engine.result = "dropped";
+    await expect(runCodexEngineWorker("thread", process.cwd())).rejects.toThrow("dropped");
+    expect(await readFile(warningFile(), "utf8")).toContain(`Run \`${command}\` to`);
+  },
+);

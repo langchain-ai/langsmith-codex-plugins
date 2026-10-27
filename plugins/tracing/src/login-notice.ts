@@ -23,6 +23,7 @@ export function loginNotices(home: string, config: Config, credential: UploadCre
     credential.kind === "api-key"
       ? { apiKey: config.api_key ?? credential.apiKey, apiUrl: credential.apiUrl }
       : undefined,
+    config.profile,
   );
   const notices = saved === undefined ? [] : [{ kind: LOGIN_NOTICE_KIND, text: saved }];
   if (credential.kind === "api-key") return notices;
