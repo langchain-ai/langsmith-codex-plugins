@@ -122,6 +122,7 @@ type ResponseItemToolSearchOutput = {
 
 type ResponseItemWebSearchCall = {
   type: "web_search_call";
+  id?: string;
   status?: string;
   action?: unknown;
 };
@@ -144,6 +145,13 @@ type ResponseItemCompaction = {
   encrypted_content: string;
 };
 
+type ResponseItemAgentMessage = {
+  type: "agent_message";
+  author: string;
+  recipient: string;
+  content: Record<string, unknown>[];
+};
+
 type ResponseItemOther = {
   type: "other";
   [key: string]: unknown;
@@ -163,6 +171,7 @@ export type ResponseItem =
   | ResponseItemImageGenerationCall
   | ResponseItemGhostSnapshot
   | ResponseItemCompaction
+  | ResponseItemAgentMessage
   | ResponseItemOther;
 
 type ResponseItemPayload = ResponseItem;
@@ -410,8 +419,10 @@ export type Task = {
   userMessageIndex: number | undefined;
   context: { model: string; [key: string]: unknown } | undefined;
   tokenCount: { total_token_usage?: TokenCount; model_context_window?: number } | undefined;
+  startTokenTotal: TokenCount | undefined;
   error: string | undefined;
   isErrorInterrupt: boolean;
+  isReviewResult: boolean;
   subagentThreads: string[];
   toolCalls: {
     [callId: string]: {

@@ -182,11 +182,29 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
-// Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs.
+// Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs,
+// except the user's own shell commands, plus the tags around pasted images.
 export const CONTEXTUAL_USER_FRAGMENTS: readonly RegExp[] = [
-  /^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+  /^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
   /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+  /^<\/?image(?:\s[^>]*)?>$/i,
 ];
+export const TOOL_OUTPUT_ENVELOPE_KEYS: readonly string[] = [
+  "output",
+  "metadata",
+  "exit_code",
+  "wall_time_seconds",
+  "chunk_id",
+  "original_token_count",
+  "session_id",
+];
+export const DATA_URL_PATTERN = /^data:([^;,]+);base64,([\s\S]*)$/;
+export const REVIEW_RESULT_PATTERN =
+  /^<user_action>[\s\S]*?<action>([\s\S]*?)<\/action>[\s\S]*<\/user_action>$/i;
+export const USER_SHELL_COMMAND_PATTERN =
+  /^<user_shell_command>\s*<command>\n([\s\S]*?)\n<\/command>\s*<result>\n([\s\S]*)\n<\/result>\s*<\/user_shell_command>$/i;
+export const REALTIME_DELEGATION_PATTERN =
+  /^<realtime_delegation>[\s\S]*?<input>([\s\S]*?)<\/input>[\s\S]*<\/realtime_delegation>$/i;
 export const QUESTION_REPLY_PATTERN =
   /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
 export const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;

@@ -42,14 +42,17 @@ import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
-import { withoutCodexMarkup } from "./utils/contextualFragments.js";
+import { isReviewResult, withoutCodexMarkup } from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
+import { toolOutputText } from "./utils/customToolInput.js";
+import { usageSince } from "./utils/tokenUsage.js";
 import { toolOriginFromArgs } from "./tool-path.js";
 import { loadSession, findRolloutFileByThreadId } from "./utils/rollout.js";
 import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
   CHILD_SCOPE_RESET,
+  DATA_URL_PATTERN,
   FAILED_TOOL_STATUSES,
   ITEM_COMPLETED_EVENT,
   LS_INTEGRATION,
@@ -127,10 +130,10 @@ function convertContent(c: Record<string, unknown>): StandardMessage["content"][
   }
 
   if (c.type === "input_image") {
-    return {
-      type: "image_url",
-      image_url: c.image_url,
-    };
+    const dataUrl = typeof c.image_url === "string" ? DATA_URL_PATTERN.exec(c.image_url) : null;
+    return dataUrl != null
+      ? { type: "image", source_type: "base64", mime_type: dataUrl[1], data: dataUrl[2] }
+      : { type: "image", source_type: "url", url: c.image_url };
   }
 
   return { type: "non_standard", value: c };
@@ -166,18 +169,17 @@ function convertFunctionCall(message: ResponseItemOf<"function_call">): Standard
   }
 }
 
+function convertToolOutputPart(part: Record<string, unknown>): StandardMessage["content"][number] {
+  const content = convertContent(part);
+  return content.type === "text" ? { ...content, text: toolOutputText(content.text) } : content;
+}
+
 function convertToolOutput(
   message: ResponseItemOf<"function_call_output"> | ResponseItemOf<"custom_tool_call_output">,
 ): StandardMessage {
   const content = Array.isArray(message.output)
-    ? message.output.filter(isRecord).map(convertContent)
-    : [
-        {
-          type: "text",
-          text:
-            typeof message.output === "string" ? message.output : JSON.stringify(message.output),
-        },
-      ];
+    ? message.output.filter(isRecord).map(convertToolOutputPart)
+    : [{ type: "text", text: toolOutputText(message.output) }];
 
   return {
     role: "tool",
@@ -211,7 +213,7 @@ function convertToolSearchCall(message: ResponseItemOf<"tool_search_call">): Sta
 }
 
 function convertToolSearchOutput(message: ResponseItemOf<"tool_search_output">): StandardMessage {
-  const text = JSON.stringify(message.tools);
+  const text = toolOutputText(message.tools);
   return {
     role: "tool",
     content: [{ type: "text", text }],
@@ -219,8 +221,9 @@ function convertToolSearchOutput(message: ResponseItemOf<"tool_search_output">):
   };
 }
 
-function convertReasoning(message: ResponseItemOf<"reasoning">): StandardMessage {
+function convertReasoning(message: ResponseItemOf<"reasoning">): StandardMessage | undefined {
   // Only include reasoning if it has non-encrypted content
+  if (!message.content?.length && !message.summary?.length) return undefined;
   const { type: _, content: reasoningRaw, ...extras } = message;
 
   const reasoning = message.content
@@ -235,7 +238,30 @@ function convertReasoning(message: ResponseItemOf<"reasoning">): StandardMessage
   };
 }
 
-function convertItem(message: ResponseItem): StandardMessage {
+function convertAgentMessage(
+  message: ResponseItemOf<"agent_message">,
+): StandardMessage | undefined {
+  const content = message.content
+    .filter((part) => part.type !== "encrypted_content")
+    .map(convertContent);
+  return content.length > 0 ? { role: "user", content } : undefined;
+}
+
+function convertHostedToolCall(
+  message:
+    | ResponseItemOf<"local_shell_call">
+    | ResponseItemOf<"web_search_call">
+    | ResponseItemOf<"image_generation_call">,
+): StandardMessage {
+  const id = message.type === "local_shell_call" ? message.call_id : message.id;
+  const args =
+    message.type === "image_generation_call"
+      ? { revised_prompt: message.revised_prompt }
+      : message.action;
+  return { role: "ai", content: [{ type: "tool_call", name: message.type, id, args }] };
+}
+
+function convertItem(message: ResponseItem): StandardMessage | undefined {
   if (message.type === "message") return convertMessage(message);
   if (message.type === "function_call") return convertFunctionCall(message);
   if (message.type === "function_call_output") return convertToolOutput(message);
@@ -244,19 +270,22 @@ function convertItem(message: ResponseItem): StandardMessage {
   if (message.type === "tool_search_call") return convertToolSearchCall(message);
   if (message.type === "tool_search_output") return convertToolSearchOutput(message);
   if (message.type === "reasoning") return convertReasoning(message);
-
-  return {
-    role: "unknown",
-    content: [{ type: "non_standard", value: message }],
-    _raw: message,
-  };
+  if (message.type === "agent_message") return convertAgentMessage(message);
+  if (
+    message.type === "local_shell_call" ||
+    message.type === "web_search_call" ||
+    message.type === "image_generation_call"
+  ) {
+    return convertHostedToolCall(message);
+  }
+  return undefined;
 }
 
 function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
-  return messages.map(({ message, ...rest }): AggregateMessage<StandardMessage> => ({
-    message: convertItem(message),
-    ...rest,
-  }));
+  return messages.flatMap(({ message, ...rest }): AggregateMessage<StandardMessage>[] => {
+    const converted = convertItem(message);
+    return converted == null ? [] : [{ message: converted, ...rest }];
+  });
 }
 
 function buildChildRunMetadata(
@@ -387,7 +416,9 @@ function parentProviderMetadata(task: Task, sessionMeta: Session | undefined) {
     ls_message_format: "anthropic",
     // Non-reserved key: backend auto-aggregates child llm usage into the
     // parent, so usage_metadata here would double-count.
-    ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage),
+    ls_raw_aggregated_usage: getUsageMetadata(
+      usageSince(task.tokenCount?.total_token_usage, task.startTokenTotal),
+    ),
   };
 }
 
@@ -703,12 +734,24 @@ async function postTurn(
   const fallbackTime = Date.now();
 
   const messages = convertToStandardMessages(task.messages);
+  const userIndex = userMessageIndex(task);
 
-  const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : undefined;
+  const user =
+    userIndex != null
+      ? convertToStandardMessages(task.messages.slice(userIndex, userIndex + 1)).at(0)
+      : undefined;
 
   const agent = mergeMessages(
-    task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages,
+    userIndex != null ? convertToStandardMessages(task.messages.slice(userIndex + 1)) : messages,
   );
+  if (
+    user == null &&
+    task.error == null &&
+    task.subagentThreads.length === 0 &&
+    agent.every(({ message }) => message.role === "system")
+  ) {
+    return;
+  }
 
   const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
 
@@ -734,12 +777,22 @@ async function postTurn(
     postedSubagentThreads: new Set<string>(),
   };
 
-  await postModelAndToolRuns(context, messages);
+  if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
 
   // Canonical activity records can arrive without a matching response item.
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(context, subagentThread);
   }
+}
+
+function userMessageIndex(task: Task): number | undefined {
+  if (task.userMessageIndex != null || task.context != null) return task.userMessageIndex;
+  const index = task.messages.findIndex(({ message }) => isUserInput(message));
+  return index === -1 ? undefined : index;
+}
+
+function isUserInput(item: ResponseItem): boolean {
+  return (item.type === "message" && item.role === "user") || item.type === "agent_message";
 }
 
 function childBase(base: Record<string, unknown>, draft: TurnDraft): Record<string, unknown> {
@@ -784,8 +837,10 @@ function createTask(): Task {
     userMessageIndex: undefined,
     context: undefined,
     tokenCount: undefined,
+    startTokenTotal: undefined,
     error: undefined,
     isErrorInterrupt: false,
+    isReviewResult: false,
     subagentThreads: [],
     toolCalls: {},
   };
@@ -829,6 +884,7 @@ function readSessionMeta(payload: SessionMetaPayload): Session {
 function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: string) {
   walk.task ??= createTask();
   const task = walk.task;
+  if (isReviewResult(item)) task.isReviewResult = true;
   const payload = withoutCodexMarkup(item);
   if (payload == null) return;
   const message = {
@@ -852,12 +908,7 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
 
   // Only capture the user message after we retrieved to turn context,
   // since <environment_context /> is being sent as user message
-  if (
-    task.context != null &&
-    task.userMessageIndex == null &&
-    payload.type === "message" &&
-    payload.role === "user"
-  ) {
+  if (task.context != null && task.userMessageIndex == null && isUserInput(payload)) {
     task.userMessageIndex = task.messages.length - 1;
   }
 }
@@ -964,6 +1015,7 @@ function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTi
     walk.turnNumber += 1;
     walk.task.turnId = { id: payload.turn_id, timestamp: eventTime };
     walk.task.turnNumber = walk.turnNumber;
+    walk.task.startTokenTotal = walk.sessionTokenTotal;
   }
 
   if (typeof payload.call_id === "string") {
@@ -991,6 +1043,7 @@ function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTi
 
     // Also update last message as well
     task.tokenCount = payload.info;
+    walk.sessionTokenTotal = payload.info.total_token_usage;
   }
 
   for (const activity of extractSubagentActivities(payload)) {
@@ -1040,6 +1093,7 @@ async function walkCompletedTurns(
     // spawn_agent call_id → its AI message, so the child id from the matching
     // function_call_output attaches there.
     spawnAgentMessages: new Map<string, { subagentThreads: string[] }>(),
+    sessionTokenTotal: undefined,
   };
 
   const events = await loadSession(input.transcript_path);

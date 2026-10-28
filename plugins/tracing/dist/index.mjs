@@ -22242,7 +22242,24 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
-const CONTEXTUAL_USER_FRAGMENTS = [/^<(environment_context|skill|user_shell_command|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i, /^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i];
+const CONTEXTUAL_USER_FRAGMENTS = [
+	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+	/^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+	/^<\/?image(?:\s[^>]*)?>$/i
+];
+const TOOL_OUTPUT_ENVELOPE_KEYS = [
+	"output",
+	"metadata",
+	"exit_code",
+	"wall_time_seconds",
+	"chunk_id",
+	"original_token_count",
+	"session_id"
+];
+const DATA_URL_PATTERN = /^data:([^;,]+);base64,([\s\S]*)$/;
+const REVIEW_RESULT_PATTERN = /^<user_action>[\s\S]*?<action>([\s\S]*?)<\/action>[\s\S]*<\/user_action>$/i;
+const USER_SHELL_COMMAND_PATTERN = /^<user_shell_command>\s*<command>\n([\s\S]*?)\n<\/command>\s*<result>\n([\s\S]*)\n<\/result>\s*<\/user_shell_command>$/i;
+const REALTIME_DELEGATION_PATTERN = /^<realtime_delegation>[\s\S]*?<input>([\s\S]*?)<\/input>[\s\S]*<\/realtime_delegation>$/i;
 const QUESTION_REPLY_PATTERN = /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
 const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;
 const XML_ENTITY_PATTERN = /&(?:lt|gt|quot|apos|amp);/g;
@@ -22458,6 +22475,23 @@ const findLast = (array, predicate) => {
 //#region src/utils/customToolInput.ts
 function customToolInput(args) {
 	return isRecord(args) && Object.keys(args).length === 1 && typeof args.input === "string" ? args.input : args;
+}
+function parsedRecord(text) {
+	try {
+		const value = JSON.parse(text);
+		return isRecord(value) ? value : void 0;
+	} catch {
+		return;
+	}
+}
+function toolOutputText(value) {
+	const record = typeof value === "string" ? parsedRecord(value) : value;
+	if (isRecord(record) && typeof record.output === "string" && Object.keys(record).every((key) => TOOL_OUTPUT_ENVELOPE_KEYS.includes(key))) {
+		const metadata = isRecord(record.metadata) ? record.metadata : {};
+		const exitCode = record.exit_code ?? metadata.exit_code;
+		return exitCode == null || exitCode === 0 ? record.output : `${record.output.trimEnd()}\n\nExit code: ${String(exitCode)}`;
+	}
+	return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 //#endregion
 //#region src/skills.ts
@@ -22680,7 +22714,11 @@ function questionReplyText(body) {
 function unwrappedText(text) {
 	const reply = QUESTION_REPLY_PATTERN.exec(text)?.[1];
 	if (reply != null) return questionReplyText(reply);
-	return (HOOK_PROMPT_PATTERN.exec(text)?.[1])?.replace(XML_ENTITY_PATTERN, (entity) => XML_ENTITIES[entity] ?? entity);
+	const action = REVIEW_RESULT_PATTERN.exec(text)?.[1];
+	if (action != null) return `/${action.trim()}`;
+	const shell = USER_SHELL_COMMAND_PATTERN.exec(text);
+	if (shell != null) return `${shell[1]}\n\n${shell[2]}`;
+	return (HOOK_PROMPT_PATTERN.exec(text)?.[1] ?? REALTIME_DELEGATION_PATTERN.exec(text)?.[1])?.replace(XML_ENTITY_PATTERN, (entity) => XML_ENTITIES[entity] ?? entity);
 }
 function unwrapPart(part) {
 	if (part.type !== "input_text" || typeof part.text !== "string") return part;
@@ -22689,6 +22727,9 @@ function unwrapPart(part) {
 		...part,
 		text
 	};
+}
+function isReviewResult(item) {
+	return item.type === "message" && item.role === "user" && item.content.some((part) => typeof part.text === "string" && REVIEW_RESULT_PATTERN.test(part.text.trim()));
 }
 function withoutCodexMarkup(item) {
 	if (item.type !== "message" || item.role !== "user") return item;
@@ -22702,6 +22743,12 @@ function withoutCodexMarkup(item) {
 //#region src/utils/omitKey.ts
 function omitKey(value, key) {
 	return Object.fromEntries(Object.entries(value ?? {}).filter(([entry]) => entry !== key));
+}
+//#endregion
+//#region src/utils/tokenUsage.ts
+function usageSince(total, start) {
+	if (total == null || start == null) return total;
+	return Object.fromEntries(Object.entries(total).map(([key, value]) => [key, typeof value === "number" ? value - (start[key] ?? 0) : value]));
 }
 //#endregion
 //#region src/tool-path.ts
@@ -22931,10 +22978,19 @@ function convertContent(c) {
 		type: "text",
 		text: c.text
 	};
-	if (c.type === "input_image") return {
-		type: "image_url",
-		image_url: c.image_url
-	};
+	if (c.type === "input_image") {
+		const dataUrl = typeof c.image_url === "string" ? DATA_URL_PATTERN.exec(c.image_url) : null;
+		return dataUrl != null ? {
+			type: "image",
+			source_type: "base64",
+			mime_type: dataUrl[1],
+			data: dataUrl[2]
+		} : {
+			type: "image",
+			source_type: "url",
+			url: c.image_url
+		};
+	}
 	return {
 		type: "non_standard",
 		value: c
@@ -22976,12 +23032,19 @@ function convertFunctionCall(message) {
 		};
 	}
 }
+function convertToolOutputPart(part) {
+	const content = convertContent(part);
+	return content.type === "text" ? {
+		...content,
+		text: toolOutputText(content.text)
+	} : content;
+}
 function convertToolOutput(message) {
 	return {
 		role: "tool",
-		content: Array.isArray(message.output) ? message.output.filter(isRecord).map(convertContent) : [{
+		content: Array.isArray(message.output) ? message.output.filter(isRecord).map(convertToolOutputPart) : [{
 			type: "text",
-			text: typeof message.output === "string" ? message.output : JSON.stringify(message.output)
+			text: toolOutputText(message.output)
 		}],
 		tool_call_id: message.call_id
 	};
@@ -23013,12 +23076,13 @@ function convertToolSearchOutput(message) {
 		role: "tool",
 		content: [{
 			type: "text",
-			text: JSON.stringify(message.tools)
+			text: toolOutputText(message.tools)
 		}],
 		tool_call_id: message.call_id
 	};
 }
 function convertReasoning(message) {
+	if (!message.content?.length && !message.summary?.length) return void 0;
 	const { type: _, content: reasoningRaw, ...extras } = message;
 	return {
 		role: "ai",
@@ -23026,6 +23090,26 @@ function convertReasoning(message) {
 			type: "reasoning",
 			reasoning: message.content ? typeof message.content === "string" ? message.content : JSON.stringify(message.content) : void 0,
 			extras
+		}]
+	};
+}
+function convertAgentMessage(message) {
+	const content = message.content.filter((part) => part.type !== "encrypted_content").map(convertContent);
+	return content.length > 0 ? {
+		role: "user",
+		content
+	} : void 0;
+}
+function convertHostedToolCall(message) {
+	const id = message.type === "local_shell_call" ? message.call_id : message.id;
+	const args = message.type === "image_generation_call" ? { revised_prompt: message.revised_prompt } : message.action;
+	return {
+		role: "ai",
+		content: [{
+			type: "tool_call",
+			name: message.type,
+			id,
+			args
 		}]
 	};
 }
@@ -23038,20 +23122,17 @@ function convertItem(message) {
 	if (message.type === "tool_search_call") return convertToolSearchCall(message);
 	if (message.type === "tool_search_output") return convertToolSearchOutput(message);
 	if (message.type === "reasoning") return convertReasoning(message);
-	return {
-		role: "unknown",
-		content: [{
-			type: "non_standard",
-			value: message
-		}],
-		_raw: message
-	};
+	if (message.type === "agent_message") return convertAgentMessage(message);
+	if (message.type === "local_shell_call" || message.type === "web_search_call" || message.type === "image_generation_call") return convertHostedToolCall(message);
 }
 function convertToStandardMessages(messages) {
-	return messages.map(({ message, ...rest }) => ({
-		message: convertItem(message),
-		...rest
-	}));
+	return messages.flatMap(({ message, ...rest }) => {
+		const converted = convertItem(message);
+		return converted == null ? [] : [{
+			message: converted,
+			...rest
+		}];
+	});
 }
 function buildChildRunMetadata(options, reset = CHILD_SCOPE_RESET) {
 	return Object.assign(buildCodingAgentMetadata(options), reset);
@@ -23134,7 +23215,7 @@ function parentProviderMetadata(task, sessionMeta) {
 	return {
 		codex_cli_version: sessionMeta?.cli_version,
 		ls_message_format: "anthropic",
-		ls_raw_aggregated_usage: getUsageMetadata(task.tokenCount?.total_token_usage)
+		ls_raw_aggregated_usage: getUsageMetadata(usageSince(task.tokenCount?.total_token_usage, task.startTokenTotal))
 	};
 }
 async function createParentRun(draft, user, agent) {
@@ -23349,8 +23430,10 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	if (mode === "off") return;
 	const fallbackTime = Date.now();
 	const messages = convertToStandardMessages(task.messages);
-	const user = task.userMessageIndex != null ? messages.at(task.userMessageIndex) : void 0;
-	const agent = mergeMessages(task.userMessageIndex != null ? messages.slice(task.userMessageIndex + 1) : messages);
+	const userIndex = userMessageIndex(task);
+	const user = userIndex != null ? convertToStandardMessages(task.messages.slice(userIndex, userIndex + 1)).at(0) : void 0;
+	const agent = mergeMessages(userIndex != null ? convertToStandardMessages(task.messages.slice(userIndex + 1)) : messages);
+	if (user == null && task.error == null && task.subagentThreads.length === 0 && agent.every(({ message }) => message.role === "system")) return;
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
 	const unattributed = turnMetadata(task, sessionMeta, request.options);
 	const attributor = mode === "full" ? request.options.attributor : void 0;
@@ -23371,8 +23454,16 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 		parent: await createParentRun(draft, user, agent),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
-	await postModelAndToolRuns(context, messages);
+	if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(context, subagentThread);
+}
+function userMessageIndex(task) {
+	if (task.userMessageIndex != null || task.context != null) return task.userMessageIndex;
+	const index = task.messages.findIndex(({ message }) => isUserInput(message));
+	return index === -1 ? void 0 : index;
+}
+function isUserInput(item) {
+	return item.type === "message" && item.role === "user" || item.type === "agent_message";
 }
 function childBase(base, draft) {
 	return draft.mode === "full" ? {
@@ -23397,8 +23488,10 @@ function createTask() {
 		userMessageIndex: void 0,
 		context: void 0,
 		tokenCount: void 0,
+		startTokenTotal: void 0,
 		error: void 0,
 		isErrorInterrupt: false,
+		isReviewResult: false,
 		subagentThreads: [],
 		toolCalls: {}
 	};
@@ -23428,6 +23521,7 @@ function readSessionMeta(payload) {
 function recordResponseItem(walk, item, timestamp) {
 	walk.task ??= createTask();
 	const task = walk.task;
+	if (isReviewResult(item)) task.isReviewResult = true;
 	const payload = withoutCodexMarkup(item);
 	if (payload == null) return;
 	const message = {
@@ -23442,7 +23536,7 @@ function recordResponseItem(walk, item, timestamp) {
 		const childId = extractSpawnedAgentId(payload.output);
 		if (childId != null) recordSubagentThread(walk, task, childId, payload.call_id);
 	}
-	if (task.context != null && task.userMessageIndex == null && payload.type === "message" && payload.role === "user") task.userMessageIndex = task.messages.length - 1;
+	if (task.context != null && task.userMessageIndex == null && isUserInput(payload)) task.userMessageIndex = task.messages.length - 1;
 }
 function toolCallEntry(task, callId) {
 	task.toolCalls[callId] ??= {
@@ -23515,6 +23609,7 @@ function recordEventMessage(walk, payload, eventTime) {
 			timestamp: eventTime
 		};
 		walk.task.turnNumber = walk.turnNumber;
+		walk.task.startTokenTotal = walk.sessionTokenTotal;
 	}
 	if (typeof payload.call_id === "string") {
 		walk.task ??= createTask();
@@ -23531,6 +23626,7 @@ function recordEventMessage(walk, payload, eventTime) {
 		const last = task?.messages.at(-1);
 		if (last != null && (usage?.input_tokens || usage?.output_tokens)) last.tokenCount = usage;
 		task.tokenCount = payload.info;
+		walk.sessionTokenTotal = payload.info.total_token_usage;
 	}
 	for (const activity of extractSubagentActivities(payload)) {
 		walk.task ??= createTask();
@@ -23553,7 +23649,8 @@ async function walkCompletedTurns(input, onTurn) {
 		sessionMeta: void 0,
 		task: void 0,
 		turnNumber: 0,
-		spawnAgentMessages: /* @__PURE__ */ new Map()
+		spawnAgentMessages: /* @__PURE__ */ new Map(),
+		sessionTokenTotal: void 0
 	};
 	const events = await loadSession(input.transcript_path);
 	const last = events.at(-1);
