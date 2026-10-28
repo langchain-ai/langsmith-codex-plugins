@@ -50,7 +50,7 @@ The simplest option is to sign in once with the LangSmith CLI, which you can [in
 langsmith auth login
 ```
 
-If you use the CLI sign-in and have more than one profile set `profile` to the one the plugin should use. API keys ignore this setting.
+If you use the CLI sign-in and have more than one profile set `profile` to the one the plugin should use. Your own `api_key` ignores this setting, but a generic `LANGSMITH_API_KEY` isn't used as a fallback while `profile` is set.
 
 You can use an API key instead by setting `api_key` in your config file. Create one at [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**.
 
@@ -163,7 +163,7 @@ Each setting has a config file key and an environment variable. The `LANGSMITH_C
 | `profile`            | none                              | the CLI's current one             | Which CLI login to use                  |
 | `workspace_id`       | none                              | the login's own                   | Workspace for a login's traces          |
 
-`profile` is personal so the managed file can't lock it. `LANGSMITH_PROFILE` is only used when no `profile` is set in a settings file.
+`profile` is personal so the managed file can't lock it. `LANGSMITH_PROFILE` and `LANGSMITH_WORKSPACE_ID` are only used when no `profile` or `workspace_id` is set in a settings file.
 
 ## Development
 
