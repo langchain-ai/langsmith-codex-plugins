@@ -21957,7 +21957,7 @@ async function postModelRun(context, fullMessages, output) {
 	const toolMessages = fullMessages.slice(output.start + 1, output.start + output.length);
 	const outputStartTime = inputMessages.at(-1)?.timestamp.end ?? aiMessage.at(0)?.timestamp.start ?? parentStartTime;
 	const outputEndTime = Math.max(aiMessage.at(-1)?.timestamp.end ?? outputStartTime, outputStartTime);
-	const tokenCounts = findLast(aiMessage, (i) => i.tokenCount != null)?.tokenCount;
+	const tokenCounts = findLast([...aiMessage, ...toolMessages], (i) => i.tokenCount != null)?.tokenCount;
 	const subagentThreads = findLast(aiMessage, (message) => message.subagentThreads.length > 0)?.subagentThreads;
 	const llmMetadata = {
 		...metadataContext,
@@ -22041,7 +22041,6 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			runType: "tool",
 			clearSubagent: true,
 			modelName: typeof task.context?.model === "string" ? task.context.model : void 0,
-			usageMetadata: getUsageMetadata(toolMessage.tokenCount),
 			...nativeToolName == null ? {} : {
 				toolName: nativeToolName,
 				runName
@@ -22263,12 +22262,13 @@ function recordEventMessage(walk, payload, eventTime) {
 		walk.task ??= createTask();
 		recordToolItem(walk.task, payload.item, eventTime);
 	}
-	if (payload.type === "token_count") {
+	if (payload.type === "token_count" && payload.info != null) {
 		walk.task ??= createTask();
 		const task = walk.task;
+		const usage = payload.info.last_token_usage;
 		const last = task?.messages.at(-1);
-		if (last != null) last.tokenCount = payload.info?.last_token_usage;
-		task.tokenCount = payload.info ?? void 0;
+		if (last != null && (usage?.input_tokens || usage?.output_tokens)) last.tokenCount = usage;
+		task.tokenCount = payload.info;
 	}
 	for (const activity of extractSubagentActivities(payload)) {
 		walk.task ??= createTask();
