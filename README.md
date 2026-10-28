@@ -4,116 +4,93 @@ Sends your Codex turns, tool calls and subagent threads to [LangSmith](https://s
 
 ## What you need
 
-- **On a Mac, nothing.** The plugin carries its own build and runs it directly.
-- **Everywhere else, including Windows,** Node.js 22 or newer.
+- **On a Mac:** nothing. The plugin carries its own build and runs it directly.
+- **On Windows and Linux:** Node.js 22 or newer.
 - Codex 0.153.4 or newer.
-- A LangSmith account, and either an API key or a login from the LangSmith CLI.
+- A LangSmith account.
 
-If the carried Mac build cannot start, the plugin hands the turn to Node instead of losing it, so Node is still worth having.
+Node is still worth having on a Mac because the plugin hands the turn to it if its own build can't start.
 
 ## Install
 
-Codex installs and updates the plugin for you, so there is nothing to download.
+### Install for yourself
+
+Add the marketplace and install the plugin:
 
 ```bash
 codex plugin marketplace add langchain-ai/langsmith-codex-plugins
+codex plugin add tracing@langsmith-codex-plugins
 ```
 
-Then turn it on, either globally in `~/.codex/config.toml` or for one project in `.codex/config.toml`:
+You can also install it from the plugin browser by running `/plugins` inside Codex.
 
-```toml
-[plugins."tracing@langsmith-codex-plugins"]
-enabled = true
-```
+**You also need to trust the plugin's hooks** with `/hooks` or when Codex's plugin UI asks. Nothing traces until you do. Codex only asks in the interactive interface, so `codex exec` skips the hooks until you've trusted them once. Restart Codex afterwards.
 
-**Enabling the plugin is not enough on its own.** You also have to trust its hooks with `/hooks`, or in Codex's plugin UI when it asks, and nothing traces until you do. Codex only asks in the interactive interface, so a session started with `codex exec` quietly skips the hooks until you have trusted them once. Restart Codex afterwards.
+### Install for your organization
 
-Codex remembers your answer against the exact wording of each hook, so any release that changes a hook asks everyone to trust it again.
-
-## Turn on tracing
-
-Tracing is off until you give it a key or a login and switch it on. Either set these in your shell:
-
-```bash
-export LANGSMITH_CODEX_API_KEY="lsv2_pt_..."
-export LANGSMITH_CODEX_PROJECT="codex"
-export TRACE_TO_LANGSMITH="true"
-```
-
-or write them to `~/.codex/langsmith.json`:
-
-```json
-{ "enabled": true, "api_key": "lsv2_pt_...", "project": "codex" }
-```
-
-Get a key from [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**. Complete a turn, then look for it in the `codex` project.
-
-Instead of a key you can run `langsmith auth login` once and leave `api_key` out, and tracing uploads with that login. Only the plugin's own key in `LANGSMITH_CODEX_API_KEY` or `api_key` beats the login, and a generic `LANGSMITH_API_KEY` or `LANGCHAIN_API_KEY` is only used when there's no login. When the login expires, the key is rejected or you sign out Codex tells you in the chat, and traces from then on aren't uploaded until you fix it. Each notice repeats at most once every `notice_cooldown` minutes. Set `strict_auth` to `true` to refuse every prompt until you fix it instead, including when you haven't signed in or set a key at all. That never applies when tracing is off.
-
-Settings can also live in a project, at `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`, or across every harness at `~/.langsmith-plugins.json`. A setting from your shell beats a project file, which beats a user file, which beats the shared one.
-
-> **Check a repository's tracing settings before you trust it.** A project file can switch tracing on, point uploads at someone else's server, supply its own credentials and turn secret redaction off, and a full trace can carry your conversation, file contents and tool results. Review these files in an unfamiliar repository, along with `.codex/config.toml` and `.codex/hooks.json`.
-
-## Hide one thread
-
-Send either of these as an ordinary message, with no leading slash and nothing else on the line:
-
-```text
-langsmith-tracing:mute
-```
-
-```text
-langsmith-tracing:unmute
-```
-
-Muting keeps tracing the shape of the thread while leaving the content out, and it applies from the next turn rather than the one in flight. The turn you are in already has its mode locked, and so does anything it started. Wait for the confirmation before sending anything sensitive, and if none appears do not assume it worked.
-
-Muting changes only what reaches LangSmith. Codex still reads and remembers everything locally, and earlier uploads are not deleted.
-
-To mute by default instead of thread by thread, set `LANGSMITH_CODEX_DEFAULT_MUTED=true` or put `"defaultMuted": true` in one of the LangSmith config files listed above. A thread you muted or unmuted by hand keeps that choice regardless.
-
-## What gets traced
-
-Each model call carries the conversation so far, the assistant's reply, and the model name, provider, stop reason and token counts. Tool calls, shell calls, file reads and web searches come with their inputs and outputs, and subagent threads appear as children of the turn that started them. A turn you cancel still uploads.
-
-When muted, the structure, timing, identifiers and token counts remain while messages, tool arguments and results are replaced with a placeholder.
-
-## Secret redaction
-
-Secrets are stripped before anything is uploaded, covering API keys, JWTs, PEM blocks and common `NAME=value`, `Authorization` and URL-credential shapes. Set `LANGSMITH_CODEX_REDACT` to `false` to turn that off, or `LANGSMITH_CODEX_REDACT_EXTRA` to a JSON array of `{ "pattern": "...", "replace": "..." }` rules to catch more.
-
-Redaction is not a guarantee that what you upload is safe to share.
-
-## Settings
-
-Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one, except that a plain `LANGSMITH_API_KEY` only counts when there's no login.
-
-| Config key           | Environment variable              | Default                           | What it does                                                          |
-| -------------------- | --------------------------------- | --------------------------------- | --------------------------------------------------------------------- |
-| `enabled`            | `TRACE_TO_LANGSMITH`              | `false`                           | Whether to trace at all                                               |
-| `api_key`            | `LANGSMITH_CODEX_API_KEY`         | none                              | Your LangSmith key                                                    |
-| `project`            | `LANGSMITH_CODEX_PROJECT`         | `codex`                           | Where runs land                                                       |
-| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`        | `https://api.smith.langchain.com` | Which server to send to                                               |
-| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`   | `false`                           | Leave content out unless told otherwise                               |
-| `redact`             | `LANGSMITH_CODEX_REDACT`          | `true`                            | Strip secrets before upload                                           |
-| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`    | none                              | Extra patterns to strip                                               |
-| `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run                                            |
-| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too                                |
-| `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`                                     |
-| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again                                |
-| `profile`            | none                              | current CLI profile               | Which `langsmith auth login` to use                                   |
-| `workspace_id`       | none                              | the login's workspace             | Workspace a login uploads to                                          |
-| `agent_id`           | none                              | none                              | Send traces to this agent's production environment, beating `project` |
-
-The `profile` setting is personal, so the managed file can't lock it, and `LANGSMITH_PROFILE` is only used when no `profile` is set since a setting from a file beats it.
+ChatGPT workspace admins can install the plugin for everyone by importing this repository as a marketplace. See [Plugin management](https://developers.openai.com/codex/enterprise/plugin-management) for how. Each user still has to trust the plugin's hooks before anything traces. Then use the managed file below to switch tracing on and set the project for everyone.
 
 ### Lock settings with a managed file
 
-An admin can lock any of these settings for each user through a managed file at `~/.langsmith-plugins/managed.json` in each user's home, which overrides every other file and environment variable. If that file is broken or not owned by root, tracing stops and Codex says why, at most once every `notice_cooldown` minutes. Windows has no managed file, so the lock is skipped there. See [the settings guide](https://github.com/langchain-ai/langsmith-plugin-binary/blob/main/docs/settings.md) to set it up.
+An admin can lock any setting in the [Settings](#settings) table except `profile` with a managed file at `~/.langsmith-plugins/managed.json` in each user's home folder. It overrides every other file and environment variable and works on macOS and Linux. Admins usually install it on each machine with an MDM tool, which manages company laptops (such as Jamf, Kandji or Microsoft Intune).
 
-## Send a trace to more than one place
+The plugin only trusts the file when:
 
-Useful for keeping a staging copy, or sending to two workspaces with different keys. List the destinations under `replicas`, and anything you leave out is inherited:
+- Root owns the file and its folder
+- No other user can write to either
+- Neither is a symlink
+
+If the file is broken or fails these checks then tracing stops and Codex explains why. See [the settings guide](https://github.com/langchain-ai/langsmith-plugin-binary/blob/main/docs/settings.md) to set it up.
+
+## Authenticate
+
+The simplest option is to sign in once with the LangSmith CLI, which you can [install from its docs](https://docs.langchain.com/langsmith/langsmith-cli#install) if you don't have it yet:
+
+```bash
+langsmith auth login
+```
+
+If you use the CLI sign-in and have more than one profile set `profile` to the one the plugin should use. API keys ignore this setting.
+
+You can use an API key instead by setting `api_key` in your config file. Create one at [smith.langchain.com](https://smith.langchain.com) under **Settings** then **API Keys**.
+
+If more than one credential is set the plugin uses the first one it finds:
+
+1. The plugin's own key from `api_key` or `LANGSMITH_CODEX_API_KEY`
+2. Your `langsmith auth login` sign-in
+3. A generic `LANGSMITH_API_KEY` in your shell
+
+When your sign-in expires, your key is rejected or you sign out the plugin stops uploading but still lets your prompts through. Turns from that gap are never uploaded, and Codex shows a notice in the chat at most every 2 minutes until you fix it. Use `notice_cooldown` to change that interval or set it to `off` to hide the notices.
+
+### Strict auth
+
+Strict auth refuses every prompt until your sign-in or key works again, even if no credentials were ever set. Turn it on by setting `strict_auth` to `true`. It's off by default and has no effect while tracing is off.
+
+> **Strict auth also blocks `codex exec`.** Leave it off in CI unless a failed sign-in should fail the job.
+
+## Turn on tracing
+
+Tracing is off until you switch it on in `~/.codex/langsmith.json`, unless your admin already turned it on with a [managed file](#lock-settings-with-a-managed-file). Send traces to an agent with `agent_id`:
+
+```json
+{ "enabled": true, "agent_id": "shared-codex" }
+```
+
+Or send them to a project with `project`:
+
+```json
+{ "enabled": true, "project": "shared-codex" }
+```
+
+Use either one, and `agent_id` wins if you set both. With neither set traces go to the `codex` project. Complete a turn and look for it in LangSmith.
+
+A project can override these settings in `<project>/.codex/langsmith.json` or `<project>/langsmith-plugins.json`. You can also share settings across LangSmith plugins in `~/.langsmith-plugins.json`. Your shell beats project files, which beat your own files, which beat the shared one.
+
+> **Check a repository's tracing settings before you trust it.** A cloned repository can switch tracing on and send your conversations and files to someone else's server. Review its LangSmith config files along with `.codex/config.toml` and `.codex/hooks.json`.
+
+### Send a trace to more than one place
+
+Replicas send the same trace to more than one project or workspace, such as a staging copy. List each destination under `replicas` and any field you leave out is inherited:
 
 ```json
 {
@@ -125,17 +102,68 @@ Useful for keeping a staging copy, or sending to two workspaces with different k
 }
 ```
 
-Setting this replaces the normal destination rather than adding to it, and an empty list turns replicas off.
+Replicas replace the normal destination instead of adding to it. An empty list turns them off.
+
+## What gets traced
+
+Each model call includes the conversation so far and the reply along with the model name, provider, stop reason and token counts. Tool calls, shell commands, file reads and web searches include their inputs and outputs. Subagent threads appear under the turn that started them.
+
+A tool call that touches a file inside a git repo is tagged with the repository name, branch, commit and author. A cancelled turn still uploads.
+
+## Hide a conversation
+
+Send either of these as a normal message with no leading slash and nothing else on the line:
+
+```text
+langsmith-tracing:mute
+```
+
+```text
+langsmith-tracing:unmute
+```
+
+The confirmation appears as a prompt blocked by a hook. That's how Codex shows a plugin's reply, so nothing went wrong and the message never reaches the model.
+
+A muted thread keeps its structure in LangSmith but leaves out the content. Muting starts from your next turn, so wait for the confirmation before you send anything sensitive. If no confirmation appears then assume it didn't work.
+
+Muting only changes what reaches LangSmith and doesn't delete earlier uploads. Set `defaultMuted` to `true` to mute every thread by default. A thread you mute or unmute by hand keeps that choice.
 
 ## When nothing shows up
 
-- **No runs at all.** Check the plugin is enabled, its hooks are trusted with `/hooks`, and tracing is switched on. A `TRACE_TO_LANGSMITH` in your shell overrides whatever the files say.
-- **Rejected key.** Check `LANGSMITH_CODEX_API_KEY` is set and still valid.
-- **Runs in the wrong place.** Set `LANGSMITH_CODEX_PROJECT`, or the `project` key.
+- **No runs at all.** Check that the plugin is enabled, its hooks are trusted with `/hooks` and tracing is on. A `TRACE_TO_LANGSMITH` in your shell overrides your config files.
+- **Tracing is paused.** Your sign-in expired or your key was rejected. Run `langsmith auth login` again or replace the key and tracing resumes from the next prompt.
+- **Stopped after an update.** Codex asks you to trust a hook again whenever a release changes it. Run `/hooks` and approve it.
+- **Runs in the wrong project.** Check `project` in your config file and `LANGSMITH_CODEX_PROJECT` in your shell.
+- **Still stuck.** The background uploader logs to `~/.codex/langsmith_engine/worker.log`.
 
-## What leaves your machine
+## Privacy
 
-With tracing on, a full turn uploads your messages, tool inputs and outputs, metadata, token usage and subagent structure. A muted turn uploads the structure and placeholders instead. Keep tracing off if none of that may leave your machine.
+With tracing on each turn uploads your messages, tool inputs and outputs, metadata, token usage and subagent structure. A muted turn uploads only the structure.
+
+Secrets are stripped before upload unless you turn `redact` off. This covers API keys, JWTs, PEM blocks and common credential patterns in variables, headers and URLs. Redaction isn't a guarantee, so keep tracing off if none of this can leave your machine.
+
+## Settings
+
+Each setting has a config file key and an environment variable. The `LANGSMITH_CODEX_` name wins over the plain `LANGSMITH_` one.
+
+| Config key           | Environment variable              | Default                           | What it does                            |
+| -------------------- | --------------------------------- | --------------------------------- | --------------------------------------- |
+| `enabled`            | `TRACE_TO_LANGSMITH`              | `false`                           | Whether to trace at all                 |
+| `api_key`            | `LANGSMITH_CODEX_API_KEY`         | none                              | Your LangSmith key                      |
+| `project`            | `LANGSMITH_CODEX_PROJECT`         | `codex`                           | Where runs land                         |
+| `agent_id`           | `LANGSMITH_AGENT_ID`              | none                              | Agent to trace to, instead of project   |
+| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`        | `https://api.smith.langchain.com` | Which server to send to                 |
+| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`   | `false`                           | Leave content out unless told otherwise |
+| `redact`             | `LANGSMITH_CODEX_REDACT`          | `true`                            | Strip secrets before upload             |
+| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`    | none                              | Extra patterns to strip                 |
+| `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run              |
+| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too  |
+| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again  |
+| `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between notices, or `off`       |
+| `profile`            | none                              | the CLI's current one             | Which CLI login to use                  |
+| `workspace_id`       | none                              | the login's own                   | Workspace for a login's traces          |
+
+`profile` is personal so the managed file can't lock it. `LANGSMITH_PROFILE` is only used when no `profile` is set in a settings file.
 
 ## Development
 
