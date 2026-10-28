@@ -524,14 +524,15 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
               messages: expect.arrayContaining([
                 {
                   role: "user",
-                  content: expect.arrayContaining([
-                    { type: "text", text: expect.stringContaining("<image name=[Image #1]>") },
+                  content: [
                     {
-                      type: "image_url",
-                      image_url: expect.stringContaining("data:image/png;base64,"),
+                      type: "image",
+                      source_type: "base64",
+                      mime_type: "image/png",
+                      data: expect.any(String),
                     },
                     { type: "text", text: expect.stringContaining("What's this file about?") },
-                  ]),
+                  ],
                 },
               ]),
             },
@@ -576,8 +577,10 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   role: "user",
                   content: expect.arrayContaining([
                     {
-                      type: "image_url",
-                      image_url: expect.stringContaining("data:image/png;base64,"),
+                      type: "image",
+                      source_type: "base64",
+                      mime_type: "image/png",
+                      data: expect.any(String),
                     },
                     { type: "text", text: expect.stringContaining("What's this file about?") },
                   ]),
@@ -1328,7 +1331,7 @@ const SCAFFOLDING_FILE = "/home/codex-user/.codex/sessions/2026/10/24/rollout-sc
 const SCAFFOLDING_TURN = "019900aa-tttt-0112";
 const EXEC_PROGRAM = 'text(await tools.exec_command({cmd:"ls"}));';
 
-async function traceScaffoldedTurn(extraUserTexts: string[] = []) {
+async function traceScaffoldedTurn(extraItems: (string | Record<string, unknown>)[] = []) {
   const user = (...texts: string[]) => ({
     type: "message",
     role: "user",
@@ -1339,6 +1342,10 @@ async function traceScaffoldedTurn(extraUserTexts: string[] = []) {
     {
       type: "response_item",
       payload: user("<environment_context>\n  <cwd>/w</cwd>\n</environment_context>"),
+    },
+    {
+      type: "response_item",
+      payload: { type: "additional_tools", role: "developer", tools: [{ name: "exec" }] },
     },
     { type: "turn_context", payload: { turn_id: SCAFFOLDING_TURN, cwd: "/w", model: "m" } },
     {
@@ -1353,7 +1360,10 @@ async function traceScaffoldedTurn(extraUserTexts: string[] = []) {
       type: "response_item",
       payload: user("<external_codex_apps_open_page>/a</external_codex_apps_open_page>"),
     },
-    ...extraUserTexts.map((text) => ({ type: "response_item", payload: user(text) })),
+    ...extraItems.map((item) => ({
+      type: "response_item",
+      payload: typeof item === "string" ? user(item) : item,
+    })),
     {
       type: "response_item",
       payload: { type: "custom_tool_call", call_id: "c1", name: "exec", input: EXEC_PROGRAM },
@@ -1363,7 +1373,18 @@ async function traceScaffoldedTurn(extraUserTexts: string[] = []) {
       payload: {
         type: "custom_tool_call_output",
         call_id: "c1",
-        output: [{ type: "input_text", text: "a\nb\n" }],
+        output: [
+          {
+            type: "input_text",
+            text: JSON.stringify({
+              chunk_id: "c0",
+              wall_time_seconds: 0.1,
+              exit_code: 0,
+              original_token_count: 2,
+              output: "a\nb\n",
+            }),
+          },
+        ],
       },
     },
     {
@@ -1415,7 +1436,7 @@ it("keeps Codex scaffolding out of the user message and model inputs", async () 
     messages: [{ role: "user", content: [{ type: "text", text: "Fix the bug" }] }],
   });
   expect(JSON.stringify(runs.map((run) => run.inputs))).not.toMatch(
-    /environment_context|<skill>|external_codex/,
+    /environment_context|<skill>|external_codex|additional_tools/,
   );
 });
 
@@ -1432,6 +1453,11 @@ it.each([
     what: "a hook prompt as its text",
     text: '<hook_prompt hook_run_id="h1">run lint &amp; test</hook_prompt>',
     shown: "run lint & test",
+  },
+  {
+    what: "a realtime handoff as its input",
+    text: "<realtime_delegation>\n  <input>Book the room &amp; desk</input>\n</realtime_delegation>",
+    shown: "Book the room & desk",
   },
   { what: "a question reply it cannot read as it arrived", text: BAD_REPLY, shown: BAD_REPLY },
 ])("shows $what, since Codex counts it as the user's", async ({ text, shown }) => {
@@ -1450,4 +1476,250 @@ it("uploads an exec program as an object and keeps its output's line breaks", as
 
   expect(exec?.inputs).toEqual({ input: { input: EXEC_PROGRAM } });
   expect(exec?.outputs?.messages[0].content).toEqual([{ type: "text", text: "a\nb\n" }]);
+});
+
+it("keeps every field of a tool result that is not Codex's shell output", async () => {
+  const result = JSON.stringify({ output: "report", warnings: ["stale"] });
+  const runs = await traceScaffoldedTurn([
+    { type: "function_call", call_id: "f1", name: "report", arguments: "{}" },
+    { type: "function_call_output", call_id: "f1", output: result },
+  ]);
+  const tool = runs.find((run) => run.name === "report");
+
+  expect(tool?.outputs?.messages[0].content).toEqual([{ type: "text", text: result }]);
+});
+
+it("shows a failed shell command's exit code under its output", async () => {
+  const runs = await traceScaffoldedTurn([
+    { type: "function_call", call_id: "f1", name: "shell", arguments: "{}" },
+    {
+      type: "function_call_output",
+      call_id: "f1",
+      output: JSON.stringify({ output: "no such file\n", metadata: { exit_code: 2 } }),
+    },
+  ]);
+  const tool = runs.find((run) => run.name === "shell");
+
+  expect(tool?.outputs?.messages[0].content).toEqual([
+    { type: "text", text: "no such file\n\nExit code: 2" },
+  ]);
+});
+
+it("shows Codex's hosted tools and agent messages as conversation", async () => {
+  const runs = await traceScaffoldedTurn([
+    { type: "local_shell_call", call_id: "ls1", status: "completed", action: { command: ["ls"] } },
+    {
+      type: "function_call_output",
+      call_id: "ls1",
+      output: JSON.stringify({ output: "a.txt\n", metadata: { exit_code: 0 } }),
+    },
+    { type: "web_search_call", id: "ws1", status: "completed", action: { query: "codex" } },
+    {
+      type: "image_generation_call",
+      id: "ig1",
+      status: "completed",
+      revised_prompt: "a cat",
+      result: "",
+    },
+    { type: "tool_search_call", call_id: "ts1", execution: "client", arguments: { query: "gh" } },
+    {
+      type: "tool_search_output",
+      call_id: "ts1",
+      status: "completed",
+      execution: "client",
+      tools: [{ name: "get_issue" }],
+    },
+    {
+      type: "agent_message",
+      author: "/root/worker",
+      recipient: "/root",
+      content: [{ type: "input_text", text: "3 files" }],
+    },
+    {
+      type: "agent_message",
+      author: "/root/worker",
+      recipient: "/root",
+      content: [{ type: "encrypted_content", encrypted_content: "gAAAA" }],
+    },
+  ]);
+  const turn = runs.find((run) => run.name === "openai.codex");
+  const call = (name: string, id: string, args: unknown) => ({ type: "tool_call", name, id, args });
+
+  expect(turn?.outputs?.messages.slice(0, 5)).toEqual([
+    { role: "ai", content: [call("local_shell_call", "ls1", { command: ["ls"] })] },
+    { role: "tool", content: [{ type: "text", text: "a.txt\n" }], tool_call_id: "ls1" },
+    {
+      role: "ai",
+      content: [
+        call("web_search_call", "ws1", { query: "codex" }),
+        call("image_generation_call", "ig1", { revised_prompt: "a cat" }),
+        call("tool_search_call", "ts1", { query: "gh" }),
+      ],
+    },
+    {
+      role: "tool",
+      content: [{ type: "text", text: '[\n  {\n    "name": "get_issue"\n  }\n]' }],
+      tool_call_id: "ts1",
+    },
+    { role: "user", content: [{ type: "text", text: "3 files" }] },
+  ]);
+});
+
+const BARE_FILE = "/home/codex-user/.codex/sessions/2026/10/27/rollout-bare.jsonl";
+const BARE_TURN = "019900bb-tttt-0112";
+const SHELL_COMMAND =
+  "<user_shell_command>\n<command>\nls\n</command>\n<result>\nExit code: 0\nOutput:\na.txt\n</result>\n</user_shell_command>";
+const REVIEW_RESULT =
+  "<user_action>\n  <context>User initiated a review task.</context>\n  <action>review</action>\n  <results>\n  None.\n  </results>\n</user_action>";
+
+const asked = (text: string) => ({
+  messages: [{ role: "user", content: [{ type: "text", text }] }],
+});
+const said = (role: string, type: string, text: string) => ({
+  type: "message",
+  role,
+  content: [{ type, text }],
+});
+
+it.each([
+  {
+    what: "a shell command the user ran",
+    items: [said("user", "input_text", SHELL_COMMAND)],
+    runs: [[asked("ls\n\nExit code: 0\nOutput:\na.txt"), { messages: [] }]],
+  },
+  {
+    what: "a review",
+    items: [
+      said("user", "input_text", REVIEW_RESULT),
+      said("assistant", "output_text", "No findings."),
+    ],
+    runs: [
+      [
+        asked("/review"),
+        { messages: [{ role: "ai", content: [{ type: "text", text: "No findings." }] }] },
+      ],
+    ],
+  },
+  {
+    what: "a prompt stopped while the model was thinking",
+    items: [
+      said("user", "input_text", "Plan it"),
+      { type: "reasoning", summary: [], encrypted_content: "gAAAA" },
+    ],
+    runs: [[asked("Plan it"), { messages: [] }]],
+  },
+  {
+    what: "a task another agent sent",
+    items: [
+      { turn_context: { turn_id: BARE_TURN, cwd: "/w", model: "m" } },
+      {
+        type: "agent_message",
+        author: "/root",
+        recipient: "/root/worker",
+        content: [
+          { type: "input_text", text: "Count files" },
+          { type: "encrypted_content", encrypted_content: "gAAAA" },
+        ],
+      },
+    ],
+    runs: [[asked("Count files"), { messages: [] }]],
+  },
+  {
+    what: "a turn that failed before any message",
+    items: [{ event_msg: { type: "turn_aborted", turn_id: BARE_TURN, reason: "interrupted" } }],
+    runs: [[{ messages: [] }, { messages: [] }]],
+  },
+  {
+    what: "a turn that only started a subagent",
+    items: [{ event_msg: { type: "sub_agent_activity", kind: "started", agent_thread_id: "a1" } }],
+    runs: [[{ messages: [] }, { messages: [] }]],
+  },
+  {
+    what: "a turn that only set Codex up",
+    items: [said("developer", "input_text", "<permissions instructions>")],
+    runs: [],
+  },
+])("traces $what without a model call", async (turn) => {
+  const lines = [
+    {
+      type: "session_meta",
+      payload: {
+        id: "019900bb-0000-7000-8000-bare",
+        cwd: "/w",
+        cli_version: "0.164.0",
+        source: "cli",
+      },
+    },
+    { type: "event_msg", payload: { type: "task_started", turn_id: BARE_TURN } },
+    ...turn.items.map((payload) =>
+      "turn_context" in payload
+        ? { type: "turn_context", payload: payload.turn_context }
+        : "event_msg" in payload
+          ? { type: "event_msg", payload: payload.event_msg }
+          : { type: "response_item", payload },
+    ),
+    { type: "event_msg", payload: { type: "task_complete", turn_id: BARE_TURN } },
+  ].map((line, i) => JSON.stringify({ timestamp: `2026-10-27T00:00:0${i}.000Z`, ...line }));
+  vol.fromJSON({ [BARE_FILE]: lines.join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: BARE_FILE, turn_id: BARE_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  expect(runs.map((run) => [run.inputs, run.outputs])).toEqual(turn.runs);
+});
+
+it("reports a later turn's own usage, not the session's running total", async () => {
+  const usage = (input: number, output: number) => ({
+    input_tokens: input,
+    output_tokens: output,
+    total_tokens: input + output,
+    cached_input_tokens: 0,
+    reasoning_output_tokens: 0,
+  });
+  const turn = (id: string, text: string, total: ReturnType<typeof usage>) => [
+    { type: "event_msg", payload: { type: "task_started", turn_id: id } },
+    { type: "turn_context", payload: { turn_id: id, cwd: "/w", model: "m" } },
+    {
+      type: "response_item",
+      payload: { type: "message", role: "user", content: [{ type: "input_text", text }] },
+    },
+    {
+      type: "response_item",
+      payload: { type: "message", role: "assistant", content: [{ type: "output_text", text }] },
+    },
+    {
+      type: "event_msg",
+      payload: {
+        type: "token_count",
+        info: { total_token_usage: total, last_token_usage: total, model_context_window: 1 },
+      },
+    },
+    { type: "event_msg", payload: { type: "task_complete", turn_id: id } },
+  ];
+  const lines = [
+    {
+      type: "session_meta",
+      payload: { id: "019900bb-0000-7000-8000-bare", cwd: "/w", cli_version: "0.164.0" },
+    },
+    ...turn("turn-1", "first", usage(100, 10)),
+    ...turn(BARE_TURN, "second", usage(250, 30)),
+  ].map((line, i) => JSON.stringify({ timestamp: `2026-10-27T00:00:${10 + i}.000Z`, ...line }));
+  vol.fromJSON({ [BARE_FILE]: lines.join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: BARE_FILE, turn_id: BARE_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  expect(runs[0].metadata?.ls_raw_aggregated_usage).toMatchObject({
+    input_tokens: 150,
+    output_tokens: 20,
+    total_tokens: 170,
+  });
 });

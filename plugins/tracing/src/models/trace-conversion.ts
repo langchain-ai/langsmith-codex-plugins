@@ -1,7 +1,7 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { RepositoryAttributor } from "@langchain/plugins-base/git";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
-import type { Session, Task } from "./rollout.js";
+import type { Session, Task, TokenCount } from "./rollout.js";
 import type { TracingMode, TurnMode } from "./tracing-policy.js";
 
 export type ToolRunIdGenerator = (callId: string) => string;
@@ -86,6 +86,7 @@ export interface RolloutWalk {
   task: Task | undefined;
   turnNumber: number;
   spawnAgentMessages: Map<string, { subagentThreads: string[] }>;
+  sessionTokenTotal: TokenCount | undefined;
 }
 
 export interface TurnPosition {
