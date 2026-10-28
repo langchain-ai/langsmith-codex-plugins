@@ -144,6 +144,23 @@ it.each([
   expect(writer.destinations[0].agentId).toBe(agentId);
 });
 
+it("keeps a managed-locked agent_id over a parent trace's project or agent", () => {
+  for (const baggage of [
+    "langsmith-project=parent-project",
+    `langsmith-address=${encodeURIComponent("lrn:agents/parent-agent/environments/production")}`,
+  ]) {
+    const { writer } = open({
+      ...base,
+      project: "configured",
+      agent_id: "my-agent",
+      locked: ["agent_id"],
+      parent_headers: parentHeaders(baggage) as Config["parent_headers"],
+    });
+    expect(writer.destinations[0].agentId).toBe("my-agent");
+    expect(writer.destinations[0].projectName).toBe("configured");
+  }
+});
+
 it("uploads to the project named by the parent headers, with the configured redaction", () => {
   const parent = "019dbc02-0000-7000-8000-000000000001";
   const { writer } = open({

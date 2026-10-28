@@ -36,7 +36,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -49,7 +49,7 @@ function failureStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/constants.js
 const POLICY_LOCK_TIMEOUT_MS = 2e3;
 const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
 const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
@@ -81,7 +81,7 @@ const HOOK_ERROR_HANDLER_WARNING = "The hook error handler failed:";
 const NOTICE_MINUTE_MS = 6e4;
 const NOTICE_STATE_FILE = "notices.json";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
 async function dispatchHookCommand(argv, options) {
 	assertHookOptions(options);
 	const [argument, ...rest] = argv;
@@ -109,7 +109,7 @@ function reportHookError(name, error, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/constants.js
 const FILE_MISSING_CODE = "ENOENT";
 const WINDOWS_PLATFORM = "win32";
 const FILE_EXISTS_CODE = "EEXIST";
@@ -120,7 +120,7 @@ const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
 const INVALID_ARGUMENT_CODE = "EINVAL";
 const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
 	DIRECTORY_NOT_EMPTY_CODE,
@@ -130,7 +130,7 @@ const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_ACCESS_DENIED_CODE
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
 async function removeFileIfPresent(path) {
 	try {
 		await unlink(path);
@@ -160,7 +160,7 @@ async function removeEmptyAncestors(directory, root) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -203,12 +203,12 @@ const STORAGE_ENGINE_FILE_PATTERNS = [
 ];
 const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_JOBS_DIRECTORY = "jobs";
 const CAPTURE_SESSIONS_DIRECTORY = "sessions";
 const CAPTURE_TURNS_DIRECTORY = "turns";
@@ -247,7 +247,7 @@ const CAPTURE_FILE_EXTENSION = ".json";
 const CAPTURE_LOCK_EXTENSION = ".lock";
 const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -286,7 +286,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -353,7 +353,7 @@ function parseJsonObject(contents, message) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	blockedPath;
 	constructor(blockedPath) {
@@ -373,7 +373,7 @@ var StorageNotWritableError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
 const heartbeats = /* @__PURE__ */ new Map();
 function startHeartbeat(path, id) {
 	const timer = setInterval(() => {
@@ -391,7 +391,7 @@ function warnUnlessMissing(error) {
 	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
 function processIsAlive(pid) {
 	try {
 		process.kill(pid, 0);
@@ -424,7 +424,7 @@ function waitForNextScan(deadline, blockedPath) {
 	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
 async function createLegacyGate(gatePath) {
 	await mkdir(gatePath, { mode: 448 });
 	const stat = await lstat(gatePath);
@@ -578,7 +578,7 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function parseClaim(value, id) {
 	if (!isPlainRecord(value)) return void 0;
 	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
@@ -888,7 +888,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
 function readPolicyFile(path, options) {
 	let raw;
 	try {
@@ -986,11 +986,11 @@ function findLockTimeout(error) {
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
 var CaptureRecordInvalidError = class extends Error {};
 var CaptureRecordVersionError = class extends Error {};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
 function publishByRename(path, contents, tempSuffix, mode) {
 	const temp = `${path}.${randomUUID()}${tempSuffix}`;
 	const fd = openSync(temp, "wx", mode);
@@ -1002,7 +1002,7 @@ function publishByRename(path, contents, tempSuffix, mode) {
 	renameSync(temp, path);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
 const STATE_TEMP_SUFFIX = ".state.tmp";
 const STATE_CORRUPT_SUFFIX = ".corrupt";
 const STATE_FILE_ENCODING = "utf-8";
@@ -1015,7 +1015,7 @@ const PENDING_STATE_FILE_SUFFIX = ".json";
 const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
 const STATE_CLAIM_SUFFIX = ".claim";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
 let sequence = 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function diffValue(path, before, after, operations) {
@@ -1171,7 +1171,7 @@ function removePending(stateFilePath, files) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-store.js
 function createStateStore(options) {
 	const { path } = options;
 	const warn = options.warn ?? console.warn;
@@ -1251,7 +1251,7 @@ async function withStateFileLock(path, warn, callback, waitMs) {
 	return true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
 async function claimStateEntry(path, key, windowMs) {
 	mkdirSync(dirname(path), {
 		recursive: true,
@@ -1277,7 +1277,7 @@ async function claimStateEntry(path, key, windowMs) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -1327,7 +1327,7 @@ function recordLockPath(root, scope) {
 	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
 }
@@ -1482,7 +1482,7 @@ async function syncDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -1509,7 +1509,7 @@ async function lstatDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
 function scopeOf(value) {
 	return {
 		integration: value.integration,
@@ -1527,19 +1527,19 @@ function scopeKey(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/compare.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/compare.js
 function compareText(left, right) {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
 function compareCaptureOrder(left, right) {
 	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
 	return compareText(left.eventId, right.eventId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
 function captureContentDigest(record) {
 	const content = { ...record };
 	delete content.version;
@@ -1549,7 +1549,7 @@ function captureContentDigest(record) {
 	return createHash("sha256").update(canonicalJson(content)).digest("hex");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
 function markerPath(root, scope) {
 	const path = eventPath(root, scope);
 	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
@@ -1677,7 +1677,7 @@ async function removeOldMarkers(root, directory, modifiedBeforeMs) {
 	return removed;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
 	const storageRoot = {
 		root: resolve(root),
@@ -2132,17 +2132,17 @@ function failure(code, error) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/format.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
 function isWaitingForOtherSetting(record, accountFingerprint) {
 	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
 function liveTurnSpans(captures) {
 	const spans = /* @__PURE__ */ new Map();
 	for (const { record, capturedAtMs } of captures) {
@@ -2198,7 +2198,7 @@ async function removeExpiredCaptures(options) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_LOCK_FILE = "worker";
 const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
 const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
@@ -2237,7 +2237,7 @@ const BACKGROUND_WORKER_FILE_PREFIX = "wake";
 const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
 const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -2270,13 +2270,13 @@ function scopedWorkerFileName(scope, name) {
 	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
 function assertPlainFile(entry, message) {
 	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
 }
@@ -2364,7 +2364,7 @@ function parseAttempt(contents, markerId, attempt) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const context = createWorkerContext(options);
@@ -2604,7 +2604,7 @@ async function readLaunch(storageRoot, scope) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
 function ifMissing(fallback) {
 	return (error) => {
 		if (errorCode(error) === "ENOENT") return fallback;
@@ -2612,7 +2612,7 @@ function ifMissing(fallback) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
 async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
 	let removed = 0;
 	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
@@ -2674,13 +2674,13 @@ const DELIVERY_DRAIN_LOCK = "delivery";
 const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
 const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
 const PROCESS_STARTED_AT_MS = Date.now();
 function isWaitingForRetry(retry, now = Date.now()) {
 	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
 function createBatch() {
 	return {
 		candidates: [],
@@ -2704,7 +2704,7 @@ function joinBatch(batch, candidate) {
 	batch.bytes += payloadBytes(candidate.entry.record);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
 function isRetryable(error) {
 	return error?.retryable !== false;
 }
@@ -2727,7 +2727,7 @@ function nextRetry(previous, baseMs) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
 function emptyDestinationResult() {
 	return {
 		delivered: 0,
@@ -2808,7 +2808,7 @@ async function settleDroppedDependency(drainCache, candidate, destination, resul
 	result.progressed = true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
 async function trySend(context, destination, candidates) {
 	const { policy, request } = context;
 	const { writer } = request;
@@ -2871,7 +2871,7 @@ async function deliverBatch(context, destination, candidates) {
 	return settleFailed(context, destination, candidates, error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
 function deliveryKey(scope, destination) {
 	return JSON.stringify([scopeKey(scope), destination]);
 }
@@ -2935,7 +2935,7 @@ async function countPending(drainCache, entries, destinations) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
 async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
 	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
@@ -3055,7 +3055,7 @@ async function dropPending(drainCache, candidate, reason) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
 function validateDrainRequest(request) {
 	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
 	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
@@ -3105,7 +3105,7 @@ function resolvePolicy(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 async function drainUnderLock(context, request, drainCache) {
 	const { captureStore, integration, sessionId, storageRoot, policy } = context;
 	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
@@ -3172,36 +3172,12 @@ function createDeliveryCoordinator(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/env.js
-function withoutEnvVariables(names, run) {
-	const hidden = names.flatMap((name) => {
-		const value = process.env[name];
-		return value === void 0 ? [] : [[name, value]];
-	});
-	for (const [name] of hidden) delete process.env[name];
-	try {
-		return run();
-	} finally {
-		for (const [name, value] of hidden) process.env[name] = value;
-	}
-}
-function withEnvVariables(values, run) {
-	const previous = Object.keys(values).map((name) => [name, process.env[name]]);
-	Object.assign(process.env, values);
-	try {
-		return run();
-	} finally {
-		for (const [name, value] of previous) if (value === void 0) delete process.env[name];
-		else process.env[name] = value;
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
 const SDK_DOUBLE_QUOTED = /^"(.*)"$/;
 const SDK_SINGLE_QUOTED = /^'(.*)'$/;
 const SDK_PROFILE_QUOTES = /^["']|["']$/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
 function sdkSetting(value) {
 	if (typeof value !== "string") return void 0;
 	const trimmed = value.trim().replace(SDK_DOUBLE_QUOTED, "$1").replace(SDK_SINGLE_QUOTED, "$1");
@@ -3212,9 +3188,8 @@ function sdkProfileValue(value) {
 	return value.trim().replace(SDK_PROFILE_QUOTES, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/auth/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/constants.js
 const LOGIN_CONFIG_FILE_VARIABLE = "LANGSMITH_CONFIG_FILE";
-const LOGIN_PROFILE_VARIABLE = "LANGSMITH_PROFILE";
 const LOGIN_HOME_VARIABLES = ["HOME", "USERPROFILE"];
 const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
 const LOGIN_CONFIG_DIRECTORY = ".langsmith";
@@ -3262,17 +3237,10 @@ const LOGIN_WORKSPACE_INVALID_REASON = [
 const LOGIN_WORKSPACE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/auth/profile.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/profile.js
 function readLoginProfile(env, profile) {
 	const configPath = loginConfigPath(env);
 	return configPath === void 0 ? void 0 : readProfileAt(configPath, profile || env["LANGSMITH_PROFILE"] || void 0);
-}
-/** The SDK picks its profile from the environment once, when the client is built. */
-function withLoginProfile(login, run) {
-	return withEnvVariables({
-		[LOGIN_CONFIG_FILE_VARIABLE]: login.configPath,
-		[LOGIN_PROFILE_VARIABLE]: login.profile
-	}, run);
 }
 function loginCommand(profile, platform = process.platform) {
 	if (!profile) return LOGIN_COMMAND;
@@ -3332,7 +3300,7 @@ function credentialHash(value) {
 	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
 const LOGIN_PAUSED_NOTICE = [
 	LOGIN_NOTICE_HEADING,
 	"Your LangSmith login expired so this session isn't being traced.",
@@ -3355,7 +3323,7 @@ const LOGIN_STATE_FILE = "sign-in.json";
 const LOGIN_NOTICE_KIND = "login-expired";
 const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/auth/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry.js
 const unrecorded = /* @__PURE__ */ new Set();
 async function recordExpiredLogin(login, sentTokenHash, storageRoot, denied = false) {
 	try {
@@ -3441,7 +3409,7 @@ function loginStore(storageRoot) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const GIT_METADATA_KEYS = {
@@ -3657,7 +3625,7 @@ const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
 const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
 const CODING_AGENT_REVISION_ID_KEY = "revision_id";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field$2(key, options = {}) {
 	return {
 		key,
@@ -3794,7 +3762,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
 function withBothGitMetadataNames(metadata) {
 	const both = { ...metadata };
 	for (const role of Object.keys(GIT_METADATA_KEYS)) {
@@ -3806,7 +3774,7 @@ function withBothGitMetadataNames(metadata) {
 	return both;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function metadataFieldTypeIssue(field, value) {
 	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
 }
@@ -3858,7 +3826,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -3916,7 +3884,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
 function forwardsEnvironmentVariable(name, value, environmentMetadata) {
 	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
 }
@@ -3943,7 +3911,7 @@ function buildCodingAgentRuntimeMetadata(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -3960,7 +3928,7 @@ function metadataForMode(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -4020,1619 +3988,20 @@ function projectedString(source, key) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/regex.js
-var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/validate.js
-function validate$1(uuid) {
-	return typeof uuid === "string" && regex_default$1.test(uuid);
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/tslib.mjs
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+	if (kind === "m") throw new TypeError("Private method is not writable");
+	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+	return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
+}
+function __classPrivateFieldGet(receiver, state, kind, f) {
+	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+	return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/parse.js
-function parse$2(uuid) {
-	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
-	let v;
-	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/stringify.js
-/**
-* Convert array of 16 byte values to UUID string format of the form:
-* XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-*/
-const byteToHex$1 = [];
-for (let i = 0; i < 256; ++i) byteToHex$1.push((i + 256).toString(16).slice(1));
-function unsafeStringify$1(arr, offset = 0) {
-	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/rng.js
-const rnds8 = /* @__PURE__ */ new Uint8Array(16);
-function rng() {
-	return crypto.getRandomValues(rnds8);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v4.js
-function v4(options, buf, offset) {
-	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
-	return _v4(options, buf, offset);
-}
-function _v4(options, buf, offset) {
-	options = options || {};
-	const rnds = options.random ?? options.rng?.() ?? rng();
-	if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
-	rnds[6] = rnds[6] & 15 | 64;
-	rnds[8] = rnds[8] & 63 | 128;
-	if (buf) {
-		offset = offset || 0;
-		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
-		for (let i = 0; i < 16; ++i) buf[offset + i] = rnds[i];
-		return buf;
-	}
-	return unsafeStringify$1(rnds);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/sha1.js
-function f(s, x, y, z) {
-	switch (s) {
-		case 0: return x & y ^ ~x & z;
-		case 1: return x ^ y ^ z;
-		case 2: return x & y ^ x & z ^ y & z;
-		case 3: return x ^ y ^ z;
-	}
-}
-function ROTL(x, n) {
-	return x << n | x >>> 32 - n;
-}
-function sha1$1(bytes) {
-	const K = [
-		1518500249,
-		1859775393,
-		2400959708,
-		3395469782
-	];
-	const H = [
-		1732584193,
-		4023233417,
-		2562383102,
-		271733878,
-		3285377520
-	];
-	const newBytes = new Uint8Array(bytes.length + 1);
-	newBytes.set(bytes);
-	newBytes[bytes.length] = 128;
-	bytes = newBytes;
-	const l = bytes.length / 4 + 2;
-	const N = Math.ceil(l / 16);
-	const M = new Array(N);
-	for (let i = 0; i < N; ++i) {
-		const arr = /* @__PURE__ */ new Uint32Array(16);
-		for (let j = 0; j < 16; ++j) arr[j] = bytes[i * 64 + j * 4] << 24 | bytes[i * 64 + j * 4 + 1] << 16 | bytes[i * 64 + j * 4 + 2] << 8 | bytes[i * 64 + j * 4 + 3];
-		M[i] = arr;
-	}
-	M[N - 1][14] = (bytes.length - 1) * 8 / 2 ** 32;
-	M[N - 1][14] = Math.floor(M[N - 1][14]);
-	M[N - 1][15] = (bytes.length - 1) * 8 & 4294967295;
-	for (let i = 0; i < N; ++i) {
-		const W = /* @__PURE__ */ new Uint32Array(80);
-		for (let t = 0; t < 16; ++t) W[t] = M[i][t];
-		for (let t = 16; t < 80; ++t) W[t] = ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
-		let a = H[0];
-		let b = H[1];
-		let c = H[2];
-		let d = H[3];
-		let e = H[4];
-		for (let t = 0; t < 80; ++t) {
-			const s = Math.floor(t / 20);
-			const T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[t] >>> 0;
-			e = d;
-			d = c;
-			c = ROTL(b, 30) >>> 0;
-			b = a;
-			a = T;
-		}
-		H[0] = H[0] + a >>> 0;
-		H[1] = H[1] + b >>> 0;
-		H[2] = H[2] + c >>> 0;
-		H[3] = H[3] + d >>> 0;
-		H[4] = H[4] + e >>> 0;
-	}
-	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v35.js
-function stringToBytes$1(str) {
-	str = unescape(encodeURIComponent(str));
-	const bytes = new Uint8Array(str.length);
-	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
-	return bytes;
-}
-const DNS$1 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-const URL$2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
-function v35$1(version, hash, value, namespace, buf, offset) {
-	const valueBytes = typeof value === "string" ? stringToBytes$1(value) : value;
-	const namespaceBytes = typeof namespace === "string" ? parse$2(namespace) : namespace;
-	if (typeof namespace === "string") namespace = parse$2(namespace);
-	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
-	let bytes = new Uint8Array(16 + valueBytes.length);
-	bytes.set(namespaceBytes);
-	bytes.set(valueBytes, namespaceBytes.length);
-	bytes = hash(bytes);
-	bytes[6] = bytes[6] & 15 | version;
-	bytes[8] = bytes[8] & 63 | 128;
-	if (buf) {
-		offset ??= 0;
-		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
-		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
-		return buf;
-	}
-	return unsafeStringify$1(bytes);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v5.js
-function v5$1(value, namespace, buf, offset) {
-	return v35$1(80, sha1$1, value, namespace, buf, offset);
-}
-v5$1.DNS = DNS$1;
-v5$1.URL = URL$2;
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/uuid/src/v7.js
-const _state = {};
-function v7(options, buf, offset) {
-	let bytes;
-	if (options) bytes = v7Bytes(options.random ?? options.rng?.() ?? rng(), options.msecs, options.seq, buf, offset);
-	else {
-		const now = Date.now();
-		const rnds = rng();
-		updateV7State(_state, now, rnds);
-		bytes = v7Bytes(rnds, _state.msecs, _state.seq, buf, offset);
-	}
-	return buf ?? unsafeStringify$1(bytes);
-}
-function updateV7State(state, now, rnds) {
-	state.msecs ??= -Infinity;
-	state.seq ??= 0;
-	if (now > state.msecs) {
-		state.seq = rnds[6] << 23 | rnds[7] << 16 | rnds[8] << 8 | rnds[9];
-		state.msecs = now;
-	} else {
-		state.seq = state.seq + 1 | 0;
-		if (state.seq === 0) state.msecs++;
-	}
-	return state;
-}
-function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
-	if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
-	if (!buf) {
-		buf = /* @__PURE__ */ new Uint8Array(16);
-		offset = 0;
-	} else if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
-	msecs ??= Date.now();
-	seq ??= rnds[6] * 127 << 24 | rnds[7] << 16 | rnds[8] << 8 | rnds[9];
-	buf[offset++] = msecs / 1099511627776 & 255;
-	buf[offset++] = msecs / 4294967296 & 255;
-	buf[offset++] = msecs / 16777216 & 255;
-	buf[offset++] = msecs / 65536 & 255;
-	buf[offset++] = msecs / 256 & 255;
-	buf[offset++] = msecs & 255;
-	buf[offset++] = 112 | seq >>> 28 & 15;
-	buf[offset++] = seq >>> 20 & 255;
-	buf[offset++] = 128 | seq >>> 14 & 63;
-	buf[offset++] = seq >>> 6 & 255;
-	buf[offset++] = seq << 2 & 255 | rnds[10] & 3;
-	buf[offset++] = rnds[11];
-	buf[offset++] = rnds[12];
-	buf[offset++] = rnds[13];
-	buf[offset++] = rnds[14];
-	buf[offset++] = rnds[15];
-	return buf;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/experimental/otel/constants.js
-const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
-const GEN_AI_SYSTEM = "gen_ai.system";
-const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
-const GEN_AI_RESPONSE_MODEL = "gen_ai.response.model";
-const GEN_AI_USAGE_INPUT_TOKENS = "gen_ai.usage.input_tokens";
-const GEN_AI_USAGE_OUTPUT_TOKENS = "gen_ai.usage.output_tokens";
-const GEN_AI_USAGE_TOTAL_TOKENS = "gen_ai.usage.total_tokens";
-const GEN_AI_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens";
-const GEN_AI_REQUEST_TEMPERATURE = "gen_ai.request.temperature";
-const GEN_AI_REQUEST_TOP_P = "gen_ai.request.top_p";
-const GEN_AI_REQUEST_FREQUENCY_PENALTY = "gen_ai.request.frequency_penalty";
-const GEN_AI_REQUEST_PRESENCE_PENALTY = "gen_ai.request.presence_penalty";
-const GEN_AI_RESPONSE_FINISH_REASONS = "gen_ai.response.finish_reasons";
-const GENAI_PROMPT = "gen_ai.prompt";
-const GENAI_COMPLETION = "gen_ai.completion";
-const GEN_AI_REQUEST_EXTRA_QUERY = "gen_ai.request.extra_query";
-const GEN_AI_REQUEST_EXTRA_BODY = "gen_ai.request.extra_body";
-const GEN_AI_SERIALIZED_NAME = "gen_ai.serialized.name";
-const GEN_AI_SERIALIZED_SIGNATURE = "gen_ai.serialized.signature";
-const GEN_AI_SERIALIZED_DOC = "gen_ai.serialized.doc";
-const GEN_AI_RESPONSE_ID = "gen_ai.response.id";
-const GEN_AI_TOOL_NAME = "gen_ai.tool.name";
-const GEN_AI_TOOL_CALL_ID = "gen_ai.tool.call.id";
-const GEN_AI_TOOL_DEFINITIONS = "gen_ai.tool.definitions";
-const GEN_AI_RESPONSE_SERVICE_TIER = "gen_ai.response.service_tier";
-const GEN_AI_RESPONSE_SYSTEM_FINGERPRINT = "gen_ai.response.system_fingerprint";
-const GEN_AI_USAGE_INPUT_TOKEN_DETAILS = "gen_ai.usage.input_token_details";
-const GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS = "gen_ai.usage.output_token_details";
-const LANGSMITH_SESSION_ID = "langsmith.trace.session_id";
-const LANGSMITH_SESSION_NAME = "langsmith.trace.session_name";
-const LANGSMITH_RUN_TYPE = "langsmith.span.kind";
-const LANGSMITH_NAME = "langsmith.trace.name";
-const LANGSMITH_METADATA = "langsmith.metadata";
-const LANGSMITH_TAGS = "langsmith.span.tags";
-const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
-const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
-const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/env.js
-let globalEnv;
-const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
-const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
-const isJsDom = () => typeof window !== "undefined" && window.name === "nodejs" || typeof navigator !== "undefined" && navigator.userAgent.includes("jsdom");
-const isDeno = () => typeof globalThis.Deno !== "undefined";
-const isNode = () => typeof process !== "undefined" && typeof process.versions !== "undefined" && typeof process.versions.node !== "undefined" && !isDeno();
-const getEnv = () => {
-	if (globalEnv) return globalEnv;
-	if (typeof Bun !== "undefined") globalEnv = "bun";
-	else if (isBrowser()) globalEnv = "browser";
-	else if (isNode()) globalEnv = "node";
-	else if (isWebWorker()) globalEnv = "webworker";
-	else if (isJsDom()) globalEnv = "jsdom";
-	else if (isDeno()) globalEnv = "deno";
-	else globalEnv = "other";
-	return globalEnv;
-};
-let runtimeEnvironment;
-function getRuntimeEnvironment() {
-	if (runtimeEnvironment === void 0) {
-		const env = getEnv();
-		const releaseEnv = getShas();
-		runtimeEnvironment = {
-			library: "langsmith",
-			runtime: env,
-			sdk: "langsmith-js",
-			sdk_version: __version__,
-			...releaseEnv
-		};
-	}
-	return runtimeEnvironment;
-}
-const EXCLUDED_SUBSTRINGS = [
-	"key",
-	"secret",
-	"token",
-	"password",
-	"passwd",
-	"pwd",
-	"credential",
-	"email"
-];
-function isSensitiveEnvVarName(key) {
-	const lowered = key.toLowerCase();
-	return EXCLUDED_SUBSTRINGS.some((sub) => lowered.includes(sub));
-}
-/**
-* Retrieves the LangSmith-specific metadata from the current runtime environment.
-*
-* @returns {Record<string, string>}
-*  - A record of LangSmith-specific metadata environment variables.
-*/
-function getLangSmithEnvVarsMetadata() {
-	const allEnvVars = getLangSmithEnvironmentVariables();
-	const envVars = {};
-	const excluded = [
-		"LANGCHAIN_API_KEY",
-		"LANGCHAIN_ENDPOINT",
-		"LANGCHAIN_TRACING_V2",
-		"LANGCHAIN_PROJECT",
-		"LANGCHAIN_SESSION",
-		"LANGSMITH_API_KEY",
-		"LANGSMITH_ENDPOINT",
-		"LANGSMITH_TRACING_V2",
-		"LANGSMITH_CONFIG_FILE",
-		"LANGSMITH_PROJECT",
-		"LANGSMITH_SESSION",
-		"LANGSMITH_AGENT_ID",
-		"LANGSMITH_AGENT_ENVIRONMENT"
-	];
-	for (const [key, value] of Object.entries(allEnvVars)) if (typeof value === "string" && !excluded.includes(key) && !isSensitiveEnvVarName(key)) {
-		if (key === "LANGCHAIN_REVISION_ID") envVars["revision_id"] = value;
-		else envVars[key] = value;
-	}
-	return envVars;
-}
-/**
-* Retrieves only the LangChain/LangSmith-prefixed environment variables from the current runtime environment.
-* This is more efficient than copying all environment variables.
-*
-* @returns {Record<string, string>}
-*  - A record of LangChain/LangSmith environment variables.
-*/
-function getLangSmithEnvironmentVariables() {
-	const envVars = {};
-	try {
-		if (typeof process !== "undefined" && process.env) {
-			for (const [key, value] of Object.entries(process.env)) if ((key.startsWith("LANGCHAIN_") || key.startsWith("LANGSMITH_")) && value != null) {
-				if (isSensitiveEnvVarName(key) && typeof value === "string") envVars[key] = value.slice(0, 2) + "*".repeat(value.length - 4) + value.slice(-2);
-				else envVars[key] = value;
-			}
-		}
-	} catch (_e) {}
-	return envVars;
-}
-function getEnvironmentVariable(name) {
-	try {
-		return typeof process !== "undefined" ? process.env?.[name] : void 0;
-	} catch (_e) {
-		return;
-	}
-}
-function getLangSmithEnvironmentVariable(name) {
-	return getEnvironmentVariable(`LANGSMITH_${name}`) || getEnvironmentVariable(`LANGCHAIN_${name}`);
-}
-let cachedCommitSHAs;
-/**
-* Get the Git commit SHA from common environment variables
-* used by different CI/CD platforms.
-* @returns {string | undefined} The Git commit SHA or undefined if not found.
-*/
-function getShas() {
-	if (cachedCommitSHAs !== void 0) return cachedCommitSHAs;
-	const common_release_envs = [
-		"VERCEL_GIT_COMMIT_SHA",
-		"NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
-		"COMMIT_REF",
-		"RENDER_GIT_COMMIT",
-		"CI_COMMIT_SHA",
-		"CIRCLE_SHA1",
-		"CF_PAGES_COMMIT_SHA",
-		"REACT_APP_GIT_SHA",
-		"SOURCE_VERSION",
-		"GITHUB_SHA",
-		"TRAVIS_COMMIT",
-		"GIT_COMMIT",
-		"BUILD_VCS_NUMBER",
-		"bamboo_planRepository_revision",
-		"Build.SourceVersion",
-		"BITBUCKET_COMMIT",
-		"DRONE_COMMIT_SHA",
-		"SEMAPHORE_GIT_SHA",
-		"BUILDKITE_COMMIT"
-	];
-	const shas = {};
-	for (const env of common_release_envs) {
-		const envVar = getEnvironmentVariable(env);
-		if (envVar !== void 0) shas[env] = envVar;
-	}
-	cachedCommitSHAs = shas;
-	return shas;
-}
-function getOtelEnabled() {
-	return getEnvironmentVariable("OTEL_ENABLED") === "true" || getLangSmithEnvironmentVariable("OTEL_ENABLED") === "true";
-}
-const _VALID_TRACING_MODES = /* @__PURE__ */ new Set(["langsmith", "otel"]);
-/**
-* Resolve the effective tracing mode from an explicit config value and
-* environment variables.
-*
-* Priority: explicit argument > `LANGSMITH_TRACING_MODE` env var >
-* legacy `OTEL_ENABLED` / `LANGSMITH_OTEL_ENABLED` env vars > `"langsmith"`.
-*/
-function resolveTracingMode(configValue) {
-	if (configValue !== void 0) return configValue;
-	const envMode = getLangSmithEnvironmentVariable("TRACING_MODE");
-	if (envMode !== void 0 && envMode !== "") {
-		const lower = envMode.toLowerCase();
-		if (!_VALID_TRACING_MODES.has(lower)) throw new Error(`Invalid LANGSMITH_TRACING_MODE=${JSON.stringify(envMode)}. Must be one of: ${[..._VALID_TRACING_MODES].sort().join(", ")}`);
-		if (getOtelEnabled()) console.warn("Both LANGSMITH_TRACING_MODE and the legacy OTEL_ENABLED / LANGSMITH_OTEL_ENABLED env vars are set. LANGSMITH_TRACING_MODE takes precedence.");
-		return lower;
-	}
-	if (getOtelEnabled()) return "otel";
-	return "langsmith";
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/singletons/otel.js
-var MockTracer = class {
-	constructor() {
-		Object.defineProperty(this, "hasWarned", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: false
-		});
-	}
-	startActiveSpan(_name, ...args) {
-		if (!this.hasWarned && resolveTracingMode() === "otel") {
-			console.warn("OTel tracing mode is active (via LANGSMITH_TRACING_MODE, OTEL_ENABLED, or LANGSMITH_OTEL_ENABLED), but the required OTEL instances have not been initialized. Please add:\n```\nimport { initializeOTEL } from \"langsmith/experimental/otel/setup\";\ninitializeOTEL();\n```\nat the beginning of your code.");
-			this.hasWarned = true;
-		}
-		let fn;
-		if (args.length === 1 && typeof args[0] === "function") fn = args[0];
-		else if (args.length === 2 && typeof args[1] === "function") fn = args[1];
-		else if (args.length === 3 && typeof args[2] === "function") fn = args[2];
-		if (typeof fn === "function") return fn();
-	}
-};
-var MockOTELTrace = class {
-	constructor() {
-		Object.defineProperty(this, "mockTracer", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: new MockTracer()
-		});
-	}
-	getTracer(_name, _version) {
-		return this.mockTracer;
-	}
-	getActiveSpan() {}
-	setSpan(context, _span) {
-		return context;
-	}
-	getSpan(_context) {}
-	setSpanContext(context, _spanContext) {
-		return context;
-	}
-	getTracerProvider() {}
-	setGlobalTracerProvider(_tracerProvider) {
-		return false;
-	}
-};
-var MockOTELContext = class {
-	active() {
-		return {};
-	}
-	with(_context, fn) {
-		return fn();
-	}
-};
-const OTEL_TRACE_KEY = Symbol.for("ls:otel_trace");
-const OTEL_CONTEXT_KEY = Symbol.for("ls:otel_context");
-const OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY = Symbol.for("ls:otel_get_default_otlp_tracer_provider");
-const mockOTELTrace = new MockOTELTrace();
-const mockOTELContext = new MockOTELContext();
-var OTELProvider = class {
-	getTraceInstance() {
-		return globalThis[OTEL_TRACE_KEY] ?? mockOTELTrace;
-	}
-	getContextInstance() {
-		return globalThis[OTEL_CONTEXT_KEY] ?? mockOTELContext;
-	}
-	initializeGlobalInstances(otel) {
-		if (globalThis[OTEL_TRACE_KEY] === void 0) globalThis[OTEL_TRACE_KEY] = otel.trace;
-		if (globalThis[OTEL_CONTEXT_KEY] === void 0) globalThis[OTEL_CONTEXT_KEY] = otel.context;
-	}
-	setDefaultOTLPTracerComponents(components) {
-		globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] = components;
-	}
-	getDefaultOTLPTracerComponents() {
-		return globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] ?? void 0;
-	}
-};
-const OTELProviderSingleton = new OTELProvider();
-/**
-* Get the current OTEL trace instance.
-* Returns a mock implementation if OTEL is not available.
-*/
-function getOTELTrace() {
-	return OTELProviderSingleton.getTraceInstance();
-}
-/**
-* Get the current OTEL context instance.
-* Returns a mock implementation if OTEL is not available.
-*/
-function getOTELContext() {
-	return OTELProviderSingleton.getContextInstance();
-}
-/**
-* Get the default OTLP tracer provider instance.
-* Returns undefined if not set.
-*/
-function getDefaultOTLPTracerComponents() {
-	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/experimental/otel/translator.js
-const WELL_KNOWN_OPERATION_NAMES = {
-	llm: "chat",
-	tool: "execute_tool",
-	retriever: "embeddings",
-	embedding: "embeddings",
-	prompt: "chat"
-};
-function getOperationName(runType) {
-	return WELL_KNOWN_OPERATION_NAMES[runType] || runType;
-}
-function isPrimitive$1(value) {
-	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-}
-var LangSmithToOTELTranslator = class {
-	constructor() {
-		Object.defineProperty(this, "spans", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: /* @__PURE__ */ new Map()
-		});
-	}
-	exportBatch(operations, otelContextMap) {
-		for (const op of operations) try {
-			if (!op.run) continue;
-			if (op.operation === "post") {
-				const span = this.createSpanForRun(op, op.run, otelContextMap.get(op.id));
-				if (span && !op.run.end_time) this.spans.set(op.id, span);
-			} else this.updateSpanForRun(op, op.run);
-		} catch (e) {
-			console.error(`Error processing operation ${op.id}:`, e);
-		}
-	}
-	createSpanForRun(op, runInfo, otelContext) {
-		const activeSpan = otelContext && getOTELTrace().getSpan(otelContext);
-		if (!activeSpan) return;
-		try {
-			return this.finishSpanSetup(activeSpan, runInfo, op);
-		} catch (e) {
-			console.error(`Failed to create span for run ${op.id}:`, e);
-			return;
-		}
-	}
-	finishSpanSetup(span, runInfo, op) {
-		this.setSpanAttributes(span, runInfo, op);
-		if (runInfo.error) {
-			span.setStatus({ code: 2 });
-			span.recordException(new Error(runInfo.error));
-		} else span.setStatus({ code: 1 });
-		if (runInfo.end_time) span.end(new Date(runInfo.end_time));
-		return span;
-	}
-	updateSpanForRun(op, runInfo) {
-		try {
-			const span = this.spans.get(op.id);
-			if (!span) {
-				console.debug(`No span found for run ${op.id} during update`);
-				return;
-			}
-			this.setSpanAttributes(span, runInfo, op);
-			if (runInfo.error) {
-				span.setStatus({ code: 2 });
-				span.recordException(new Error(runInfo.error));
-			} else span.setStatus({ code: 1 });
-			const endTime = runInfo.end_time;
-			if (endTime) {
-				span.end(new Date(endTime));
-				this.spans.delete(op.id);
-			}
-		} catch (e) {
-			console.error(`Failed to update span for run ${op.id}:`, e);
-		}
-	}
-	extractModelName(runInfo) {
-		if (runInfo.extra?.metadata) {
-			const metadata = runInfo.extra.metadata;
-			if (metadata.ls_model_name) return metadata.ls_model_name;
-			if (metadata.invocation_params) {
-				const invocationParams = metadata.invocation_params;
-				if (invocationParams.model) return invocationParams.model;
-				else if (invocationParams.model_name) return invocationParams.model_name;
-			}
-		}
-	}
-	setSpanAttributes(span, runInfo, op) {
-		if ("run_type" in runInfo && runInfo.run_type) {
-			span.setAttribute(LANGSMITH_RUN_TYPE, runInfo.run_type);
-			const operationName = getOperationName(runInfo.run_type || "chain");
-			span.setAttribute(GEN_AI_OPERATION_NAME, operationName);
-		}
-		if ("name" in runInfo && runInfo.name) span.setAttribute(LANGSMITH_NAME, runInfo.name);
-		if ("session_id" in runInfo && runInfo.session_id) span.setAttribute(LANGSMITH_SESSION_ID, runInfo.session_id);
-		if ("session_name" in runInfo && runInfo.session_name) span.setAttribute(LANGSMITH_SESSION_NAME, runInfo.session_name);
-		this.setGenAiSystem(span, runInfo);
-		const modelName = this.extractModelName(runInfo);
-		if (modelName) span.setAttribute(GEN_AI_REQUEST_MODEL, modelName);
-		if (runInfo.extra?.metadata?.usage_metadata && typeof runInfo.extra.metadata.usage_metadata === "object") span.setAttribute(LANGSMITH_USAGE_METADATA, JSON.stringify(runInfo.extra.metadata.usage_metadata));
-		if ("prompt_tokens" in runInfo && typeof runInfo.prompt_tokens === "number") span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, runInfo.prompt_tokens);
-		if ("completion_tokens" in runInfo && typeof runInfo.completion_tokens === "number") span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, runInfo.completion_tokens);
-		if ("total_tokens" in runInfo && typeof runInfo.total_tokens === "number") span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, runInfo.total_tokens);
-		this.setInvocationParameters(span, runInfo);
-		if ("run_type" in runInfo && runInfo.run_type === "tool") {
-			if ("name" in runInfo && runInfo.name) span.setAttribute(GEN_AI_TOOL_NAME, runInfo.name);
-			const toolCallId = runInfo.extra?.tool_call_id || runInfo.extra?.metadata?.tool_call_id;
-			if (toolCallId != null) span.setAttribute(GEN_AI_TOOL_CALL_ID, String(toolCallId));
-		}
-		const metadata = runInfo.extra?.metadata || {};
-		for (const [key, value] of Object.entries(metadata)) if (value !== null && value !== void 0) span.setAttribute(`${LANGSMITH_METADATA}.${key}`, isPrimitive$1(value) ? String(value) : JSON.stringify(value));
-		const tags = runInfo.tags;
-		if (tags && Array.isArray(tags)) span.setAttribute(LANGSMITH_TAGS, tags.join(", "));
-		else if (tags) span.setAttribute(LANGSMITH_TAGS, String(tags));
-		if ("serialized" in runInfo && typeof runInfo.serialized === "object") {
-			const serialized = runInfo.serialized;
-			if (serialized.name) span.setAttribute(GEN_AI_SERIALIZED_NAME, String(serialized.name));
-			if (serialized.signature) span.setAttribute(GEN_AI_SERIALIZED_SIGNATURE, String(serialized.signature));
-			if (serialized.doc) span.setAttribute(GEN_AI_SERIALIZED_DOC, String(serialized.doc));
-		}
-		this.setIOAttributes(span, op);
-	}
-	setGenAiSystem(span, runInfo) {
-		let system = "langchain";
-		const modelName = this.extractModelName(runInfo);
-		if (modelName) {
-			const modelLower = modelName.toLowerCase();
-			if (modelLower.includes("anthropic") || modelLower.startsWith("claude")) system = "anthropic";
-			else if (modelLower.includes("bedrock")) system = "aws.bedrock";
-			else if (modelLower.includes("azure") && modelLower.includes("openai")) system = "az.ai.openai";
-			else if (modelLower.includes("azure") && modelLower.includes("inference")) system = "az.ai.inference";
-			else if (modelLower.includes("cohere")) system = "cohere";
-			else if (modelLower.includes("deepseek")) system = "deepseek";
-			else if (modelLower.includes("gemini")) system = "gemini";
-			else if (modelLower.includes("groq")) system = "groq";
-			else if (modelLower.includes("watson") || modelLower.includes("ibm")) system = "ibm.watsonx.ai";
-			else if (modelLower.includes("mistral")) system = "mistral_ai";
-			else if (modelLower.includes("gpt") || modelLower.includes("openai")) system = "openai";
-			else if (modelLower.includes("perplexity") || modelLower.includes("sonar")) system = "perplexity";
-			else if (modelLower.includes("vertex")) system = "vertex_ai";
-			else if (modelLower.includes("xai") || modelLower.includes("grok")) system = "xai";
-		}
-		span.setAttribute(GEN_AI_SYSTEM, system);
-	}
-	setInvocationParameters(span, runInfo) {
-		const tools = runInfo.extra?.invocation_params?.tools;
-		if (Array.isArray(tools) && tools.length > 0) span.setAttribute(GEN_AI_TOOL_DEFINITIONS, JSON.stringify(tools));
-		if (!runInfo.extra?.metadata?.invocation_params) return;
-		const invocationParams = runInfo.extra.metadata.invocation_params;
-		if (invocationParams.max_tokens !== void 0) span.setAttribute(GEN_AI_REQUEST_MAX_TOKENS, invocationParams.max_tokens);
-		if (invocationParams.temperature !== void 0) span.setAttribute(GEN_AI_REQUEST_TEMPERATURE, invocationParams.temperature);
-		if (invocationParams.top_p !== void 0) span.setAttribute(GEN_AI_REQUEST_TOP_P, invocationParams.top_p);
-		if (invocationParams.frequency_penalty !== void 0) span.setAttribute(GEN_AI_REQUEST_FREQUENCY_PENALTY, invocationParams.frequency_penalty);
-		if (invocationParams.presence_penalty !== void 0) span.setAttribute(GEN_AI_REQUEST_PRESENCE_PENALTY, invocationParams.presence_penalty);
-	}
-	setIOAttributes(span, op) {
-		if (op.run.inputs) try {
-			const inputs = op.run.inputs;
-			if (typeof inputs === "object" && inputs !== null) {
-				if (inputs.model && Array.isArray(inputs.messages)) span.setAttribute(GEN_AI_REQUEST_MODEL, inputs.model);
-				if (inputs.stream !== void 0) span.setAttribute(LANGSMITH_REQUEST_STREAMING, inputs.stream);
-				if (inputs.extra_headers) span.setAttribute(LANGSMITH_REQUEST_HEADERS, JSON.stringify(inputs.extra_headers));
-				if (inputs.extra_query) span.setAttribute(GEN_AI_REQUEST_EXTRA_QUERY, JSON.stringify(inputs.extra_query));
-				if (inputs.extra_body) span.setAttribute(GEN_AI_REQUEST_EXTRA_BODY, JSON.stringify(inputs.extra_body));
-			}
-			span.setAttribute(GENAI_PROMPT, JSON.stringify(inputs));
-		} catch (e) {
-			console.debug(`Failed to process inputs for run ${op.id}`, e);
-		}
-		if (op.run.outputs) try {
-			const outputs = op.run.outputs;
-			const tokenUsage = this.getUnifiedRunTokens(outputs);
-			if (tokenUsage) {
-				span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, tokenUsage[0]);
-				span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, tokenUsage[1]);
-				span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, tokenUsage[0] + tokenUsage[1]);
-			}
-			if (outputs && typeof outputs === "object") {
-				if (outputs.model) span.setAttribute(GEN_AI_RESPONSE_MODEL, String(outputs.model));
-				if (outputs.id) span.setAttribute(GEN_AI_RESPONSE_ID, outputs.id);
-				if (outputs.choices && Array.isArray(outputs.choices)) {
-					const finishReasons = outputs.choices.map((choice) => choice.finish_reason).filter((reason) => reason).map(String);
-					if (finishReasons.length > 0) span.setAttribute(GEN_AI_RESPONSE_FINISH_REASONS, finishReasons.join(", "));
-				}
-				if (outputs.service_tier) span.setAttribute(GEN_AI_RESPONSE_SERVICE_TIER, outputs.service_tier);
-				if (outputs.system_fingerprint) span.setAttribute(GEN_AI_RESPONSE_SYSTEM_FINGERPRINT, outputs.system_fingerprint);
-				if (outputs.usage_metadata && typeof outputs.usage_metadata === "object") {
-					const usageMetadata = outputs.usage_metadata;
-					span.setAttribute(LANGSMITH_USAGE_METADATA, JSON.stringify(usageMetadata));
-					if (usageMetadata.input_token_details) span.setAttribute(GEN_AI_USAGE_INPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.input_token_details));
-					if (usageMetadata.output_token_details) span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.output_token_details));
-				}
-			}
-			span.setAttribute(GENAI_COMPLETION, JSON.stringify(outputs));
-		} catch (e) {
-			console.debug(`Failed to process outputs for run ${op.id}`, e);
-		}
-	}
-	getUnifiedRunTokens(outputs) {
-		if (!outputs) return null;
-		let tokenUsage = this.extractUnifiedRunTokens(outputs.usage_metadata);
-		if (tokenUsage) return tokenUsage;
-		const keys = Object.keys(outputs);
-		for (const key of keys) {
-			const haystack = outputs[key];
-			if (!haystack || typeof haystack !== "object") continue;
-			tokenUsage = this.extractUnifiedRunTokens(haystack.usage_metadata);
-			if (tokenUsage) return tokenUsage;
-			if (haystack.lc === 1 && haystack.kwargs && typeof haystack.kwargs === "object") {
-				tokenUsage = this.extractUnifiedRunTokens(haystack.kwargs.usage_metadata);
-				if (tokenUsage) return tokenUsage;
-			}
-		}
-		const generations = outputs.generations || [];
-		if (!Array.isArray(generations)) return null;
-		const flatGenerations = Array.isArray(generations[0]) ? generations.flat() : generations;
-		for (const generation of flatGenerations) if (typeof generation === "object" && generation.message && typeof generation.message === "object" && generation.message.kwargs && typeof generation.message.kwargs === "object") {
-			tokenUsage = this.extractUnifiedRunTokens(generation.message.kwargs.usage_metadata);
-			if (tokenUsage) return tokenUsage;
-		}
-		return null;
-	}
-	extractUnifiedRunTokens(outputs) {
-		if (!outputs || typeof outputs !== "object") return null;
-		if (typeof outputs.input_tokens !== "number" || typeof outputs.output_tokens !== "number") return null;
-		return [outputs.input_tokens, outputs.output_tokens];
-	}
-};
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/is-network-error/index.js
-const objectToString = Object.prototype.toString;
-const isError = (value) => objectToString.call(value) === "[object Error]";
-const errorMessages = /* @__PURE__ */ new Set([
-	"network error",
-	"Failed to fetch",
-	"NetworkError when attempting to fetch resource.",
-	"The Internet connection appears to be offline.",
-	"Network request failed",
-	"fetch failed",
-	"terminated",
-	" A network error occurred.",
-	"Network connection lost"
-]);
-function isNetworkError(error) {
-	if (!(error && isError(error) && error.name === "TypeError" && typeof error.message === "string")) return false;
-	const { message, stack } = error;
-	if (message === "Load failed") return stack === void 0 || "__sentry_captured__" in error;
-	if (message.startsWith("error sending request for url")) return true;
-	return errorMessages.has(message);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/p-retry/index.js
-function validateRetries(retries) {
-	if (typeof retries === "number") {
-		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
-		if (Number.isNaN(retries)) throw new TypeError("Expected `retries` to be a valid number or Infinity, got NaN.");
-	} else if (retries !== void 0) throw new TypeError("Expected `retries` to be a number or Infinity.");
-}
-function validateNumberOption(name, value, { min = 0, allowInfinity = false } = {}) {
-	if (value === void 0) return;
-	if (typeof value !== "number" || Number.isNaN(value)) throw new TypeError(`Expected \`${name}\` to be a number${allowInfinity ? " or Infinity" : ""}.`);
-	if (!allowInfinity && !Number.isFinite(value)) throw new TypeError(`Expected \`${name}\` to be a finite number.`);
-	if (value < min) throw new TypeError(`Expected \`${name}\` to be \u2265 ${min}.`);
-}
-var AbortError = class extends Error {
-	constructor(message) {
-		super();
-		if (message instanceof Error) {
-			this.originalError = message;
-			({message} = message);
-		} else {
-			this.originalError = new Error(message);
-			this.originalError.stack = this.stack;
-		}
-		this.name = "AbortError";
-		this.message = message;
-	}
-};
-function calculateDelay(retriesConsumed, options) {
-	const attempt = Math.max(1, retriesConsumed + 1);
-	const random = options.randomize ? Math.random() + 1 : 1;
-	let timeout = Math.round(random * options.minTimeout * options.factor ** (attempt - 1));
-	timeout = Math.min(timeout, options.maxTimeout);
-	return timeout;
-}
-function calculateRemainingTime(start, max) {
-	if (!Number.isFinite(max)) return max;
-	return max - (performance.now() - start);
-}
-async function onAttemptFailure({ error, attemptNumber, retriesConsumed, startTime, options }) {
-	const normalizedError = error instanceof Error ? error : /* @__PURE__ */ new TypeError(`Non-error was thrown: "${error}". You should only throw errors.`);
-	if (normalizedError instanceof AbortError) throw normalizedError.originalError;
-	const retriesLeft = Number.isFinite(options.retries) ? Math.max(0, options.retries - retriesConsumed) : options.retries;
-	const maxRetryTime = options.maxRetryTime ?? Number.POSITIVE_INFINITY;
-	const context = Object.freeze({
-		error: normalizedError,
-		attemptNumber,
-		retriesLeft,
-		retriesConsumed
-	});
-	await options.onFailedAttempt(context);
-	if (calculateRemainingTime(startTime, maxRetryTime) <= 0) throw normalizedError;
-	const consumeRetry = await options.shouldConsumeRetry(context);
-	const remainingTime = calculateRemainingTime(startTime, maxRetryTime);
-	if (remainingTime <= 0 || retriesLeft <= 0) throw normalizedError;
-	if (normalizedError instanceof TypeError && !isNetworkError(normalizedError)) {
-		if (consumeRetry) throw normalizedError;
-		options.signal?.throwIfAborted();
-		return false;
-	}
-	if (!await options.shouldRetry(context)) throw normalizedError;
-	if (!consumeRetry) {
-		options.signal?.throwIfAborted();
-		return false;
-	}
-	const delayTime = calculateDelay(retriesConsumed, options);
-	const finalDelay = Math.min(delayTime, remainingTime);
-	if (finalDelay > 0) await new Promise((resolve, reject) => {
-		const onAbort = () => {
-			clearTimeout(timeoutToken);
-			options.signal?.removeEventListener("abort", onAbort);
-			reject(options.signal.reason);
-		};
-		const timeoutToken = setTimeout(() => {
-			options.signal?.removeEventListener("abort", onAbort);
-			resolve();
-		}, finalDelay);
-		if (options.unref) timeoutToken.unref?.();
-		options.signal?.addEventListener("abort", onAbort, { once: true });
-	});
-	options.signal?.throwIfAborted();
-	return true;
-}
-async function pRetry(input, options = {}) {
-	options = { ...options };
-	validateRetries(options.retries);
-	if (Object.hasOwn(options, "forever")) throw new Error("The `forever` option is no longer supported. For many use-cases, you can set `retries: Infinity` instead.");
-	options.retries ??= 10;
-	options.factor ??= 2;
-	options.minTimeout ??= 1e3;
-	options.maxTimeout ??= Number.POSITIVE_INFINITY;
-	options.maxRetryTime ??= Number.POSITIVE_INFINITY;
-	options.randomize ??= false;
-	options.onFailedAttempt ??= () => {};
-	options.shouldRetry ??= () => true;
-	options.shouldConsumeRetry ??= () => true;
-	validateNumberOption("factor", options.factor, {
-		min: 0,
-		allowInfinity: false
-	});
-	validateNumberOption("minTimeout", options.minTimeout, {
-		min: 0,
-		allowInfinity: false
-	});
-	validateNumberOption("maxTimeout", options.maxTimeout, {
-		min: 0,
-		allowInfinity: true
-	});
-	validateNumberOption("maxRetryTime", options.maxRetryTime, {
-		min: 0,
-		allowInfinity: true
-	});
-	if (!(options.factor > 0)) options.factor = 1;
-	options.signal?.throwIfAborted();
-	let attemptNumber = 0;
-	let retriesConsumed = 0;
-	const startTime = performance.now();
-	while (Number.isFinite(options.retries) ? retriesConsumed <= options.retries : true) {
-		attemptNumber++;
-		try {
-			options.signal?.throwIfAborted();
-			const result = await input(attemptNumber);
-			options.signal?.throwIfAborted();
-			return result;
-		} catch (error) {
-			if (await onAttemptFailure({
-				error,
-				attemptNumber,
-				retriesConsumed,
-				startTime,
-				options
-			})) retriesConsumed++;
-		}
-	}
-	throw new Error("Retry attempts exhausted without throwing an error.");
-}
-//#endregion
-//#region ../../node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
-var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	var has = Object.prototype.hasOwnProperty;
-	var prefix = "~";
-	/**
-	* Constructor to create a storage for our `EE` objects.
-	* An `Events` instance is a plain object whose properties are event names.
-	*
-	* @constructor
-	* @private
-	*/
-	function Events() {}
-	if (Object.create) {
-		Events.prototype = Object.create(null);
-		if (!new Events().__proto__) prefix = false;
-	}
-	/**
-	* Representation of a single event listener.
-	*
-	* @param {Function} fn The listener function.
-	* @param {*} context The context to invoke the listener with.
-	* @param {Boolean} [once=false] Specify if the listener is a one-time listener.
-	* @constructor
-	* @private
-	*/
-	function EE(fn, context, once) {
-		this.fn = fn;
-		this.context = context;
-		this.once = once || false;
-	}
-	/**
-	* Add a listener for a given event.
-	*
-	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-	* @param {(String|Symbol)} event The event name.
-	* @param {Function} fn The listener function.
-	* @param {*} context The context to invoke the listener with.
-	* @param {Boolean} once Specify if the listener is a one-time listener.
-	* @returns {EventEmitter}
-	* @private
-	*/
-	function addListener(emitter, event, fn, context, once) {
-		if (typeof fn !== "function") throw new TypeError("The listener must be a function");
-		var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
-		if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
-		else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
-		else emitter._events[evt] = [emitter._events[evt], listener];
-		return emitter;
-	}
-	/**
-	* Clear event by name.
-	*
-	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-	* @param {(String|Symbol)} evt The Event name.
-	* @private
-	*/
-	function clearEvent(emitter, evt) {
-		if (--emitter._eventsCount === 0) emitter._events = new Events();
-		else delete emitter._events[evt];
-	}
-	/**
-	* Minimal `EventEmitter` interface that is molded against the Node.js
-	* `EventEmitter` interface.
-	*
-	* @constructor
-	* @public
-	*/
-	function EventEmitter() {
-		this._events = new Events();
-		this._eventsCount = 0;
-	}
-	/**
-	* Return an array listing the events for which the emitter has registered
-	* listeners.
-	*
-	* @returns {Array}
-	* @public
-	*/
-	EventEmitter.prototype.eventNames = function eventNames() {
-		var names = [], events, name;
-		if (this._eventsCount === 0) return names;
-		for (name in events = this._events) if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-		if (Object.getOwnPropertySymbols) return names.concat(Object.getOwnPropertySymbols(events));
-		return names;
-	};
-	/**
-	* Return the listeners registered for a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @returns {Array} The registered listeners.
-	* @public
-	*/
-	EventEmitter.prototype.listeners = function listeners(event) {
-		var evt = prefix ? prefix + event : event, handlers = this._events[evt];
-		if (!handlers) return [];
-		if (handlers.fn) return [handlers.fn];
-		for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) ee[i] = handlers[i].fn;
-		return ee;
-	};
-	/**
-	* Return the number of listeners listening to a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @returns {Number} The number of listeners.
-	* @public
-	*/
-	EventEmitter.prototype.listenerCount = function listenerCount(event) {
-		var evt = prefix ? prefix + event : event, listeners = this._events[evt];
-		if (!listeners) return 0;
-		if (listeners.fn) return 1;
-		return listeners.length;
-	};
-	/**
-	* Calls each of the listeners registered for a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @returns {Boolean} `true` if the event had listeners, else `false`.
-	* @public
-	*/
-	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-		var evt = prefix ? prefix + event : event;
-		if (!this._events[evt]) return false;
-		var listeners = this._events[evt], len = arguments.length, args, i;
-		if (listeners.fn) {
-			if (listeners.once) this.removeListener(event, listeners.fn, void 0, true);
-			switch (len) {
-				case 1: return listeners.fn.call(listeners.context), true;
-				case 2: return listeners.fn.call(listeners.context, a1), true;
-				case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-				case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-				case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-				case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-			}
-			for (i = 1, args = new Array(len - 1); i < len; i++) args[i - 1] = arguments[i];
-			listeners.fn.apply(listeners.context, args);
-		} else {
-			var length = listeners.length, j;
-			for (i = 0; i < length; i++) {
-				if (listeners[i].once) this.removeListener(event, listeners[i].fn, void 0, true);
-				switch (len) {
-					case 1:
-						listeners[i].fn.call(listeners[i].context);
-						break;
-					case 2:
-						listeners[i].fn.call(listeners[i].context, a1);
-						break;
-					case 3:
-						listeners[i].fn.call(listeners[i].context, a1, a2);
-						break;
-					case 4:
-						listeners[i].fn.call(listeners[i].context, a1, a2, a3);
-						break;
-					default:
-						if (!args) for (j = 1, args = new Array(len - 1); j < len; j++) args[j - 1] = arguments[j];
-						listeners[i].fn.apply(listeners[i].context, args);
-				}
-			}
-		}
-		return true;
-	};
-	/**
-	* Add a listener for a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @param {Function} fn The listener function.
-	* @param {*} [context=this] The context to invoke the listener with.
-	* @returns {EventEmitter} `this`.
-	* @public
-	*/
-	EventEmitter.prototype.on = function on(event, fn, context) {
-		return addListener(this, event, fn, context, false);
-	};
-	/**
-	* Add a one-time listener for a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @param {Function} fn The listener function.
-	* @param {*} [context=this] The context to invoke the listener with.
-	* @returns {EventEmitter} `this`.
-	* @public
-	*/
-	EventEmitter.prototype.once = function once(event, fn, context) {
-		return addListener(this, event, fn, context, true);
-	};
-	/**
-	* Remove the listeners of a given event.
-	*
-	* @param {(String|Symbol)} event The event name.
-	* @param {Function} fn Only remove the listeners that match this function.
-	* @param {*} context Only remove the listeners that have this context.
-	* @param {Boolean} once Only remove one-time listeners.
-	* @returns {EventEmitter} `this`.
-	* @public
-	*/
-	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-		var evt = prefix ? prefix + event : event;
-		if (!this._events[evt]) return this;
-		if (!fn) {
-			clearEvent(this, evt);
-			return this;
-		}
-		var listeners = this._events[evt];
-		if (listeners.fn) {
-			if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) clearEvent(this, evt);
-		} else {
-			for (var i = 0, events = [], length = listeners.length; i < length; i++) if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) events.push(listeners[i]);
-			if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-			else clearEvent(this, evt);
-		}
-		return this;
-	};
-	/**
-	* Remove all listeners, or those of the specified event.
-	*
-	* @param {(String|Symbol)} [event] The event name.
-	* @returns {EventEmitter} `this`.
-	* @public
-	*/
-	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-		var evt;
-		if (event) {
-			evt = prefix ? prefix + event : event;
-			if (this._events[evt]) clearEvent(this, evt);
-		} else {
-			this._events = new Events();
-			this._eventsCount = 0;
-		}
-		return this;
-	};
-	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-	EventEmitter.prefixed = prefix;
-	EventEmitter.EventEmitter = EventEmitter;
-	if ("undefined" !== typeof module) module.exports = EventEmitter;
-}));
-//#endregion
-//#region ../../node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
-var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	module.exports = (promise, onFinally) => {
-		onFinally = onFinally || (() => {});
-		return promise.then((val) => new Promise((resolve) => {
-			resolve(onFinally());
-		}).then(() => val), (err) => new Promise((resolve) => {
-			resolve(onFinally());
-		}).then(() => {
-			throw err;
-		}));
-	};
-}));
-//#endregion
-//#region ../../node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
-var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	const pFinally = require_p_finally();
-	var TimeoutError = class extends Error {
-		constructor(message) {
-			super(message);
-			this.name = "TimeoutError";
-		}
-	};
-	const pTimeout = (promise, milliseconds, fallback) => new Promise((resolve, reject) => {
-		if (typeof milliseconds !== "number" || milliseconds < 0) throw new TypeError("Expected `milliseconds` to be a positive number");
-		if (milliseconds === Infinity) {
-			resolve(promise);
-			return;
-		}
-		const timer = setTimeout(() => {
-			if (typeof fallback === "function") {
-				try {
-					resolve(fallback());
-				} catch (error) {
-					reject(error);
-				}
-				return;
-			}
-			const message = typeof fallback === "string" ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
-			const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
-			if (typeof promise.cancel === "function") promise.cancel();
-			reject(timeoutError);
-		}, milliseconds);
-		pFinally(promise.then(resolve, reject), () => {
-			clearTimeout(timer);
-		});
-	});
-	module.exports = pTimeout;
-	module.exports.default = pTimeout;
-	module.exports.TimeoutError = TimeoutError;
-}));
-//#endregion
-//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
-var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	function lowerBound(array, value, comparator) {
-		let first = 0;
-		let count = array.length;
-		while (count > 0) {
-			const step = count / 2 | 0;
-			let it = first + step;
-			if (comparator(array[it], value) <= 0) {
-				first = ++it;
-				count -= step + 1;
-			} else count = step;
-		}
-		return first;
-	}
-	exports.default = lowerBound;
-}));
-//#endregion
-//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
-var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	const lower_bound_1 = require_lower_bound();
-	var PriorityQueue = class {
-		constructor() {
-			this._queue = [];
-		}
-		enqueue(run, options) {
-			options = Object.assign({ priority: 0 }, options);
-			const element = {
-				priority: options.priority,
-				run
-			};
-			if (this.size && this._queue[this.size - 1].priority >= options.priority) {
-				this._queue.push(element);
-				return;
-			}
-			const index = lower_bound_1.default(this._queue, element, (a, b) => b.priority - a.priority);
-			this._queue.splice(index, 0, element);
-		}
-		dequeue() {
-			const item = this._queue.shift();
-			return item === null || item === void 0 ? void 0 : item.run;
-		}
-		filter(options) {
-			return this._queue.filter((element) => element.priority === options.priority).map((element) => element.run);
-		}
-		get size() {
-			return this._queue.length;
-		}
-	};
-	exports.default = PriorityQueue;
-}));
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/p-queue.js
-var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	const EventEmitter = require_eventemitter3();
-	const p_timeout_1 = require_p_timeout();
-	const priority_queue_1 = require_priority_queue();
-	const empty = () => {};
-	const timeoutError = new p_timeout_1.TimeoutError();
-	/**
-	Promise queue with concurrency control.
-	*/
-	var PQueue = class extends EventEmitter {
-		constructor(options) {
-			var _a, _b, _c, _d;
-			super();
-			this._intervalCount = 0;
-			this._intervalEnd = 0;
-			this._pendingCount = 0;
-			this._resolveEmpty = empty;
-			this._resolveIdle = empty;
-			options = Object.assign({
-				carryoverConcurrencyCount: false,
-				intervalCap: Infinity,
-				interval: 0,
-				concurrency: Infinity,
-				autoStart: true,
-				queueClass: priority_queue_1.default
-			}, options);
-			if (!(typeof options.intervalCap === "number" && options.intervalCap >= 1)) throw new TypeError(`Expected \`intervalCap\` to be a number from 1 and up, got \`${(_b = (_a = options.intervalCap) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : ""}\` (${typeof options.intervalCap})`);
-			if (options.interval === void 0 || !(Number.isFinite(options.interval) && options.interval >= 0)) throw new TypeError(`Expected \`interval\` to be a finite number >= 0, got \`${(_d = (_c = options.interval) === null || _c === void 0 ? void 0 : _c.toString()) !== null && _d !== void 0 ? _d : ""}\` (${typeof options.interval})`);
-			this._carryoverConcurrencyCount = options.carryoverConcurrencyCount;
-			this._isIntervalIgnored = options.intervalCap === Infinity || options.interval === 0;
-			this._intervalCap = options.intervalCap;
-			this._interval = options.interval;
-			this._queue = new options.queueClass();
-			this._queueClass = options.queueClass;
-			this.concurrency = options.concurrency;
-			this._timeout = options.timeout;
-			this._throwOnTimeout = options.throwOnTimeout === true;
-			this._isPaused = options.autoStart === false;
-		}
-		get _doesIntervalAllowAnother() {
-			return this._isIntervalIgnored || this._intervalCount < this._intervalCap;
-		}
-		get _doesConcurrentAllowAnother() {
-			return this._pendingCount < this._concurrency;
-		}
-		_next() {
-			this._pendingCount--;
-			this._tryToStartAnother();
-			this.emit("next");
-		}
-		_resolvePromises() {
-			this._resolveEmpty();
-			this._resolveEmpty = empty;
-			if (this._pendingCount === 0) {
-				this._resolveIdle();
-				this._resolveIdle = empty;
-				this.emit("idle");
-			}
-		}
-		_onResumeInterval() {
-			this._onInterval();
-			this._initializeIntervalIfNeeded();
-			this._timeoutId = void 0;
-		}
-		_isIntervalPaused() {
-			const now = Date.now();
-			if (this._intervalId === void 0) {
-				const delay = this._intervalEnd - now;
-				if (delay < 0) this._intervalCount = this._carryoverConcurrencyCount ? this._pendingCount : 0;
-				else {
-					if (this._timeoutId === void 0) this._timeoutId = setTimeout(() => {
-						this._onResumeInterval();
-					}, delay);
-					return true;
-				}
-			}
-			return false;
-		}
-		_tryToStartAnother() {
-			if (this._queue.size === 0) {
-				if (this._intervalId) clearInterval(this._intervalId);
-				this._intervalId = void 0;
-				this._resolvePromises();
-				return false;
-			}
-			if (!this._isPaused) {
-				const canInitializeInterval = !this._isIntervalPaused();
-				if (this._doesIntervalAllowAnother && this._doesConcurrentAllowAnother) {
-					const job = this._queue.dequeue();
-					if (!job) return false;
-					this.emit("active");
-					job();
-					if (canInitializeInterval) this._initializeIntervalIfNeeded();
-					return true;
-				}
-			}
-			return false;
-		}
-		_initializeIntervalIfNeeded() {
-			if (this._isIntervalIgnored || this._intervalId !== void 0) return;
-			this._intervalId = setInterval(() => {
-				this._onInterval();
-			}, this._interval);
-			this._intervalEnd = Date.now() + this._interval;
-		}
-		_onInterval() {
-			if (this._intervalCount === 0 && this._pendingCount === 0 && this._intervalId) {
-				clearInterval(this._intervalId);
-				this._intervalId = void 0;
-			}
-			this._intervalCount = this._carryoverConcurrencyCount ? this._pendingCount : 0;
-			this._processQueue();
-		}
-		/**
-		Executes all queued functions until it reaches the limit.
-		*/
-		_processQueue() {
-			while (this._tryToStartAnother());
-		}
-		get concurrency() {
-			return this._concurrency;
-		}
-		set concurrency(newConcurrency) {
-			if (!(typeof newConcurrency === "number" && newConcurrency >= 1)) throw new TypeError(`Expected \`concurrency\` to be a number from 1 and up, got \`${newConcurrency}\` (${typeof newConcurrency})`);
-			this._concurrency = newConcurrency;
-			this._processQueue();
-		}
-		/**
-		Adds a sync or async task to the queue. Always returns a promise.
-		*/
-		async add(fn, options = {}) {
-			return new Promise((resolve, reject) => {
-				const run = async () => {
-					this._pendingCount++;
-					this._intervalCount++;
-					try {
-						resolve(await (this._timeout === void 0 && options.timeout === void 0 ? fn() : p_timeout_1.default(Promise.resolve(fn()), options.timeout === void 0 ? this._timeout : options.timeout, () => {
-							if (options.throwOnTimeout === void 0 ? this._throwOnTimeout : options.throwOnTimeout) reject(timeoutError);
-						})));
-					} catch (error) {
-						reject(error);
-					}
-					this._next();
-				};
-				this._queue.enqueue(run, options);
-				this._tryToStartAnother();
-				this.emit("add");
-			});
-		}
-		/**
-		Same as `.add()`, but accepts an array of sync or async functions.
-		
-		@returns A promise that resolves when all functions are resolved.
-		*/
-		async addAll(functions, options) {
-			return Promise.all(functions.map(async (function_) => this.add(function_, options)));
-		}
-		/**
-		Start (or resume) executing enqueued tasks within concurrency limit. No need to call this if queue is not paused (via `options.autoStart = false` or by `.pause()` method.)
-		*/
-		start() {
-			if (!this._isPaused) return this;
-			this._isPaused = false;
-			this._processQueue();
-			return this;
-		}
-		/**
-		Put queue execution on hold.
-		*/
-		pause() {
-			this._isPaused = true;
-		}
-		/**
-		Clear the queue.
-		*/
-		clear() {
-			this._queue = new this._queueClass();
-		}
-		/**
-		Can be called multiple times. Useful if you for example add additional items at a later time.
-		
-		@returns A promise that settles when the queue becomes empty.
-		*/
-		async onEmpty() {
-			if (this._queue.size === 0) return;
-			return new Promise((resolve) => {
-				const existingResolve = this._resolveEmpty;
-				this._resolveEmpty = () => {
-					existingResolve();
-					resolve();
-				};
-			});
-		}
-		/**
-		The difference with `.onEmpty` is that `.onIdle` guarantees that all work from the queue has finished. `.onEmpty` merely signals that the queue is empty, but it could mean that some promises haven't completed yet.
-		
-		@returns A promise that settles when the queue becomes empty, and all promises have completed; `queue.size === 0 && queue.pending === 0`.
-		*/
-		async onIdle() {
-			if (this._pendingCount === 0 && this._queue.size === 0) return;
-			return new Promise((resolve) => {
-				const existingResolve = this._resolveIdle;
-				this._resolveIdle = () => {
-					existingResolve();
-					resolve();
-				};
-			});
-		}
-		/**
-		Size of the queue.
-		*/
-		get size() {
-			return this._queue.size;
-		}
-		/**
-		Size of the queue, filtered by the given options.
-		
-		For example, this can be used to find the number of items remaining in the queue with a specific priority level.
-		*/
-		sizeBy(options) {
-			return this._queue.filter(options).length;
-		}
-		/**
-		Number of pending promises.
-		*/
-		get pending() {
-			return this._pendingCount;
-		}
-		/**
-		Whether the queue is currently paused.
-		*/
-		get isPaused() {
-			return this._isPaused;
-		}
-		get timeout() {
-			return this._timeout;
-		}
-		/**
-		Set the timeout for future operations.
-		*/
-		set timeout(milliseconds) {
-			this._timeout = milliseconds;
-		}
-	};
-	exports.default = PQueue;
-})))(), 1);
-const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/async_caller.js
-const STATUS_RETRYABLE = [
-	408,
-	425,
-	429,
-	500,
-	502,
-	503,
-	504
-];
-/**
-* A class that can be used to make async calls with concurrency and retry logic.
-*
-* This is useful for making calls to any kind of "expensive" external resource,
-* be it because it's rate-limited, subject to network issues, etc.
-*
-* Concurrent calls are limited by the `maxConcurrency` parameter, which defaults
-* to `Infinity`. This means that by default, all calls will be made in parallel.
-*
-* Retries are limited by the `maxRetries` parameter, which defaults to 6. This
-* means that by default, each call will be retried up to 6 times, with an
-* exponential backoff between each attempt.
-*/
-var AsyncCaller = class {
-	constructor(params) {
-		Object.defineProperty(this, "maxConcurrency", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		Object.defineProperty(this, "maxRetries", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		Object.defineProperty(this, "maxQueueSizeBytes", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		Object.defineProperty(this, "queue", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		Object.defineProperty(this, "onFailedResponseHook", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: void 0
-		});
-		Object.defineProperty(this, "queueSizeBytes", {
-			enumerable: true,
-			configurable: true,
-			writable: true,
-			value: 0
-		});
-		this.maxConcurrency = params.maxConcurrency ?? Infinity;
-		this.maxRetries = params.maxRetries ?? 6;
-		this.maxQueueSizeBytes = params.maxQueueSizeBytes;
-		this.queue = new PQueue({ concurrency: this.maxConcurrency });
-		this.onFailedResponseHook = params?.onFailedResponseHook;
-	}
-	call(callable, ...args) {
-		return this.callWithOptions({}, callable, ...args);
-	}
-	callWithOptions(options, callable, ...args) {
-		const sizeBytes = options.sizeBytes ?? 0;
-		if (this.maxQueueSizeBytes !== void 0 && sizeBytes > 0 && this.queueSizeBytes + sizeBytes > this.maxQueueSizeBytes) return Promise.reject(/* @__PURE__ */ new Error(`Queue size limit (${this.maxQueueSizeBytes} bytes) exceeded. Current queue size: ${this.queueSizeBytes} bytes, attempted addition: ${sizeBytes} bytes.`));
-		if (sizeBytes > 0) this.queueSizeBytes += sizeBytes;
-		const onFailedResponseHook = this.onFailedResponseHook;
-		let promise = this.queue.add(() => pRetry(() => callable(...args).catch((error) => {
-			if (error instanceof Error) throw error;
-			else throw new Error(error);
-		}), {
-			async onFailedAttempt({ error }) {
-				if (typeof error !== "object" || error == null) throw error;
-				const errorMessage = "message" in error && typeof error.message === "string" ? error.message : void 0;
-				if (errorMessage?.startsWith("Cancel") || errorMessage?.startsWith("TimeoutError") || errorMessage?.startsWith("AbortError")) throw error;
-				if ("name" in error && error.name === "TimeoutError") throw error;
-				if ("code" in error && error.code === "ECONNABORTED") throw error;
-				const response = "response" in error ? error.response : void 0;
-				if (onFailedResponseHook) {
-					if (await onFailedResponseHook(response)) return;
-				}
-				const status = response?.status ?? ("status" in error ? error.status : void 0);
-				if (status != null && (typeof status === "number" || typeof status === "string") && !STATUS_RETRYABLE.includes(+status)) throw error;
-			},
-			retries: this.maxRetries,
-			randomize: true
-		}), { throwOnTimeout: true });
-		if (sizeBytes > 0) promise = promise.finally(() => {
-			this.queueSizeBytes -= sizeBytes;
-		});
-		if (options.signal) return Promise.race([promise, new Promise((_, reject) => {
-			options.signal?.addEventListener("abort", () => {
-				reject(/* @__PURE__ */ new Error("AbortError"));
-			});
-		})]);
-		return promise;
-	}
-};
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/messages.js
-function isLangChainMessage(message) {
-	return typeof message?._getType === "function";
-}
-function convertLangChainMessageToExample(message) {
-	const converted = {
-		type: message._getType(),
-		data: { content: message.content }
-	};
-	if (message?.additional_kwargs && Object.keys(message.additional_kwargs).length > 0) converted.data.additional_kwargs = { ...message.additional_kwargs };
-	return converted;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/uuid.mjs
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -5647,7 +4016,7 @@ let uuid4 = function() {
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/errors.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/errors.mjs
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -5670,7 +4039,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/core/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/error.mjs
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -5749,7 +4118,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/values.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/values.mjs
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -5782,13 +4151,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/sleep.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/sleep.mjs
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/version.js
-const VERSION = "0.0.1";
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/version.mjs
+const VERSION = "0.11.4";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/detect-platform.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/detect-platform.mjs
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -5900,10 +4269,10 @@ const normalizePlatform = (platform) => {
 };
 let _platformHeaders;
 const getPlatformHeaders = () => {
-	return _platformHeaders ??= getPlatformProperties();
+	return _platformHeaders ?? (_platformHeaders = getPlatformProperties());
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/shims.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/shims.mjs
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -5928,6 +4297,40 @@ function ReadableStreamFrom(iterable) {
 	});
 }
 /**
+* Most browsers don't yet have async iterable support for ReadableStream,
+* and Node has a very different way of reading bytes from its "ReadableStream".
+*
+* This polyfill was pulled from https://github.com/MattiasBuelens/web-streams-polyfill/pull/122#issuecomment-1627354490
+*/
+function ReadableStreamToAsyncIterable(stream) {
+	if (stream[Symbol.asyncIterator]) return stream;
+	const reader = stream.getReader();
+	return {
+		async next() {
+			try {
+				const result = await reader.read();
+				if (result?.done) reader.releaseLock();
+				return result;
+			} catch (e) {
+				reader.releaseLock();
+				throw e;
+			}
+		},
+		async return() {
+			const cancelPromise = reader.cancel();
+			reader.releaseLock();
+			await cancelPromise;
+			return {
+				done: true,
+				value: void 0
+			};
+		},
+		[Symbol.asyncIterator]() {
+			return this;
+		}
+	};
+}
+/**
 * Cancels a ReadableStream we don't need to consume.
 * See https://undici.nodejs.org/#/?id=garbage-collection
 */
@@ -5943,7 +4346,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/request-options.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/request-options.mjs
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -5951,7 +4354,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/qs/formats.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/formats.mjs
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -5959,7 +4362,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/qs/utils.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/utils.mjs
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -6018,7 +4421,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/qs/stringify.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/stringify.mjs
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -6052,7 +4455,7 @@ const defaults = {
 	/** @deprecated */
 	indices: false,
 	serializeDate(date) {
-		return (toISOString ??= Function.prototype.call.bind(Date.prototype.toISOString))(date);
+		return (toISOString ?? (toISOString = Function.prototype.call.bind(Date.prototype.toISOString)))(date);
 	},
 	skipNulls: false,
 	strictNullHandling: false
@@ -6194,12 +4597,131 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/query.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/query.mjs
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/log.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/bytes.mjs
+function concatBytes(buffers) {
+	let length = 0;
+	for (const buffer of buffers) length += buffer.length;
+	const output = new Uint8Array(length);
+	let index = 0;
+	for (const buffer of buffers) {
+		output.set(buffer, index);
+		index += buffer.length;
+	}
+	return output;
+}
+let encodeUTF8_;
+function encodeUTF8(str) {
+	let encoder;
+	return (encodeUTF8_ ?? (encoder = new globalThis.TextEncoder(), encodeUTF8_ = encoder.encode.bind(encoder)))(str);
+}
+let decodeUTF8_;
+function decodeUTF8(bytes) {
+	let decoder;
+	return (decodeUTF8_ ?? (decoder = new globalThis.TextDecoder(), decodeUTF8_ = decoder.decode.bind(decoder)))(bytes);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/decoders/line.mjs
+var _LineDecoder_buffer;
+var _LineDecoder_carriageReturnIndex;
+/**
+* A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
+* reading lines from text.
+*
+* https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
+*/
+var LineDecoder = class {
+	constructor() {
+		_LineDecoder_buffer.set(this, void 0);
+		_LineDecoder_carriageReturnIndex.set(this, void 0);
+		__classPrivateFieldSet(this, _LineDecoder_buffer, /* @__PURE__ */ new Uint8Array(), "f");
+		__classPrivateFieldSet(this, _LineDecoder_carriageReturnIndex, null, "f");
+	}
+	decode(chunk) {
+		if (chunk == null) return [];
+		const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? encodeUTF8(chunk) : chunk;
+		__classPrivateFieldSet(this, _LineDecoder_buffer, concatBytes([__classPrivateFieldGet(this, _LineDecoder_buffer, "f"), binaryChunk]), "f");
+		const lines = [];
+		let patternIndex;
+		while ((patternIndex = findNewlineIndex(__classPrivateFieldGet(this, _LineDecoder_buffer, "f"), __classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f"))) != null) {
+			if (patternIndex.carriage && __classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f") == null) {
+				__classPrivateFieldSet(this, _LineDecoder_carriageReturnIndex, patternIndex.index, "f");
+				continue;
+			}
+			if (__classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f") != null && (patternIndex.index !== __classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f") + 1 || patternIndex.carriage)) {
+				lines.push(decodeUTF8(__classPrivateFieldGet(this, _LineDecoder_buffer, "f").subarray(0, __classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f") - 1)));
+				__classPrivateFieldSet(this, _LineDecoder_buffer, __classPrivateFieldGet(this, _LineDecoder_buffer, "f").subarray(__classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f")), "f");
+				__classPrivateFieldSet(this, _LineDecoder_carriageReturnIndex, null, "f");
+				continue;
+			}
+			const endIndex = __classPrivateFieldGet(this, _LineDecoder_carriageReturnIndex, "f") !== null ? patternIndex.preceding - 1 : patternIndex.preceding;
+			const line = decodeUTF8(__classPrivateFieldGet(this, _LineDecoder_buffer, "f").subarray(0, endIndex));
+			lines.push(line);
+			__classPrivateFieldSet(this, _LineDecoder_buffer, __classPrivateFieldGet(this, _LineDecoder_buffer, "f").subarray(patternIndex.index), "f");
+			__classPrivateFieldSet(this, _LineDecoder_carriageReturnIndex, null, "f");
+		}
+		return lines;
+	}
+	flush() {
+		if (!__classPrivateFieldGet(this, _LineDecoder_buffer, "f").length) return [];
+		return this.decode("\n");
+	}
+};
+_LineDecoder_buffer = /* @__PURE__ */ new WeakMap(), _LineDecoder_carriageReturnIndex = /* @__PURE__ */ new WeakMap();
+Object.defineProperty(LineDecoder, "NEWLINE_CHARS", {
+	enumerable: true,
+	configurable: true,
+	writable: true,
+	value: /* @__PURE__ */ new Set(["\n", "\r"])
+});
+Object.defineProperty(LineDecoder, "NEWLINE_REGEXP", {
+	enumerable: true,
+	configurable: true,
+	writable: true,
+	value: /\r\n|[\n\r]/g
+});
+/**
+* This function searches the buffer for the end patterns, (\r or \n)
+* and returns an object with the index preceding the matched newline and the
+* index after the newline char. `null` is returned if no new line is found.
+*
+* ```ts
+* findNewLineIndex('abc\ndef') -> { preceding: 2, index: 3 }
+* ```
+*/
+function findNewlineIndex(buffer, startIndex) {
+	const newline = 10;
+	const carriage = 13;
+	for (let i = startIndex ?? 0; i < buffer.length; i++) {
+		if (buffer[i] === newline) return {
+			preceding: i,
+			index: i + 1,
+			carriage: false
+		};
+		if (buffer[i] === carriage) return {
+			preceding: i,
+			index: i + 1,
+			carriage: true
+		};
+	}
+	return null;
+}
+function findDoubleNewlineIndex(buffer) {
+	const newline = 10;
+	const carriage = 13;
+	for (let i = 0; i < buffer.length - 1; i++) {
+		if (buffer[i] === newline && buffer[i + 1] === newline) return i + 2;
+		if (buffer[i] === carriage && buffer[i + 1] === carriage) return i + 2;
+		if (buffer[i] === carriage && buffer[i + 1] === newline && i + 3 < buffer.length && buffer[i + 2] === carriage && buffer[i + 3] === newline) return i + 4;
+	}
+	return -1;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/log.mjs
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -6252,10 +4774,253 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/parse.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/streaming.mjs
+var _Stream_client;
+var Stream = class Stream {
+	constructor(iterator, controller, client) {
+		Object.defineProperty(this, "iterator", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: iterator
+		});
+		Object.defineProperty(this, "controller", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		_Stream_client.set(this, void 0);
+		this.controller = controller;
+		__classPrivateFieldSet(this, _Stream_client, client, "f");
+	}
+	static fromSSEResponse(response, controller, client) {
+		let consumed = false;
+		const logger = client ? loggerFor(client) : console;
+		async function* iterator() {
+			if (consumed) throw new LangsmithError("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
+			consumed = true;
+			let done = false;
+			try {
+				for await (const sse of _iterSSEMessages(response, controller)) {
+					if (sse.event === "end") break;
+					if (sse.event === "error") throw new APIError(void 0, safeJSON(sse.data) ?? sse.data, void 0, response.headers);
+					if (sse.event === "data") try {
+						yield JSON.parse(sse.data);
+					} catch (e) {
+						logger.error(`Could not parse message into JSON:`, sse.data);
+						logger.error(`From chunk:`, sse.raw);
+						throw e;
+					}
+					else try {
+						yield JSON.parse(sse.data);
+					} catch (e) {
+						logger.error(`Could not parse message into JSON:`, sse.data);
+						logger.error(`From chunk:`, sse.raw);
+						throw e;
+					}
+				}
+				done = true;
+			} catch (e) {
+				if (isAbortError(e)) return;
+				throw e;
+			} finally {
+				if (!done) controller.abort();
+			}
+		}
+		return new Stream(iterator, controller, client);
+	}
+	/**
+	* Generates a Stream from a newline-separated ReadableStream
+	* where each item is a JSON value.
+	*/
+	static fromReadableStream(readableStream, controller, client) {
+		let consumed = false;
+		async function* iterLines() {
+			const lineDecoder = new LineDecoder();
+			const iter = ReadableStreamToAsyncIterable(readableStream);
+			for await (const chunk of iter) for (const line of lineDecoder.decode(chunk)) yield line;
+			for (const line of lineDecoder.flush()) yield line;
+		}
+		async function* iterator() {
+			if (consumed) throw new LangsmithError("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
+			consumed = true;
+			let done = false;
+			try {
+				for await (const line of iterLines()) {
+					if (done) continue;
+					if (line) yield JSON.parse(line);
+				}
+				done = true;
+			} catch (e) {
+				if (isAbortError(e)) return;
+				throw e;
+			} finally {
+				if (!done) controller.abort();
+			}
+		}
+		return new Stream(iterator, controller, client);
+	}
+	[(_Stream_client = /* @__PURE__ */ new WeakMap(), Symbol.asyncIterator)]() {
+		return this.iterator();
+	}
+	/**
+	* Splits the stream into two streams which can be
+	* independently read from at different speeds.
+	*/
+	tee() {
+		const left = [];
+		const right = [];
+		const iterator = this.iterator();
+		const teeIterator = (queue) => {
+			return { next: () => {
+				if (queue.length === 0) {
+					const result = iterator.next();
+					left.push(result);
+					right.push(result);
+				}
+				return queue.shift();
+			} };
+		};
+		return [new Stream(() => teeIterator(left), this.controller, __classPrivateFieldGet(this, _Stream_client, "f")), new Stream(() => teeIterator(right), this.controller, __classPrivateFieldGet(this, _Stream_client, "f"))];
+	}
+	/**
+	* Converts this stream to a newline-separated ReadableStream of
+	* JSON stringified values in the stream
+	* which can be turned back into a Stream with `Stream.fromReadableStream()`.
+	*/
+	toReadableStream() {
+		const self = this;
+		let iter;
+		return makeReadableStream({
+			async start() {
+				iter = self[Symbol.asyncIterator]();
+			},
+			async pull(ctrl) {
+				try {
+					const { value, done } = await iter.next();
+					if (done) return ctrl.close();
+					const bytes = encodeUTF8(JSON.stringify(value) + "\n");
+					ctrl.enqueue(bytes);
+				} catch (err) {
+					ctrl.error(err);
+				}
+			},
+			async cancel() {
+				await iter.return?.();
+			}
+		});
+	}
+};
+async function* _iterSSEMessages(response, controller) {
+	if (!response.body) {
+		controller.abort();
+		if (typeof globalThis.navigator !== "undefined" && globalThis.navigator.product === "ReactNative") throw new LangsmithError(`The default react-native fetch implementation does not support streaming. Please use expo/fetch: https://docs.expo.dev/versions/latest/sdk/expo/#expofetch-api`);
+		throw new LangsmithError(`Attempted to iterate over a response with no body`);
+	}
+	const sseDecoder = new SSEDecoder();
+	const lineDecoder = new LineDecoder();
+	const iter = ReadableStreamToAsyncIterable(response.body);
+	for await (const sseChunk of iterSSEChunks(iter)) for (const line of lineDecoder.decode(sseChunk)) {
+		const sse = sseDecoder.decode(line);
+		if (sse) yield sse;
+	}
+	for (const line of lineDecoder.flush()) {
+		const sse = sseDecoder.decode(line);
+		if (sse) yield sse;
+	}
+}
+/**
+* Given an async iterable iterator, iterates over it and yields full
+* SSE chunks, i.e. yields when a double new-line is encountered.
+*/
+async function* iterSSEChunks(iterator) {
+	let data = /* @__PURE__ */ new Uint8Array();
+	for await (const chunk of iterator) {
+		if (chunk == null) continue;
+		const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? encodeUTF8(chunk) : chunk;
+		let newData = new Uint8Array(data.length + binaryChunk.length);
+		newData.set(data);
+		newData.set(binaryChunk, data.length);
+		data = newData;
+		let patternIndex;
+		while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
+			yield data.slice(0, patternIndex);
+			data = data.slice(patternIndex);
+		}
+	}
+	if (data.length > 0) yield data;
+}
+var SSEDecoder = class {
+	constructor() {
+		Object.defineProperty(this, "data", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "event", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "chunks", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		this.event = null;
+		this.data = [];
+		this.chunks = [];
+	}
+	decode(line) {
+		if (line.endsWith("\r")) line = line.substring(0, line.length - 1);
+		if (!line) {
+			if (!this.event && !this.data.length) return null;
+			const sse = {
+				event: this.event,
+				data: this.data.join("\n"),
+				raw: this.chunks
+			};
+			this.event = null;
+			this.data = [];
+			this.chunks = [];
+			return sse;
+		}
+		this.chunks.push(line);
+		if (line.startsWith(":")) return null;
+		let [fieldname, _, value] = partition(line, ":");
+		if (value.startsWith(" ")) value = value.substring(1);
+		if (fieldname === "event") this.event = value;
+		else if (fieldname === "data") this.data.push(value);
+		return null;
+	}
+};
+function partition(str, delimiter) {
+	const index = str.indexOf(delimiter);
+	if (index !== -1) return [
+		str.substring(0, index),
+		delimiter,
+		str.substring(index + delimiter.length)
+	];
+	return [
+		str,
+		"",
+		""
+	];
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/parse.mjs
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
+		if (props.options.stream) {
+			loggerFor(client).debug("response", response.status, response.url, response.headers, response.body);
+			if (props.options.__streamClass) return props.options.__streamClass.fromSSEResponse(response, props.controller, client);
+			return Stream.fromSSEResponse(response, props.controller, client);
+		}
 		if (response.status === 204) return null;
 		if (props.options.__binaryResponse) return response;
 		const mediaType = response.headers.get("content-type")?.split(";")[0]?.trim();
@@ -6275,18 +5040,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/core/api-promise.js
-var __classPrivateFieldSet$2 = function(receiver, state, value, kind, f) {
-	if (kind === "m") throw new TypeError("Private method is not writable");
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-	return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-};
-var __classPrivateFieldGet$2 = function(receiver, state, kind, f) {
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-	return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/api-promise.mjs
 var _APIPromise_client;
 /**
 * A subclass of `Promise` providing additional helper methods
@@ -6316,10 +5070,10 @@ var APIPromise = class APIPromise extends Promise {
 			value: void 0
 		});
 		_APIPromise_client.set(this, void 0);
-		__classPrivateFieldSet$2(this, _APIPromise_client, client, "f");
+		__classPrivateFieldSet(this, _APIPromise_client, client, "f");
 	}
 	_thenUnwrap(transform) {
-		return new APIPromise(__classPrivateFieldGet$2(this, _APIPromise_client, "f"), this.responsePromise, async (client, props) => transform(await this.parseResponse(client, props), props));
+		return new APIPromise(__classPrivateFieldGet(this, _APIPromise_client, "f"), this.responsePromise, async (client, props) => transform(await this.parseResponse(client, props), props));
 	}
 	/**
 	* Gets the raw `Response` instance instead of parsing the response
@@ -6353,7 +5107,7 @@ var APIPromise = class APIPromise extends Promise {
 		};
 	}
 	parse() {
-		if (!this.parsedPromise) this.parsedPromise = this.responsePromise.then((data) => this.parseResponse(__classPrivateFieldGet$2(this, _APIPromise_client, "f"), data));
+		if (!this.parsedPromise) this.parsedPromise = this.responsePromise.then((data) => this.parseResponse(__classPrivateFieldGet(this, _APIPromise_client, "f"), data));
 		return this.parsedPromise;
 	}
 	then(onfulfilled, onrejected) {
@@ -6368,18 +5122,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/core/pagination.js
-var __classPrivateFieldSet$1 = function(receiver, state, value, kind, f) {
-	if (kind === "m") throw new TypeError("Private method is not writable");
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-	return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-};
-var __classPrivateFieldGet$1 = function(receiver, state, kind, f) {
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-	return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/pagination.mjs
 var _AbstractPage_client;
 var AbstractPage = class {
 	constructor(client, response, body, options) {
@@ -6402,7 +5145,7 @@ var AbstractPage = class {
 			writable: true,
 			value: void 0
 		});
-		__classPrivateFieldSet$1(this, _AbstractPage_client, client, "f");
+		__classPrivateFieldSet(this, _AbstractPage_client, client, "f");
 		this.options = options;
 		this.response = response;
 		this.body = body;
@@ -6414,7 +5157,7 @@ var AbstractPage = class {
 	async getNextPage() {
 		const nextOptions = this.nextPageRequestOptions();
 		if (!nextOptions) throw new LangsmithError("No next page expected; please check `.hasNextPage()` before calling `.getNextPage()`.");
-		return await __classPrivateFieldGet$1(this, _AbstractPage_client, "f").requestAPIList(this.constructor, nextOptions);
+		return await __classPrivateFieldGet(this, _AbstractPage_client, "f").requestAPIList(this.constructor, nextOptions);
 	}
 	async *iterPages() {
 		let page = this;
@@ -6602,7 +5345,7 @@ var ItemsCursorGetPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/uploads.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/uploads.mjs
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -6623,7 +5366,7 @@ function getName(value) {
 }
 const isAsyncIterable = (value) => value != null && typeof value === "object" && typeof value[Symbol.asyncIterator] === "function";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/to-file.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/to-file.mjs
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -6651,11 +5394,11 @@ async function toFile(value, name, options) {
 	}
 	if (isResponseLike(value)) {
 		const blob = await value.blob();
-		name ||= new URL(value.url).pathname.split(/[\\/]/).pop();
+		name || (name = new URL(value.url).pathname.split(/[\\/]/).pop());
 		return makeFile(await getBytes(blob), name, options);
 	}
 	const parts = await getBytes(value);
-	name ||= getName(value);
+	name || (name = getName(value));
 	if (!options?.type) {
 		const type = parts.find((part) => typeof part === "object" && "type" in part && part.type);
 		if (typeof type === "string") options = {
@@ -6681,7 +5424,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/core/resource.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/resource.mjs
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -6694,7 +5437,67 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/path.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/headers.mjs
+const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
+function* iterateHeaders(headers) {
+	if (!headers) return;
+	if (brand_privateNullableHeaders in headers) {
+		const { values, nulls } = headers;
+		yield* values.entries();
+		for (const name of nulls) yield [name, null];
+		return;
+	}
+	let shouldClear = false;
+	let iter;
+	if (headers instanceof Headers) iter = headers.entries();
+	else if (isReadonlyArray(headers)) iter = headers;
+	else {
+		shouldClear = true;
+		iter = Object.entries(headers ?? {});
+	}
+	for (let row of iter) {
+		const name = row[0];
+		if (typeof name !== "string") throw new TypeError("expected header name to be a string");
+		const values = isReadonlyArray(row[1]) ? row[1] : [row[1]];
+		let didClear = false;
+		for (const value of values) {
+			if (value === void 0) continue;
+			if (shouldClear && !didClear) {
+				didClear = true;
+				yield [name, null];
+			}
+			yield [name, value];
+		}
+	}
+}
+const buildHeaders = (newHeaders) => {
+	const targetHeaders = new Headers();
+	const nullHeaders = /* @__PURE__ */ new Set();
+	for (const headers of newHeaders) {
+		const seenHeaders = /* @__PURE__ */ new Set();
+		for (const [name, value] of iterateHeaders(headers)) {
+			const lowerName = name.toLowerCase();
+			if (!seenHeaders.has(lowerName)) {
+				targetHeaders.delete(name);
+				seenHeaders.add(lowerName);
+			}
+			if (value === null) {
+				targetHeaders.delete(name);
+				nullHeaders.add(lowerName);
+			} else {
+				targetHeaders.append(name, value);
+				nullHeaders.delete(lowerName);
+			}
+		}
+	}
+	return {
+		[brand_privateNullableHeaders]: true,
+		values: targetHeaders,
+		nulls: nullHeaders
+	};
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/path.mjs
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -6751,7 +5554,78 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/items.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/agents.mjs
+var Agents = class extends APIResource {
+	/**
+	* Creates an Agent with a caller-assigned ID. Returns 409 if the ID already
+	* exists. Creates all four environments unless production_only is set for a FLEET
+	* agent. source_type defaults to EXTERNAL in this SDK. agent_type defaults to
+	* CUSTOM. The authenticated user becomes the owner
+	* when available. Requires permission to create projects. The response does not
+	* include runtime bindings.
+	*/
+	create(body, options) {
+		return this._client.post("/api/v1/agents", {
+			body: {
+				...body,
+				source_type: body.source_type === void 0 ? "EXTERNAL" : body.source_type
+			},
+			...options
+		});
+	}
+	/**
+	* Returns an Agent with the environments visible to the caller. The path value is
+	* the user-assigned Agent ID. Pass include=runtime_bindings to embed each
+	* environment's runtime bindings.
+	*/
+	retrieve(agentID, query = {}, options) {
+		return this._client.get(path$1`/api/v1/agents/${agentID}`, {
+			query,
+			...options
+		});
+	}
+	/**
+	* Updates an Agent's name, source_type, agent_type, or owner_id. Omitted fields
+	* keep their values. Changing or clearing owner_id additionally requires
+	* workspaces:manage; assigning an owner also requires workspaces:read and active
+	* workspace membership. Fleet ownership cannot be changed through this endpoint.
+	* Changing agent_type requires workspaces:manage in addition to project update
+	* access; repeating the current type is a no-op. Source type can change only for
+	* an EXTERNAL Agent without runtime bindings. The id is immutable and is rejected
+	* when present. Requires update permission on every environment project.
+	*/
+	update(agentID, body, options) {
+		return this._client.patch(path$1`/api/v1/agents/${agentID}`, {
+			body,
+			...options
+		});
+	}
+	/**
+	* Returns Agents visible to the caller. Each item is the same Agent shape as GET
+	* /api/v1/agents/{agent_id}, including the environments the caller may read. The
+	* list never embeds runtime bindings. An unknown query parameter, including limit,
+	* returns 400; use page_size to set the page size.
+	*/
+	list(query = {}, options) {
+		return this._client.getAPIList("/api/v1/agents", ItemsCursorGetPagination, {
+			query,
+			...options
+		});
+	}
+	/**
+	* Permanently deletes an Agent, along with its environments, runtime bindings,
+	* runtimes, and tracing projects. This cannot be undone. Deleting an Agent that
+	* does not exist returns 204.
+	*/
+	delete(agentID, options) {
+		return this._client.delete(path$1`/api/v1/agents/${agentID}`, {
+			...options,
+			headers: buildHeaders([{ Accept: "*/*" }, options?.headers])
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/items.mjs
 var Items = class extends APIResource {
 	/**
 	* Add RUN or THREAD items to a single annotation queue. RUN items require run_id
@@ -6781,8 +5655,10 @@ var Items = class extends APIResource {
 	/**
 	* List RUN and THREAD items in a single annotation queue for one review status
 	* section, with opaque cursor pagination. Optional item_type=RUN|THREAD filters
-	* the page. direction=backward returns items before the supplied cursor. The
-	* response contains item metadata only, not expanded run or thread payloads.
+	* the page. Optional min_start_time/max_start_time bound the item's trace start
+	* time; items with no start time are excluded when either bound is set.
+	* direction=backward returns items before the supplied cursor. The response
+	* contains item metadata only, not expanded run or thread payloads.
 	* status=archived returns items whose queue review requirements have been
 	* satisfied, not merely items the caller personally marked completed.
 	*/
@@ -6803,7 +5679,8 @@ var Items = class extends APIResource {
 		});
 	}
 	/**
-	* Remove RUN or THREAD items from a single annotation queue by item ID.
+	* Remove RUN or THREAD items from a single annotation queue by item ID. Both
+	* active and completed items can be removed.
 	*/
 	deleteAll(queueID, body, options) {
 		return this._client.post(path$1`/api/v1/platform/annotation-queues/${queueID}/items/delete`, {
@@ -6812,8 +5689,10 @@ var Items = class extends APIResource {
 		});
 	}
 	/**
-	* Returns the number of annotation queue items for the requested reviewer-specific
-	* or archived bucket.
+	* Returns the number of annotation queue items in one status bucket. The two time
+	* windows are independent: start_time/end_time bound when an item was archived,
+	* min_start_time/max_start_time bound when its trace ran. Items with no trace
+	* start time are excluded when either of the latter is set.
 	*/
 	retrieveCount(queueID, query, options) {
 		return this._client.get(path$1`/api/v1/platform/annotation-queues/${queueID}/items/count`, {
@@ -6823,7 +5702,9 @@ var Items = class extends APIResource {
 	}
 	/**
 	* Resolve a RUN or THREAD item to its current review section and zero-based
-	* position for deep linking.
+	* position for deep linking. The returned cursor counts RUN and THREAD items
+	* together, so it is only valid for a list request with no item_type or start-time
+	* filter.
 	*/
 	retrievePlacement(itemID, params, options) {
 		const { queue_id } = params;
@@ -6831,7 +5712,7 @@ var Items = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/runs.mjs
 var Runs$2 = class extends APIResource {
 	/**
 	* Add Runs To Annotation Queue
@@ -6904,7 +5785,7 @@ var Runs$2 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/annotation-queues/annotation-queues.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/annotation-queues.mjs
 var AnnotationQueues = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -7041,7 +5922,26 @@ var AnnotationQueues = class extends APIResource {
 AnnotationQueues.Runs = Runs$2;
 AnnotationQueues.Items = Items;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/datasets/experiment-runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/examples.mjs
+var Examples = class extends APIResource {
+	/**
+	* Soft-delete an example, preserving prior versions and their attachments. If the
+	* latest version is already deleted, the request succeeds without creating another
+	* version. Deletion is recorded at the current time or just after the latest
+	* version, whichever is later. For future-dated versions, latest reads reflect
+	* deletion immediately; timestamp reads reflect deletion only at or after the
+	* recorded deletion timestamp.
+	*/
+	delete(exampleID, params, options) {
+		const { dataset_id } = params;
+		return this._client.delete(path$1`/api/v1/platform/datasets/${dataset_id}/examples/${exampleID}`, {
+			...options,
+			headers: buildHeaders([{ Accept: "*/*" }, options?.headers])
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/experiment-runs.mjs
 var ExperimentRuns = class extends APIResource {
 	/**
 	* Returns a paginated page of dataset examples with runs from the requested
@@ -7058,10 +5958,16 @@ var ExperimentRuns = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/datasets/datasets.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/datasets.mjs
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
+		Object.defineProperty(this, "examples", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Examples(this._client)
+		});
 		Object.defineProperty(this, "experimentRuns", {
 			enumerable: true,
 			configurable: true,
@@ -7070,9 +5976,36 @@ var Datasets = class extends APIResource {
 		});
 	}
 };
+Datasets.Examples = Examples;
 Datasets.ExperimentRuns = ExperimentRuns;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/info.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/fleet/threads.mjs
+var Threads$1 = class extends APIResource {
+	/**
+	* Starts or resumes the sandbox referenced by the thread and returns when it is
+	* ready. The operation is idempotent. The thread must include
+	* sandbox.sandbox_slug.
+	*/
+	activateSandbox(threadID, options) {
+		return this._client.post(path$1`/v1/fleet/threads/${threadID}/sandbox-activation`, options);
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/fleet/fleet.mjs
+var Fleet = class extends APIResource {
+	constructor() {
+		super(...arguments);
+		Object.defineProperty(this, "threads", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Threads$1(this._client)
+		});
+	}
+};
+Fleet.Threads = Threads$1;
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/info.mjs
 var Info = class extends APIResource {
 	/**
 	* Returns information about the current LangSmith deployment: version, instance
@@ -7084,15 +6017,18 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/issues.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/issues.mjs
 var Issues = class extends APIResource {
 	/**
 	* **Beta:** This endpoint is in active development and may change without notice.
 	*
 	* Returns one issue for the authenticated tenant.
 	*/
-	retrieve(id, options) {
-		return this._client.get(path$1`/api/v1/platform/issues/${id}`, options);
+	retrieve(id, query = {}, options) {
+		return this._client.get(path$1`/api/v1/platform/issues/${id}`, {
+			query,
+			...options
+		});
 	}
 	/**
 	* **Beta:** This endpoint is in active development and may change without notice.
@@ -7108,67 +6044,7 @@ var Issues = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/headers.js
-const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
-function* iterateHeaders(headers) {
-	if (!headers) return;
-	if (brand_privateNullableHeaders in headers) {
-		const { values, nulls } = headers;
-		yield* values.entries();
-		for (const name of nulls) yield [name, null];
-		return;
-	}
-	let shouldClear = false;
-	let iter;
-	if (headers instanceof Headers) iter = headers.entries();
-	else if (isReadonlyArray(headers)) iter = headers;
-	else {
-		shouldClear = true;
-		iter = Object.entries(headers ?? {});
-	}
-	for (let row of iter) {
-		const name = row[0];
-		if (typeof name !== "string") throw new TypeError("expected header name to be a string");
-		const values = isReadonlyArray(row[1]) ? row[1] : [row[1]];
-		let didClear = false;
-		for (const value of values) {
-			if (value === void 0) continue;
-			if (shouldClear && !didClear) {
-				didClear = true;
-				yield [name, null];
-			}
-			yield [name, value];
-		}
-	}
-}
-const buildHeaders = (newHeaders) => {
-	const targetHeaders = new Headers();
-	const nullHeaders = /* @__PURE__ */ new Set();
-	for (const headers of newHeaders) {
-		const seenHeaders = /* @__PURE__ */ new Set();
-		for (const [name, value] of iterateHeaders(headers)) {
-			const lowerName = name.toLowerCase();
-			if (!seenHeaders.has(lowerName)) {
-				targetHeaders.delete(name);
-				seenHeaders.add(lowerName);
-			}
-			if (value === null) {
-				targetHeaders.delete(name);
-				nullHeaders.add(lowerName);
-			} else {
-				targetHeaders.append(name, value);
-				nullHeaders.delete(lowerName);
-			}
-		}
-	}
-	return {
-		[brand_privateNullableHeaders]: true,
-		values: targetHeaders,
-		nulls: nullHeaders
-	};
-};
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/online-evaluators.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/online-evaluators.mjs
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -7187,6 +6063,7 @@ var OnlineEvaluators = class extends APIResource {
 	}
 	/**
 	* Update an existing evaluator's name, LLM configuration, or code configuration.
+	* Returns 409 when a code evaluator build is ENQUEUED or BUILDING.
 	*/
 	update(evaluatorID, body, options) {
 		return this._client.patch(path$1`/api/v1/platform/evaluators/${evaluatorID}`, {
@@ -7205,10 +6082,12 @@ var OnlineEvaluators = class extends APIResource {
 		});
 	}
 	/**
-	* Delete an evaluator. When delete_run_rules is true, all run rules referencing
-	* this evaluator are deleted first (same tenant). Associated llm_evaluators and
-	* code_evaluators rows are removed by foreign-key cascade when the evaluator row
-	* is deleted.
+	* Delete an evaluator. Returns 409 when a code evaluator build is ENQUEUED or
+	* BUILDING, or when run rules still reference the evaluator and delete_run_rules
+	* is false. When delete_run_rules is true, all run rules referencing this
+	* evaluator are deleted first (same tenant) if the build is not in flight.
+	* Associated llm_evaluators and code_evaluators rows are removed by foreign-key
+	* cascade when the evaluator row is deleted.
 	*/
 	delete(evaluatorID, params = {}, options) {
 		const { delete_run_rules } = params ?? {};
@@ -7234,8 +6113,9 @@ var OnlineEvaluators = class extends APIResource {
 	/**
 	* Returns per-day LLM evaluator spend for the requested 7-day period, grouped by
 	* evaluator, resource, or run rule. Exactly one of group_by, evaluator_id,
-	* session_id, or dataset_id is required. resource_id, type, feedback_key, and
-	* tag_value_id may be supplied with group_by to narrow listing aggregations.
+	* session_id, or dataset_id is required. resource_id, type, feedback_key,
+	* tag_value_id, and agent_id may be supplied with group_by to narrow listing
+	* aggregations.
 	*/
 	spend(query, options) {
 		return this._client.get("/api/v1/platform/evaluators/spend", {
@@ -7245,7 +6125,94 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/public/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/product-feedback.mjs
+var ProductFeedback = class extends APIResource {
+	/**
+	* **Alpha:** This endpoint is in active development and may change without notice.
+	*
+	* Submits concise product feedback with optional non-sensitive client details.
+	*/
+	create(params, options) {
+		const { "Idempotency-Key": idempotencyKey, ...body } = params;
+		return this._client.post("/api/v1/platform/product-feedbacks", {
+			body,
+			...options,
+			headers: buildHeaders([{ ...idempotencyKey != null ? { "Idempotency-Key": idempotencyKey } : void 0 }, options?.headers])
+		});
+	}
+	/**
+	* **Alpha:** This endpoint is in active development and may change without notice.
+	*/
+	retrieve(id, options) {
+		return this._client.get(path$1`/api/v1/platform/product-feedbacks/${id}`, options);
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/prompt-webhooks.mjs
+var PromptWebhooks = class extends APIResource {
+	/**
+	* Create a new prompt webhook.
+	*
+	* LangSmith sends a POST request to the webhook URL for each event listed in
+	* triggers on the prompts it matches. A workspace can have one prompt webhook
+	* unless its limit was raised; creating one past the limit returns 400.
+	*/
+	create(body, options) {
+		return this._client.post("/api/v1/prompt-webhooks", {
+			body,
+			...options
+		});
+	}
+	/**
+	* Get a specific prompt webhook.
+	*/
+	retrieve(webhookID, options) {
+		return this._client.get(path$1`/api/v1/prompt-webhooks/${webhookID}`, options);
+	}
+	/**
+	* Update a specific prompt webhook.
+	*
+	* Omitted fields keep their current values; list fields and headers that are set
+	* replace the stored values.
+	*/
+	update(webhookID, body, options) {
+		return this._client.patch(path$1`/api/v1/prompt-webhooks/${webhookID}`, {
+			body,
+			...options
+		});
+	}
+	/**
+	* List all prompt webhooks for the current tenant.
+	*/
+	list(options) {
+		return this._client.get("/api/v1/prompt-webhooks", options);
+	}
+	/**
+	* Delete a specific prompt webhook.
+	*/
+	delete(webhookID, options) {
+		return this._client.delete(path$1`/api/v1/prompt-webhooks/${webhookID}`, {
+			...options,
+			headers: buildHeaders([{ Accept: "*/*" }, options?.headers])
+		});
+	}
+	/**
+	* Test a specific prompt webhook.
+	*
+	* Sends the sample payload to the webhook configuration in the request body
+	* without saving it, but only if the webhook's triggers include the payload's
+	* event and its prompt filters match the payload's prompt. Otherwise nothing is
+	* sent. Fails if the destination does not accept the payload.
+	*/
+	test(body, options) {
+		return this._client.post("/api/v1/prompt-webhooks/test", {
+			body,
+			...options
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/public/runs.mjs
 var Runs$1 = class extends APIResource {
 	/**
 	* Returns one run within the trace identified by the share token. The request
@@ -7296,7 +6263,7 @@ var Runs$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/public/public.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/public/public.mjs
 var Public = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -7310,8 +6277,8 @@ var Public = class extends APIResource {
 };
 Public.Runs = Runs$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/runs/share.js
-var Share = class extends APIResource {
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/share.mjs
+var Share$1 = class extends APIResource {
 	/**
 	* Creates or returns a share token for a run. Child runs share their trace root.
 	*
@@ -7321,6 +6288,10 @@ var Share = class extends APIResource {
 	* ```ts
 	* const share = await client.runs.share.create(
 	*   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+	*   {
+	*     session_id: '018e4c7e-a9fb-7ef0-a5b6-6ea3a82e9327',
+	*     trace_id: '018e4c7e-a9fb-7ef0-a5b6-6ea3a82e9327',
+	*   },
 	* );
 	* ```
 	*/
@@ -7340,6 +6311,7 @@ var Share = class extends APIResource {
 	* ```ts
 	* await client.runs.share.delete(
 	*   '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+	*   { session_id: '018e4c7e-a9fb-7ef0-a5b6-6ea3a82e9327' },
 	* );
 	* ```
 	*/
@@ -7352,15 +6324,127 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/runs/runs.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/query-streaming.mjs
+/**
+* Yields the items of a streamed query one at a time and follows the next page cursor across pages.
+*
+* The stream is a sequence of JSON Patch operations on the page document. While a page only appends items
+* (the root document, `<items>/-`) each item is yielded as soon as it arrives. As soon as the page inserts
+* at an index (`add <items>/<n>`) or replaces or removes an item, the position of an item is only known once
+* the page's stream ends: from then on items are held back and yielded in their final order at the end of
+* the page. Items yielded before that cannot be reordered. Patches deeper than one item are ignored: the
+* item was already yielded.
+*/
+async function* iterQueryStream(fetch, paths) {
+	const itemPath = new RegExp(`^${escapeRegExp(paths.items)}/(-|\\d+)$`);
+	let cursor;
+	do {
+		let next = null;
+		const doc = [];
+		let yielded = 0;
+		let buffered = false;
+		for await (const event of await fetch(cursor)) for (const op of event) {
+			if (op.path === "") {
+				const root = op.value;
+				next = getPointer(root, paths.nextCursor) ?? null;
+				const items = getPointer(root, paths.items) ?? [];
+				doc.splice(yielded, doc.length - yielded, ...items.slice(yielded));
+			} else if (op.path === paths.nextCursor) next = op.value ?? null;
+			else {
+				const match = itemPath.exec(op.path);
+				if (!match) continue;
+				const index = match[1] === "-" ? doc.length : Number(match[1]);
+				if (match[1] !== "-") buffered = true;
+				if (op.op === "remove") {
+					if (index >= yielded && index < doc.length) doc.splice(index, 1);
+				} else if (op.op === "replace") {
+					if (index >= yielded && index < doc.length) doc[index] = op.value;
+				} else doc.splice(Math.min(index, doc.length), 0, op.value);
+			}
+			while (!buffered && yielded < doc.length) yield doc[yielded++];
+		}
+		while (yielded < doc.length) yield doc[yielded++];
+		cursor = next || void 0;
+	} while (cursor);
+}
+function getPointer(doc, pointer) {
+	let value = doc;
+	for (const segment of pointer.split("/").slice(1)) {
+		if (value == null || typeof value !== "object") return void 0;
+		value = value[segment.replace(/~1/g, "/").replace(/~0/g, "~")];
+	}
+	return value;
+}
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/streaming.mjs
+var Streaming$2 = class extends APIResource {
+	/**
+	* Returns a paginated list of runs for the given projects within min/max
+	* start_time. Supports filters, cursor pagination, and `selects` to select fields
+	* to return.
+	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
+	*
+	* Self-hosted deployments require LangSmith `v0.16` or later.
+	*
+	* @example
+	* ```ts
+	* const response = await client.runs.streaming.queryV2();
+	* ```
+	*/
+	queryV2(params, options) {
+		const { Accept, ...body } = params;
+		return this._client.post("/api/v2/runs/query", {
+			body,
+			...options,
+			headers: buildHeaders([{ Accept: Accept != null ? Accept : "text/event-stream" }, options?.headers]),
+			stream: true
+		});
+	}
+	/**
+	* Yields the items of `queryV2` one at a time across pages, following the next page cursor.
+	*
+	* @example
+	* ```ts
+	* // Automatically fetches more pages as needed.
+	* for await (const run of client.runs.streaming.queryV2Items(
+	*   {},
+	* )) {
+	*   // ...
+	* }
+	* ```
+	*/
+	queryV2Items(params, options) {
+		return iterQueryStream((cursor) => this.queryV2(cursor ? {
+			...params,
+			cursor
+		} : params, options), {
+			items: "/items",
+			nextCursor: "/next_cursor"
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/runs.mjs
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
+		Object.defineProperty(this, "streaming", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Streaming$2(this._client)
+		});
 		Object.defineProperty(this, "share", {
 			enumerable: true,
 			configurable: true,
 			writable: true,
-			value: new Share(this._client)
+			value: new Share$1(this._client)
 		});
 		Object.defineProperty(this, "retrieve", {
 			enumerable: true,
@@ -7400,6 +6484,10 @@ var Runs = class extends APIResource {
 	* Returns a paginated list of runs for the given projects within min/max
 	* start_time. Supports filters, cursor pagination, and `selects` to select fields
 	* to return.
+	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
 	*
 	* Self-hosted deployments require LangSmith `v0.16` or later.
 	*
@@ -7443,9 +6531,10 @@ var Runs = class extends APIResource {
 		});
 	}
 };
-Runs.Share = Share;
+Runs.Streaming = Streaming$2;
+Runs.Share = Share$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/boxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/boxes.mjs
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -7510,12 +6599,40 @@ var Boxes = class extends APIResource {
 		});
 	}
 	/**
+	* Removes the sharing grant for one port, or for every port when port is omitted.
+	* A LangSmith login URL stops working immediately. A previously minted service
+	* token is not revoked and stays valid until it expires, but no new one can be
+	* issued from the removed grant.
+	*/
+	deleteServiceURL(name, params = {}, options) {
+		const { port } = params ?? {};
+		return this._client.delete(path$1`/api/v2/sandboxes/boxes/${name}/service-urls`, {
+			query: { port },
+			...options,
+			headers: buildHeaders([{ Accept: "*/*" }, options?.headers])
+		});
+	}
+	/**
 	* Generate a tokenized link that downloads a single file from a sandbox with no
 	* further authentication. This mints a token rather than creating an addressable
 	* resource, so it returns 200 with no Location header. The token pins the sandbox,
-	* the file path, and the response content type and disposition, so a link cannot
-	* be repointed at another file. Links never expire unless expires_in_seconds is
-	* set. The link is served from the sandbox service domain, not the API host.
+	* the file path, the response content type and disposition, and the sandbox flags,
+	* so a link cannot be repointed at another file or served under a weaker policy.
+	* The file is always served with a Content-Security-Policy: a sandbox directive,
+	* plus a default-src holding every fetch to the file's own download host and a set
+	* of pre-approved third-party origins. csp_sandbox_flags may loosen the sandbox
+	* with allow-downloads, allow-forms, allow-modals, allow-orientation-lock,
+	* allow-pointer-lock, allow-popups, allow-presentation, allow-same-origin,
+	* allow-scripts, or allow-top-navigation-by-user-activation. Every file is served
+	* from its own host, derived from the sandbox and the path, so allow-same-origin
+	* gives a page localStorage and IndexedDB that no other file can read, and
+	* re-minting a link for the same file keeps them. csp_sandbox set to false drops
+	* the sandbox directive altogether, and csp_sandbox_flags must then be omitted.
+	* csp_source_bundles selects the third-party origins: cdnjs, google-fonts,
+	* jsdelivr, and unpkg are all allowed when the field is omitted, 'none' holds the
+	* file to its own host, and 'any' sends no default-src at all. Links never expire
+	* unless expires_in_seconds is set. The link is served from the sandbox service
+	* domain, not the API host.
 	*/
 	generateDownloadURL(name, body, options) {
 		return this._client.post(path$1`/api/v2/sandboxes/boxes/${name}/download-url`, {
@@ -7525,9 +6642,17 @@ var Boxes = class extends APIResource {
 	}
 	/**
 	* Create a short-lived JWT for accessing an HTTP service running on a specific
-	* port inside a sandbox. Returns a browser_url (sets auth cookie via redirect), a
-	* service_url (for use with the X-Langsmith-Sandbox-Service-Token header), the raw
-	* token, and its expiry.
+	* port inside a sandbox. Returns a browser_url (sets auth cookie via redirect), an
+	* embed_url (for an iframe; carries the token in the URL fragment, so no server or
+	* Referer sees it), a service_url (for use with the
+	* X-Langsmith-Sandbox-Service-Token header), the raw token, and its expiry. Set
+	* access=restricted|workspace to instead enable durable LangSmith login (no token;
+	* users authenticate with their normal LangSmith session), or access=off to
+	* disable it. embed_origins names the pages that may show the URL in an iframe. In
+	* token mode they are bound into the minted token; with LangSmith login they are
+	* stored on the grant and a viewer signs in from inside the frame through a
+	* LangSmith popup. LangSmith login and token access are mutually exclusive per
+	* service URL.
 	*/
 	generateServiceURL(name, body, options) {
 		return this._client.post(path$1`/api/v2/sandboxes/boxes/${name}/service-url`, {
@@ -7540,6 +6665,18 @@ var Boxes = class extends APIResource {
 	*/
 	getStatus(name, options) {
 		return this._client.get(path$1`/api/v2/sandboxes/boxes/${name}/status`, options);
+	}
+	/**
+	* Returns one entry per port the sandbox is currently reachable on, so a caller
+	* can see what is shared before turning it off. Expired token grants are omitted.
+	* Cursors are opaque and only valid on this endpoint; do not parse or construct
+	* one.
+	*/
+	listServiceURLs(name, query = {}, options) {
+		return this._client.getAPIList(path$1`/api/v2/sandboxes/boxes/${name}/service-urls`, ItemsCursorGetPagination, {
+			query,
+			...options
+		});
 	}
 	/**
 	* Start a stopped or failed sandbox. This endpoint is not idempotent.
@@ -7559,7 +6696,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/registries.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/registries.mjs
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -7586,7 +6723,11 @@ var Registries = class extends APIResource {
 		});
 	}
 	/**
-	* List sandbox registries for pulling private images.
+	* List sandbox registries for pulling private images. Page with page_size and
+	* cursor, replaying next_cursor until it is null. Results are ordered newest
+	* first, with stable ordering for equal creation times. Keep filters unchanged
+	* between pages. Requests without page_size or cursor retain the legacy default of
+	* 50 results. Cursor requests default to 20 results, with a maximum of 100.
 	*/
 	list(query = {}, options) {
 		return this._client.get("/api/v2/sandboxes/registries", {
@@ -7605,10 +6746,12 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/snapshots.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/snapshots.mjs
 var Snapshots = class extends APIResource {
 	/**
-	* Create a snapshot from a Docker image (async build).
+	* Create a snapshot from a Docker image (async build). Names use lowercase
+	* registry-style components separated by slashes, up to 255 characters. The
+	* system/ namespace is read-only.
 	*/
 	create(body, options) {
 		return this._client.post("/api/v2/sandboxes/snapshots", {
@@ -7617,16 +6760,18 @@ var Snapshots = class extends APIResource {
 		});
 	}
 	/**
-	* Get a sandbox snapshot by ID or by a Docker-style reference. A bare name means
-	* name:latest, falling back to the newest ready untagged snapshot of that name. To
-	* list the tags under a name, use /api/v2/sandboxes/snapshots-by-name/{name}.
+	* Get a sandbox snapshot by ID or a registry-style reference, including
+	* system/default:latest. URL-encode references containing slashes. A bare name
+	* means name:latest, falling back to the newest ready untagged snapshot of that
+	* name. To list the tags under a name, use
+	* /api/v2/sandboxes/snapshots-by-name/{name}.
 	*/
 	retrieve(snapshotID, options) {
 		return this._client.get(path$1`/api/v2/sandboxes/snapshots/${snapshotID}`, options);
 	}
 	/**
-	* List sandbox snapshots for the authenticated tenant, with optional filtering,
-	* sorting, and pagination. Page with page_size and cursor: replay the response's
+	* List workspace and published system snapshots, with optional filtering, sorting,
+	* and pagination. Page with page_size and cursor: replay the response's
 	* next_cursor until it comes back null, which is the only signal that no pages
 	* remain. Cursors are opaque and only valid on this endpoint; do not parse or
 	* construct one.
@@ -7656,7 +6801,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/sandboxes/sandboxes.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/sandboxes.mjs
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -7679,13 +6824,201 @@ var Sandboxes = class extends APIResource {
 			value: new Snapshots(this._client)
 		});
 	}
+	/**
+	* Returns priced usage per sandbox or snapshot and UTC hour in the half-open
+	* requested interval. LCU uses the recorded compute amount for sandboxes;
+	* snapshots have zero LCU. LSU allocates the recorded workspace storage amount
+	* proportionally to attributed bytes, including checkpoints on their sandbox and
+	* snapshots as separate resources. Resource filters preserve each resource's
+	* share. Rate changes do not reprice recorded amounts. An access-filtered page can
+	* have no items and a non-null next_cursor; continue until next_cursor is null.
+	*/
+	listUsageCosts(query, options) {
+		return this._client.getAPIList("/api/v2/sandboxes/usage/costs", ItemsCursorGetPagination, {
+			query,
+			...options
+		});
+	}
 };
 Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sessions.mjs
+var Sessions = class extends APIResource {
+	/**
+	* Returns the tracing project (session) an address names. An address is an AGENT
+	* (`id` and `environment`), an EXPERIMENT (`id`), or an EVALUATOR (no `id`:
+	* evaluator traces share one project per workspace). Send `kind` and `environment`
+	* in upper case, as listed; they are matched case-insensitively, while the Agent
+	* `id` is case-sensitive. An address that does not exist, or whose project you
+	* cannot read, is a 404. Pass the returned `session_id` to any endpoint that takes
+	* a project (session) ID. This is not supported on a BYOC data plane yet, and is a
+	* 501 there. Self-hosted deployments need LangSmith v0.18 or later.
+	*/
+	resolve(query, options) {
+		return this._client.get("/api/v1/sessions/resolutions", {
+			query,
+			...options
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/share.mjs
+var Share = class extends APIResource {
+	/**
+	* Mints a public share token for a thread. Idempotent: sharing an already-shared
+	* thread returns the existing token.
+	*
+	* @example
+	* ```ts
+	* const share = await client.threads.share.create(
+	*   'thread_id',
+	*   { project_id: '018e4c7e-a9fb-7ef0-a5b6-6ea3a82e9327' },
+	* );
+	* ```
+	*/
+	create(threadID, body, options) {
+		return this._client.post(path$1`/api/v2/threads/${threadID}/share`, {
+			body,
+			...options
+		});
+	}
+	/**
+	* Returns the share token for a thread. The token is omitted when the thread is
+	* not shared. Gated on runs:share so the control's state matches the control's
+	* permission.
+	*
+	* @example
+	* ```ts
+	* const share = await client.threads.share.retrieve(
+	*   'thread_id',
+	*   { project_id: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e' },
+	* );
+	* ```
+	*/
+	retrieve(threadID, query, options) {
+		return this._client.get(path$1`/api/v2/threads/${threadID}/share`, {
+			query,
+			...options
+		});
+	}
+	/**
+	* Deletes the share token for a thread. Idempotent: returns 204 whether or not a
+	* share token existed. Deliberately does not verify the thread still exists.
+	*
+	* @example
+	* ```ts
+	* await client.threads.share.delete('thread_id', {
+	*   project_id: '182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e',
+	* });
+	* ```
+	*/
+	delete(threadID, params, options) {
+		const { project_id } = params;
+		return this._client.delete(path$1`/api/v2/threads/${threadID}/share`, {
+			query: { project_id },
+			...options,
+			headers: buildHeaders([{ Accept: "*/*" }, options?.headers])
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/streaming.mjs
+var Streaming$1 = class extends APIResource {
+	/**
+	* GET with body payload — no resources created. Returns the threads in a tracing
+	* project matching the query passed as the request payload. Results are filtered
+	* by the given time range and optional filters, with cursor-based pagination.
+	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
+	*
+	* Self-hosted deployments require LangSmith `v0.16` or later.
+	*
+	* @example
+	* ```ts
+	* const response = await client.threads.streaming.query();
+	* ```
+	*/
+	query(params, options) {
+		const { Accept, ...body } = params;
+		return this._client.post("/api/v2/threads/query", {
+			body,
+			...options,
+			headers: buildHeaders([{ Accept: Accept != null ? Accept : "text/event-stream" }, options?.headers]),
+			stream: true
+		});
+	}
+	/**
+	* Yields the items of `query` one at a time across pages, following the next page cursor.
+	*
+	* @example
+	* ```ts
+	* // Automatically fetches more pages as needed.
+	* for await (const thread of client.threads.streaming.queryItems(
+	*   {},
+	* )) {
+	*   // ...
+	* }
+	* ```
+	*/
+	queryItems(params, options) {
+		return iterQueryStream((cursor) => this.query(cursor ? {
+			...params,
+			cursor
+		} : params, options), {
+			items: "/items",
+			nextCursor: "/next_cursor"
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/threads.mjs
 var Threads = class extends APIResource {
+	constructor() {
+		super(...arguments);
+		Object.defineProperty(this, "streaming", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Streaming$1(this._client)
+		});
+		Object.defineProperty(this, "share", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Share(this._client)
+		});
+	}
+	/**
+	* GET with body payload — no resources created. Returns aggregate statistics for
+	* threads in a tracing project. The response includes the thread counts, run
+	* counts, latency percentiles, rates, token totals, and cost totals requested in
+	* `select`.
+	*
+	* Self-hosted deployments require LangSmith `v0.17` or later.
+	*
+	* @example
+	* ```ts
+	* const response = await client.threads.aggregateStats({
+	*   project_id: '0190a1b2-c3d4-7ef0-a5b6-6ea3a82e9328',
+	*   select: [
+	*     'THREAD_COUNT',
+	*     'TRACE_COUNT',
+	*     'TOTAL_TOKENS',
+	*     'TOTAL_COST',
+	*   ],
+	* });
+	* ```
+	*/
+	aggregateStats(body, options) {
+		return this._client.post("/api/v2/threads/stats", {
+			body,
+			...options
+		});
+	}
 	/**
 	* Retrieve all traces belonging to a specific thread within a project.
 	*
@@ -7709,8 +7042,13 @@ var Threads = class extends APIResource {
 		});
 	}
 	/**
-	* Query threads within a project (session), with cursor-based pagination. Returns
-	* threads matching the given time range and optional filters.
+	* GET with body payload — no resources created. Returns the threads in a tracing
+	* project matching the query passed as the request payload. Results are filtered
+	* by the given time range and optional filters, with cursor-based pagination.
+	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
 	*
 	* Self-hosted deployments require LangSmith `v0.16` or later.
 	*
@@ -7722,11 +7060,13 @@ var Threads = class extends APIResource {
 	* }
 	* ```
 	*/
-	query(body, options) {
+	query(params, options) {
+		const { Accept, ...body } = params;
 		return this._client.getAPIList("/api/v2/threads/query", ItemsCursorPostPagination, {
 			body,
 			method: "post",
-			...options
+			...options,
+			headers: buildHeaders([{ ...Accept != null ? { Accept } : void 0 }, options?.headers])
 		});
 	}
 	/**
@@ -7753,9 +7093,79 @@ var Threads = class extends APIResource {
 		});
 	}
 };
+Threads.Streaming = Streaming$1;
+Threads.Share = Share;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/resources/traces.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/traces/streaming.mjs
+var Streaming = class extends APIResource {
+	/**
+	* Returns a paginated list of traces (root runs) for a single tracing project.
+	* Each item carries the trace's root run plus optional trace-wide aggregates
+	* (`total_tokens`, `total_cost`, `first_token_time`) under `trace_aggregates`, so
+	* clients never have to merge by `trace_id`.
+	*
+	* Traces are scanned within a `start_time` window: `min_start_time` defaults to 24
+	* hours before the request, `max_start_time` defaults to the request time. Set
+	* either explicitly to widen or narrow the window.
+	*
+	* Supports filters (`trace_filter`, `tree_filter`), cursor pagination (`cursor`),
+	* and field projection (`selects`).
+	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
+	*
+	* Self-hosted deployments require LangSmith `v0.16` or later.
+	*
+	* @example
+	* ```ts
+	* const response = await client.traces.streaming.query();
+	* ```
+	*/
+	query(params, options) {
+		const { Accept, ...body } = params;
+		return this._client.post("/api/v2/traces/query", {
+			body,
+			...options,
+			headers: buildHeaders([{ Accept: Accept != null ? Accept : "text/event-stream" }, options?.headers]),
+			stream: true
+		});
+	}
+	/**
+	* Yields the items of `query` one at a time across pages, following the next page cursor.
+	*
+	* @example
+	* ```ts
+	* // Automatically fetches more pages as needed.
+	* for await (const trace of client.traces.streaming.queryItems(
+	*   {},
+	* )) {
+	*   // ...
+	* }
+	* ```
+	*/
+	queryItems(params, options) {
+		return iterQueryStream((cursor) => this.query(cursor ? {
+			...params,
+			cursor
+		} : params, options), {
+			items: "/items",
+			nextCursor: "/next_cursor"
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/traces/traces.mjs
 var Traces = class extends APIResource {
+	constructor() {
+		super(...arguments);
+		Object.defineProperty(this, "streaming", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Streaming(this._client)
+		});
+	}
 	/**
 	* Returns runs for a trace ID within min/max start time. Optional `filter`;
 	* repeatable `selects` to select fields to return.
@@ -7791,6 +7201,10 @@ var Traces = class extends APIResource {
 	* Supports filters (`trace_filter`, `tree_filter`), cursor pagination (`cursor`),
 	* and field projection (`selects`).
 	*
+	* When `ai_search` is set, `Accept: text/event-stream` is required; requests
+	* without it return 406. AI search is unavailable on deployments that route
+	* queries to the v1 backend and returns 501 there.
+	*
 	* Self-hosted deployments require LangSmith `v0.16` or later.
 	*
 	* @example
@@ -7801,16 +7215,19 @@ var Traces = class extends APIResource {
 	* }
 	* ```
 	*/
-	query(body, options) {
+	query(params, options) {
+		const { Accept, ...body } = params;
 		return this._client.getAPIList("/api/v2/traces/query", ItemsCursorPostPagination, {
 			body,
 			method: "post",
-			...options
+			...options,
+			headers: buildHeaders([{ ...Accept != null ? { Accept } : void 0 }, options?.headers])
 		});
 	}
 };
+Traces.Streaming = Streaming;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/internal/utils/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/env.mjs
 /**
 * Read an environment variable.
 *
@@ -7823,18 +7240,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/_openapi_client/client.js
-var __classPrivateFieldSet = function(receiver, state, value, kind, f) {
-	if (kind === "m") throw new TypeError("Private method is not writable");
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-	return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-};
-var __classPrivateFieldGet = function(receiver, state, kind, f) {
-	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-	if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-	return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/client.mjs
 var _Langsmith_instances;
 var _a;
 var _Langsmith_encoder;
@@ -7925,6 +7331,30 @@ var Langsmith = class {
 			writable: true,
 			value: void 0
 		});
+		Object.defineProperty(this, "productFeedback", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new ProductFeedback(this)
+		});
+		Object.defineProperty(this, "agents", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Agents(this)
+		});
+		Object.defineProperty(this, "fleet", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Fleet(this)
+		});
+		Object.defineProperty(this, "sessions", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Sessions(this)
+		});
 		Object.defineProperty(this, "datasets", {
 			enumerable: true,
 			configurable: true,
@@ -7966,6 +7396,12 @@ var Langsmith = class {
 			configurable: true,
 			writable: true,
 			value: new AnnotationQueues(this)
+		});
+		Object.defineProperty(this, "promptWebhooks", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new PromptWebhooks(this)
 		});
 		Object.defineProperty(this, "info", {
 			enumerable: true,
@@ -8461,6 +7897,10 @@ Object.defineProperty(Langsmith, "toFile", {
 	writable: true,
 	value: toFile
 });
+Langsmith.ProductFeedback = ProductFeedback;
+Langsmith.Agents = Agents;
+Langsmith.Fleet = Fleet;
+Langsmith.Sessions = Sessions;
 Langsmith.Datasets = Datasets;
 Langsmith.Runs = Runs;
 Langsmith.Threads = Threads;
@@ -8468,11 +7908,1728 @@ Langsmith.Traces = Traces;
 Langsmith.OnlineEvaluators = OnlineEvaluators;
 Langsmith.Public = Public;
 Langsmith.AnnotationQueues = AnnotationQueues;
+Langsmith.PromptWebhooks = PromptWebhooks;
 Langsmith.Info = Info;
 Langsmith.Issues = Issues;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/warn.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/env.mjs
+let globalEnv;
+const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
+const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
+const isJsDom = () => typeof window !== "undefined" && window.name === "nodejs" || typeof navigator !== "undefined" && navigator.userAgent.includes("jsdom");
+const isDeno = () => typeof globalThis.Deno !== "undefined";
+const isNode = () => typeof process !== "undefined" && typeof process.versions !== "undefined" && typeof process.versions.node !== "undefined" && !isDeno();
+const getEnv = () => {
+	if (globalEnv) return globalEnv;
+	if (typeof Bun !== "undefined") globalEnv = "bun";
+	else if (isBrowser()) globalEnv = "browser";
+	else if (isNode()) globalEnv = "node";
+	else if (isWebWorker()) globalEnv = "webworker";
+	else if (isJsDom()) globalEnv = "jsdom";
+	else if (isDeno()) globalEnv = "deno";
+	else globalEnv = "other";
+	return globalEnv;
+};
+let runtimeEnvironment;
+function getRuntimeEnvironment() {
+	if (runtimeEnvironment === void 0) {
+		const env = getEnv();
+		const releaseEnv = getShas();
+		runtimeEnvironment = {
+			library: "langsmith",
+			runtime: env,
+			sdk: "langsmith-js",
+			sdk_version: VERSION,
+			...releaseEnv
+		};
+	}
+	return runtimeEnvironment;
+}
+const EXCLUDED_SUBSTRINGS = [
+	"key",
+	"secret",
+	"token",
+	"password",
+	"passwd",
+	"pwd",
+	"credential",
+	"email"
+];
+function isSensitiveEnvVarName(key) {
+	const lowered = key.toLowerCase();
+	return EXCLUDED_SUBSTRINGS.some((sub) => lowered.includes(sub));
+}
+/**
+* Retrieves the LangSmith-specific metadata from the current runtime environment.
+*
+* @returns {Record<string, string>}
+*  - A record of LangSmith-specific metadata environment variables.
+*/
+function getLangSmithEnvVarsMetadata() {
+	const allEnvVars = getLangSmithEnvironmentVariables();
+	const envVars = {};
+	const excluded = [
+		"LANGCHAIN_API_KEY",
+		"LANGCHAIN_ENDPOINT",
+		"LANGCHAIN_TRACING_V2",
+		"LANGCHAIN_PROJECT",
+		"LANGCHAIN_SESSION",
+		"LANGSMITH_API_KEY",
+		"LANGSMITH_ENDPOINT",
+		"LANGSMITH_TRACING_V2",
+		"LANGSMITH_CONFIG_FILE",
+		"LANGSMITH_PROJECT",
+		"LANGSMITH_SESSION",
+		"LANGSMITH_AGENT_ID",
+		"LANGSMITH_AGENT_ENVIRONMENT"
+	];
+	for (const [key, value] of Object.entries(allEnvVars)) if (typeof value === "string" && !excluded.includes(key) && !isSensitiveEnvVarName(key)) {
+		if (key !== "LANGSMITH_REVISION_ID" && key !== "LANGCHAIN_REVISION_ID") envVars[key] = value;
+	}
+	const revisionId = allEnvVars.LANGSMITH_REVISION_ID || allEnvVars.LANGCHAIN_REVISION_ID;
+	if (revisionId) envVars["revision_id"] = revisionId;
+	return envVars;
+}
+/**
+* Retrieves only the LangChain/LangSmith-prefixed environment variables from the current runtime environment.
+* This is more efficient than copying all environment variables.
+*
+* @returns {Record<string, string>}
+*  - A record of LangChain/LangSmith environment variables.
+*/
+function getLangSmithEnvironmentVariables() {
+	const envVars = {};
+	try {
+		if (typeof process !== "undefined" && process.env) {
+			for (const [key, value] of Object.entries(process.env)) if ((key.startsWith("LANGCHAIN_") || key.startsWith("LANGSMITH_")) && value != null) {
+				if (isSensitiveEnvVarName(key) && typeof value === "string") envVars[key] = value.slice(0, 2) + "*".repeat(value.length - 4) + value.slice(-2);
+				else envVars[key] = value;
+			}
+		}
+	} catch (_e) {}
+	return envVars;
+}
+function getEnvironmentVariable(name) {
+	try {
+		return typeof process !== "undefined" ? process.env?.[name] : void 0;
+	} catch (_e) {
+		return;
+	}
+}
+function getLangSmithEnvironmentVariable(name) {
+	return getEnvironmentVariable(`LANGSMITH_${name}`) || getEnvironmentVariable(`LANGCHAIN_${name}`);
+}
+let cachedCommitSHAs;
+/**
+* Get the Git commit SHA from common environment variables
+* used by different CI/CD platforms.
+* @returns {string | undefined} The Git commit SHA or undefined if not found.
+*/
+function getShas() {
+	if (cachedCommitSHAs !== void 0) return cachedCommitSHAs;
+	const common_release_envs = [
+		"VERCEL_GIT_COMMIT_SHA",
+		"NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
+		"COMMIT_REF",
+		"RENDER_GIT_COMMIT",
+		"CI_COMMIT_SHA",
+		"CIRCLE_SHA1",
+		"CF_PAGES_COMMIT_SHA",
+		"REACT_APP_GIT_SHA",
+		"SOURCE_VERSION",
+		"GITHUB_SHA",
+		"TRAVIS_COMMIT",
+		"GIT_COMMIT",
+		"BUILD_VCS_NUMBER",
+		"bamboo_planRepository_revision",
+		"Build.SourceVersion",
+		"BITBUCKET_COMMIT",
+		"DRONE_COMMIT_SHA",
+		"SEMAPHORE_GIT_SHA",
+		"BUILDKITE_COMMIT"
+	];
+	const shas = {};
+	for (const env of common_release_envs) {
+		const envVar = getEnvironmentVariable(env);
+		if (envVar !== void 0) shas[env] = envVar;
+	}
+	cachedCommitSHAs = shas;
+	return shas;
+}
+function getOtelEnabled() {
+	return getEnvironmentVariable("OTEL_ENABLED") === "true" || getLangSmithEnvironmentVariable("OTEL_ENABLED") === "true";
+}
+const _VALID_TRACING_MODES = /* @__PURE__ */ new Set(["langsmith", "otel"]);
+/**
+* Resolve the effective tracing mode from an explicit config value and
+* environment variables.
+*
+* Priority: explicit argument > `LANGSMITH_TRACING_MODE` env var >
+* legacy `OTEL_ENABLED` / `LANGSMITH_OTEL_ENABLED` env vars > `"langsmith"`.
+*/
+function resolveTracingMode(configValue) {
+	if (configValue !== void 0) return configValue;
+	const envMode = getLangSmithEnvironmentVariable("TRACING_MODE");
+	if (envMode !== void 0 && envMode !== "") {
+		const lower = envMode.toLowerCase();
+		if (!_VALID_TRACING_MODES.has(lower)) throw new Error(`Invalid LANGSMITH_TRACING_MODE=${JSON.stringify(envMode)}. Must be one of: ${[..._VALID_TRACING_MODES].sort().join(", ")}`);
+		if (getOtelEnabled()) console.warn("Both LANGSMITH_TRACING_MODE and the legacy OTEL_ENABLED / LANGSMITH_OTEL_ENABLED env vars are set. LANGSMITH_TRACING_MODE takes precedence.");
+		return lower;
+	}
+	if (getOtelEnabled()) return "otel";
+	return "langsmith";
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/address.mjs
+/**
+* Addresses that name where runs are sent instead of a project.
+*
+* An `Address` names a tracing project held by a feature: an `AgentAddress`, an
+* `ExperimentAddress` or the workspace's `EvaluatorAddress`. Any of them can be resolved to
+* its project. Only an `AgentAddress` can receive traces, and ingestion rejects the
+* others at its entry points. Self-hosted deployments need LangSmith v0.18 or later.
+*
+* @example
+* ```ts
+* import { AgentAddress, traceable } from "langsmith";
+*
+* const support = new AgentAddress("customer-support", "production");
+* const handle = traceable(fn, { address: support });
+* ```
+*/
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const AGENT_ID_PATTERN = /^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const ENVIRONMENTS = [
+	"local",
+	"development",
+	"staging",
+	"production"
+];
+const LRN_PATTERN = /^lrn:agents\/([^/]+)\/environments\/([^/]+)$/;
+const ENV_NAMES = ["LANGSMITH_AGENT_ID", "LANGSMITH_AGENT_ENVIRONMENT"];
+/** The `LANGSMITH_AGENT_*` / project env vars name half an address, or both. */
+var EnvAddressError = class extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "EnvAddressError";
+	}
+};
+function ensureAddress(value) {
+	if (value == null) return void 0;
+	if (typeof value !== "object") throw new Error("address must be an AgentAddress, ExperimentAddress or EvaluatorAddress object.");
+	const { kind, id, environment } = value;
+	if (kind === "EVALUATOR") return { kind };
+	if (kind === "EXPERIMENT") {
+		if (typeof id !== "string" || !UUID_PATTERN.test(id)) throw new Error(`Experiment id must be a UUID, got ${JSON.stringify(id)}.`);
+		return {
+			kind,
+			id: id.toLowerCase()
+		};
+	}
+	if (kind !== "AGENT") throw new Error("address must be an AgentAddress, ExperimentAddress or EvaluatorAddress object.");
+	if (typeof id !== "string" || !AGENT_ID_PATTERN.test(id)) throw new Error(`Address agent id must be 1 to 63 lowercase ASCII letters, digits, or hyphens, start with a letter, and end with a letter or digit, got ${JSON.stringify(id)}. Use an id such as "support-agent".`);
+	const normalized = typeof environment === "string" ? environment.toLowerCase() : void 0;
+	if (normalized === void 0 || !ENVIRONMENTS.includes(normalized)) throw new Error(`Address environment must be one of ${ENVIRONMENTS.join(", ")}, got ${JSON.stringify(environment)}.`);
+	return {
+		kind,
+		id,
+		environment: normalized.toUpperCase()
+	};
+}
+function ensureAgent(value) {
+	const address = ensureAddress(value);
+	if (address && address.kind !== "AGENT") throw new Error(`Only an AgentAddress can receive traces, got ${address.kind}.`);
+	return address;
+}
+/** @internal Convert a validated address to the ingestion wire format. */
+function addressToLrn(address) {
+	return `lrn:agents/${address.id}/environments/${address.environment.toLowerCase()}`;
+}
+/** @internal Parse and validate an address from untrusted wire data. */
+function addressFromLrn(value) {
+	const match = typeof value === "string" ? LRN_PATTERN.exec(value) : null;
+	if (!match) throw new Error("Not an agent address.");
+	return ensureAgent({
+		kind: "AGENT",
+		id: match[1],
+		environment: match[2]
+	});
+}
+/** @internal Read and validate the address named by environment variables. */
+function addressFromEnv() {
+	const values = ENV_NAMES.map((name) => getEnvironmentVariable(name));
+	if (!values.some(Boolean)) return void 0;
+	try {
+		const missing = ENV_NAMES.filter((_, i) => !values[i]);
+		if (missing.length) throw new Error(`An address needs ${missing.join(" and ")} as well.`);
+		return ensureAgent({
+			kind: "AGENT",
+			id: values[0],
+			environment: values[1]
+		});
+	} catch (e) {
+		throw new EnvAddressError(`The LANGSMITH_AGENT_* env vars can't address a run: ${e.message}`);
+	}
+}
+/** @internal The environment variable names an address reads. */
+function envNames() {
+	return ENV_NAMES;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/regex.mjs
+var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/validate.mjs
+function validate$1(uuid) {
+	return typeof uuid === "string" && regex_default$1.test(uuid);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/parse.mjs
+function parse$1(uuid) {
+	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
+	let v;
+	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/stringify.mjs
+/**
+* Convert array of 16 byte values to UUID string format of the form:
+* XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+*/
+const byteToHex$1 = [];
+for (let i = 0; i < 256; ++i) byteToHex$1.push((i + 256).toString(16).slice(1));
+function unsafeStringify$1(arr, offset = 0) {
+	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/rng.mjs
+const rnds8 = /* @__PURE__ */ new Uint8Array(16);
+function rng() {
+	return crypto.getRandomValues(rnds8);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v4.mjs
+function v4(options, buf, offset) {
+	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
+	return _v4(options, buf, offset);
+}
+function _v4(options, buf, offset) {
+	options = options || {};
+	const rnds = options.random ?? options.rng?.() ?? rng();
+	if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
+	rnds[6] = rnds[6] & 15 | 64;
+	rnds[8] = rnds[8] & 63 | 128;
+	if (buf) {
+		offset = offset || 0;
+		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+		for (let i = 0; i < 16; ++i) buf[offset + i] = rnds[i];
+		return buf;
+	}
+	return unsafeStringify$1(rnds);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/sha1.mjs
+function f(s, x, y, z) {
+	switch (s) {
+		case 0: return x & y ^ ~x & z;
+		case 1: return x ^ y ^ z;
+		case 2: return x & y ^ x & z ^ y & z;
+		case 3: return x ^ y ^ z;
+	}
+}
+function ROTL(x, n) {
+	return x << n | x >>> 32 - n;
+}
+function sha1$1(bytes) {
+	const K = [
+		1518500249,
+		1859775393,
+		2400959708,
+		3395469782
+	];
+	const H = [
+		1732584193,
+		4023233417,
+		2562383102,
+		271733878,
+		3285377520
+	];
+	const newBytes = new Uint8Array(bytes.length + 1);
+	newBytes.set(bytes);
+	newBytes[bytes.length] = 128;
+	bytes = newBytes;
+	const l = bytes.length / 4 + 2;
+	const N = Math.ceil(l / 16);
+	const M = new Array(N);
+	for (let i = 0; i < N; ++i) {
+		const arr = /* @__PURE__ */ new Uint32Array(16);
+		for (let j = 0; j < 16; ++j) arr[j] = bytes[i * 64 + j * 4] << 24 | bytes[i * 64 + j * 4 + 1] << 16 | bytes[i * 64 + j * 4 + 2] << 8 | bytes[i * 64 + j * 4 + 3];
+		M[i] = arr;
+	}
+	M[N - 1][14] = (bytes.length - 1) * 8 / 2 ** 32;
+	M[N - 1][14] = Math.floor(M[N - 1][14]);
+	M[N - 1][15] = (bytes.length - 1) * 8 & 4294967295;
+	for (let i = 0; i < N; ++i) {
+		const W = /* @__PURE__ */ new Uint32Array(80);
+		for (let t = 0; t < 16; ++t) W[t] = M[i][t];
+		for (let t = 16; t < 80; ++t) W[t] = ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
+		let a = H[0];
+		let b = H[1];
+		let c = H[2];
+		let d = H[3];
+		let e = H[4];
+		for (let t = 0; t < 80; ++t) {
+			const s = Math.floor(t / 20);
+			const T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[t] >>> 0;
+			e = d;
+			d = c;
+			c = ROTL(b, 30) >>> 0;
+			b = a;
+			a = T;
+		}
+		H[0] = H[0] + a >>> 0;
+		H[1] = H[1] + b >>> 0;
+		H[2] = H[2] + c >>> 0;
+		H[3] = H[3] + d >>> 0;
+		H[4] = H[4] + e >>> 0;
+	}
+	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v35.mjs
+function stringToBytes$1(str) {
+	str = unescape(encodeURIComponent(str));
+	const bytes = new Uint8Array(str.length);
+	for (let i = 0; i < str.length; ++i) bytes[i] = str.charCodeAt(i);
+	return bytes;
+}
+const DNS$1 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const URL$2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
+function v35$1(version, hash, value, namespace, buf, offset) {
+	const valueBytes = typeof value === "string" ? stringToBytes$1(value) : value;
+	const namespaceBytes = typeof namespace === "string" ? parse$1(namespace) : namespace;
+	if (typeof namespace === "string") namespace = parse$1(namespace);
+	if (namespace?.length !== 16) throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
+	let bytes = new Uint8Array(16 + valueBytes.length);
+	bytes.set(namespaceBytes);
+	bytes.set(valueBytes, namespaceBytes.length);
+	bytes = hash(bytes);
+	bytes[6] = bytes[6] & 15 | version;
+	bytes[8] = bytes[8] & 63 | 128;
+	if (buf) {
+		offset ?? (offset = 0);
+		if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+		for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
+		return buf;
+	}
+	return unsafeStringify$1(bytes);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v5.mjs
+function v5$1(value, namespace, buf, offset) {
+	return v35$1(80, sha1$1, value, namespace, buf, offset);
+}
+v5$1.DNS = DNS$1;
+v5$1.URL = URL$2;
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v7.mjs
+const _state = {};
+function v7(options, buf, offset) {
+	let bytes;
+	if (options) bytes = v7Bytes(options.random ?? options.rng?.() ?? rng(), options.msecs, options.seq, buf, offset);
+	else {
+		const now = Date.now();
+		const rnds = rng();
+		updateV7State(_state, now, rnds);
+		bytes = v7Bytes(rnds, _state.msecs, _state.seq, buf, offset);
+	}
+	return buf ?? unsafeStringify$1(bytes);
+}
+function updateV7State(state, now, rnds) {
+	state.msecs ?? (state.msecs = -Infinity);
+	state.seq ?? (state.seq = 0);
+	if (now > state.msecs) {
+		state.seq = rnds[6] << 23 | rnds[7] << 16 | rnds[8] << 8 | rnds[9];
+		state.msecs = now;
+	} else {
+		state.seq = state.seq + 1 | 0;
+		if (state.seq === 0) state.msecs++;
+	}
+	return state;
+}
+function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
+	if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
+	if (!buf) {
+		buf = /* @__PURE__ */ new Uint8Array(16);
+		offset = 0;
+	} else if (offset < 0 || offset + 16 > buf.length) throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+	msecs ?? (msecs = Date.now());
+	seq ?? (seq = rnds[6] * 127 << 24 | rnds[7] << 16 | rnds[8] << 8 | rnds[9]);
+	buf[offset++] = msecs / 1099511627776 & 255;
+	buf[offset++] = msecs / 4294967296 & 255;
+	buf[offset++] = msecs / 16777216 & 255;
+	buf[offset++] = msecs / 65536 & 255;
+	buf[offset++] = msecs / 256 & 255;
+	buf[offset++] = msecs & 255;
+	buf[offset++] = 112 | seq >>> 28 & 15;
+	buf[offset++] = seq >>> 20 & 255;
+	buf[offset++] = 128 | seq >>> 14 & 63;
+	buf[offset++] = seq >>> 6 & 255;
+	buf[offset++] = seq << 2 & 255 | rnds[10] & 3;
+	buf[offset++] = rnds[11];
+	buf[offset++] = rnds[12];
+	buf[offset++] = rnds[13];
+	buf[offset++] = rnds[14];
+	buf[offset++] = rnds[15];
+	return buf;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/api_url.mjs
+function getOpenAPIBaseUrl(apiUrl) {
+	const url = apiUrl.replace(/\/$/, "");
+	for (const suffix of ["/api/v1", "/api"]) if (url.endsWith(suffix)) return url.slice(0, -suffix.length);
+	return url;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/experimental/otel/constants.mjs
+const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
+const GEN_AI_SYSTEM = "gen_ai.system";
+const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
+const GEN_AI_RESPONSE_MODEL = "gen_ai.response.model";
+const GEN_AI_USAGE_INPUT_TOKENS = "gen_ai.usage.input_tokens";
+const GEN_AI_USAGE_OUTPUT_TOKENS = "gen_ai.usage.output_tokens";
+const GEN_AI_USAGE_TOTAL_TOKENS = "gen_ai.usage.total_tokens";
+const GEN_AI_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens";
+const GEN_AI_REQUEST_TEMPERATURE = "gen_ai.request.temperature";
+const GEN_AI_REQUEST_TOP_P = "gen_ai.request.top_p";
+const GEN_AI_REQUEST_FREQUENCY_PENALTY = "gen_ai.request.frequency_penalty";
+const GEN_AI_REQUEST_PRESENCE_PENALTY = "gen_ai.request.presence_penalty";
+const GEN_AI_RESPONSE_FINISH_REASONS = "gen_ai.response.finish_reasons";
+const GENAI_PROMPT = "gen_ai.prompt";
+const GENAI_COMPLETION = "gen_ai.completion";
+const GEN_AI_REQUEST_EXTRA_QUERY = "gen_ai.request.extra_query";
+const GEN_AI_REQUEST_EXTRA_BODY = "gen_ai.request.extra_body";
+const GEN_AI_SERIALIZED_NAME = "gen_ai.serialized.name";
+const GEN_AI_SERIALIZED_SIGNATURE = "gen_ai.serialized.signature";
+const GEN_AI_SERIALIZED_DOC = "gen_ai.serialized.doc";
+const GEN_AI_RESPONSE_ID = "gen_ai.response.id";
+const GEN_AI_TOOL_NAME = "gen_ai.tool.name";
+const GEN_AI_TOOL_CALL_ID = "gen_ai.tool.call.id";
+const GEN_AI_TOOL_DEFINITIONS = "gen_ai.tool.definitions";
+const GEN_AI_RESPONSE_SERVICE_TIER = "gen_ai.response.service_tier";
+const GEN_AI_RESPONSE_SYSTEM_FINGERPRINT = "gen_ai.response.system_fingerprint";
+const GEN_AI_USAGE_INPUT_TOKEN_DETAILS = "gen_ai.usage.input_token_details";
+const GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS = "gen_ai.usage.output_token_details";
+const LANGSMITH_SESSION_ID = "langsmith.trace.session_id";
+const LANGSMITH_SESSION_NAME = "langsmith.trace.session_name";
+const LANGSMITH_RUN_TYPE = "langsmith.span.kind";
+const LANGSMITH_NAME = "langsmith.trace.name";
+const LANGSMITH_METADATA = "langsmith.metadata";
+const LANGSMITH_TAGS = "langsmith.span.tags";
+const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
+const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
+const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/otel.mjs
+var MockTracer = class {
+	constructor() {
+		Object.defineProperty(this, "hasWarned", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: false
+		});
+	}
+	startActiveSpan(_name, ...args) {
+		if (!this.hasWarned && resolveTracingMode() === "otel") {
+			console.warn("OTel tracing mode is active (via LANGSMITH_TRACING_MODE, OTEL_ENABLED, or LANGSMITH_OTEL_ENABLED), but the required OTEL instances have not been initialized. Please add:\n```\nimport { initializeOTEL } from \"langsmith/experimental/otel/setup\";\ninitializeOTEL();\n```\nat the beginning of your code.");
+			this.hasWarned = true;
+		}
+		let fn;
+		if (args.length === 1 && typeof args[0] === "function") fn = args[0];
+		else if (args.length === 2 && typeof args[1] === "function") fn = args[1];
+		else if (args.length === 3 && typeof args[2] === "function") fn = args[2];
+		if (typeof fn === "function") return fn();
+	}
+};
+var MockOTELTrace = class {
+	constructor() {
+		Object.defineProperty(this, "mockTracer", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new MockTracer()
+		});
+	}
+	getTracer(_name, _version) {
+		return this.mockTracer;
+	}
+	getActiveSpan() {}
+	setSpan(context, _span) {
+		return context;
+	}
+	getSpan(_context) {}
+	setSpanContext(context, _spanContext) {
+		return context;
+	}
+	getTracerProvider() {}
+	setGlobalTracerProvider(_tracerProvider) {
+		return false;
+	}
+};
+var MockOTELContext = class {
+	active() {
+		return {};
+	}
+	with(_context, fn) {
+		return fn();
+	}
+};
+const OTEL_TRACE_KEY = Symbol.for("ls:otel_trace");
+const OTEL_CONTEXT_KEY = Symbol.for("ls:otel_context");
+const OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY = Symbol.for("ls:otel_get_default_otlp_tracer_provider");
+const mockOTELTrace = new MockOTELTrace();
+const mockOTELContext = new MockOTELContext();
+var OTELProvider = class {
+	getTraceInstance() {
+		return globalThis[OTEL_TRACE_KEY] ?? mockOTELTrace;
+	}
+	getContextInstance() {
+		return globalThis[OTEL_CONTEXT_KEY] ?? mockOTELContext;
+	}
+	initializeGlobalInstances(otel) {
+		if (globalThis[OTEL_TRACE_KEY] === void 0) globalThis[OTEL_TRACE_KEY] = otel.trace;
+		if (globalThis[OTEL_CONTEXT_KEY] === void 0) globalThis[OTEL_CONTEXT_KEY] = otel.context;
+	}
+	setDefaultOTLPTracerComponents(components) {
+		globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] = components;
+	}
+	getDefaultOTLPTracerComponents() {
+		return globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] ?? void 0;
+	}
+};
+const OTELProviderSingleton = new OTELProvider();
+/**
+* Get the current OTEL trace instance.
+* Returns a mock implementation if OTEL is not available.
+*/
+function getOTELTrace() {
+	return OTELProviderSingleton.getTraceInstance();
+}
+/**
+* Get the current OTEL context instance.
+* Returns a mock implementation if OTEL is not available.
+*/
+function getOTELContext() {
+	return OTELProviderSingleton.getContextInstance();
+}
+/**
+* Get the default OTLP tracer provider instance.
+* Returns undefined if not set.
+*/
+function getDefaultOTLPTracerComponents() {
+	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/experimental/otel/translator.mjs
+const WELL_KNOWN_OPERATION_NAMES = {
+	llm: "chat",
+	tool: "execute_tool",
+	retriever: "embeddings",
+	embedding: "embeddings",
+	prompt: "chat"
+};
+function getOperationName(runType) {
+	return WELL_KNOWN_OPERATION_NAMES[runType] || runType;
+}
+function isPrimitive$1(value) {
+	return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+var LangSmithToOTELTranslator = class {
+	constructor() {
+		Object.defineProperty(this, "spans", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: /* @__PURE__ */ new Map()
+		});
+	}
+	exportBatch(operations, otelContextMap) {
+		for (const op of operations) try {
+			if (!op.run) continue;
+			if (op.operation === "post") {
+				const span = this.createSpanForRun(op, op.run, otelContextMap.get(op.id));
+				if (span && !op.run.end_time) this.spans.set(op.id, span);
+			} else this.updateSpanForRun(op, op.run);
+		} catch (e) {
+			console.error(`Error processing operation ${op.id}:`, e);
+		}
+	}
+	createSpanForRun(op, runInfo, otelContext) {
+		const activeSpan = otelContext && getOTELTrace().getSpan(otelContext);
+		if (!activeSpan) return;
+		try {
+			return this.finishSpanSetup(activeSpan, runInfo, op);
+		} catch (e) {
+			console.error(`Failed to create span for run ${op.id}:`, e);
+			return;
+		}
+	}
+	finishSpanSetup(span, runInfo, op) {
+		this.setSpanAttributes(span, runInfo, op);
+		if (runInfo.error) {
+			span.setStatus({ code: 2 });
+			span.recordException(new Error(runInfo.error));
+		} else span.setStatus({ code: 1 });
+		if (runInfo.end_time) span.end(new Date(runInfo.end_time));
+		return span;
+	}
+	updateSpanForRun(op, runInfo) {
+		try {
+			const span = this.spans.get(op.id);
+			if (!span) {
+				console.debug(`No span found for run ${op.id} during update`);
+				return;
+			}
+			this.setSpanAttributes(span, runInfo, op);
+			if (runInfo.error) {
+				span.setStatus({ code: 2 });
+				span.recordException(new Error(runInfo.error));
+			} else span.setStatus({ code: 1 });
+			const endTime = runInfo.end_time;
+			if (endTime) {
+				span.end(new Date(endTime));
+				this.spans.delete(op.id);
+			}
+		} catch (e) {
+			console.error(`Failed to update span for run ${op.id}:`, e);
+		}
+	}
+	extractModelName(runInfo) {
+		if (runInfo.extra?.metadata) {
+			const metadata = runInfo.extra.metadata;
+			if (metadata.ls_model_name) return metadata.ls_model_name;
+			if (metadata.invocation_params) {
+				const invocationParams = metadata.invocation_params;
+				if (invocationParams.model) return invocationParams.model;
+				else if (invocationParams.model_name) return invocationParams.model_name;
+			}
+		}
+	}
+	setSpanAttributes(span, runInfo, op) {
+		if ("run_type" in runInfo && runInfo.run_type) {
+			span.setAttribute(LANGSMITH_RUN_TYPE, runInfo.run_type);
+			const operationName = getOperationName(runInfo.run_type || "chain");
+			span.setAttribute(GEN_AI_OPERATION_NAME, operationName);
+		}
+		if ("name" in runInfo && runInfo.name) span.setAttribute(LANGSMITH_NAME, runInfo.name);
+		if ("session_id" in runInfo && runInfo.session_id) span.setAttribute(LANGSMITH_SESSION_ID, runInfo.session_id);
+		if ("session_name" in runInfo && runInfo.session_name) span.setAttribute(LANGSMITH_SESSION_NAME, runInfo.session_name);
+		this.setGenAiSystem(span, runInfo);
+		const modelName = this.extractModelName(runInfo);
+		if (modelName) span.setAttribute(GEN_AI_REQUEST_MODEL, modelName);
+		if (runInfo.extra?.metadata?.usage_metadata && typeof runInfo.extra.metadata.usage_metadata === "object") span.setAttribute(LANGSMITH_USAGE_METADATA, JSON.stringify(runInfo.extra.metadata.usage_metadata));
+		if ("prompt_tokens" in runInfo && typeof runInfo.prompt_tokens === "number") span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, runInfo.prompt_tokens);
+		if ("completion_tokens" in runInfo && typeof runInfo.completion_tokens === "number") span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, runInfo.completion_tokens);
+		if ("total_tokens" in runInfo && typeof runInfo.total_tokens === "number") span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, runInfo.total_tokens);
+		this.setInvocationParameters(span, runInfo);
+		if ("run_type" in runInfo && runInfo.run_type === "tool") {
+			if ("name" in runInfo && runInfo.name) span.setAttribute(GEN_AI_TOOL_NAME, runInfo.name);
+			const toolCallId = runInfo.extra?.tool_call_id || runInfo.extra?.metadata?.tool_call_id;
+			if (toolCallId != null) span.setAttribute(GEN_AI_TOOL_CALL_ID, String(toolCallId));
+		}
+		const metadata = runInfo.extra?.metadata || {};
+		for (const [key, value] of Object.entries(metadata)) if (value !== null && value !== void 0) span.setAttribute(`${LANGSMITH_METADATA}.${key}`, isPrimitive$1(value) ? String(value) : JSON.stringify(value));
+		const tags = runInfo.tags;
+		if (tags && Array.isArray(tags)) span.setAttribute(LANGSMITH_TAGS, tags.join(", "));
+		else if (tags) span.setAttribute(LANGSMITH_TAGS, String(tags));
+		if ("serialized" in runInfo && typeof runInfo.serialized === "object") {
+			const serialized = runInfo.serialized;
+			if (serialized.name) span.setAttribute(GEN_AI_SERIALIZED_NAME, String(serialized.name));
+			if (serialized.signature) span.setAttribute(GEN_AI_SERIALIZED_SIGNATURE, String(serialized.signature));
+			if (serialized.doc) span.setAttribute(GEN_AI_SERIALIZED_DOC, String(serialized.doc));
+		}
+		this.setIOAttributes(span, op);
+	}
+	setGenAiSystem(span, runInfo) {
+		let system = "langchain";
+		const modelName = this.extractModelName(runInfo);
+		if (modelName) {
+			const modelLower = modelName.toLowerCase();
+			if (modelLower.includes("anthropic") || modelLower.startsWith("claude")) system = "anthropic";
+			else if (modelLower.includes("bedrock")) system = "aws.bedrock";
+			else if (modelLower.includes("azure") && modelLower.includes("openai")) system = "az.ai.openai";
+			else if (modelLower.includes("azure") && modelLower.includes("inference")) system = "az.ai.inference";
+			else if (modelLower.includes("cohere")) system = "cohere";
+			else if (modelLower.includes("deepseek")) system = "deepseek";
+			else if (modelLower.includes("gemini")) system = "gemini";
+			else if (modelLower.includes("groq")) system = "groq";
+			else if (modelLower.includes("watson") || modelLower.includes("ibm")) system = "ibm.watsonx.ai";
+			else if (modelLower.includes("mistral")) system = "mistral_ai";
+			else if (modelLower.includes("gpt") || modelLower.includes("openai")) system = "openai";
+			else if (modelLower.includes("perplexity") || modelLower.includes("sonar")) system = "perplexity";
+			else if (modelLower.includes("vertex")) system = "vertex_ai";
+			else if (modelLower.includes("xai") || modelLower.includes("grok")) system = "xai";
+		}
+		span.setAttribute(GEN_AI_SYSTEM, system);
+	}
+	setInvocationParameters(span, runInfo) {
+		const tools = runInfo.extra?.invocation_params?.tools;
+		if (Array.isArray(tools) && tools.length > 0) span.setAttribute(GEN_AI_TOOL_DEFINITIONS, JSON.stringify(tools));
+		if (!runInfo.extra?.metadata?.invocation_params) return;
+		const invocationParams = runInfo.extra.metadata.invocation_params;
+		if (invocationParams.max_tokens !== void 0) span.setAttribute(GEN_AI_REQUEST_MAX_TOKENS, invocationParams.max_tokens);
+		if (invocationParams.temperature !== void 0) span.setAttribute(GEN_AI_REQUEST_TEMPERATURE, invocationParams.temperature);
+		if (invocationParams.top_p !== void 0) span.setAttribute(GEN_AI_REQUEST_TOP_P, invocationParams.top_p);
+		if (invocationParams.frequency_penalty !== void 0) span.setAttribute(GEN_AI_REQUEST_FREQUENCY_PENALTY, invocationParams.frequency_penalty);
+		if (invocationParams.presence_penalty !== void 0) span.setAttribute(GEN_AI_REQUEST_PRESENCE_PENALTY, invocationParams.presence_penalty);
+	}
+	setIOAttributes(span, op) {
+		if (op.run.inputs) try {
+			const inputs = op.run.inputs;
+			if (typeof inputs === "object" && inputs !== null) {
+				if (inputs.model && Array.isArray(inputs.messages)) span.setAttribute(GEN_AI_REQUEST_MODEL, inputs.model);
+				if (inputs.stream !== void 0) span.setAttribute(LANGSMITH_REQUEST_STREAMING, inputs.stream);
+				if (inputs.extra_headers) span.setAttribute(LANGSMITH_REQUEST_HEADERS, JSON.stringify(inputs.extra_headers));
+				if (inputs.extra_query) span.setAttribute(GEN_AI_REQUEST_EXTRA_QUERY, JSON.stringify(inputs.extra_query));
+				if (inputs.extra_body) span.setAttribute(GEN_AI_REQUEST_EXTRA_BODY, JSON.stringify(inputs.extra_body));
+			}
+			span.setAttribute(GENAI_PROMPT, JSON.stringify(inputs));
+		} catch (e) {
+			console.debug(`Failed to process inputs for run ${op.id}`, e);
+		}
+		if (op.run.outputs) try {
+			const outputs = op.run.outputs;
+			const tokenUsage = this.getUnifiedRunTokens(outputs);
+			if (tokenUsage) {
+				span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, tokenUsage[0]);
+				span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, tokenUsage[1]);
+				span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, tokenUsage[0] + tokenUsage[1]);
+			}
+			if (outputs && typeof outputs === "object") {
+				if (outputs.model) span.setAttribute(GEN_AI_RESPONSE_MODEL, String(outputs.model));
+				if (outputs.id) span.setAttribute(GEN_AI_RESPONSE_ID, outputs.id);
+				if (outputs.choices && Array.isArray(outputs.choices)) {
+					const finishReasons = outputs.choices.map((choice) => choice.finish_reason).filter((reason) => reason).map(String);
+					if (finishReasons.length > 0) span.setAttribute(GEN_AI_RESPONSE_FINISH_REASONS, finishReasons.join(", "));
+				}
+				if (outputs.service_tier) span.setAttribute(GEN_AI_RESPONSE_SERVICE_TIER, outputs.service_tier);
+				if (outputs.system_fingerprint) span.setAttribute(GEN_AI_RESPONSE_SYSTEM_FINGERPRINT, outputs.system_fingerprint);
+				if (outputs.usage_metadata && typeof outputs.usage_metadata === "object") {
+					const usageMetadata = outputs.usage_metadata;
+					span.setAttribute(LANGSMITH_USAGE_METADATA, JSON.stringify(usageMetadata));
+					if (usageMetadata.input_token_details) span.setAttribute(GEN_AI_USAGE_INPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.input_token_details));
+					if (usageMetadata.output_token_details) span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.output_token_details));
+				}
+			}
+			span.setAttribute(GENAI_COMPLETION, JSON.stringify(outputs));
+		} catch (e) {
+			console.debug(`Failed to process outputs for run ${op.id}`, e);
+		}
+	}
+	getUnifiedRunTokens(outputs) {
+		if (!outputs) return null;
+		let tokenUsage = this.extractUnifiedRunTokens(outputs.usage_metadata);
+		if (tokenUsage) return tokenUsage;
+		const keys = Object.keys(outputs);
+		for (const key of keys) {
+			const haystack = outputs[key];
+			if (!haystack || typeof haystack !== "object") continue;
+			tokenUsage = this.extractUnifiedRunTokens(haystack.usage_metadata);
+			if (tokenUsage) return tokenUsage;
+			if (haystack.lc === 1 && haystack.kwargs && typeof haystack.kwargs === "object") {
+				tokenUsage = this.extractUnifiedRunTokens(haystack.kwargs.usage_metadata);
+				if (tokenUsage) return tokenUsage;
+			}
+		}
+		const generations = outputs.generations || [];
+		if (!Array.isArray(generations)) return null;
+		const flatGenerations = Array.isArray(generations[0]) ? generations.flat() : generations;
+		for (const generation of flatGenerations) if (typeof generation === "object" && generation.message && typeof generation.message === "object" && generation.message.kwargs && typeof generation.message.kwargs === "object") {
+			tokenUsage = this.extractUnifiedRunTokens(generation.message.kwargs.usage_metadata);
+			if (tokenUsage) return tokenUsage;
+		}
+		return null;
+	}
+	extractUnifiedRunTokens(outputs) {
+		if (!outputs || typeof outputs !== "object") return null;
+		if (typeof outputs.input_tokens !== "number" || typeof outputs.output_tokens !== "number") return null;
+		return [outputs.input_tokens, outputs.output_tokens];
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/is-network-error/index.mjs
+const objectToString = Object.prototype.toString;
+const isError = (value) => objectToString.call(value) === "[object Error]";
+const errorMessages = /* @__PURE__ */ new Set([
+	"network error",
+	"Failed to fetch",
+	"NetworkError when attempting to fetch resource.",
+	"The Internet connection appears to be offline.",
+	"Network request failed",
+	"fetch failed",
+	"terminated",
+	" A network error occurred.",
+	"Network connection lost"
+]);
+function isNetworkError(error) {
+	if (!(error && isError(error) && error.name === "TypeError" && typeof error.message === "string")) return false;
+	const { message, stack } = error;
+	if (message === "Load failed") return stack === void 0 || "__sentry_captured__" in error;
+	if (message.startsWith("error sending request for url")) return true;
+	return errorMessages.has(message);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/p-retry/index.mjs
+function validateRetries(retries) {
+	if (typeof retries === "number") {
+		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
+		if (Number.isNaN(retries)) throw new TypeError("Expected `retries` to be a valid number or Infinity, got NaN.");
+	} else if (retries !== void 0) throw new TypeError("Expected `retries` to be a number or Infinity.");
+}
+function validateNumberOption(name, value, { min = 0, allowInfinity = false } = {}) {
+	if (value === void 0) return;
+	if (typeof value !== "number" || Number.isNaN(value)) throw new TypeError(`Expected \`${name}\` to be a number${allowInfinity ? " or Infinity" : ""}.`);
+	if (!allowInfinity && !Number.isFinite(value)) throw new TypeError(`Expected \`${name}\` to be a finite number.`);
+	if (value < min) throw new TypeError(`Expected \`${name}\` to be \u2265 ${min}.`);
+}
+var AbortError = class extends Error {
+	constructor(message) {
+		super();
+		if (message instanceof Error) {
+			this.originalError = message;
+			({message} = message);
+		} else {
+			this.originalError = new Error(message);
+			this.originalError.stack = this.stack;
+		}
+		this.name = "AbortError";
+		this.message = message;
+	}
+};
+function calculateDelay(retriesConsumed, options) {
+	const attempt = Math.max(1, retriesConsumed + 1);
+	const random = options.randomize ? Math.random() + 1 : 1;
+	let timeout = Math.round(random * options.minTimeout * options.factor ** (attempt - 1));
+	timeout = Math.min(timeout, options.maxTimeout);
+	return timeout;
+}
+function calculateRemainingTime(start, max) {
+	if (!Number.isFinite(max)) return max;
+	return max - (performance.now() - start);
+}
+async function onAttemptFailure({ error, attemptNumber, retriesConsumed, startTime, options }) {
+	const normalizedError = error instanceof Error ? error : /* @__PURE__ */ new TypeError(`Non-error was thrown: "${error}". You should only throw errors.`);
+	if (normalizedError instanceof AbortError) throw normalizedError.originalError;
+	const retriesLeft = Number.isFinite(options.retries) ? Math.max(0, options.retries - retriesConsumed) : options.retries;
+	const maxRetryTime = options.maxRetryTime ?? Number.POSITIVE_INFINITY;
+	const context = Object.freeze({
+		error: normalizedError,
+		attemptNumber,
+		retriesLeft,
+		retriesConsumed
+	});
+	await options.onFailedAttempt(context);
+	if (calculateRemainingTime(startTime, maxRetryTime) <= 0) throw normalizedError;
+	const consumeRetry = await options.shouldConsumeRetry(context);
+	const remainingTime = calculateRemainingTime(startTime, maxRetryTime);
+	if (remainingTime <= 0 || retriesLeft <= 0) throw normalizedError;
+	if (normalizedError instanceof TypeError && !isNetworkError(normalizedError)) {
+		if (consumeRetry) throw normalizedError;
+		options.signal?.throwIfAborted();
+		return false;
+	}
+	if (!await options.shouldRetry(context)) throw normalizedError;
+	if (!consumeRetry) {
+		options.signal?.throwIfAborted();
+		return false;
+	}
+	const delayTime = calculateDelay(retriesConsumed, options);
+	const finalDelay = Math.min(delayTime, remainingTime);
+	if (finalDelay > 0) await new Promise((resolve, reject) => {
+		const onAbort = () => {
+			clearTimeout(timeoutToken);
+			options.signal?.removeEventListener("abort", onAbort);
+			reject(options.signal.reason);
+		};
+		const timeoutToken = setTimeout(() => {
+			options.signal?.removeEventListener("abort", onAbort);
+			resolve();
+		}, finalDelay);
+		if (options.unref) timeoutToken.unref?.();
+		options.signal?.addEventListener("abort", onAbort, { once: true });
+	});
+	options.signal?.throwIfAborted();
+	return true;
+}
+async function pRetry(input, options = {}) {
+	options = { ...options };
+	validateRetries(options.retries);
+	if (Object.hasOwn(options, "forever")) throw new Error("The `forever` option is no longer supported. For many use-cases, you can set `retries: Infinity` instead.");
+	options.retries ?? (options.retries = 10);
+	options.factor ?? (options.factor = 2);
+	options.minTimeout ?? (options.minTimeout = 1e3);
+	options.maxTimeout ?? (options.maxTimeout = Number.POSITIVE_INFINITY);
+	options.maxRetryTime ?? (options.maxRetryTime = Number.POSITIVE_INFINITY);
+	options.randomize ?? (options.randomize = false);
+	options.onFailedAttempt ?? (options.onFailedAttempt = () => {});
+	options.shouldRetry ?? (options.shouldRetry = () => true);
+	options.shouldConsumeRetry ?? (options.shouldConsumeRetry = () => true);
+	validateNumberOption("factor", options.factor, {
+		min: 0,
+		allowInfinity: false
+	});
+	validateNumberOption("minTimeout", options.minTimeout, {
+		min: 0,
+		allowInfinity: false
+	});
+	validateNumberOption("maxTimeout", options.maxTimeout, {
+		min: 0,
+		allowInfinity: true
+	});
+	validateNumberOption("maxRetryTime", options.maxRetryTime, {
+		min: 0,
+		allowInfinity: true
+	});
+	if (!(options.factor > 0)) options.factor = 1;
+	options.signal?.throwIfAborted();
+	let attemptNumber = 0;
+	let retriesConsumed = 0;
+	const startTime = performance.now();
+	while (Number.isFinite(options.retries) ? retriesConsumed <= options.retries : true) {
+		attemptNumber++;
+		try {
+			options.signal?.throwIfAborted();
+			const result = await input(attemptNumber);
+			options.signal?.throwIfAborted();
+			return result;
+		} catch (error) {
+			if (await onAttemptFailure({
+				error,
+				attemptNumber,
+				retriesConsumed,
+				startTime,
+				options
+			})) retriesConsumed++;
+		}
+	}
+	throw new Error("Retry attempts exhausted without throwing an error.");
+}
+//#endregion
+//#region ../../node_modules/.pnpm/eventemitter3@4.0.7/node_modules/eventemitter3/index.js
+var require_eventemitter3 = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	var has = Object.prototype.hasOwnProperty;
+	var prefix = "~";
+	/**
+	* Constructor to create a storage for our `EE` objects.
+	* An `Events` instance is a plain object whose properties are event names.
+	*
+	* @constructor
+	* @private
+	*/
+	function Events() {}
+	if (Object.create) {
+		Events.prototype = Object.create(null);
+		if (!new Events().__proto__) prefix = false;
+	}
+	/**
+	* Representation of a single event listener.
+	*
+	* @param {Function} fn The listener function.
+	* @param {*} context The context to invoke the listener with.
+	* @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+	* @constructor
+	* @private
+	*/
+	function EE(fn, context, once) {
+		this.fn = fn;
+		this.context = context;
+		this.once = once || false;
+	}
+	/**
+	* Add a listener for a given event.
+	*
+	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} context The context to invoke the listener with.
+	* @param {Boolean} once Specify if the listener is a one-time listener.
+	* @returns {EventEmitter}
+	* @private
+	*/
+	function addListener(emitter, event, fn, context, once) {
+		if (typeof fn !== "function") throw new TypeError("The listener must be a function");
+		var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
+		if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
+		else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
+		else emitter._events[evt] = [emitter._events[evt], listener];
+		return emitter;
+	}
+	/**
+	* Clear event by name.
+	*
+	* @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+	* @param {(String|Symbol)} evt The Event name.
+	* @private
+	*/
+	function clearEvent(emitter, evt) {
+		if (--emitter._eventsCount === 0) emitter._events = new Events();
+		else delete emitter._events[evt];
+	}
+	/**
+	* Minimal `EventEmitter` interface that is molded against the Node.js
+	* `EventEmitter` interface.
+	*
+	* @constructor
+	* @public
+	*/
+	function EventEmitter() {
+		this._events = new Events();
+		this._eventsCount = 0;
+	}
+	/**
+	* Return an array listing the events for which the emitter has registered
+	* listeners.
+	*
+	* @returns {Array}
+	* @public
+	*/
+	EventEmitter.prototype.eventNames = function eventNames() {
+		var names = [], events, name;
+		if (this._eventsCount === 0) return names;
+		for (name in events = this._events) if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+		if (Object.getOwnPropertySymbols) return names.concat(Object.getOwnPropertySymbols(events));
+		return names;
+	};
+	/**
+	* Return the listeners registered for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Array} The registered listeners.
+	* @public
+	*/
+	EventEmitter.prototype.listeners = function listeners(event) {
+		var evt = prefix ? prefix + event : event, handlers = this._events[evt];
+		if (!handlers) return [];
+		if (handlers.fn) return [handlers.fn];
+		for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) ee[i] = handlers[i].fn;
+		return ee;
+	};
+	/**
+	* Return the number of listeners listening to a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Number} The number of listeners.
+	* @public
+	*/
+	EventEmitter.prototype.listenerCount = function listenerCount(event) {
+		var evt = prefix ? prefix + event : event, listeners = this._events[evt];
+		if (!listeners) return 0;
+		if (listeners.fn) return 1;
+		return listeners.length;
+	};
+	/**
+	* Calls each of the listeners registered for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @returns {Boolean} `true` if the event had listeners, else `false`.
+	* @public
+	*/
+	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+		var evt = prefix ? prefix + event : event;
+		if (!this._events[evt]) return false;
+		var listeners = this._events[evt], len = arguments.length, args, i;
+		if (listeners.fn) {
+			if (listeners.once) this.removeListener(event, listeners.fn, void 0, true);
+			switch (len) {
+				case 1: return listeners.fn.call(listeners.context), true;
+				case 2: return listeners.fn.call(listeners.context, a1), true;
+				case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+				case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+				case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+				case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+			}
+			for (i = 1, args = new Array(len - 1); i < len; i++) args[i - 1] = arguments[i];
+			listeners.fn.apply(listeners.context, args);
+		} else {
+			var length = listeners.length, j;
+			for (i = 0; i < length; i++) {
+				if (listeners[i].once) this.removeListener(event, listeners[i].fn, void 0, true);
+				switch (len) {
+					case 1:
+						listeners[i].fn.call(listeners[i].context);
+						break;
+					case 2:
+						listeners[i].fn.call(listeners[i].context, a1);
+						break;
+					case 3:
+						listeners[i].fn.call(listeners[i].context, a1, a2);
+						break;
+					case 4:
+						listeners[i].fn.call(listeners[i].context, a1, a2, a3);
+						break;
+					default:
+						if (!args) for (j = 1, args = new Array(len - 1); j < len; j++) args[j - 1] = arguments[j];
+						listeners[i].fn.apply(listeners[i].context, args);
+				}
+			}
+		}
+		return true;
+	};
+	/**
+	* Add a listener for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} [context=this] The context to invoke the listener with.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.on = function on(event, fn, context) {
+		return addListener(this, event, fn, context, false);
+	};
+	/**
+	* Add a one-time listener for a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn The listener function.
+	* @param {*} [context=this] The context to invoke the listener with.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.once = function once(event, fn, context) {
+		return addListener(this, event, fn, context, true);
+	};
+	/**
+	* Remove the listeners of a given event.
+	*
+	* @param {(String|Symbol)} event The event name.
+	* @param {Function} fn Only remove the listeners that match this function.
+	* @param {*} context Only remove the listeners that have this context.
+	* @param {Boolean} once Only remove one-time listeners.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+		var evt = prefix ? prefix + event : event;
+		if (!this._events[evt]) return this;
+		if (!fn) {
+			clearEvent(this, evt);
+			return this;
+		}
+		var listeners = this._events[evt];
+		if (listeners.fn) {
+			if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) clearEvent(this, evt);
+		} else {
+			for (var i = 0, events = [], length = listeners.length; i < length; i++) if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) events.push(listeners[i]);
+			if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+			else clearEvent(this, evt);
+		}
+		return this;
+	};
+	/**
+	* Remove all listeners, or those of the specified event.
+	*
+	* @param {(String|Symbol)} [event] The event name.
+	* @returns {EventEmitter} `this`.
+	* @public
+	*/
+	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+		var evt;
+		if (event) {
+			evt = prefix ? prefix + event : event;
+			if (this._events[evt]) clearEvent(this, evt);
+		} else {
+			this._events = new Events();
+			this._eventsCount = 0;
+		}
+		return this;
+	};
+	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+	EventEmitter.prefixed = prefix;
+	EventEmitter.EventEmitter = EventEmitter;
+	if ("undefined" !== typeof module) module.exports = EventEmitter;
+}));
+//#endregion
+//#region ../../node_modules/.pnpm/p-finally@1.0.0/node_modules/p-finally/index.js
+var require_p_finally = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	module.exports = (promise, onFinally) => {
+		onFinally = onFinally || (() => {});
+		return promise.then((val) => new Promise((resolve) => {
+			resolve(onFinally());
+		}).then(() => val), (err) => new Promise((resolve) => {
+			resolve(onFinally());
+		}).then(() => {
+			throw err;
+		}));
+	};
+}));
+//#endregion
+//#region ../../node_modules/.pnpm/p-timeout@3.2.0/node_modules/p-timeout/index.js
+var require_p_timeout = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	const pFinally = require_p_finally();
+	var TimeoutError = class extends Error {
+		constructor(message) {
+			super(message);
+			this.name = "TimeoutError";
+		}
+	};
+	const pTimeout = (promise, milliseconds, fallback) => new Promise((resolve, reject) => {
+		if (typeof milliseconds !== "number" || milliseconds < 0) throw new TypeError("Expected `milliseconds` to be a positive number");
+		if (milliseconds === Infinity) {
+			resolve(promise);
+			return;
+		}
+		const timer = setTimeout(() => {
+			if (typeof fallback === "function") {
+				try {
+					resolve(fallback());
+				} catch (error) {
+					reject(error);
+				}
+				return;
+			}
+			const message = typeof fallback === "string" ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
+			const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
+			if (typeof promise.cancel === "function") promise.cancel();
+			reject(timeoutError);
+		}, milliseconds);
+		pFinally(promise.then(resolve, reject), () => {
+			clearTimeout(timer);
+		});
+	});
+	module.exports = pTimeout;
+	module.exports.default = pTimeout;
+	module.exports.TimeoutError = TimeoutError;
+}));
+//#endregion
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/lower-bound.js
+var require_lower_bound = /* @__PURE__ */ __commonJSMin(((exports) => {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	function lowerBound(array, value, comparator) {
+		let first = 0;
+		let count = array.length;
+		while (count > 0) {
+			const step = count / 2 | 0;
+			let it = first + step;
+			if (comparator(array[it], value) <= 0) {
+				first = ++it;
+				count -= step + 1;
+			} else count = step;
+		}
+		return first;
+	}
+	exports.default = lowerBound;
+}));
+//#endregion
+//#region ../../node_modules/.pnpm/p-queue@6.6.2/node_modules/p-queue/dist/priority-queue.js
+var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	const lower_bound_1 = require_lower_bound();
+	var PriorityQueue = class {
+		constructor() {
+			this._queue = [];
+		}
+		enqueue(run, options) {
+			options = Object.assign({ priority: 0 }, options);
+			const element = {
+				priority: options.priority,
+				run
+			};
+			if (this.size && this._queue[this.size - 1].priority >= options.priority) {
+				this._queue.push(element);
+				return;
+			}
+			const index = lower_bound_1.default(this._queue, element, (a, b) => b.priority - a.priority);
+			this._queue.splice(index, 0, element);
+		}
+		dequeue() {
+			const item = this._queue.shift();
+			return item === null || item === void 0 ? void 0 : item.run;
+		}
+		filter(options) {
+			return this._queue.filter((element) => element.priority === options.priority).map((element) => element.run);
+		}
+		get size() {
+			return this._queue.length;
+		}
+	};
+	exports.default = PriorityQueue;
+}));
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/p-queue.mjs
+var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	const EventEmitter = require_eventemitter3();
+	const p_timeout_1 = require_p_timeout();
+	const priority_queue_1 = require_priority_queue();
+	const empty = () => {};
+	const timeoutError = new p_timeout_1.TimeoutError();
+	/**
+	Promise queue with concurrency control.
+	*/
+	var PQueue = class extends EventEmitter {
+		constructor(options) {
+			var _a, _b, _c, _d;
+			super();
+			this._intervalCount = 0;
+			this._intervalEnd = 0;
+			this._pendingCount = 0;
+			this._resolveEmpty = empty;
+			this._resolveIdle = empty;
+			options = Object.assign({
+				carryoverConcurrencyCount: false,
+				intervalCap: Infinity,
+				interval: 0,
+				concurrency: Infinity,
+				autoStart: true,
+				queueClass: priority_queue_1.default
+			}, options);
+			if (!(typeof options.intervalCap === "number" && options.intervalCap >= 1)) throw new TypeError(`Expected \`intervalCap\` to be a number from 1 and up, got \`${(_b = (_a = options.intervalCap) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : ""}\` (${typeof options.intervalCap})`);
+			if (options.interval === void 0 || !(Number.isFinite(options.interval) && options.interval >= 0)) throw new TypeError(`Expected \`interval\` to be a finite number >= 0, got \`${(_d = (_c = options.interval) === null || _c === void 0 ? void 0 : _c.toString()) !== null && _d !== void 0 ? _d : ""}\` (${typeof options.interval})`);
+			this._carryoverConcurrencyCount = options.carryoverConcurrencyCount;
+			this._isIntervalIgnored = options.intervalCap === Infinity || options.interval === 0;
+			this._intervalCap = options.intervalCap;
+			this._interval = options.interval;
+			this._queue = new options.queueClass();
+			this._queueClass = options.queueClass;
+			this.concurrency = options.concurrency;
+			this._timeout = options.timeout;
+			this._throwOnTimeout = options.throwOnTimeout === true;
+			this._isPaused = options.autoStart === false;
+		}
+		get _doesIntervalAllowAnother() {
+			return this._isIntervalIgnored || this._intervalCount < this._intervalCap;
+		}
+		get _doesConcurrentAllowAnother() {
+			return this._pendingCount < this._concurrency;
+		}
+		_next() {
+			this._pendingCount--;
+			this._tryToStartAnother();
+			this.emit("next");
+		}
+		_resolvePromises() {
+			this._resolveEmpty();
+			this._resolveEmpty = empty;
+			if (this._pendingCount === 0) {
+				this._resolveIdle();
+				this._resolveIdle = empty;
+				this.emit("idle");
+			}
+		}
+		_onResumeInterval() {
+			this._onInterval();
+			this._initializeIntervalIfNeeded();
+			this._timeoutId = void 0;
+		}
+		_isIntervalPaused() {
+			const now = Date.now();
+			if (this._intervalId === void 0) {
+				const delay = this._intervalEnd - now;
+				if (delay < 0) this._intervalCount = this._carryoverConcurrencyCount ? this._pendingCount : 0;
+				else {
+					if (this._timeoutId === void 0) this._timeoutId = setTimeout(() => {
+						this._onResumeInterval();
+					}, delay);
+					return true;
+				}
+			}
+			return false;
+		}
+		_tryToStartAnother() {
+			if (this._queue.size === 0) {
+				if (this._intervalId) clearInterval(this._intervalId);
+				this._intervalId = void 0;
+				this._resolvePromises();
+				return false;
+			}
+			if (!this._isPaused) {
+				const canInitializeInterval = !this._isIntervalPaused();
+				if (this._doesIntervalAllowAnother && this._doesConcurrentAllowAnother) {
+					const job = this._queue.dequeue();
+					if (!job) return false;
+					this.emit("active");
+					job();
+					if (canInitializeInterval) this._initializeIntervalIfNeeded();
+					return true;
+				}
+			}
+			return false;
+		}
+		_initializeIntervalIfNeeded() {
+			if (this._isIntervalIgnored || this._intervalId !== void 0) return;
+			this._intervalId = setInterval(() => {
+				this._onInterval();
+			}, this._interval);
+			this._intervalEnd = Date.now() + this._interval;
+		}
+		_onInterval() {
+			if (this._intervalCount === 0 && this._pendingCount === 0 && this._intervalId) {
+				clearInterval(this._intervalId);
+				this._intervalId = void 0;
+			}
+			this._intervalCount = this._carryoverConcurrencyCount ? this._pendingCount : 0;
+			this._processQueue();
+		}
+		/**
+		Executes all queued functions until it reaches the limit.
+		*/
+		_processQueue() {
+			while (this._tryToStartAnother());
+		}
+		get concurrency() {
+			return this._concurrency;
+		}
+		set concurrency(newConcurrency) {
+			if (!(typeof newConcurrency === "number" && newConcurrency >= 1)) throw new TypeError(`Expected \`concurrency\` to be a number from 1 and up, got \`${newConcurrency}\` (${typeof newConcurrency})`);
+			this._concurrency = newConcurrency;
+			this._processQueue();
+		}
+		/**
+		Adds a sync or async task to the queue. Always returns a promise.
+		*/
+		async add(fn, options = {}) {
+			return new Promise((resolve, reject) => {
+				const run = async () => {
+					this._pendingCount++;
+					this._intervalCount++;
+					try {
+						resolve(await (this._timeout === void 0 && options.timeout === void 0 ? fn() : p_timeout_1.default(Promise.resolve(fn()), options.timeout === void 0 ? this._timeout : options.timeout, () => {
+							if (options.throwOnTimeout === void 0 ? this._throwOnTimeout : options.throwOnTimeout) reject(timeoutError);
+						})));
+					} catch (error) {
+						reject(error);
+					}
+					this._next();
+				};
+				this._queue.enqueue(run, options);
+				this._tryToStartAnother();
+				this.emit("add");
+			});
+		}
+		/**
+		Same as `.add()`, but accepts an array of sync or async functions.
+		
+		@returns A promise that resolves when all functions are resolved.
+		*/
+		async addAll(functions, options) {
+			return Promise.all(functions.map(async (function_) => this.add(function_, options)));
+		}
+		/**
+		Start (or resume) executing enqueued tasks within concurrency limit. No need to call this if queue is not paused (via `options.autoStart = false` or by `.pause()` method.)
+		*/
+		start() {
+			if (!this._isPaused) return this;
+			this._isPaused = false;
+			this._processQueue();
+			return this;
+		}
+		/**
+		Put queue execution on hold.
+		*/
+		pause() {
+			this._isPaused = true;
+		}
+		/**
+		Clear the queue.
+		*/
+		clear() {
+			this._queue = new this._queueClass();
+		}
+		/**
+		Can be called multiple times. Useful if you for example add additional items at a later time.
+		
+		@returns A promise that settles when the queue becomes empty.
+		*/
+		async onEmpty() {
+			if (this._queue.size === 0) return;
+			return new Promise((resolve) => {
+				const existingResolve = this._resolveEmpty;
+				this._resolveEmpty = () => {
+					existingResolve();
+					resolve();
+				};
+			});
+		}
+		/**
+		The difference with `.onEmpty` is that `.onIdle` guarantees that all work from the queue has finished. `.onEmpty` merely signals that the queue is empty, but it could mean that some promises haven't completed yet.
+		
+		@returns A promise that settles when the queue becomes empty, and all promises have completed; `queue.size === 0 && queue.pending === 0`.
+		*/
+		async onIdle() {
+			if (this._pendingCount === 0 && this._queue.size === 0) return;
+			return new Promise((resolve) => {
+				const existingResolve = this._resolveIdle;
+				this._resolveIdle = () => {
+					existingResolve();
+					resolve();
+				};
+			});
+		}
+		/**
+		Size of the queue.
+		*/
+		get size() {
+			return this._queue.size;
+		}
+		/**
+		Size of the queue, filtered by the given options.
+		
+		For example, this can be used to find the number of items remaining in the queue with a specific priority level.
+		*/
+		sizeBy(options) {
+			return this._queue.filter(options).length;
+		}
+		/**
+		Number of pending promises.
+		*/
+		get pending() {
+			return this._pendingCount;
+		}
+		/**
+		Whether the queue is currently paused.
+		*/
+		get isPaused() {
+			return this._isPaused;
+		}
+		get timeout() {
+			return this._timeout;
+		}
+		/**
+		Set the timeout for future operations.
+		*/
+		set timeout(milliseconds) {
+			this._timeout = milliseconds;
+		}
+	};
+	exports.default = PQueue;
+})))(), 1);
+const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/async_caller.mjs
+const STATUS_RETRYABLE = [
+	408,
+	425,
+	429,
+	500,
+	502,
+	503,
+	504
+];
+/**
+* A class that can be used to make async calls with concurrency and retry logic.
+*
+* This is useful for making calls to any kind of "expensive" external resource,
+* be it because it's rate-limited, subject to network issues, etc.
+*
+* Concurrent calls are limited by the `maxConcurrency` parameter, which defaults
+* to `Infinity`. This means that by default, all calls will be made in parallel.
+*
+* Retries are limited by the `maxRetries` parameter, which defaults to 6. This
+* means that by default, each call will be retried up to 6 times, with an
+* exponential backoff between each attempt.
+*/
+var AsyncCaller = class {
+	constructor(params) {
+		Object.defineProperty(this, "maxConcurrency", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "maxRetries", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "maxQueueSizeBytes", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "queue", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "onFailedResponseHook", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "queueSizeBytes", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: 0
+		});
+		this.maxConcurrency = params.maxConcurrency ?? Infinity;
+		this.maxRetries = params.maxRetries ?? 6;
+		this.maxQueueSizeBytes = params.maxQueueSizeBytes;
+		this.queue = new PQueue({ concurrency: this.maxConcurrency });
+		this.onFailedResponseHook = params?.onFailedResponseHook;
+	}
+	call(callable, ...args) {
+		return this.callWithOptions({}, callable, ...args);
+	}
+	callWithOptions(options, callable, ...args) {
+		const sizeBytes = options.sizeBytes ?? 0;
+		if (this.maxQueueSizeBytes !== void 0 && sizeBytes > 0 && this.queueSizeBytes + sizeBytes > this.maxQueueSizeBytes) return Promise.reject(/* @__PURE__ */ new Error(`Queue size limit (${this.maxQueueSizeBytes} bytes) exceeded. Current queue size: ${this.queueSizeBytes} bytes, attempted addition: ${sizeBytes} bytes.`));
+		if (sizeBytes > 0) this.queueSizeBytes += sizeBytes;
+		const onFailedResponseHook = this.onFailedResponseHook;
+		let promise = this.queue.add(() => pRetry(() => callable(...args).catch((error) => {
+			if (error instanceof Error) throw error;
+			else throw new Error(error);
+		}), {
+			async onFailedAttempt({ error }) {
+				if (typeof error !== "object" || error == null) throw error;
+				const errorMessage = "message" in error && typeof error.message === "string" ? error.message : void 0;
+				if (errorMessage?.startsWith("Cancel") || errorMessage?.startsWith("TimeoutError") || errorMessage?.startsWith("AbortError")) throw error;
+				if ("name" in error && error.name === "TimeoutError") throw error;
+				if ("code" in error && error.code === "ECONNABORTED") throw error;
+				const response = "response" in error ? error.response : void 0;
+				if (onFailedResponseHook) {
+					if (await onFailedResponseHook(response)) return;
+				}
+				const status = response?.status ?? ("status" in error ? error.status : void 0);
+				if (status != null && (typeof status === "number" || typeof status === "string") && !STATUS_RETRYABLE.includes(+status)) throw error;
+			},
+			retries: this.maxRetries,
+			randomize: true
+		}), { throwOnTimeout: true });
+		if (sizeBytes > 0) promise = promise.finally(() => {
+			this.queueSizeBytes -= sizeBytes;
+		});
+		if (options.signal) return Promise.race([promise, new Promise((_, reject) => {
+			options.signal?.addEventListener("abort", () => {
+				reject(/* @__PURE__ */ new Error("AbortError"));
+			});
+		})]);
+		return promise;
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/messages.mjs
+function isLangChainMessage(message) {
+	return typeof message?._getType === "function";
+}
+function convertLangChainMessageToExample(message) {
+	const converted = {
+		type: message._getType(),
+		data: { content: message.content }
+	};
+	if (message?.additional_kwargs && Object.keys(message.additional_kwargs).length > 0) converted.data.additional_kwargs = { ...message.additional_kwargs };
+	return converted;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/warn.mjs
 const warnedMessages = {};
 function warnOnce$1(message, options) {
 	const key = options?.code ?? message;
@@ -8487,7 +9644,7 @@ function warnOnce$1(message, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/xxhash/xxhash.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/xxhash/xxhash.mjs
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -8756,7 +9913,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/_uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/_uuid.mjs
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -8862,7 +10019,7 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/sampling.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/sampling.mjs
 /**
 * Deterministic trace sampling, kept consistent across LangSmith SDKs.
 */
@@ -8882,94 +10039,9 @@ const isSampledById = (identifier, samplingRate) => {
 	return Number(bucket) / Number(SAMPLING_HASH_MODULUS) < samplingRate;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/address.js
-/**
-* (beta) Addresses that name where runs are sent instead of a project.
-* Enabled per workspace; a workspace without it rejects the runs.
-*
-* An address is a plain string, `lrn:agents/{id}/environments/{environment}`,
-* typed as a template literal so a literal is checked at compile time. A
-* dynamic `string` goes through `address.parse`, which validates it at
-* runtime (JS callers are validated the same way). The environment is always
-* rendered lowercase.
-*
-* @example
-* ```ts
-* import { address, traceable } from "langsmith";
-*
-* const support = address.agent("customer-support", "production");
-* const handle = traceable(fn, { address: support });
-* // or a literal: { address: "lrn:agents/customer-support/environments/staging" }
-* ```
-*/
-const AGENT_ID_PATTERN = /^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$/;
-const ENVIRONMENTS = [
-	"local",
-	"development",
-	"staging",
-	"production"
-];
-const ADDRESS_PATTERN = /^lrn:agents\/([^/]*)\/environments\/([^/]*)$/;
-const ENV_NAMES = ["LANGSMITH_AGENT_ID", "LANGSMITH_AGENT_ENVIRONMENT"];
-/** The `LANGSMITH_AGENT_*` / project env vars name half an address, or both. */
-var EnvAddressError = class extends Error {
-	constructor(message) {
-		super(message);
-		this.name = "EnvAddressError";
-	}
-};
-/**
-* (beta) Build the address of an agent's environment.
-* @param agentId 1 to 63 lowercase ASCII letters, digits or hyphens, starting
-*   with a letter and ending with a letter or digit.
-* @param agentEnvironment One of `local`, `development`, `staging` or
-*   `production`, in any case.
-* @throws If a value is invalid.
-*/
-function agent(agentId, agentEnvironment) {
-	if (typeof agentId !== "string" || !AGENT_ID_PATTERN.test(agentId)) throw new Error(`Address agent id must be 1 to 63 lowercase ASCII letters, digits, or hyphens, start with a letter, and end with a letter or digit, got ${JSON.stringify(agentId)}. Use an id such as "support-agent".`);
-	const environment = typeof agentEnvironment === "string" ? agentEnvironment.toLowerCase() : void 0;
-	if (environment === void 0 || !ENVIRONMENTS.includes(environment)) throw new Error(`Address environment must be one of ${ENVIRONMENTS.join(", ")}, got ${JSON.stringify(agentEnvironment)}.`);
-	return `lrn:agents/${agentId}/environments/${environment}`;
-}
-/**
-* (beta) Validate an address string, lowercasing its environment.
-* Only agent addresses, `lrn:agents/{id}/environments/{environment}`, exist.
-* @throws If `value` is not a valid agent address.
-*/
-function parse$1(value) {
-	const match = typeof value === "string" ? ADDRESS_PATTERN.exec(value) : void 0;
-	if (!match) throw new Error(`An address must be a string like "lrn:agents/{id}/environments/{environment}", got ${JSON.stringify(value)}.`);
-	return agent(match[1], match[2]);
-}
-/**
-* (beta) Read the address named by `LANGSMITH_AGENT_ID` and
-* `LANGSMITH_AGENT_ENVIRONMENT`; `undefined` if neither is set.
-* @throws {EnvAddressError} If only one is set, or a value is invalid.
-*/
-function fromEnv() {
-	const values = ENV_NAMES.map((name) => getEnvironmentVariable(name));
-	if (!values.some(Boolean)) return;
-	try {
-		const missing = ENV_NAMES.filter((_, i) => !values[i]);
-		if (missing.length > 0) throw new Error(`An address needs ${missing.join(" and ")} as well.`);
-		return agent(values[0], values[1]);
-	} catch (e) {
-		throw new EnvAddressError(`The LANGSMITH_AGENT_* env vars can't address a run (${ENV_NAMES.flatMap((name, i) => values[i] ? [`${name}=${JSON.stringify(values[i])}`] : []).join(", ")}): ${e.message}`);
-	}
-}
-/** @internal The `LANGSMITH_AGENT_*` env var names an address reads. */
-function envNames() {
-	return ENV_NAMES;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/agent_addressing.js
-/** Validate and normalise an address at an entry point; the SDK carries the result. */
-function checkAddress(address) {
-	return address == null ? void 0 : parse$1(address);
-}
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/addressing.mjs
 function rejectConflicting(project, address) {
-	if (project && address) throw new Error(`A run is sent to a project (${JSON.stringify(project)}) or to an address (${JSON.stringify(address)}), not both.`);
+	if (project && address) throw new Error(`A run is sent to a project (${JSON.stringify(project)}) or to an address, not both.`);
 }
 function getEnvProject() {
 	return getLangSmithEnvironmentVariable("PROJECT") || getEnvironmentVariable("LANGCHAIN_SESSION") || void 0;
@@ -8980,7 +10052,7 @@ function getEnvProject() {
 */
 function resolveFromEnv() {
 	const project = getEnvProject();
-	const address = fromEnv();
+	const address = addressFromEnv();
 	if (project && address) throw new EnvAddressError("LANGSMITH_AGENT_* and a project are both set in the environment.");
 	return address ? [void 0, address] : [project ?? "default", void 0];
 }
@@ -8997,27 +10069,32 @@ function warnOnEnv() {
 	}
 }
 /**
-* Put the run's address in its payload field, as one lowercase string.
+* Put the run's address in its payload field, in its wire form.
 * Without one, a create naming no project takes the env address.
 *
 * @throws {EnvAddressError} If the env names half an address.
 */
 function applyToPayload(run, { update = false } = {}) {
 	const payload = run;
-	let address = checkAddress(payload.address);
+	let address;
+	if (typeof payload.address === "string") try {
+		address = addressFromLrn(payload.address);
+	} catch {
+		throw new Error("The run's `address` is not a valid agent address.");
+	}
+	else address = ensureAgent(payload.address);
 	delete payload.address;
 	const namedProject = payload.session_id != null || payload.session_name != null;
-	if (!address && !update && !namedProject) address = fromEnv();
+	if (!address && !update && !namedProject) address = addressFromEnv();
 	if (!address) return;
-	warnOnce$1("Sending runs to an `address` is in beta and enabled per workspace; a workspace without it rejects the runs.");
-	payload.address = address;
+	payload.address = addressToLrn(address);
 	if (!namedProject) {
 		delete payload.session_name;
 		delete payload.session_id;
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/v2_migration.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/v2_migration.mjs
 const QueryBackend = {
 	CLICKHOUSE_ONLY: "clickhouse_only",
 	SMITHDB_ONLY: "smithdb_only",
@@ -9033,7 +10110,7 @@ function getQueryBackend(instanceFlags) {
 	return QueryBackend.CLICKHOUSE_ONLY;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/error.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/error.mjs
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -9165,7 +10242,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/prompts.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/prompts.mjs
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -9193,7 +10270,7 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/fs.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/fs.mjs
 /**
 * File system abstraction (Node.js version).
 *
@@ -9253,7 +10330,7 @@ async function rmRecursive(filePath) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/prompt_cache/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/prompt_cache/index.mjs
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -9535,7 +10612,7 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/singletons/fetch.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/fetch.mjs
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
 const _shouldStreamForGlobalFetchImplementation = () => {
@@ -9557,7 +10634,7 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/profile-lock.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/profile-lock.mjs
 const LOCK_POLL_INTERVAL_MS = 10;
 const LOCK_STALE_AFTER_MS = 1e4;
 const LOCK_METADATA_FILE = "created_at";
@@ -9638,26 +10715,26 @@ function isBrowserLikeRuntime() {
 	const env = getEnv();
 	return env === "browser" || env === "webworker";
 }
-function getProfileConfigPath() {
-	const explicitPath = getEnvironmentVariable("LANGSMITH_CONFIG_FILE");
+function getProfileConfigPath(selected) {
+	const explicitPath = selected || getEnvironmentVariable("LANGSMITH_CONFIG_FILE");
 	if (explicitPath) return explicitPath;
 	const home = getEnvironmentVariable("HOME") ?? getEnvironmentVariable("USERPROFILE");
 	if (!home) return;
 	return path.join(home, ".langsmith", "config.json");
 }
-function resolveProfileName(config) {
-	const envProfile = getEnvironmentVariable("LANGSMITH_PROFILE");
-	if (envProfile) return envProfile;
+function resolveProfileName(config, selected) {
+	const chosen = selected || getEnvironmentVariable("LANGSMITH_PROFILE");
+	if (chosen) return chosen;
 	if (config.current_profile) return config.current_profile;
 	if (config.profiles?.default) return "default";
 }
-function loadProfileState() {
+function loadProfileState(selection = {}) {
 	if (isBrowserLikeRuntime()) return;
-	const configPath = getProfileConfigPath();
+	const configPath = getProfileConfigPath(selection.configPath);
 	if (!configPath || !existsSync$1(configPath)) return;
 	try {
 		const config = JSON.parse(readFileSync$1(configPath));
-		const profileName = resolveProfileName(config);
+		const profileName = resolveProfileName(config, selection.profile);
 		const profile = profileName ? config.profiles?.[profileName] : void 0;
 		if (!profileName || !profile) return;
 		return {
@@ -9785,7 +10862,7 @@ async function resolveTokenEndpoint(apiUrl, fetchImplementation) {
 	return `${normalizeConfigUrl(apiUrl)}/oauth/token`;
 }
 function applyTokenResponse(profile, token) {
-	profile.oauth ??= {};
+	profile.oauth ?? (profile.oauth = {});
 	if (token.access_token) profile.oauth.access_token = token.access_token;
 	if (token.refresh_token) profile.oauth.refresh_token = token.refresh_token;
 	if (typeof token.expires_in === "number" && token.expires_in > 0) profile.oauth.expires_at = new Date(Date.now() + token.expires_in * 1e3).toISOString();
@@ -9812,8 +10889,8 @@ async function waitForAbortSignal(promise, signal) {
 		cleanup?.();
 	}
 }
-function loadProfileClientConfig() {
-	const state = loadProfileState();
+function loadProfileClientConfig(selection = {}) {
+	const state = loadProfileState(selection);
 	const profile = state?.profile;
 	if (!state || !profile) return {};
 	const apiKey = trimConfigValue(profile.api_key);
@@ -9882,6 +10959,7 @@ var ProfileAuth = class {
 		}
 	}
 	async refreshOAuthToken(fetchImplementation) {
+		var _a;
 		const refreshToken = this.state.profile.oauth?.refresh_token;
 		if (!refreshToken) return;
 		const refreshApiUrl = trimConfigValue(this.state.profile.api_url) ?? "https://api.smith.langchain.com";
@@ -9905,7 +10983,7 @@ var ProfileAuth = class {
 			const token = await response.json();
 			if (!token.access_token) return;
 			applyTokenResponse(this.state.profile, token);
-			this.state.config.profiles ??= {};
+			(_a = this.state.config).profiles ?? (_a.profiles = {});
 			this.state.config.profiles[this.state.profileName] = this.state.profile;
 			await writeFileAtomic(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
 		} catch {
@@ -9940,7 +11018,7 @@ function authHeaderFromProfile(profile) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/fast-safe-stringify/index.mjs
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -10190,7 +11268,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/worker_threads.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/worker_threads.mjs
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -10202,7 +11280,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/serialize_worker.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/serialize_worker.mjs
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -10526,7 +11604,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/client.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/client.mjs
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -11177,7 +12255,12 @@ var Client = class Client {
 			writable: true,
 			value: getEnvironmentVariable("LANGSMITH_DEBUG") === "true"
 		});
-		const defaultConfig = Client.getDefaultClientConfig();
+		const defaultConfig = Client.getDefaultClientConfig({
+			profile: config.profile,
+			apiKey: config.apiKey,
+			profileConfigPath: config.profileConfigPath,
+			preferProfileAuth: config.preferProfileAuth
+		});
 		this.tracingSampleRate = getTracingSamplingRate(config.tracingSamplingRate);
 		this.apiUrl = trimQuotes(config.apiUrl ?? defaultConfig.apiUrl) ?? "";
 		if (this.apiUrl.endsWith("/")) this.apiUrl = this.apiUrl.slice(0, -1);
@@ -11244,11 +12327,15 @@ var Client = class Client {
 			else this._promptCache = config.cache;
 		} else if (!config.disablePromptCache) this._promptCache = promptCacheSingleton;
 	}
-	static getDefaultClientConfig() {
-		const profileConfig = loadProfileClientConfig();
-		const envApiKey = getLangSmithEnvironmentVariable("API_KEY");
-		const envApiUrl = getLangSmithEnvironmentVariable("ENDPOINT");
-		const envWorkspaceId = getLangSmithEnvironmentVariable("WORKSPACE_ID");
+	static getDefaultClientConfig(options = {}) {
+		const profileConfig = loadProfileClientConfig({
+			profile: options.profile,
+			configPath: options.profileConfigPath
+		});
+		const useProfile = options.preferProfileAuth === true && !hasValue(trimQuotes(options.apiKey)) && profileConfig.profileAuth !== void 0;
+		const envApiKey = useProfile ? void 0 : getLangSmithEnvironmentVariable("API_KEY");
+		const envApiUrl = useProfile ? void 0 : getLangSmithEnvironmentVariable("ENDPOINT");
+		const envWorkspaceId = useProfile && profileConfig.workspaceId != null ? void 0 : getLangSmithEnvironmentVariable("WORKSPACE_ID");
 		const envAuthSet = hasValue(envApiKey);
 		const apiUrl = envApiUrl ?? profileConfig.apiUrl ?? "https://api.smith.langchain.com";
 		const apiUrlSource = envApiUrl != null ? "LANGSMITH_ENDPOINT / LANGCHAIN_ENDPOINT environment variable" : profileConfig.apiUrl != null ? "profile config" : "built-in default";
@@ -11329,7 +12416,7 @@ var Client = class Client {
 	}
 	get _mergedHeaders() {
 		const headers = {
-			"User-Agent": `langsmith-js/${__version__}`,
+			"User-Agent": `langsmith-js/${VERSION}`,
 			...this._callerHeaders
 		};
 		if (this.apiKey !== void 0) headers["x-api-key"] = `${this.apiKey}`;
@@ -11350,7 +12437,7 @@ var Client = class Client {
 	*/
 	get _openAPIClientOptions() {
 		const headers = { ...this._callerHeaders };
-		if (!Object.keys(headers).some((name) => name.toLowerCase() === "user-agent")) headers["User-Agent"] = `langsmith-js/${__version__}`;
+		if (!Object.keys(headers).some((name) => name.toLowerCase() === "user-agent")) headers["User-Agent"] = `langsmith-js/${VERSION}`;
 		const callerApiKeyName = Object.keys(headers).find((name) => name.toLowerCase() === "x-api-key");
 		let apiKey = this.apiKey;
 		if (apiKey === void 0 && callerApiKeyName !== void 0) {
@@ -11376,9 +12463,7 @@ var Client = class Client {
 		this._customHeaders = value ?? {};
 	}
 	_getOpenAPIBaseUrl() {
-		const url = this.apiUrl.replace(/\/$/, "");
-		for (const suffix of ["/api/v1", "/api"]) if (url.endsWith(suffix)) return url.slice(0, -suffix.length);
-		return url;
+		return getOpenAPIBaseUrl(this.apiUrl);
 	}
 	/**
 	* The generated OpenAPI client, rebuilt whenever its auth or headers change.
@@ -11446,6 +12531,18 @@ var Client = class Client {
 	get traces() {
 		this._checkStainlessVersion("0.16.0");
 		return this.openAPIClient.traces;
+	}
+	/**
+	* Access the sessions resource, which resolves an address to the
+	* project its traces go to: `client.sessions.resolve(address)`.
+	*/
+	get sessions() {
+		this._checkStainlessVersion("0.18.0");
+		return this.openAPIClient.sessions;
+	}
+	/** Manage workspace registry agents and their tracing destinations. */
+	get agents() {
+		return this.openAPIClient.agents;
 	}
 	/** Access the public shared-run resource. */
 	get public() {
@@ -11687,10 +12784,13 @@ var Client = class Client {
 	async _processBatch(batch, options) {
 		if (!batch.length) return;
 		const batchSizeBytes = batch.reduce((sum, item) => sum + (item.size ?? 0), 0);
+		const feedbacks = batch.filter((item) => item.action === "feedback").map((item) => item.item);
+		const runItems = batch.filter((item) => item.action !== "feedback");
 		try {
 			if (this.langSmithToOTELTranslator !== void 0) {
-				for (const item of batch) item.item = await this._maskRunMetadata(item.item);
-				this._sendBatchToOTELTranslator(batch);
+				for (const item of runItems) item.item = await this._maskRunMetadata(item.item);
+				this._sendBatchToOTELTranslator(runItems);
+				await this._postFeedbacks(feedbacks, options);
 			} else {
 				const ingestParams = {
 					runCreates: batch.filter((item) => item.action === "create").map((item) => item.item),
@@ -11700,7 +12800,10 @@ var Client = class Client {
 				if (!this._multipartDisabled && (serverInfo?.batch_ingest_config?.use_multipart_endpoint ?? true)) {
 					const useGzip = !this._runCompressionDisabled && serverInfo?.instance_flags?.gzip_body_enabled;
 					try {
-						await this.multipartIngestRuns(ingestParams, {
+						await this.multipartIngestRuns({
+							...ingestParams,
+							feedbacks
+						}, {
 							...options,
 							useGzip,
 							sizeBytes: batchSizeBytes
@@ -11712,12 +12815,16 @@ var Client = class Client {
 								...options,
 								sizeBytes: batchSizeBytes
 							});
+							await this._postFeedbacks(feedbacks, options);
 						} else throw e;
 					}
-				} else await this.batchIngestRuns(ingestParams, {
-					...options,
-					sizeBytes: batchSizeBytes
-				});
+				} else {
+					await this.batchIngestRuns(ingestParams, {
+						...options,
+						sizeBytes: batchSizeBytes
+					});
+					await this._postFeedbacks(feedbacks, options);
+				}
 			}
 		} catch (e) {
 			console.error("Error exporting batch:", e);
@@ -11763,7 +12870,7 @@ var Client = class Client {
 	async processRunOperation(item) {
 		clearTimeout(this.autoBatchTimeout);
 		this.autoBatchTimeout = void 0;
-		item.item = mergeRuntimeEnvIntoRun(item.item, this.cachedLSEnvVarsForMetadata, this.omitTracedRuntimeInfo, this.tracingSampleRate);
+		if (item.action !== "feedback") item.item = mergeRuntimeEnvIntoRun(item.item, this.cachedLSEnvVarsForMetadata, this.omitTracedRuntimeInfo, this.tracingSampleRate);
 		const itemPromise = this.autoBatchQueue.push(item);
 		if (this.manualFlushMode) return itemPromise;
 		const sizeLimitBytes = await this._getBatchSizeLimitBytes();
@@ -11860,7 +12967,7 @@ var Client = class Client {
 			...this._mergedHeaders,
 			"Content-Type": "application/json"
 		};
-		const address = checkAddress(run.address);
+		const address = ensureAgent(run.address);
 		const bodySessionName = run.session_name;
 		rejectConflicting(run.project_name ?? bodySessionName, address);
 		const session_name = run.project_name;
@@ -11971,8 +13078,8 @@ var Client = class Client {
 	* Batch ingest/upsert multiple runs in the Langsmith system.
 	* @param runs
 	*/
-	async multipartIngestRuns({ runCreates, runUpdates }, options) {
-		if (runCreates === void 0 && runUpdates === void 0) return;
+	async multipartIngestRuns({ runCreates, runUpdates, feedbacks }, options) {
+		if (runCreates === void 0 && runUpdates === void 0 && !feedbacks?.length) return;
 		const allAttachments = {};
 		let preparedCreateParams = [];
 		for (const create of runCreates ?? []) {
@@ -12000,7 +13107,7 @@ var Client = class Client {
 			preparedCreateParams = Object.values(createById);
 			preparedUpdateParams = standaloneUpdates;
 		}
-		if (preparedCreateParams.length === 0 && preparedUpdateParams.length === 0) return;
+		if (preparedCreateParams.length === 0 && preparedUpdateParams.length === 0 && !feedbacks?.length) return;
 		const accumulatedContext = [];
 		const accumulatedParts = [];
 		for (const [method, payloads] of [["post", preparedCreateParams], ["patch", preparedUpdateParams]]) for (const originalPayload of payloads) {
@@ -12050,6 +13157,14 @@ var Client = class Client {
 				}
 			}
 			accumulatedContext.push(`trace=${payload.trace_id},id=${payload.id}`);
+		}
+		for (const feedback of feedbacks ?? []) {
+			const stringifiedFeedback = await this._serializeBody(feedback, `Serializing for multipart ingestion of feedback with id: ${feedback.id}`);
+			accumulatedParts.push({
+				name: `feedback.${feedback.id}`,
+				payload: new Blob([stringifiedFeedback], { type: `application/json; length=${stringifiedFeedback.length}` })
+			});
+			accumulatedContext.push(`trace=${feedback.trace_id},id=${feedback.id}`);
 		}
 		await this._sendMultipartRequest(accumulatedParts, accumulatedContext.join("; "), options);
 	}
@@ -12149,7 +13264,7 @@ var Client = class Client {
 			metadata: await this.processMetadata(run.extra.metadata)
 		};
 		if (run.events) run.events = this._filterNewTokenEvents(run.events);
-		applyToPayload(run, { update: true });
+		ensureAgent(run.address);
 		const data = {
 			...run,
 			id: runId
@@ -12183,7 +13298,9 @@ var Client = class Client {
 		};
 		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
 		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
-		const body = serialize(run.extra ? mergeRuntimeEnvIntoRun(run, this.cachedLSEnvVarsForMetadata, this.omitTracedRuntimeInfo, this.tracingSampleRate) : run, `Serializing payload to update run with id: ${runId}`);
+		const wireRun = { ...run };
+		applyToPayload(wireRun, { update: true });
+		const body = serialize(wireRun.extra ? mergeRuntimeEnvIntoRun(wireRun, this.cachedLSEnvVarsForMetadata, this.omitTracedRuntimeInfo, this.tracingSampleRate) : wireRun, `Serializing payload to update run with id: ${runId}`);
 		await this.caller.call(async () => {
 			const res = await this._fetch(`${options?.apiUrl ?? this.apiUrl}/runs/${runId}`, {
 				method: "PATCH",
@@ -12219,17 +13336,20 @@ var Client = class Client {
 		return run;
 	}
 	/** @deprecated Use `client.runs.getURL()` instead. See https://docs.langchain.com/langsmith/smithdb-sdk-migration-runs#runs-get-url for the migration guide. Will be removed after Jan 31, 2027. */
-	async getRunUrl({ runId, run, projectOpts }) {
+	async getRunUrl({ runId, run, projectOpts, address: rawAddress }) {
 		warnOnce$1("getRunUrl() is deprecated and will be removed after Jan 31, 2027. Use client.runs.getURL() instead. See https://docs.langchain.com/langsmith/smithdb-sdk-migration-runs#runs-get-url for the migration guide.", {
 			type: "DeprecationWarning",
 			code: "LANGSMITH_DEPRECATED_GET_RUN_URL"
 		});
 		if (run !== void 0) {
-			if (!run.session_id && run.address) throw new Error("Addressed runs have no URL until read back.");
+			const argumentAddress = ensureAddress(rawAddress);
+			rejectConflicting(projectOpts?.projectName ?? projectOpts?.projectId, argumentAddress);
+			const address = argumentAddress ?? ensureAgent(run.address);
 			let sessionId;
 			if (run.session_id) sessionId = run.session_id;
 			else if (projectOpts?.projectName) sessionId = (await this.readProject({ projectName: projectOpts?.projectName })).id;
 			else if (projectOpts?.projectId) sessionId = projectOpts?.projectId;
+			else if (address) sessionId = await this._resolveAddress(address);
 			else sessionId = (await this.readProject({ projectName: getLangSmithEnvironmentVariable("PROJECT") || "default" })).id;
 			const tenantId = await this._getTenantId();
 			return `${this.getHostUrl()}/o/${tenantId}/projects/p/${sessionId}/r/${run.id}?poll=true`;
@@ -12238,6 +13358,12 @@ var Client = class Client {
 			if (!run_.app_path) throw new Error(`Run ${runId} has no app_path`);
 			return `${this.getHostUrl()}${run_.app_path}`;
 		} else throw new Error("Must provide either runId or run");
+	}
+	/** The ID of the project an address names, with one request. */
+	async _resolveAddress(address) {
+		const { session_id: sessionId } = await this.sessions.resolve(address);
+		assertUuid(sessionId);
+		return sessionId;
 	}
 	async _loadChildRuns(run) {
 		const childRuns = await toArray(this._listRuns({
@@ -13165,20 +14291,20 @@ var Client = class Client {
 			return res;
 		});
 	}
-	async createExample(inputsOrUpdate, outputs, options) {
+	async createExample(inputsOrUpdate, referenceOutputs, options) {
 		if (isExampleCreate(inputsOrUpdate)) {
-			if (outputs !== void 0 || options !== void 0) throw new Error("Cannot provide outputs or options when using ExampleCreate object");
+			if (referenceOutputs !== void 0 || options !== void 0) throw new Error("Cannot provide referenceOutputs or options when using ExampleCreate object");
 		}
-		let datasetId_ = outputs ? options?.datasetId : inputsOrUpdate.dataset_id;
-		const datasetName_ = outputs ? options?.datasetName : inputsOrUpdate.dataset_name;
+		let datasetId_ = referenceOutputs ? options?.datasetId : inputsOrUpdate.dataset_id;
+		const datasetName_ = referenceOutputs ? options?.datasetName : inputsOrUpdate.dataset_name;
 		if (datasetId_ === void 0 && datasetName_ === void 0) throw new Error("Must provide either datasetName or datasetId");
 		else if (datasetId_ !== void 0 && datasetName_ !== void 0) throw new Error("Must provide either datasetName or datasetId, not both");
 		else if (datasetId_ === void 0) datasetId_ = (await this.readDataset({ datasetName: datasetName_ })).id;
-		const createdAt_ = (outputs ? options?.createdAt : inputsOrUpdate.created_at) || /* @__PURE__ */ new Date();
+		const createdAt_ = (referenceOutputs ? options?.createdAt : inputsOrUpdate.created_at) || /* @__PURE__ */ new Date();
 		let data;
 		if (!isExampleCreate(inputsOrUpdate)) data = {
 			inputs: inputsOrUpdate,
-			outputs,
+			reference_outputs: referenceOutputs,
 			created_at: createdAt_?.toISOString(),
 			id: options?.exampleId,
 			metadata: options?.metadata,
@@ -13204,7 +14330,8 @@ var Client = class Client {
 			const response = await this._uploadExamplesMultipart(datasetId_, uploads);
 			return await Promise.all(response.example_ids.map((id) => this.readExample(id)));
 		}
-		const { inputs, outputs, metadata, splits, sourceRunIds, useSourceRunIOs, useSourceRunAttachments, attachments, exampleIds, datasetId, datasetName } = propsOrUploads;
+		const { inputs, referenceOutputs, outputs, metadata, splits, sourceRunIds, useSourceRunIOs, useSourceRunAttachments, attachments, exampleIds, datasetId, datasetName } = propsOrUploads;
+		if (referenceOutputs !== void 0 && outputs !== void 0) throw new Error("Cannot specify both referenceOutputs and outputs");
 		if (inputs === void 0) throw new Error("Must provide inputs when using legacy parameters");
 		let datasetId_ = datasetId;
 		const datasetName_ = datasetName;
@@ -13215,7 +14342,7 @@ var Client = class Client {
 			return {
 				dataset_id: datasetId_,
 				inputs: input,
-				outputs: outputs?.[idx],
+				reference_outputs: (referenceOutputs ?? outputs)?.[idx],
 				metadata: metadata?.[idx],
 				split: splits?.[idx],
 				id: exampleIds?.[idx],
@@ -13253,7 +14380,7 @@ var Client = class Client {
 		}, {});
 		return example;
 	}
-	async *listExamples({ datasetId, datasetName, exampleIds, asOf, splits, inlineS3Urls, metadata, limit, offset, filter, includeAttachments } = {}) {
+	async *listExamples({ datasetId, datasetName, exampleIds, asOf, splits, inlineS3Urls, metadata, limit, offset, filter, includeAttachments, select, excludeDefaultFields } = {}) {
 		let datasetId_;
 		if (datasetId !== void 0 && datasetName !== void 0) throw new Error("Must provide either datasetName or datasetId, not both");
 		else if (datasetId !== void 0) datasetId_ = datasetId;
@@ -13273,11 +14400,14 @@ var Client = class Client {
 		if (limit !== void 0) params.append("limit", limit.toString());
 		if (offset !== void 0) params.append("offset", offset.toString());
 		if (filter !== void 0) params.append("filter", filter);
-		if (includeAttachments === true) [
+		const selectFields = new Set(select ?? []);
+		if (includeAttachments === true) for (const field of [
 			"attachment_urls",
 			"outputs",
 			"metadata"
-		].forEach((field) => params.append("select", field));
+		]) selectFields.add(field);
+		for (const field of selectFields) params.append("select", field);
+		if (excludeDefaultFields === true) params.append("exclude_default_fields", "true");
 		let i = 0;
 		for await (const rawExamples of this._getPaginated("/examples", params)) {
 			for (const rawExample of rawExamples) {
@@ -13455,7 +14585,7 @@ var Client = class Client {
 			key: keyArg,
 			...optionsArg
 		};
-		const address = checkAddress(rawAddress);
+		const address = ensureAgent(rawAddress);
 		rejectConflicting(sessionId ?? projectId, address);
 		if (!runId && !projectId) throw new Error("One of runId or projectId must be provided");
 		if (runId && projectId) throw new Error("Only one of runId or projectId can be provided");
@@ -13484,18 +14614,39 @@ var Client = class Client {
 		};
 		const samplingId = traceId ?? runId;
 		if (samplingId != null && !this._shouldSample(samplingId)) return feedback;
-		const body = JSON.stringify(address ? {
+		const payload = address ? {
 			...feedback,
-			address
-		} : feedback);
-		const url = `${this.apiUrl}/feedback`;
+			address: addressToLrn(address)
+		} : feedback;
+		if (runId && traceId && extendTraceRetention !== false && await this._canBatchFeedback()) {
+			this.processRunOperation({
+				action: "feedback",
+				item: {
+					...payload,
+					start_time: typeof startTime === "number" ? new Date(startTime).toISOString() : startTime
+				}
+			}).catch(console.error);
+			return feedback;
+		}
+		await this._postFeedback(payload);
+		return feedback;
+	}
+	async _canBatchFeedback() {
+		if (!this.autoBatchTracing || this.langSmithToOTELTranslator !== void 0 || this._multipartDisabled) return false;
+		return (await this._ensureServerInfo())?.batch_ingest_config?.use_multipart_endpoint ?? true;
+	}
+	async _postFeedback(feedback, options) {
+		const headers = {
+			...this._mergedHeaders,
+			"Content-Type": "application/json"
+		};
+		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
+		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		const body = JSON.stringify(feedback);
 		await this.caller.call(async () => {
-			const res = await this._fetch(url, {
+			const res = await this._fetch(`${options?.apiUrl ?? this.apiUrl}/feedback`, {
 				method: "POST",
-				headers: {
-					...this._mergedHeaders,
-					"Content-Type": "application/json"
-				},
+				headers,
 				signal: AbortSignal.timeout(this.timeout_ms),
 				...this.fetchOptions,
 				body
@@ -13503,7 +14654,10 @@ var Client = class Client {
 			await raiseForStatus(res, "create feedback", true);
 			return res;
 		});
-		return feedback;
+	}
+	/** Sends batched feedback one request at a time when multipart is unavailable. */
+	async _postFeedbacks(feedbacks, options) {
+		await Promise.all(feedbacks.map((feedback) => this._postFeedback(feedback, options)));
 	}
 	async updateFeedback(feedbackId, { score, value, correction, comment }) {
 		const feedbackUpdate = {};
@@ -13693,16 +14847,23 @@ var Client = class Client {
 	* @param options - The options for creating a feedback config
 	* @param options.feedbackKey - The unique key for this feedback config
 	* @param options.feedbackConfig - The config specifying type, bounds, and categories
-	* @param options.isLowerScoreBetter - Whether a lower score is better
+	* @param options.isLowerScoreBetter - Whether a lower score is better. When
+	*   omitted, a key that already has configs keeps its direction, and a new
+	*   key defaults to higher is better.
+	* @param options.isEnforced - Create the key's enforced config, which sets
+	*   the rules for the whole workspace. Requires the
+	*   feedback-configs:manage-enforced permission, which workspace admins
+	*   have. Fails if the key already has an enforced config.
 	* @returns The created FeedbackConfigSchema object
 	*/
 	async createFeedbackConfig(options) {
-		const { feedbackKey, feedbackConfig, isLowerScoreBetter = false } = options;
+		const { feedbackKey, feedbackConfig, isLowerScoreBetter, isEnforced = false } = options;
 		const body = {
 			feedback_key: feedbackKey,
 			feedback_config: feedbackConfig,
-			is_lower_score_better: isLowerScoreBetter
+			is_enforced: isEnforced
 		};
+		if (isLowerScoreBetter !== void 0) body.is_lower_score_better = isLowerScoreBetter;
 		return (await this.caller.call(async () => {
 			const res = await this._fetch(`${this.apiUrl}/feedback-configs`, {
 				method: "POST",
@@ -14451,6 +15612,7 @@ var Client = class Client {
 		return this._uploadExamplesMultipart(datasetId, uploads);
 	}
 	async _uploadExamplesMultipart(datasetId, uploads = []) {
+		for (const example of uploads) getExampleReferenceOutputs(example);
 		if (!await this._getDatasetExamplesMultiPartSupport()) throw new Error("Your LangSmith deployment does not allow using the multipart examples endpoint, please upgrade your deployment to the latest version.");
 		const formData = new FormData();
 		for (const example of uploads) {
@@ -14470,8 +15632,9 @@ var Client = class Client {
 				const inputsBlob = new Blob([stringifiedInputs], { type: "application/json" });
 				formData.append(`${exampleId}.inputs`, inputsBlob);
 			}
-			if (example.outputs) {
-				const stringifiedOutputs = serialize(example.outputs, `Serializing outputs for uploaded example with id: ${exampleId}`);
+			const referenceOutputs = getExampleReferenceOutputs(example);
+			if (referenceOutputs !== void 0) {
+				const stringifiedOutputs = serialize(referenceOutputs, `Serializing outputs for uploaded example with id: ${exampleId}`);
 				const outputsBlob = new Blob([stringifiedOutputs], { type: "application/json" });
 				formData.append(`${exampleId}.outputs`, outputsBlob);
 			}
@@ -15011,18 +16174,22 @@ Object.defineProperty(Client, "_fallbackDirsCreated", {
 function isExampleCreate(input) {
 	return "dataset_id" in input || "dataset_name" in input;
 }
+function getExampleReferenceOutputs(example) {
+	if (example.reference_outputs !== void 0 && example.outputs !== void 0) throw new Error("Cannot specify both reference_outputs and outputs");
+	return example.reference_outputs ?? example.outputs;
+}
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/env.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/env.mjs
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/singletons/constants.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/constants.mjs
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/utils/context_vars.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/context_vars.mjs
 /**
 * Get a context variable from a run tree instance
 */
@@ -15038,7 +16205,7 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/run_trees.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/run_trees.mjs
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
 	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
@@ -15064,12 +16231,10 @@ const HEADER_SAFE_REPLICA_FIELDS = /* @__PURE__ */ new Set([
 	"reroot",
 	"address"
 ]);
-const LANGSMITH_ADDRESS = "langsmith-address";
-/** Validates an untrusted header address; `undefined` if unusable. */
+/** Rebuilds an untrusted header address; `undefined` if unusable. */
 function addressFromHeader(value) {
-	if (value == null) return;
 	try {
-		return parse$1(value);
+		return addressFromLrn(value);
 	} catch {
 		console.warn("Ignoring an unusable address in a `baggage` header.");
 		return;
@@ -15137,17 +16302,17 @@ var Baggage = class Baggage {
 			if (key === "langsmith-metadata") metadata = JSON.parse(value);
 			else if (key === "langsmith-tags") tags = value.split(",");
 			else if (key === "langsmith-project") project_name = value;
-			else if (key === LANGSMITH_ADDRESS) address = addressFromHeader(value);
+			else if (key === "langsmith-address") address = addressFromHeader(value);
 			else if (key === "langsmith-replicas") replicas = JSON.parse(value).flatMap((replica) => {
 				if (Array.isArray(replica)) return [replica];
 				const filtered = filterReplicaForHeaders(replica);
 				const raw = filtered.address;
 				delete filtered.address;
-				const address = addressFromHeader(raw);
 				if (filtered.projectName || raw == null) return [filtered];
-				return address ? [{
+				const replicaAddress = addressFromHeader(raw);
+				return replicaAddress ? [{
 					...filtered,
-					address
+					address: replicaAddress
 				}] : [];
 			});
 		}
@@ -15158,7 +16323,7 @@ var Baggage = class Baggage {
 		if (this.metadata && Object.keys(this.metadata).length > 0) items.push(`langsmith-metadata=${encodeURIComponent(JSON.stringify(this.metadata))}`);
 		if (this.tags && this.tags.length > 0) items.push(`langsmith-tags=${encodeURIComponent(this.tags.join(","))}`);
 		if (this.project_name) items.push(`langsmith-project=${encodeURIComponent(this.project_name)}`);
-		if (this.address) items.push(`${LANGSMITH_ADDRESS}=${encodeURIComponent(this.address)}`);
+		if (this.address) items.push(`langsmith-address=${encodeURIComponent(addressToLrn(this.address))}`);
 		return items.join(",");
 	}
 };
@@ -15193,7 +16358,7 @@ var RunTree = class RunTree {
 			writable: true,
 			value: void 0
 		});
-		/** (beta) Set instead of `project_name` for an addressed run. */
+		/** Set instead of `project_name` for an addressed run. */
 		Object.defineProperty(this, "address", {
 			enumerable: true,
 			configurable: true,
@@ -15379,8 +16544,8 @@ var RunTree = class RunTree {
 			client
 		});
 		this._resolveAddressing(config);
-		this.execution_order ??= 1;
-		this.child_execution_order ??= 1;
+		this.execution_order ?? (this.execution_order = 1);
+		this.child_execution_order ?? (this.child_execution_order = 1);
 		if (!this.dotted_order) this._serialized_start_time = getMicrosecondPrecisionDatestring(this.start_time, this.execution_order);
 		if (!this.id) this.id = uuid7FromTime(this._serialized_start_time ?? this.start_time);
 		if (!this.trace_id) {
@@ -15396,7 +16561,7 @@ var RunTree = class RunTree {
 	}
 	/** Falls back to the env; a bad env leaves the run untraced. */
 	_resolveAddressing(config) {
-		const address = checkAddress(config.address);
+		const address = ensureAgent(config.address);
 		const project = config.project_name || void 0;
 		rejectConflicting(project, address);
 		if (project || address) {
@@ -15572,7 +16737,7 @@ var RunTree = class RunTree {
 	}
 	/** A replica naming neither inherits the run tree's destination. */
 	_replicaAddressing(replica) {
-		const address = checkAddress(replica.address);
+		const address = ensureAgent(replica.address);
 		if (replica.projectName != null) {
 			rejectConflicting(replica.projectName, address);
 			return [replica.projectName, void 0];
@@ -15583,12 +16748,12 @@ var RunTree = class RunTree {
 	_remapForProject(params) {
 		const { projectName, address, primary, runtimeEnv, excludeChildRuns = true, reroot = false, distributedParentId, apiUrl, apiKey, workspaceId } = params;
 		const baseRun = this._convertToCreate(this, runtimeEnv, excludeChildRuns);
-		if (primary === void 0 && !this.replicas?.some((r) => r.primary === true) && projectName === this.project_name && address === this.address) return {
+		if (primary === void 0 && !this.replicas?.some((r) => r.primary === true) && projectName === this.project_name && (address ? addressToLrn(address) : void 0) === (this.address ? addressToLrn(this.address) : void 0)) return {
 			...baseRun,
 			session_name: projectName,
 			address
 		};
-		const seed = projectName ?? address ?? "agent//";
+		const seed = projectName ?? (address ? addressToLrn(address) : void 0) ?? "agent//";
 		if (reroot) {
 			if (distributedParentId) this._sliceParentId(distributedParentId, baseRun);
 			else {
@@ -15979,7 +17144,7 @@ function _ensureWriteReplicas(replicas) {
 			projectName: replica[0],
 			updates: replica[1]
 		};
-		const address = checkAddress(replica.address);
+		const address = ensureAgent(replica.address);
 		return address ? {
 			...replica,
 			address
@@ -15992,7 +17157,7 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/uuid.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/uuid.mjs
 /**
 * Compute the run ID used for a secondary tracing replica.
 *
@@ -16008,7 +17173,7 @@ function computeRunIdForSecondaryReplica(runId, projectName) {
 	return nonCryptographicUuid7Deterministic(normalizedRunId, projectName);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/singletons/traceable.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/traceable.mjs
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -16027,10 +17192,7 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/index.js
-const __version__ = "0.10.8";
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -16047,7 +17209,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -16165,7 +17327,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -16241,15 +17403,20 @@ const UPLOAD_LOGIN_FIELD_NAMES = {
 	workspaceId: "login workspace ID"
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 const rejectedAuthorizations = /* @__PURE__ */ new WeakMap();
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, login, anonymizer, redactedFields } = options;
-	const config = {
+	const client = new Client({
 		...login === void 0 ? {
 			apiKey: apiKey ?? "",
 			workspaceId: workspaceId ?? ""
-		} : login.workspaceId === void 0 ? {} : { workspaceId: login.workspaceId },
+		} : {
+			profile: login.profile,
+			profileConfigPath: login.configPath,
+			preferProfileAuth: true,
+			...login.workspaceId === void 0 ? {} : { workspaceId: login.workspaceId }
+		},
 		apiUrl,
 		autoBatchTracing: false,
 		manualFlushMode: true,
@@ -16270,8 +17437,7 @@ function createUploadClient(options) {
 			if (response.status === 401 || response.status === 403) rejectedAuthorizations.set(client, new Headers(init?.headers).get("Authorization") ?? "");
 			return response;
 		}
-	};
-	const client = withoutEnvVariables(LOGIN_API_KEY_VARIABLES, () => login === void 0 ? new Client(config) : withLoginProfile(login, () => new Client(config)));
+	});
 	return client;
 }
 function takeRejectedAccessToken(client) {
@@ -16280,7 +17446,7 @@ function takeRejectedAccessToken(client) {
 	return authorization?.replace(UPLOAD_BEARER_PATTERN, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/auth/credential.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/credential.js
 function resolveUploadCredential(options = {}) {
 	const env = options.env ?? process.env;
 	const workspaceId = sdkSetting(options.workspaceId);
@@ -16349,7 +17515,7 @@ function loginReplicaRefusal(replicas, apiUrl) {
 	return configured.some((replica) => sdkSetting(replica.apiKey) !== void 0 || replica.apiUrl === void 0 || sameServer(replica.apiUrl, apiUrl)) ? void 0 : refusedLoginReplicas(configured, apiUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -16469,7 +17635,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.10.8_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_74c043658451e37676b684cee2e148d7/node_modules/langsmith/dist/anonymizer/index.js
+//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/anonymizer/index.mjs
 function extractStringNodes(data, options) {
 	const parsedOptions = {
 		...options,
@@ -16667,7 +17833,7 @@ const DEFAULT_SECRET_RULES = [
 		replace: SECRET_PLACEHOLDER
 	},
 	{
-		pattern: /\b([A-Za-z0-9_.-]*(?:API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?KEY|AUTH[_-]?TOKEN|CLIENT[_-]?SECRET)(?![A-Za-z0-9])(?:[_.-][A-Za-z0-9]+)*["']?\s*[:=]\s*["']?)(?:(?:bearer|token|basic)\s+)?[^\s"'&;]{6,}/gi,
+		pattern: /\b([A-Za-z0-9_.-]*(?:API[_-]?KEY[_-]?SALT|LICENSE[_-]?KEY|API[_-]?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE[_-]?KEY|ACCESS[_-]?KEY|AUTH[_-]?TOKEN|CLIENT[_-]?SECRET)(?![A-Za-z0-9])(?:[_.-][A-Za-z0-9]+)*["']?\s*[:=]\s*["']?)(?:(?:bearer|token|basic)\s+)?[^\s"'&;]{6,}/gi,
 		replace: `$1${SECRET_PLACEHOLDER}`
 	},
 	{
@@ -16705,7 +17871,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -16726,7 +17892,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -16755,7 +17921,7 @@ function usesLogin(login, client) {
 	return loginUrl === void 0 || typeof clientUrl === "string" && sameServer(clientUrl, loginUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
 function createUploadClientCache() {
 	const clientsByMode = /* @__PURE__ */ new Map();
 	return { forSubmission(destination, submission) {
@@ -16774,7 +17940,7 @@ function createUploadClientCache() {
 	} };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
 var UploadError = class extends Error {
 	retryable;
 	status;
@@ -16792,13 +17958,13 @@ function isAlreadyReceived(cause) {
 	return failureStatus(cause) === 409 && describe(cause).includes("already received");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
 function applyRuntimeMetadata(payload, privacyMode) {
 	if (privacyMode !== "full") return;
 	const added = buildCodingAgentRuntimeMetadata({
 		env: process.env,
 		runtime: "Bun" in globalThis ? "bun" : UPLOAD_NODE_RUNTIME,
-		sdkVersion: __version__
+		sdkVersion: VERSION
 	});
 	const extra = payload.extra ?? {};
 	const metadata = {
@@ -16815,7 +17981,7 @@ function applyRuntimeMetadata(payload, privacyMode) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function contextForDestination(context, destination) {
 	if (destination.sourceProjectName === void 0) return context;
 	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
@@ -16855,7 +18021,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
 function applyReplicaPatchUpdates(payload, destination, privacyMode) {
 	if (privacyMode !== "full" || destination.updates === void 0) return;
 	const mutablePayload = payload;
@@ -16880,7 +18046,7 @@ function mergeReplicaExtra(baseValue, updateValue) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
 async function withDeadline(work) {
 	let timer;
 	const expired = new Promise((_resolve, reject) => {
@@ -16893,7 +18059,7 @@ async function withDeadline(work) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
 function samplingRate(environment) {
 	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
 		const value = environment[name]?.trim();
@@ -16911,7 +18077,7 @@ function traceIdOf(run) {
 	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
 function startTimeFromDottedOrder(dottedOrder) {
 	if (typeof dottedOrder !== "string") return void 0;
 	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
@@ -16926,7 +18092,7 @@ function startTimeText(supplied, dottedOrder) {
 	return startTimeFromDottedOrder(dottedOrder);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -17150,11 +18316,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -17187,7 +18353,7 @@ async function readSavedCaptureWake(error, options) {
 	} : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -17226,7 +18392,7 @@ const LIFECYCLE_IDENTITY_FIELD_LABELS = [
 	["dotted_order", "Dotted order"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
 async function captureReadiness(scopes, destinations, readOutcome) {
 	const pending = /* @__PURE__ */ new Set();
 	const dropped = /* @__PURE__ */ new Set();
@@ -17249,7 +18415,7 @@ async function captureReadiness(scopes, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -17350,7 +18516,7 @@ function field$1(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -17410,7 +18576,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
@@ -17659,7 +18825,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
 function projectCapture(record, integration) {
 	const submission = projectSubmission({
 		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
@@ -17753,14 +18919,14 @@ function closureRank(state) {
 	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
 const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
 const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
 function recordRun(events) {
 	const latest = events.at(-1);
 	const run = latest.payload.run;
@@ -17804,7 +18970,7 @@ function mergeMetadataObject(previous, current) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
 function uniqueScopes(scopes) {
 	const unique = /* @__PURE__ */ new Map();
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
@@ -17895,7 +19061,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
 function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
 	const revision = createHash("sha256").update(JSON.stringify({
 		turnId,
@@ -17908,7 +19074,7 @@ function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, 
 	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
 function hasCausalRunError(events) {
 	let hasError = false;
 	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
@@ -17931,7 +19097,7 @@ function retainedEndTime(events) {
 	return endTime;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	const named = withBothGitMetadataNames(metadata ?? {});
@@ -17963,7 +19129,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
 function unsettled(settlementReport) {
 	return {
 		report: settlementReport,
@@ -18189,7 +19355,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}, requiredRunIds, currentByRunId, generated, options);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -18256,7 +19422,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -18287,7 +19453,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
 async function removeSettledTurns(options) {
 	const known = new Set(options.knownScopes.map(turnEventKey));
 	const removable = /* @__PURE__ */ new Map();
@@ -18346,7 +19512,7 @@ function field(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const context = createBridgeContext(options);
 	return Object.freeze({
@@ -18691,7 +19857,7 @@ function restoreSubmission(record, integration) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
@@ -18808,13 +19974,13 @@ const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
 const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
 const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
 function assertKnownKeys(record, required, optional, message) {
 	const keys = Object.keys(record);
 	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
 function readEventId(output, seen) {
 	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
 	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
@@ -19048,7 +20214,7 @@ function validateTurnEvidence(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
 function snapshotJob(job) {
 	return Object.freeze({
 		...job,
@@ -19225,7 +20391,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
 async function processJob(candidate, context) {
 	const { job, scope } = candidate;
 	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
@@ -19328,7 +20494,7 @@ async function recordTerminal(store, scope, accountFingerprint, outcome, reason)
 	return result.status === "recorded";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -19483,7 +20649,7 @@ async function summarizePending(context) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	if (waitingOnBackoff(result)) return "deferred";
@@ -19509,7 +20675,7 @@ const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is requir
 const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
 const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
 	return Object.freeze({
@@ -19541,7 +20707,7 @@ function snapshotWriterOptions(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
 var MissingSettlementCaptureError = class extends Error {
 	constructor() {
 		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
@@ -19549,7 +20715,7 @@ var MissingSettlementCaptureError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	try {
 		return (await refreshSettlementProgress(await settleCapturedTurns({
@@ -19590,7 +20756,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 function validateRecoveryRequest(request) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError(TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE);
@@ -19742,7 +20908,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 function retryableFailure(error) {
 	return {
 		status: "failed",
@@ -19798,7 +20964,7 @@ async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
 async function drainThroughBackoff(drain) {
 	let waitedMs = 0;
 	let result = await drain();
@@ -19815,7 +20981,7 @@ async function drainThroughBackoff(drain) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
@@ -19935,12 +21101,12 @@ async function drainSession(context) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
 function resolveUploadDestinationFingerprint(options) {
 	return resolveUploadDestinationIdentities(options).accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/session.js
 function openPluginSession(options) {
 	const { storageRoot, integration, sessionId, writer } = options;
 	const callbacks = (id) => ({
@@ -19980,19 +21146,19 @@ function fingerprintOf(writer) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
 function builtAsBinary() {
 	return typeof LS_COMPILED_BINARY !== "undefined";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
 const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
 const SYSTEM_CERTIFICATE_STORE = "system";
 const CERTIFICATE_FILE_ENCODING = "utf8";
 const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
 const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
 function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
 	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
 	if (existing === file) return { environment };
@@ -20028,7 +21194,7 @@ function readIfPresent(file) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
 function launchDetachedWorker(args, options = {}) {
 	const root = options.storageRoot;
 	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
@@ -20078,7 +21244,7 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
 const shownInProcess = /* @__PURE__ */ new Set();
 async function shouldShowNotice(options) {
 	if (options.cooldown === "off") return false;
@@ -20094,7 +21260,7 @@ ${options.kind}`;
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/paths.js
 function nearestExistingDirectory(path) {
 	let current = path;
 	for (;;) {
@@ -20107,7 +21273,7 @@ function nearestExistingDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/git/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/constants.js
 const GIT_LOCATION_ENV_KEYS = [
 	"GIT_DIR",
 	"GIT_WORK_TREE",
@@ -20157,7 +21323,7 @@ const GH_LOGIN_TIMEOUT_MS = 5e3;
 const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
 const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
 function findExecutable(name, env, platform) {
 	const windows = platform === WINDOWS_PLATFORM;
 	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
@@ -20172,7 +21338,7 @@ function findExecutable(name, env, platform) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/git/repository.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/repository.js
 function parseRepoName(remoteUrl) {
 	const value = remoteUrl.trim();
 	try {
@@ -20316,7 +21482,7 @@ function installedCommand(name) {
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/git/github-login.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/github-login.js
 function createGitHubLoginFallback(options) {
 	const now = options.now ?? Date.now;
 	const retryAfterMs = options.retryAfterMs ?? 864e5;
@@ -20354,7 +21520,7 @@ function createGitHubLoginFallback(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/git/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/paths.js
 function gitMarkerAt(directory) {
 	const marker = join(directory, GIT_DIRECTORY_NAME);
 	try {
@@ -20384,7 +21550,7 @@ function rootFromGitMarker(directory) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/git/attribution.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/attribution.js
 function createRepositoryAttributor(options) {
 	const rootByDirectory = /* @__PURE__ */ new Map();
 	const attributionByRoot = /* @__PURE__ */ new Map();
@@ -20479,7 +21645,7 @@ function withoutRepositoryKeys(base, pinned) {
 	return stripped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -20518,12 +21684,12 @@ const LINUX_ACCOUNT_LIST_FILE = "/etc/passwd";
 const LINUX_ACCOUNT_LOOKUPS = ["/usr/bin/getent", "/bin/getent"];
 const UTF8_BOM = /^\uFEFF/;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/parse.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/parse.js
 function invalid(raw) {
 	return {
 		status: "invalid",
@@ -20637,7 +21803,7 @@ function parseCommonConfig(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
 let cachedBunHome;
 function accountHomeDirectory() {
 	if (process.versions.bun === void 0) return nodeAccountHome();
@@ -20697,7 +21863,7 @@ function homeField(entry, field) {
 	return home !== void 0 && isAbsolute(home) ? home : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
 const warned = /* @__PURE__ */ new Set();
 function warnOnce(lines) {
 	for (const line of lines) {
@@ -20707,7 +21873,7 @@ function warnOnce(lines) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
 function onlyOwnerCanChange(stats, ownerUid) {
 	return !stats.isSymbolicLink() && stats.uid === ownerUid && (stats.mode & 18) === 0;
 }
@@ -20766,7 +21932,7 @@ function lockPluginFields(managed, fields) {
 	return Object.fromEntries(present(fields.lockable).map((name) => [name, raw[name]]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
 function lockedValues(common) {
 	const lock = { ...common };
 	for (const field of COMMON_USER_ONLY_FIELDS) delete lock[field];
@@ -20809,7 +21975,7 @@ function overrideDiagnostics(sources, lock) {
 	return [MANAGED_CONFIG_OVERRIDE_WARNING.replace("{overrides}", list)];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 /** Resolve the first supplied value from sources ordered highest priority first. */
 function resolveField(sources, field) {
 	return sources.find((source) => source[field] !== void 0)?.[field];
@@ -20889,7 +22055,7 @@ function toSdkReplicas(replicas) {
 	}));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/settings/config-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/config-files.js
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
 	let fd;
@@ -20955,9 +22121,9 @@ const ENV_SUFFIXES = {
 	noticeCooldown: "NOTICE_COOLDOWN"
 };
 const PARENT_PROJECT_PROBE = "codex-parent-without-project";
-const AGENT_ADDRESS_PATTERN = /^lrn:agents\/([^/]+)\/environments\/[^/]+$/u;
 const PARENT_TRACE_HEADER = "langsmith-trace";
 const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"];
+const AGENT_ID_ENV_KEY = "LANGSMITH_AGENT_ID";
 const DEFAULT_MUTED_ENV_KEYS = ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"];
 const ENV_TRUE_VALUES = [
 	"1",
@@ -21155,6 +22321,7 @@ function readEnvironment(env) {
 		api_key: envVariable(env, ENV_SUFFIXES.apiKey, [PLUGIN_ENV_PREFIX]),
 		api_url: envVariable(env, ENV_SUFFIXES.apiUrl),
 		project: envVariable(env, ENV_SUFFIXES.project),
+		agent_id: nonBlank(env[AGENT_ID_ENV_KEY]),
 		metadata: parseJson(envVariable(env, ENV_SUFFIXES.metadata)),
 		replicas: parseJson(envVariable(env, ENV_SUFFIXES.replicas)),
 		redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
@@ -22580,10 +23747,15 @@ function createRunClient(config, credential) {
 		apiKey: config.api_key,
 		apiUrl: config.api_url
 	};
-	return credential.kind === "login" ? withLoginProfile(credential.login, () => new Client({
+	if (credential.kind !== "login") return new Client(options);
+	const { login } = credential;
+	return new Client({
 		...options,
-		workspaceId: credential.login.workspaceId
-	})) : new Client(options);
+		profile: login.profile,
+		profileConfigPath: login.configPath,
+		preferProfileAuth: true,
+		workspaceId: login.workspaceId
+	});
 }
 function normalizedSnapshot(payload) {
 	if (typeof payload.id !== "string" || typeof payload.name !== "string" || typeof payload.run_type !== "string" || !isRecord(payload.inputs)) throw new Error("Codex run identity or inputs are unavailable");
@@ -22622,16 +23794,6 @@ async function showPendingWarning(home) {
 	} catch {
 		return;
 	}
-}
-//#endregion
-//#region src/parent-destination.ts
-function parentDestination(config) {
-	if (!config.parent_headers) return {};
-	const parent = RunTree.fromHeaders(config.parent_headers, { project_name: PARENT_PROJECT_PROBE });
-	const agentId = parent?.address === void 0 ? void 0 : AGENT_ADDRESS_PATTERN.exec(parent.address)?.[1];
-	if (agentId !== void 0) return { agentId };
-	const projectName = parent?.project_name;
-	return projectName === void 0 || projectName === "codex-parent-without-project" ? {} : { projectName };
 }
 //#endregion
 //#region src/tracing-engine.ts
@@ -22831,6 +23993,14 @@ async function reconstructTranscript(job, workerConfig, home, plugin) {
 		outputs
 	};
 }
+function parentDestination(config) {
+	if (!config.parent_headers) return {};
+	const parent = RunTree.fromHeaders(config.parent_headers, { project_name: PARENT_PROJECT_PROBE });
+	const agentId = parent?.address?.id;
+	if (agentId !== void 0) return { agentId };
+	const projectName = parent?.project_name;
+	return projectName === void 0 || projectName === "codex-parent-without-project" ? {} : { projectName };
+}
 function parentRunTreeFor(config, client) {
 	return config.parent_headers ? RunTree.fromHeaders(config.parent_headers, {
 		client,
@@ -22861,7 +24031,7 @@ function writerOptions(config, storageRoot) {
 		...credential,
 		apiKey: config.api_key ?? credential.apiKey
 	} : credential;
-	const parent = config.locked.includes("project") ? {} : parentDestination(config);
+	const parent = config.locked.includes("project") || config.locked.includes("agent_id") ? {} : parentDestination(config);
 	const agentId = parent.agentId ?? (parent.projectName === void 0 ? config.agent_id : void 0);
 	return {
 		destinations: [{
@@ -22959,10 +24129,10 @@ async function queueCodexTurn(session, config, request, mode) {
 	await markTurnUploaded(transcriptPath, turnId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -22984,7 +24154,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_6bba9b9d9e0129da965a3400174395eb/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {

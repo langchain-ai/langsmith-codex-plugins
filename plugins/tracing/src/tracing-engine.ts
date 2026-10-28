@@ -33,6 +33,7 @@ import {
   GITHUB_LOGIN_MARKER_FILE_NAME,
   LIVE_RUN_EVENT_PREFIX,
   OPEN_CLOSURE,
+  PARENT_PROJECT_PROBE,
   SUBAGENT_AGENT_TYPE,
   LIVE_RUN_NOT_SAVED_MESSAGE,
   LS_INTEGRATION,
@@ -47,6 +48,7 @@ import type {
   CodexRecoveryResult,
   LiveToolRequest,
   LiveToolRuns,
+  ParentDestination,
 } from "./models/tracing-engine.js";
 import type { TracingMode } from "./models/tracing-policy.js";
 import { convertToRunTree } from "./trace.js";
@@ -61,7 +63,6 @@ import {
 } from "./tracing-engine-payload.js";
 import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
-import { parentDestination } from "./parent-destination.js";
 
 export function engineStorageRoot(home: string): string {
   return path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
@@ -282,6 +283,17 @@ async function reconstructTranscript(
   return { status: "ready", outputs };
 }
 
+function parentDestination(config: Config): ParentDestination {
+  if (!config.parent_headers) return {};
+  const parent = RunTree.fromHeaders(config.parent_headers, {
+    project_name: PARENT_PROJECT_PROBE,
+  });
+  const agentId = parent?.address?.id;
+  if (agentId !== undefined) return { agentId };
+  const projectName = parent?.project_name;
+  return projectName === undefined || projectName === PARENT_PROJECT_PROBE ? {} : { projectName };
+}
+
 function parentRunTreeFor(config: Config, client?: Client): RunTree | undefined {
   return config.parent_headers
     ? RunTree.fromHeaders(config.parent_headers, { client, project_name: config.project })
@@ -318,7 +330,10 @@ function writerOptions(
       : credential.kind === "api-key"
         ? { ...credential, apiKey: config.api_key ?? credential.apiKey }
         : credential;
-  const parent = config.locked.includes("project") ? {} : parentDestination(config);
+  const parent =
+    config.locked.includes("project") || config.locked.includes("agent_id")
+      ? {}
+      : parentDestination(config);
   const agentId =
     parent.agentId ?? (parent.projectName === undefined ? config.agent_id : undefined);
   return {

@@ -40,9 +40,9 @@ export const ENV_SUFFIXES = {
 export const STRICT_TRUE_VALUE = "true";
 export const STRICT_FALSE_VALUE = "false";
 export const PARENT_PROJECT_PROBE = "codex-parent-without-project";
-export const AGENT_ADDRESS_PATTERN = /^lrn:agents\/([^/]+)\/environments\/[^/]+$/u;
 export const PARENT_TRACE_HEADER = "langsmith-trace";
 export const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"] as const;
+export const AGENT_ID_ENV_KEY = "LANGSMITH_AGENT_ID";
 export const DEFAULT_MUTED_ENV_KEYS = [
   "LANGSMITH_CODEX_DEFAULT_MUTED",
   "LANGSMITH_DEFAULT_MUTED",

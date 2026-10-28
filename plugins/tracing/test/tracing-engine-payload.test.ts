@@ -77,7 +77,7 @@ afterEach(async () => {
 });
 
 it("builds the run client from the chosen login profile and workspace", async () => {
-  vi.stubEnv("LANGSMITH_API_KEY", undefined);
+  vi.stubEnv("LANGSMITH_API_KEY", "synthetic-shell-key");
   vi.stubEnv("LANGSMITH_PROFILE", undefined);
   home = await mkdtemp(path.join(tmpdir(), "codex-client-"));
   const configPath = path.join(home, "config.json");
@@ -99,4 +99,5 @@ it("builds the run client from the chosen login profile and workspace", async ()
     apiUrl: "https://two.example",
   });
   expect(client).toMatchObject({ apiUrl: "https://two.example", workspaceId: "ws-1" });
+  expect(client).toMatchObject({ apiKey: undefined });
 });
