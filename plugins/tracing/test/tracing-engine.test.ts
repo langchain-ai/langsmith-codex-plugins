@@ -79,6 +79,88 @@ it.each([{ replicas: [] }, { replicas: [{ api_url: "https://replica.example" }] 
   },
 );
 
+it("uploads with the configured CLI profile and workspace when signed in by login", async () => {
+  vi.stubEnv("LANGSMITH_API_KEY", undefined);
+  vi.stubEnv("LANGSMITH_PROFILE", undefined);
+  await mkdir(path.join(home, ".langsmith"));
+  await writeFile(
+    path.join(home, ".langsmith", "config.json"),
+    JSON.stringify({
+      current_profile: "default",
+      profiles: {
+        default: { api_url: "https://one.example", oauth: { access_token: "synthetic-one" } },
+        work: { api_url: "https://two.example", oauth: { access_token: "synthetic-two" } },
+      },
+    }),
+  );
+  const { writer } = open({
+    ...base,
+    api_key: undefined,
+    profile: "work",
+    workspace_id: "11111111-1111-4111-8111-111111111111",
+  });
+  expect(writer.destinations[0]).toMatchObject({
+    apiUrl: "https://two.example",
+    login: { profile: "work", workspaceId: "11111111-1111-4111-8111-111111111111" },
+  });
+});
+
+it("sends the primary upload to the configured agent and refuses an invalid agent ID", () => {
+  const { writer } = open({ ...base, agent_id: "my-agent", replicas: [{ project: "copy" }] });
+  expect(writer.destinations[0].agentId).toBe("my-agent");
+  expect(writer.replicas[0]).not.toHaveProperty("agentId");
+  engine.options = undefined;
+  createCodexTracingSession({ ...base, agent_id: "Not Valid" }, "thread-2", "/work/repo", home);
+  expect(engine.options).toBeUndefined();
+});
+
+const parentHeaders = (baggage?: string) => ({
+  "langsmith-trace": "20250101T000000000000Z019dbc02-0000-7000-8000-000000000001",
+  ...(baggage === undefined ? {} : { baggage }),
+});
+
+it.each([
+  [
+    "a parent in a project beats agent_id",
+    "langsmith-project=parent-project",
+    "parent-project",
+    undefined,
+  ],
+  [
+    "a parent in an agent beats agent_id",
+    `langsmith-address=${encodeURIComponent("lrn:agents/parent-agent/environments/staging")}`,
+    "configured",
+    "parent-agent",
+  ],
+  ["a parent naming nothing leaves agent_id", undefined, "configured", "my-agent"],
+])("nested trace: %s", (_name, baggage, projectName, agentId) => {
+  const { writer } = open({
+    ...base,
+    project: "configured",
+    agent_id: "my-agent",
+    parent_headers: parentHeaders(baggage) as Config["parent_headers"],
+  });
+  expect(writer.destinations[0].projectName).toBe(projectName);
+  expect(writer.destinations[0].agentId).toBe(agentId);
+});
+
+it("keeps a managed-locked agent_id over a parent trace's project or agent", () => {
+  for (const baggage of [
+    "langsmith-project=parent-project",
+    `langsmith-address=${encodeURIComponent("lrn:agents/parent-agent/environments/production")}`,
+  ]) {
+    const { writer } = open({
+      ...base,
+      project: "configured",
+      agent_id: "my-agent",
+      locked: ["agent_id"],
+      parent_headers: parentHeaders(baggage) as Config["parent_headers"],
+    });
+    expect(writer.destinations[0].agentId).toBe("my-agent");
+    expect(writer.destinations[0].projectName).toBe("configured");
+  }
+});
+
 it("uploads to the project named by the parent headers, with the configured redaction", () => {
   const parent = "019dbc02-0000-7000-8000-000000000001";
   const { writer } = open({

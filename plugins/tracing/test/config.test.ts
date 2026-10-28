@@ -108,6 +108,7 @@ it("applies all environment values over config files", async () => {
       api_key: "local-key",
       api_url: "https://local.example",
       project: "local-project",
+      agent_id: "local-agent",
     },
   });
 
@@ -115,6 +116,7 @@ it("applies all environment values over config files", async () => {
   vi.stubEnv("LANGSMITH_CODEX_API_KEY", "env-key");
   vi.stubEnv("LANGSMITH_ENDPOINT", "https://env.example");
   vi.stubEnv("LANGSMITH_PROJECT", "env-project");
+  vi.stubEnv("LANGSMITH_AGENT_ID", "env-agent");
   vi.stubEnv("LANGSMITH_METADATA", JSON.stringify({ source: "env" }));
   vi.stubEnv(
     "LANGSMITH_RUNS_ENDPOINTS",
@@ -129,6 +131,7 @@ it("applies all environment values over config files", async () => {
     api_key: "env-key",
     api_url: "https://env.example",
     project: "env-project",
+    agent_id: "env-agent",
     metadata: { source: "env" },
     replicas: [{ api_url: "https://env-replica.example" }],
     redact: true,

@@ -1,5 +1,5 @@
 minimumReleaseAge: 1440
-minimumReleaseAgeExclude: ["@langchain/plugins-base"]
+minimumReleaseAgeExclude: ["@langchain/plugins-base", "langsmith"]
 packages: ["."]
 overrides:
   vite: 8.1.6

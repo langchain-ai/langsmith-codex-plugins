@@ -88,19 +88,24 @@ Redaction is not a guarantee that what you upload is safe to share.
 
 Every setting has a config key and an environment variable. The `LANGSMITH_CODEX_` form wins over the plain `LANGSMITH_` one, except that a plain `LANGSMITH_API_KEY` only counts when there's no login.
 
-| Config key           | Environment variable              | Default                           | What it does                            |
-| -------------------- | --------------------------------- | --------------------------------- | --------------------------------------- |
-| `enabled`            | `TRACE_TO_LANGSMITH`              | `false`                           | Whether to trace at all                 |
-| `api_key`            | `LANGSMITH_CODEX_API_KEY`         | none                              | Your LangSmith key                      |
-| `project`            | `LANGSMITH_CODEX_PROJECT`         | `codex`                           | Where runs land                         |
-| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`        | `https://api.smith.langchain.com` | Which server to send to                 |
-| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`   | `false`                           | Leave content out unless told otherwise |
-| `redact`             | `LANGSMITH_CODEX_REDACT`          | `true`                            | Strip secrets before upload             |
-| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`    | none                              | Extra patterns to strip                 |
-| `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run              |
-| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too  |
-| `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`       |
-| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again  |
+| Config key           | Environment variable              | Default                           | What it does                                                          |
+| -------------------- | --------------------------------- | --------------------------------- | --------------------------------------------------------------------- |
+| `enabled`            | `TRACE_TO_LANGSMITH`              | `false`                           | Whether to trace at all                                               |
+| `api_key`            | `LANGSMITH_CODEX_API_KEY`         | none                              | Your LangSmith key                                                    |
+| `project`            | `LANGSMITH_CODEX_PROJECT`         | `codex`                           | Where runs land                                                       |
+| `api_url`            | `LANGSMITH_CODEX_ENDPOINT`        | `https://api.smith.langchain.com` | Which server to send to                                               |
+| `defaultMuted`       | `LANGSMITH_CODEX_DEFAULT_MUTED`   | `false`                           | Leave content out unless told otherwise                               |
+| `redact`             | `LANGSMITH_CODEX_REDACT`          | `true`                            | Strip secrets before upload                                           |
+| `redact_extra_rules` | `LANGSMITH_CODEX_REDACT_EXTRA`    | none                              | Extra patterns to strip                                               |
+| `metadata`           | `LANGSMITH_CODEX_METADATA`        | none                              | Custom fields on every run                                            |
+| `replicas`           | `LANGSMITH_CODEX_RUNS_ENDPOINTS`  | none                              | Send the same trace somewhere else too                                |
+| `notice_cooldown`    | `LANGSMITH_CODEX_NOTICE_COOLDOWN` | `2`                               | Minutes between repeats, or `off`                                     |
+| `strict_auth`        | `LANGSMITH_CODEX_STRICT_AUTH`     | `false`                           | Refuse prompts until you sign in again                                |
+| `profile`            | none                              | current CLI profile               | Which `langsmith auth login` to use                                   |
+| `workspace_id`       | none                              | the login's workspace             | Workspace a login uploads to                                          |
+| `agent_id`           | none                              | none                              | Send traces to this agent's production environment, beating `project` |
+
+The `profile` setting is personal, so the managed file can't lock it, and `LANGSMITH_PROFILE` is only used when no `profile` is set since a setting from a file beats it.
 
 ### Lock settings with a managed file
 

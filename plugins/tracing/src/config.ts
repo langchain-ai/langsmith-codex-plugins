@@ -6,6 +6,7 @@ import {
   readCommonConfigFiles,
 } from "@langchain/plugins-base/settings";
 import {
+  AGENT_ID_ENV_KEY,
   CODEX_CONFIG_DIRECTORY,
   DEFAULT_LANGSMITH_PROJECT_NAME,
   DEFAULT_MUTED_ENV_KEYS,
@@ -102,6 +103,7 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
     api_key: envVariable(env, ENV_SUFFIXES.apiKey, [PLUGIN_ENV_PREFIX]),
     api_url: envVariable(env, ENV_SUFFIXES.apiUrl),
     project: envVariable(env, ENV_SUFFIXES.project),
+    agent_id: nonBlank(env[AGENT_ID_ENV_KEY]),
     metadata: parseJson(envVariable(env, ENV_SUFFIXES.metadata)),
     replicas: parseJson(envVariable(env, ENV_SUFFIXES.replicas)),
     redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),

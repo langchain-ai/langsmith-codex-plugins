@@ -4,11 +4,17 @@ import * as path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { handlePromptSubmit } from "../src/user-prompt-submit.js";
 
-const launch = vi.hoisted(() => ({ notice: "key rejected" as string | undefined }));
+const launch = vi.hoisted(() => ({
+  notice: "key rejected" as string | undefined,
+  profile: undefined as string | undefined,
+}));
 
 vi.mock("@langchain/plugins-base/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@langchain/plugins-base/auth")>()),
-  readLoginNotice: () => launch.notice,
+  readLoginNotice: (...args: unknown[]) => {
+    launch.profile = args[3] as string | undefined;
+    return launch.notice;
+  },
 }));
 
 let home: string;
@@ -22,6 +28,7 @@ beforeEach(async () => {
   vi.stubEnv("LANGSMITH_CODEX_API_KEY", "synthetic-key");
   vi.stubEnv("LANGSMITH_CODEX_STRICT_AUTH", "true");
   launch.notice = "key rejected";
+  launch.profile = undefined;
 });
 
 afterEach(async () => {
@@ -58,4 +65,10 @@ it("refuses a muted conversation in strict mode too", async () => {
     decision: "block",
     reason: "key rejected",
   });
+});
+
+it("asks for the sign-in notice of the configured CLI profile", async () => {
+  await fs.writeFile(path.join(home, ".langsmith-plugins.json"), '{"profile":"work"}');
+  await submit("one");
+  expect(launch.profile).toBe("work");
 });

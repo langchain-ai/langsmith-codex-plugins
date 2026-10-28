@@ -49,3 +49,8 @@ export interface CodexTurnRequest {
 export type CodexRecoveryResult = Parameters<
   NonNullable<PluginSessionOptions["onRecoveryReport"]>
 >[0];
+
+export interface ParentDestination {
+  agentId?: string;
+  projectName?: string;
+}
