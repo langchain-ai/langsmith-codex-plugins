@@ -1,5 +1,7 @@
 import { FileLockTimeoutError, withFileLock } from "@langchain/plugins-base/storage";
-import { SIDECAR_SUFFIX } from "./constants.js";
+import { HOOK_FIRINGS_SUFFIX, SIDECAR_SUFFIX } from "./constants.js";
+import type { Config } from "./models/config.js";
+import type { CodexHookInput, HookFiring } from "./models/hook-input.js";
 import * as fs from "node:fs/promises";
 
 export function withSidecarLock<T>(rolloutFile: string, action: () => Promise<T>): Promise<T> {
@@ -33,4 +35,35 @@ export async function markTurnUploaded(rolloutFile: string, turnId: string): Pro
   } catch {
     return false;
   }
+}
+
+export async function recordHookFiring(
+  config: Config,
+  input: Partial<CodexHookInput>,
+): Promise<void> {
+  if (!config.enabled || !config.capture_hook_outputs || !input.transcript_path) return;
+  const firing: HookFiring = {
+    event: input.hook_event_name,
+    turn_id: input.turn_id,
+    tool_use_id: input.tool_use_id,
+    time: performance.timeOrigin,
+  };
+  await fs.appendFile(
+    `${input.transcript_path}${HOOK_FIRINGS_SUFFIX}`,
+    `${JSON.stringify(firing)}\n`,
+  );
+}
+
+export async function loadHookFirings(rolloutFile: string): Promise<HookFiring[]> {
+  const data = await fs.readFile(`${rolloutFile}${HOOK_FIRINGS_SUFFIX}`, "utf-8").catch(() => "");
+  return data
+    .split("\n")
+    .flatMap((line): HookFiring[] => {
+      try {
+        return [JSON.parse(line)];
+      } catch {
+        return [];
+      }
+    })
+    .toSorted((a, b) => a.time - b.time);
 }

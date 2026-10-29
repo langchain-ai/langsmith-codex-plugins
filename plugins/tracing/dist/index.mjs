@@ -36,7 +36,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -49,7 +49,7 @@ function failureStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/constants.js
 const POLICY_LOCK_TIMEOUT_MS = 2e3;
 const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
 const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
@@ -81,7 +81,7 @@ const HOOK_ERROR_HANDLER_WARNING = "The hook error handler failed:";
 const NOTICE_MINUTE_MS = 6e4;
 const NOTICE_STATE_FILE = "notices.json";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
 async function dispatchHookCommand(argv, options) {
 	assertHookOptions(options);
 	const [argument, ...rest] = argv;
@@ -109,7 +109,7 @@ function reportHookError(name, error, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/constants.js
 const FILE_MISSING_CODE = "ENOENT";
 const WINDOWS_PLATFORM = "win32";
 const FILE_EXISTS_CODE = "EEXIST";
@@ -120,7 +120,7 @@ const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
 const INVALID_ARGUMENT_CODE = "EINVAL";
 const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
 	DIRECTORY_NOT_EMPTY_CODE,
@@ -130,7 +130,7 @@ const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_ACCESS_DENIED_CODE
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
 async function removeFileIfPresent(path) {
 	try {
 		await unlink(path);
@@ -160,7 +160,7 @@ async function removeEmptyAncestors(directory, root) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -203,12 +203,12 @@ const STORAGE_ENGINE_FILE_PATTERNS = [
 ];
 const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_JOBS_DIRECTORY = "jobs";
 const CAPTURE_SESSIONS_DIRECTORY = "sessions";
 const CAPTURE_TURNS_DIRECTORY = "turns";
@@ -247,7 +247,7 @@ const CAPTURE_FILE_EXTENSION = ".json";
 const CAPTURE_LOCK_EXTENSION = ".lock";
 const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -286,7 +286,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -353,7 +353,7 @@ function parseJsonObject(contents, message) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	blockedPath;
 	constructor(blockedPath) {
@@ -373,7 +373,7 @@ var StorageNotWritableError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
 const heartbeats = /* @__PURE__ */ new Map();
 function startHeartbeat(path, id) {
 	const timer = setInterval(() => {
@@ -391,7 +391,7 @@ function warnUnlessMissing(error) {
 	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
 function processIsAlive(pid) {
 	try {
 		process.kill(pid, 0);
@@ -424,7 +424,7 @@ function waitForNextScan(deadline, blockedPath) {
 	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
 async function createLegacyGate(gatePath) {
 	await mkdir(gatePath, { mode: 448 });
 	const stat = await lstat(gatePath);
@@ -578,7 +578,7 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function parseClaim(value, id) {
 	if (!isPlainRecord(value)) return void 0;
 	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
@@ -888,7 +888,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
 function readPolicyFile(path, options) {
 	let raw;
 	try {
@@ -986,11 +986,11 @@ function findLockTimeout(error) {
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
 var CaptureRecordInvalidError = class extends Error {};
 var CaptureRecordVersionError = class extends Error {};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
 function publishByRename(path, contents, tempSuffix, mode) {
 	const temp = `${path}.${randomUUID()}${tempSuffix}`;
 	const fd = openSync(temp, "wx", mode);
@@ -1002,7 +1002,7 @@ function publishByRename(path, contents, tempSuffix, mode) {
 	renameSync(temp, path);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
 const STATE_TEMP_SUFFIX = ".state.tmp";
 const STATE_CORRUPT_SUFFIX = ".corrupt";
 const STATE_FILE_ENCODING = "utf-8";
@@ -1015,7 +1015,7 @@ const PENDING_STATE_FILE_SUFFIX = ".json";
 const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
 const STATE_CLAIM_SUFFIX = ".claim";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
 let sequence = 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function diffValue(path, before, after, operations) {
@@ -1171,7 +1171,7 @@ function removePending(stateFilePath, files) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/state-store.js
 function createStateStore(options) {
 	const { path } = options;
 	const warn = options.warn ?? console.warn;
@@ -1251,7 +1251,7 @@ async function withStateFileLock(path, warn, callback, waitMs) {
 	return true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
 async function claimStateEntry(path, key, windowMs) {
 	mkdirSync(dirname(path), {
 		recursive: true,
@@ -1277,7 +1277,7 @@ async function claimStateEntry(path, key, windowMs) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -1327,7 +1327,7 @@ function recordLockPath(root, scope) {
 	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
 }
@@ -1482,7 +1482,7 @@ async function syncDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -1509,7 +1509,7 @@ async function lstatDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
 function scopeOf(value) {
 	return {
 		integration: value.integration,
@@ -1527,19 +1527,19 @@ function scopeKey(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/compare.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/compare.js
 function compareText(left, right) {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
 function compareCaptureOrder(left, right) {
 	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
 	return compareText(left.eventId, right.eventId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
 function captureContentDigest(record) {
 	const content = { ...record };
 	delete content.version;
@@ -1549,7 +1549,7 @@ function captureContentDigest(record) {
 	return createHash("sha256").update(canonicalJson(content)).digest("hex");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
 function markerPath(root, scope) {
 	const path = eventPath(root, scope);
 	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
@@ -1677,7 +1677,7 @@ async function removeOldMarkers(root, directory, modifiedBeforeMs) {
 	return removed;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
 	const storageRoot = {
 		root: resolve(root),
@@ -2132,17 +2132,17 @@ function failure(code, error) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/format.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
 function isWaitingForOtherSetting(record, accountFingerprint) {
 	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
 function liveTurnSpans(captures) {
 	const spans = /* @__PURE__ */ new Map();
 	for (const { record, capturedAtMs } of captures) {
@@ -2198,7 +2198,7 @@ async function removeExpiredCaptures(options) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_LOCK_FILE = "worker";
 const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
 const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
@@ -2237,7 +2237,7 @@ const BACKGROUND_WORKER_FILE_PREFIX = "wake";
 const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
 const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -2270,13 +2270,13 @@ function scopedWorkerFileName(scope, name) {
 	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
 function assertPlainFile(entry, message) {
 	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
 }
@@ -2364,7 +2364,7 @@ function parseAttempt(contents, markerId, attempt) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const context = createWorkerContext(options);
@@ -2604,7 +2604,7 @@ async function readLaunch(storageRoot, scope) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
 function ifMissing(fallback) {
 	return (error) => {
 		if (errorCode(error) === "ENOENT") return fallback;
@@ -2612,7 +2612,7 @@ function ifMissing(fallback) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
 async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
 	let removed = 0;
 	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
@@ -2674,13 +2674,13 @@ const DELIVERY_DRAIN_LOCK = "delivery";
 const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
 const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
 const PROCESS_STARTED_AT_MS = Date.now();
 function isWaitingForRetry(retry, now = Date.now()) {
 	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
 function createBatch() {
 	return {
 		candidates: [],
@@ -2704,7 +2704,7 @@ function joinBatch(batch, candidate) {
 	batch.bytes += payloadBytes(candidate.entry.record);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
 function isRetryable(error) {
 	return error?.retryable !== false;
 }
@@ -2727,7 +2727,7 @@ function nextRetry(previous, baseMs) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
 function emptyDestinationResult() {
 	return {
 		delivered: 0,
@@ -2808,7 +2808,7 @@ async function settleDroppedDependency(drainCache, candidate, destination, resul
 	result.progressed = true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
 async function trySend(context, destination, candidates) {
 	const { policy, request } = context;
 	const { writer } = request;
@@ -2871,7 +2871,7 @@ async function deliverBatch(context, destination, candidates) {
 	return settleFailed(context, destination, candidates, error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
 function deliveryKey(scope, destination) {
 	return JSON.stringify([scopeKey(scope), destination]);
 }
@@ -2935,7 +2935,7 @@ async function countPending(drainCache, entries, destinations) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
 async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
 	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
@@ -3055,7 +3055,7 @@ async function dropPending(drainCache, candidate, reason) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
 function validateDrainRequest(request) {
 	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
 	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
@@ -3105,7 +3105,7 @@ function resolvePolicy(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 async function drainUnderLock(context, request, drainCache) {
 	const { captureStore, integration, sessionId, storageRoot, policy } = context;
 	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
@@ -3172,12 +3172,12 @@ function createDeliveryCoordinator(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
 const SDK_DOUBLE_QUOTED = /^"(.*)"$/;
 const SDK_SINGLE_QUOTED = /^'(.*)'$/;
 const SDK_PROFILE_QUOTES = /^["']|["']$/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
 function sdkSetting(value) {
 	if (typeof value !== "string") return void 0;
 	const trimmed = value.trim().replace(SDK_DOUBLE_QUOTED, "$1").replace(SDK_SINGLE_QUOTED, "$1");
@@ -3188,7 +3188,7 @@ function sdkProfileValue(value) {
 	return value.trim().replace(SDK_PROFILE_QUOTES, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/auth/constants.js
 const LOGIN_CONFIG_FILE_VARIABLE = "LANGSMITH_CONFIG_FILE";
 const LOGIN_HOME_VARIABLES = ["HOME", "USERPROFILE"];
 const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
@@ -3237,7 +3237,7 @@ const LOGIN_WORKSPACE_INVALID_REASON = [
 const LOGIN_WORKSPACE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/profile.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/auth/profile.js
 function readLoginProfile(env, profile) {
 	const configPath = loginConfigPath(env);
 	return configPath === void 0 ? void 0 : readProfileAt(configPath, profile || env["LANGSMITH_PROFILE"] || void 0);
@@ -3300,7 +3300,7 @@ function credentialHash(value) {
 	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
 const LOGIN_PAUSED_NOTICE = [
 	LOGIN_NOTICE_HEADING,
 	"Your LangSmith login expired so this session isn't being traced.",
@@ -3323,7 +3323,7 @@ const LOGIN_STATE_FILE = "sign-in.json";
 const LOGIN_NOTICE_KIND = "login-expired";
 const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/auth/expiry.js
 const unrecorded = /* @__PURE__ */ new Set();
 async function recordExpiredLogin(login, sentTokenHash, storageRoot, denied = false) {
 	try {
@@ -3409,7 +3409,7 @@ function loginStore(storageRoot) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const GIT_METADATA_KEYS = {
@@ -3625,7 +3625,7 @@ const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
 const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
 const CODING_AGENT_REVISION_ID_KEY = "revision_id";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field$2(key, options = {}) {
 	return {
 		key,
@@ -3762,7 +3762,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
 function withBothGitMetadataNames(metadata) {
 	const both = { ...metadata };
 	for (const role of Object.keys(GIT_METADATA_KEYS)) {
@@ -3774,7 +3774,7 @@ function withBothGitMetadataNames(metadata) {
 	return both;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function metadataFieldTypeIssue(field, value) {
 	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
 }
@@ -3826,7 +3826,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -3884,7 +3884,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
 function forwardsEnvironmentVariable(name, value, environmentMetadata) {
 	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
 }
@@ -3911,7 +3911,7 @@ function buildCodingAgentRuntimeMetadata(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -3928,7 +3928,7 @@ function metadataForMode(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -17192,7 +17192,7 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -17209,7 +17209,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -17327,7 +17327,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -17403,7 +17403,7 @@ const UPLOAD_LOGIN_FIELD_NAMES = {
 	workspaceId: "login workspace ID"
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 const rejectedAuthorizations = /* @__PURE__ */ new WeakMap();
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, login, anonymizer, redactedFields } = options;
@@ -17446,7 +17446,7 @@ function takeRejectedAccessToken(client) {
 	return authorization?.replace(UPLOAD_BEARER_PATTERN, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/credential.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/auth/credential.js
 function resolveUploadCredential(options = {}) {
 	const env = options.env ?? process.env;
 	const workspaceId = sdkSetting(options.workspaceId);
@@ -17515,7 +17515,7 @@ function loginReplicaRefusal(replicas, apiUrl) {
 	return configured.some((replica) => sdkSetting(replica.apiKey) !== void 0 || replica.apiUrl === void 0 || sameServer(replica.apiUrl, apiUrl)) ? void 0 : refusedLoginReplicas(configured, apiUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -17871,7 +17871,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -17892,7 +17892,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -17921,7 +17921,7 @@ function usesLogin(login, client) {
 	return loginUrl === void 0 || typeof clientUrl === "string" && sameServer(clientUrl, loginUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
 function createUploadClientCache() {
 	const clientsByMode = /* @__PURE__ */ new Map();
 	return { forSubmission(destination, submission) {
@@ -17940,7 +17940,7 @@ function createUploadClientCache() {
 	} };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
 var UploadError = class extends Error {
 	retryable;
 	status;
@@ -17958,7 +17958,7 @@ function isAlreadyReceived(cause) {
 	return failureStatus(cause) === 409 && describe(cause).includes("already received");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
 function applyRuntimeMetadata(payload, privacyMode) {
 	if (privacyMode !== "full") return;
 	const added = buildCodingAgentRuntimeMetadata({
@@ -17981,7 +17981,7 @@ function applyRuntimeMetadata(payload, privacyMode) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function contextForDestination(context, destination) {
 	if (destination.sourceProjectName === void 0) return context;
 	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
@@ -18021,7 +18021,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
 function applyReplicaPatchUpdates(payload, destination, privacyMode) {
 	if (privacyMode !== "full" || destination.updates === void 0) return;
 	const mutablePayload = payload;
@@ -18046,7 +18046,7 @@ function mergeReplicaExtra(baseValue, updateValue) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
 async function withDeadline(work) {
 	let timer;
 	const expired = new Promise((_resolve, reject) => {
@@ -18059,7 +18059,7 @@ async function withDeadline(work) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
 function samplingRate(environment) {
 	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
 		const value = environment[name]?.trim();
@@ -18077,7 +18077,7 @@ function traceIdOf(run) {
 	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
 function startTimeFromDottedOrder(dottedOrder) {
 	if (typeof dottedOrder !== "string") return void 0;
 	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
@@ -18092,7 +18092,7 @@ function startTimeText(supplied, dottedOrder) {
 	return startTimeFromDottedOrder(dottedOrder);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -18316,11 +18316,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -18353,7 +18353,7 @@ async function readSavedCaptureWake(error, options) {
 	} : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -18392,7 +18392,7 @@ const LIFECYCLE_IDENTITY_FIELD_LABELS = [
 	["dotted_order", "Dotted order"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
 async function captureReadiness(scopes, destinations, readOutcome) {
 	const pending = /* @__PURE__ */ new Set();
 	const dropped = /* @__PURE__ */ new Set();
@@ -18415,7 +18415,7 @@ async function captureReadiness(scopes, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -18516,7 +18516,7 @@ function field$1(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -18576,7 +18576,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
@@ -18825,7 +18825,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
 function projectCapture(record, integration) {
 	const submission = projectSubmission({
 		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
@@ -18919,14 +18919,14 @@ function closureRank(state) {
 	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
 const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
 const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
 function recordRun(events) {
 	const latest = events.at(-1);
 	const run = latest.payload.run;
@@ -18970,7 +18970,7 @@ function mergeMetadataObject(previous, current) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
 function uniqueScopes(scopes) {
 	const unique = /* @__PURE__ */ new Map();
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
@@ -19061,7 +19061,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
 function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
 	const revision = createHash("sha256").update(JSON.stringify({
 		turnId,
@@ -19074,7 +19074,7 @@ function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, 
 	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
 function hasCausalRunError(events) {
 	let hasError = false;
 	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
@@ -19097,7 +19097,7 @@ function retainedEndTime(events) {
 	return endTime;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	const named = withBothGitMetadataNames(metadata ?? {});
@@ -19129,7 +19129,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
 function unsettled(settlementReport) {
 	return {
 		report: settlementReport,
@@ -19355,7 +19355,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}, requiredRunIds, currentByRunId, generated, options);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -19422,7 +19422,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -19453,7 +19453,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
 async function removeSettledTurns(options) {
 	const known = new Set(options.knownScopes.map(turnEventKey));
 	const removable = /* @__PURE__ */ new Map();
@@ -19512,7 +19512,7 @@ function field(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const context = createBridgeContext(options);
 	return Object.freeze({
@@ -19857,7 +19857,7 @@ function restoreSubmission(record, integration) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
@@ -19974,13 +19974,13 @@ const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
 const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
 const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
 function assertKnownKeys(record, required, optional, message) {
 	const keys = Object.keys(record);
 	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
 function readEventId(output, seen) {
 	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
 	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
@@ -20214,7 +20214,7 @@ function validateTurnEvidence(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
 function snapshotJob(job) {
 	return Object.freeze({
 		...job,
@@ -20391,7 +20391,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
 async function processJob(candidate, context) {
 	const { job, scope } = candidate;
 	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
@@ -20494,7 +20494,7 @@ async function recordTerminal(store, scope, accountFingerprint, outcome, reason)
 	return result.status === "recorded";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -20649,7 +20649,7 @@ async function summarizePending(context) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	if (waitingOnBackoff(result)) return "deferred";
@@ -20675,7 +20675,7 @@ const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is requir
 const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
 const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
 	return Object.freeze({
@@ -20707,7 +20707,7 @@ function snapshotWriterOptions(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
 var MissingSettlementCaptureError = class extends Error {
 	constructor() {
 		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
@@ -20715,7 +20715,7 @@ var MissingSettlementCaptureError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	try {
 		return (await refreshSettlementProgress(await settleCapturedTurns({
@@ -20756,7 +20756,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 function validateRecoveryRequest(request) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError(TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE);
@@ -20908,7 +20908,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 function retryableFailure(error) {
 	return {
 		status: "failed",
@@ -20964,7 +20964,7 @@ async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
 async function drainThroughBackoff(drain) {
 	let waitedMs = 0;
 	let result = await drain();
@@ -20981,7 +20981,7 @@ async function drainThroughBackoff(drain) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
@@ -21101,12 +21101,12 @@ async function drainSession(context) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
 function resolveUploadDestinationFingerprint(options) {
 	return resolveUploadDestinationIdentities(options).accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/session.js
 function openPluginSession(options) {
 	const { storageRoot, integration, sessionId, writer } = options;
 	const callbacks = (id) => ({
@@ -21146,19 +21146,19 @@ function fingerprintOf(writer) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
 function builtAsBinary() {
 	return typeof LS_COMPILED_BINARY !== "undefined";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
 const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
 const SYSTEM_CERTIFICATE_STORE = "system";
 const CERTIFICATE_FILE_ENCODING = "utf8";
 const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
 const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
 function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
 	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
 	if (existing === file) return { environment };
@@ -21194,7 +21194,7 @@ function readIfPresent(file) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
 function launchDetachedWorker(args, options = {}) {
 	const root = options.storageRoot;
 	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
@@ -21244,7 +21244,7 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
 const shownInProcess = /* @__PURE__ */ new Set();
 async function shouldShowNotice(options) {
 	if (options.cooldown === "off") return false;
@@ -21260,7 +21260,7 @@ ${options.kind}`;
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/paths.js
 function nearestExistingDirectory(path) {
 	let current = path;
 	for (;;) {
@@ -21273,7 +21273,7 @@ function nearestExistingDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/git/constants.js
 const GIT_LOCATION_ENV_KEYS = [
 	"GIT_DIR",
 	"GIT_WORK_TREE",
@@ -21323,7 +21323,7 @@ const GH_LOGIN_TIMEOUT_MS = 5e3;
 const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
 const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
 function findExecutable(name, env, platform) {
 	const windows = platform === WINDOWS_PLATFORM;
 	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
@@ -21338,7 +21338,7 @@ function findExecutable(name, env, platform) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/repository.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/git/repository.js
 function parseRepoName(remoteUrl) {
 	const value = remoteUrl.trim();
 	try {
@@ -21482,7 +21482,7 @@ function installedCommand(name) {
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/github-login.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/git/github-login.js
 function createGitHubLoginFallback(options) {
 	const now = options.now ?? Date.now;
 	const retryAfterMs = options.retryAfterMs ?? 864e5;
@@ -21520,7 +21520,7 @@ function createGitHubLoginFallback(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/git/paths.js
 function gitMarkerAt(directory) {
 	const marker = join(directory, GIT_DIRECTORY_NAME);
 	try {
@@ -21550,7 +21550,7 @@ function rootFromGitMarker(directory) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/attribution.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/git/attribution.js
 function createRepositoryAttributor(options) {
 	const rootByDirectory = /* @__PURE__ */ new Map();
 	const attributionByRoot = /* @__PURE__ */ new Map();
@@ -21645,7 +21645,7 @@ function withoutRepositoryKeys(base, pinned) {
 	return stripped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -21656,7 +21656,11 @@ const COMMON_BOOLEAN_SETTINGS = {
 		restrictive: true
 	}
 };
-const COMMON_STRICT_BOOLEAN_FIELDS = ["redact", "strict_auth"];
+const COMMON_STRICT_BOOLEAN_FIELDS = [
+	"redact",
+	"strict_auth",
+	"capture_hook_outputs"
+];
 const COMMON_DEFAULT_API_URL = "https://api.smith.langchain.com";
 const COMMON_USER_ONLY_FIELDS = ["profile"];
 const COMMON_CONFIG_FILE_NAME = "langsmith.json";
@@ -21684,12 +21688,12 @@ const LINUX_ACCOUNT_LIST_FILE = "/etc/passwd";
 const LINUX_ACCOUNT_LOOKUPS = ["/usr/bin/getent", "/bin/getent"];
 const UTF8_BOM = /^\uFEFF/;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/parse.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/parse.js
 function invalid(raw) {
 	return {
 		status: "invalid",
@@ -21803,7 +21807,7 @@ function parseCommonConfig(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
 let cachedBunHome;
 function accountHomeDirectory() {
 	if (process.versions.bun === void 0) return nodeAccountHome();
@@ -21863,7 +21867,7 @@ function homeField(entry, field) {
 	return home !== void 0 && isAbsolute(home) ? home : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
 const warned = /* @__PURE__ */ new Set();
 function warnOnce(lines) {
 	for (const line of lines) {
@@ -21873,7 +21877,7 @@ function warnOnce(lines) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
 function onlyOwnerCanChange(stats, ownerUid) {
 	return !stats.isSymbolicLink() && stats.uid === ownerUid && (stats.mode & 18) === 0;
 }
@@ -21932,7 +21936,7 @@ function lockPluginFields(managed, fields) {
 	return Object.fromEntries(present(fields.lockable).map((name) => [name, raw[name]]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
 function lockedValues(common) {
 	const lock = { ...common };
 	for (const field of COMMON_USER_ONLY_FIELDS) delete lock[field];
@@ -21975,7 +21979,7 @@ function overrideDiagnostics(sources, lock) {
 	return [MANAGED_CONFIG_OVERRIDE_WARNING.replace("{overrides}", list)];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 /** Resolve the first supplied value from sources ordered highest priority first. */
 function resolveField(sources, field) {
 	return sources.find((source) => source[field] !== void 0)?.[field];
@@ -22038,6 +22042,7 @@ function mergeCommonConfig(sources, options = {}) {
 	merged.redact = resolveField(precedence, "redact") ?? true;
 	merged.redact_extra_rules = resolveField(precedence, "redact_extra_rules");
 	merged.strict_auth = resolveField(precedence, "strict_auth");
+	merged.capture_hook_outputs = resolveField(precedence, "capture_hook_outputs");
 	merged.notice_cooldown = resolveField(precedence, "notice_cooldown");
 	if (precedence.some((source) => source.metadata !== void 0)) merged.metadata = [...precedence].reverse().reduce((metadata, source) => ({
 		...metadata,
@@ -22055,7 +22060,7 @@ function toSdkReplicas(replicas) {
 	}));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/config-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/settings/config-files.js
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
 	let fd;
@@ -22117,6 +22122,7 @@ const ENV_SUFFIXES = {
 	redact: "REDACT",
 	redactExtraRules: "REDACT_EXTRA",
 	strictAuth: "STRICT_AUTH",
+	captureHookOutputs: "CAPTURE_HOOK_OUTPUTS",
 	parentHeaders: "PARENT_HEADERS",
 	noticeCooldown: "NOTICE_COOLDOWN"
 };
@@ -22177,6 +22183,8 @@ const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
 ];
 const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
 const ENGINE_WORKER_FLAG = "--engine-worker";
+const RECORD_HOOK_FLAG = "--record-hook";
+const CAPTURE_FLAG_FILE = "capture-hook-outputs";
 const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
 const TRACE_RUN_EVENT_PREFIX = "codex-run:";
@@ -22205,6 +22213,38 @@ const TOOL_ITEM_TYPES = [
 	"McpToolCall"
 ];
 const FAILED_TOOL_STATUSES = ["failed", "declined"];
+const HOOK_FIRINGS_SUFFIX = ".langsmith-hooks";
+const TURN_END_EVENTS = [
+	"task_complete",
+	"turn_complete",
+	"turn_aborted"
+];
+const UNKNOWN_HOOK_PLACEMENT = {
+	direction: "input",
+	scope: "turn"
+};
+const HOOK_PLACEMENTS = {
+	SessionStart: {
+		direction: "input",
+		scope: "turn"
+	},
+	UserPromptSubmit: {
+		direction: "input",
+		scope: "turn"
+	},
+	SubagentStart: {
+		direction: "input",
+		scope: "turn"
+	},
+	PreToolUse: {
+		direction: "input",
+		scope: "tool"
+	},
+	PostToolUse: {
+		direction: "output",
+		scope: "tool"
+	}
+};
 const OPEN_CLOSURE = "open";
 const PATCH_OPERATION = "patch";
 const RUN_RUNNING = "running";
@@ -22344,7 +22384,8 @@ function readEnvironment(env) {
 		redact: parseBoolean(envVariable(env, ENV_SUFFIXES.redact)),
 		redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
 		notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown)),
-		strict_auth: parseBoolean(envVariable(env, ENV_SUFFIXES.strictAuth))
+		strict_auth: parseBoolean(envVariable(env, ENV_SUFFIXES.strictAuth)),
+		capture_hook_outputs: parseBoolean(envVariable(env, ENV_SUFFIXES.captureHookOutputs))
 	};
 	const parsed = parseCommonConfig(Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== void 0)));
 	if (parsed.status !== "valid" || rawParent !== void 0 && parentHeaders === void 0) return { common: {} };
@@ -22467,10 +22508,70 @@ async function removeJobContext(home, sessionId, contextRef) {
 	});
 }
 //#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs-constants.js
+const HOOK_OUTPUTS_KEY = "hooks";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs.js
+function hookOutputs(hooks) {
+	const valid = hooks.filter(({ name, output }) => typeof name === "string" && typeof output === "string");
+	if (valid.length === 0) return {};
+	return { [HOOK_OUTPUTS_KEY]: valid.map(({ name, output }) => ({
+		name,
+		output
+	})) };
+}
+//#endregion
 //#region src/utils/findLast.ts
 const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
+//#endregion
+//#region src/sidecar.ts
+function withSidecarLock(rolloutFile, action) {
+	return withFileLock(`${rolloutFile}${SIDECAR_SUFFIX}`, action);
+}
+function withSidecarLockOrWithout(rolloutFile, action) {
+	return withSidecarLock(rolloutFile, action).catch((error) => {
+		if (!(error instanceof FileLockTimeoutError)) throw error;
+		return action();
+	});
+}
+async function loadUploadedTurnIds(rolloutFile) {
+	try {
+		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
+		return new Set(data.split("\n").filter(Boolean));
+	} catch (error) {
+		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
+		throw error;
+	}
+}
+async function markTurnUploaded(rolloutFile, turnId) {
+	try {
+		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
+		return true;
+	} catch {
+		return false;
+	}
+}
+async function recordHookFiring(config, input) {
+	if (!config.enabled || !config.capture_hook_outputs || !input.transcript_path) return;
+	const firing = {
+		event: input.hook_event_name,
+		turn_id: input.turn_id,
+		tool_use_id: input.tool_use_id,
+		time: performance.timeOrigin
+	};
+	await nodeFsPromises.appendFile(`${input.transcript_path}${HOOK_FIRINGS_SUFFIX}`, `${JSON.stringify(firing)}\n`);
+}
+async function loadHookFirings(rolloutFile) {
+	return (await nodeFsPromises.readFile(`${rolloutFile}${HOOK_FIRINGS_SUFFIX}`, "utf-8").catch(() => "")).split("\n").flatMap((line) => {
+		try {
+			return [JSON.parse(line)];
+		} catch {
+			return [];
+		}
+	}).toSorted((a, b) => a.time - b.time);
+}
 //#endregion
 //#region src/utils/customToolInput.ts
 function customToolInput(args) {
@@ -23220,6 +23321,7 @@ function parentProviderMetadata(task, sessionMeta) {
 }
 async function createParentRun(draft, user, agent) {
 	const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
+	const hooks = task.hooks.filter(({ callId }) => callId === void 0);
 	const { mode, parentStartTime } = draft;
 	const options = draft.request.options;
 	const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
@@ -23242,8 +23344,14 @@ async function createParentRun(draft, user, agent) {
 		project_name: options.projectName,
 		run_type: "chain",
 		replicas: options.replicas,
-		inputs: { messages: user != null ? [user.message] : [] },
-		outputs: { messages: agent.map((i) => i.message) },
+		inputs: {
+			messages: user != null ? [user.message] : [],
+			...hookOutputs(hooksIn(hooks, "input"))
+		},
+		outputs: {
+			messages: agent.map((i) => i.message),
+			...hookOutputs(hooksIn(hooks, "output"))
+		},
 		error: task.error,
 		start_time: parentStartTime,
 		end_time: parentEndTime,
@@ -23275,6 +23383,13 @@ function modelSpans(fullMessages, includeOpenTurn = false) {
 			length: 1
 		};
 	});
+}
+function lateRunIds({ toolRunId, nextRunId }, scope) {
+	let count = 0;
+	return () => toolRunId?.(`late:${scope}:${count++}`) ?? nextRunId();
+}
+function toolsOutsideSpans(fullMessages, spans) {
+	return fullMessages.filter(({ message }, index) => message.role === "tool" && !spans.some(({ start, length }) => index > start && index < start + length && fullMessages[start].message.content.some(isCallTo(message.tool_call_id))));
 }
 async function postSubagentThread(context, subagentThread) {
 	if (context.postedSubagentThreads.has(subagentThread)) return;
@@ -23360,20 +23475,21 @@ async function postSkillRuns(context, skillNames, window, toolCall) {
 		await options.captureRun(skillRun, mode, skillMetadata);
 	}
 }
-async function postToolRuns(context, aiMessage, toolMessages) {
+async function postToolRuns(context, callers, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const options = context.request.options;
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
-		const msgToolCall = aiMessage.at(0)?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
+		const caller = findLast(callers, ({ message }) => message.content.some(isCallTo(toolCallId)));
+		const msgToolCall = caller?.message.content.find(isCallTo(toolCallId));
 		if (toolCallId == null || msgToolCall == null) continue;
 		const toolCall = task.toolCalls?.[toolCallId] ?? {
 			error: void 0,
 			timings: [],
 			outputs: {}
 		};
-		const callTime = aiMessage.at(0)?.timestamp.start;
+		const callTime = caller?.timestamp.start;
 		const min = Math.min(toolMessage.timestamp.start, ...callTime != null ? [callTime] : [], ...toolCall.timings);
 		const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 		const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
@@ -23395,6 +23511,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			},
 			base: toolMetadataBase(context, msgToolCall.args)
 		};
+		const toolHooks = task.hooks.filter(({ callId }) => callId === toolCallId);
 		const sequentialId = options.nextRunId();
 		const toolRun = createRunTree({
 			id: options.toolRunId?.(toolCallId) ?? sequentialId,
@@ -23402,10 +23519,14 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			run_type: "tool",
 			start_time: min,
 			end_time: max,
-			inputs: { input: msgToolCall.args },
+			inputs: {
+				input: msgToolCall.args,
+				...hookOutputs(hooksIn(toolHooks, "input"))
+			},
 			outputs: {
 				...toolCall.outputs,
-				messages: [toolMessage.message]
+				messages: [toolMessage.message],
+				...hookOutputs(hooksIn(toolHooks, "output"))
 			},
 			error: toolCall.error,
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
@@ -23417,8 +23538,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 		}, toolCall);
 	}
 }
-async function postModelAndToolRuns(context, messages) {
-	const fullMessages = mergeMessages([...getSystemMessage(context.sessionMeta, context.task), ...messages]);
+async function postModelAndToolRuns(context, fullMessages) {
 	for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
 		const { aiMessage, toolMessages, subagentThreads } = await postModelRun(context, fullMessages, output);
 		await postToolRuns(context, aiMessage, toolMessages);
@@ -23435,6 +23555,12 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 	const agent = mergeMessages(userIndex != null ? convertToStandardMessages(task.messages.slice(userIndex + 1)) : messages);
 	if (user == null && task.error == null && task.subagentThreads.length === 0 && agent.every(({ message }) => message.role === "system")) return;
 	const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
+	const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
+	const posted = postedCallIds(fullMessages);
+	task.hooks = task.hooks.map((hook) => ({
+		...hook,
+		callId: hook.toolUseIds && hookCallId(task, posted, hook.toolUseIds)
+	}));
 	const unattributed = turnMetadata(task, sessionMeta, request.options);
 	const attributor = mode === "full" ? request.options.attributor : void 0;
 	const origins = attributor ? toolOrigins(messages, unattributed.cwd) : [];
@@ -23454,8 +23580,23 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 		parent: await createParentRun(draft, user, agent),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
-	if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
+	if (!task.isReviewResult) await postModelAndToolRuns(context, fullMessages);
 	for (const subagentThread of task.subagentThreads) await postSubagentThread(context, subagentThread);
+	if (request.options.captureHookOutputs && !task.isReviewResult) {
+		const spans = modelSpans(fullMessages, request.includeOpenTurn);
+		const scope = `${sessionMeta?.session_id}:${task.turnId?.id}`;
+		const options = {
+			...request.options,
+			nextRunId: lateRunIds(request.options, scope)
+		};
+		await postToolRuns({
+			...context,
+			request: {
+				...request,
+				options
+			}
+		}, fullMessages, toolsOutsideSpans(fullMessages, spans));
+	}
 }
 function userMessageIndex(task) {
 	if (task.userMessageIndex != null || task.context != null) return task.userMessageIndex;
@@ -23493,6 +23634,7 @@ function createTask() {
 		isErrorInterrupt: false,
 		isReviewResult: false,
 		subagentThreads: [],
+		hooks: [],
 		toolCalls: {}
 	};
 }
@@ -23518,6 +23660,78 @@ function readSessionMeta(payload) {
 		agent_nickname: threadSpawn?.agent_nickname ?? payload.agent_nickname ?? void 0
 	};
 }
+function passthrough(item) {
+	return item.internal_chat_message_metadata_passthrough;
+}
+function isHookItem(item) {
+	return item.type === "message" && passthrough(item)?.content_item_kinds?.includes("hooks.additional_context") === true;
+}
+function createdAt(item, written) {
+	const created = passthrough(item)?.create_time;
+	return created === void 0 ? written : created * 1e3;
+}
+function isModelItem(item) {
+	return "call_id" in item || item.type === "reasoning" || item.type === "message" && item.role === "assistant";
+}
+function recordHookOutput(walk, task, item, at) {
+	const turnId = passthrough(item)?.turn_id ?? task.turnId?.id;
+	const started = task.turnId?.timestamp ?? -Infinity;
+	const firings = (walk.firings ?? []).filter((each) => each.turn_id === turnId || each.turn_id == null && each.time >= started);
+	const latest = findLast(firings, (each) => each.time <= at);
+	const firing = latest && latest.time >= walk.lastModelItemTime ? latest : void 0;
+	const name = firing?.event ?? "Hook";
+	const toolUseIds = firing && hookPlacement(name).scope === "tool" ? firedTools(firings, firing) : void 0;
+	task.hooks.push({
+		name,
+		output: item.content.map((part) => part.text).join("\n"),
+		toolUseIds
+	});
+}
+function firedTools(firings, latest) {
+	const tools = [];
+	for (let i = firings.indexOf(latest); i >= 0 && firings[i].event === latest.event; i--) tools.push(firings[i].tool_use_id ?? void 0);
+	return tools;
+}
+function hookPlacement(name) {
+	return Object.hasOwn(HOOK_PLACEMENTS, name) ? HOOK_PLACEMENTS[name] : UNKNOWN_HOOK_PLACEMENT;
+}
+function hooksIn(hooks, direction) {
+	return hooks.filter(({ name }) => hookPlacement(name).direction === direction);
+}
+function isCallTo(callId) {
+	return (part) => part.type === "tool_call" && part.id === callId;
+}
+function postedCallIds(fullMessages) {
+	const called = /* @__PURE__ */ new Set();
+	const posted = /* @__PURE__ */ new Set();
+	for (const { message } of fullMessages) {
+		const id = message.tool_call_id;
+		if (message.role === "tool" && typeof id === "string" && called.has(id)) posted.add(id);
+		for (const part of message.content) if (part.type === "tool_call") called.add(part.id);
+	}
+	return posted;
+}
+function hookCallId(task, posted, toolUseIds) {
+	const calls = new Set(toolUseIds.map((id) => callIdFor(task, posted, id)));
+	const [only] = calls;
+	return calls.size === 1 && only !== void 0 && posted.has(only) ? only : void 0;
+}
+function callIdFor(task, posted, toolUseId) {
+	if (toolUseId === void 0 || posted.has(toolUseId)) return toolUseId;
+	const at = task.toolCalls[toolUseId]?.timings.at(-1);
+	if (at === void 0) return void 0;
+	const [only, ...others] = openCallIds(task.messages.filter(({ timestamp }) => timestamp <= at));
+	return others.length === 0 && typeof only === "string" ? only : void 0;
+}
+function openCallIds(messages) {
+	const open = [];
+	for (const { message } of messages) {
+		if (!("call_id" in message)) continue;
+		if (!message.type.endsWith("_output")) open.push(message.call_id);
+		else if (open.includes(message.call_id)) open.splice(open.indexOf(message.call_id), 1);
+	}
+	return open;
+}
 function recordResponseItem(walk, item, timestamp) {
 	walk.task ??= createTask();
 	const task = walk.task;
@@ -23530,7 +23744,9 @@ function recordResponseItem(walk, item, timestamp) {
 		tokenCount: void 0,
 		subagentThreads: []
 	};
+	if (walk.firings && isHookItem(payload)) recordHookOutput(walk, task, payload, createdAt(payload, message.timestamp));
 	task.messages.push(message);
+	if (isModelItem(payload)) walk.lastModelItemTime = Math.max(walk.lastModelItemTime, createdAt(payload, message.timestamp));
 	if (payload.type === "function_call" && payload.name === "spawn_agent") walk.spawnAgentMessages.set(payload.call_id, message);
 	else if (payload.type === "function_call_output" && walk.spawnAgentMessages.has(payload.call_id)) {
 		const childId = extractSpawnedAgentId(payload.output);
@@ -23602,7 +23818,10 @@ function recordTurnError(task, payload) {
 }
 function recordEventMessage(walk, payload, eventTime) {
 	if (payload.type === "task_started") {
-		walk.task = createTask();
+		walk.task = {
+			...createTask(),
+			hooks: walk.task?.hooks ?? []
+		};
 		walk.turnNumber += 1;
 		walk.task.turnId = {
 			id: payload.turn_id,
@@ -23642,7 +23861,21 @@ function recordEventMessage(walk, payload, eventTime) {
 	}
 }
 function endsTurn(walk, payload, position, input) {
-	return payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || walk.task != null && position.index === position.length - 1 && input.turn_id != null;
+	return payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || payload.type === "langsmith_open_turn_end" || walk.task != null && position.index === position.length - 1 && input.turn_id != null;
+}
+function endInterruptedTurns(events) {
+	let open = false;
+	return events.flatMap((event) => {
+		if (event.type !== "event_msg") return [event];
+		const starts = event.payload.type === "task_started";
+		const end = {
+			...event,
+			payload: { type: OPEN_TURN_END }
+		};
+		const ended = starts && open ? [end, event] : [event];
+		if (starts || TURN_END_EVENTS.includes(event.payload.type)) open = starts;
+		return ended;
+	});
 }
 async function walkCompletedTurns(input, onTurn) {
 	const walk = {
@@ -23650,7 +23883,9 @@ async function walkCompletedTurns(input, onTurn) {
 		task: void 0,
 		turnNumber: 0,
 		spawnAgentMessages: /* @__PURE__ */ new Map(),
-		sessionTokenTotal: void 0
+		sessionTokenTotal: void 0,
+		firings: input.firings,
+		lastModelItemTime: -Infinity
 	};
 	const events = await loadSession(input.transcript_path);
 	const last = events.at(-1);
@@ -23662,7 +23897,8 @@ async function walkCompletedTurns(input, onTurn) {
 		};
 		events.push(end);
 	}
-	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
+	const lines = input.firings ? endInterruptedTurns(events) : events;
+	for (const [index, { type, payload, timestamp }, arr] of enumerate(lines)) {
 		if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 		if (type === "response_item") recordResponseItem(walk, payload, timestamp);
 		if (type === "turn_context") {
@@ -23702,6 +23938,10 @@ async function walkCompletedTurns(input, onTurn) {
 async function convertToRunTree(input, options) {
 	const seenTurnIds = /* @__PURE__ */ new Set();
 	const skipBacklog = options.replayHistory !== true;
+	if (options.captureHookOutputs) input = {
+		...input,
+		firings: await loadHookFirings(input.transcript_path)
+	};
 	await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
 		const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
 		const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
@@ -24002,7 +24242,8 @@ function conversionOptions(config, sessionId, turnId, privacyMode, runs, home) {
 		nextRunId: runIdGenerator(sessionId, turnId),
 		toolRunId: toolRunIdGenerator(sessionId, turnId),
 		privacyMode,
-		attributor
+		attributor,
+		captureHookOutputs: config.capture_hook_outputs
 	};
 }
 function reportRecovery(result) {
@@ -24144,34 +24385,6 @@ function writerOptions(config, storageRoot) {
 	};
 }
 //#endregion
-//#region src/sidecar.ts
-function withSidecarLock(rolloutFile, action) {
-	return withFileLock(`${rolloutFile}${SIDECAR_SUFFIX}`, action);
-}
-function withSidecarLockOrWithout(rolloutFile, action) {
-	return withSidecarLock(rolloutFile, action).catch((error) => {
-		if (!(error instanceof FileLockTimeoutError)) throw error;
-		return action();
-	});
-}
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch {
-		return false;
-	}
-}
-//#endregion
 //#region src/turn-queue.ts
 function queueCodexTurns(session, config, request) {
 	return withSidecarLockOrWithout(request.transcriptPath, () => queueUnhandledTurns(session, config, request));
@@ -24179,14 +24392,17 @@ function queueCodexTurns(session, config, request) {
 async function queueUnhandledTurns(session, config, request) {
 	const handled = await loadUploadedTurnIds(request.transcriptPath);
 	const firstStop = handled.size === 0;
+	const fired = config.capture_hook_outputs ? await loadHookFirings(request.transcriptPath) : [];
 	const completed = await listCompletedTurnIds({
 		transcript_path: request.transcriptPath,
-		turn_id: request.turnId
+		turn_id: request.turnId,
+		firings: config.capture_hook_outputs ? fired : void 0
 	});
 	for (const turnId of completed) {
 		if (handled.has(turnId) && !await hasUnclosedLiveRoot(session, turnId)) continue;
 		const mode = lockedTurnMode(config, session.sessionId, turnId);
-		if (mode === "off" || firstStop && turnId !== request.turnId) {
+		const prompted = fired.some(({ turn_id }) => turn_id === turnId);
+		if (mode === "off" || firstStop && turnId !== request.turnId && !prompted) {
 			await markTurnUploaded(request.transcriptPath, turnId);
 			continue;
 		}
@@ -24226,10 +24442,10 @@ async function queueCodexTurn(session, config, request, mode) {
 	await markTurnUploaded(transcriptPath, turnId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -24251,7 +24467,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -24291,7 +24507,7 @@ async function handlePostToolUse(input) {
 		cwd: input.cwd,
 		env: process.env
 	});
-	if (!config.enabled) return;
+	if (!config.enabled || config.capture_hook_outputs) return;
 	const mode = lockedTurnMode(config, session_id, turn_id);
 	if (mode === "off") return;
 	const plugin = createCodexTracingSession(config, session_id, input.cwd);
@@ -24368,6 +24584,8 @@ async function handlePromptSubmit(input) {
 			cwd: input.cwd,
 			env: process.env
 		});
+		await syncCaptureFlag(config).catch(() => void 0);
+		await recordHookFiring(config, input).catch(() => void 0);
 		const mutedLocked = muteLocked(config);
 		const result = await submitPreference(defaultPrivacyPath(), {
 			sessionId: input.session_id,
@@ -24415,6 +24633,16 @@ async function handlePromptSubmit(input) {
 			reason: `${failure}. Repair the privacy file or permissions and retry. Command blocked; no model turn was started.`
 		};
 	}
+}
+async function syncCaptureFlag(config) {
+	const root = engineStorageRoot(homeDirectory());
+	const flag = join(root, CAPTURE_FLAG_FILE);
+	if (config.enabled && config.capture_hook_outputs) {
+		await mkdir(root, { recursive: true });
+		return writeFile(flag, "");
+	}
+	const { mtimeMs } = await stat(flag);
+	if (Date.now() - mtimeMs > 864e5) await rm(flag, { force: true });
 }
 //#endregion
 //#region src/utils/stdin.ts
@@ -24465,6 +24693,14 @@ async function runHook() {
 		cwd: content.cwd
 	});
 }
+async function recordFiring() {
+	const content = await readStdin();
+	await recordHookFiring(await getConfig({
+		home: homeDirectory(),
+		cwd: content.cwd,
+		env: process.env
+	}), content);
+}
 const USAGE = usage(binary.target.executableName);
 const args = process.argv.slice(2);
 if (args.length === 0) runHook().catch((error) => {
@@ -24473,7 +24709,7 @@ if (args.length === 0) runHook().catch((error) => {
 else await dispatchHookCommand(args, {
 	usage: USAGE,
 	version: "0.4.1",
-	hooks: {},
+	hooks: { [RECORD_HOOK_FLAG]: () => recordFiring().catch(() => void 0) },
 	worker: {
 		command: ENGINE_WORKER_FLAG,
 		run: ([sessionId, cwd]) => {

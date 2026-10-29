@@ -27,7 +27,7 @@ export async function handlePostToolUse(input: CodexHookInput): Promise<void> {
   const { session_id, turn_id, transcript_path, tool_use_id } = input;
   if (!session_id || !turn_id || !transcript_path || !tool_use_id) return;
   const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
-  if (!config.enabled) return;
+  if (!config.enabled || config.capture_hook_outputs) return;
   const mode = lockedTurnMode(config, session_id, turn_id);
   if (mode === MODE_OFF) return;
   const plugin = createCodexTracingSession(config, session_id, input.cwd);

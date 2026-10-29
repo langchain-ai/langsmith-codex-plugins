@@ -1,26 +1,34 @@
+import { mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { getConfig } from "./config.js";
 import { loginNotices } from "./login-notice.js";
 import {
+  CAPTURE_FLAG_FILE,
+  CAPTURE_FLAG_KEEP_MS,
   LOCKED_MUTE_REPLY,
   NOTICE_KIND_MANAGED,
   STRICT_NOTICE_KINDS,
   PREFERENCE_WARNING_PREFIX,
 } from "./constants.js";
+import type { Config } from "./models/config.js";
 import type { PromptSubmitInput } from "./models/hook-input.js";
 import { homeDirectory } from "./utils/home.js";
 import { showNotices } from "./notices.js";
+import { recordHookFiring } from "./sidecar.js";
 import {
   defaultPrivacyPath,
   muteLocked,
   parseTracingCommand,
   submitPreference,
 } from "./tracing-policy.js";
-import { uploadCredential } from "./tracing-engine.js";
+import { engineStorageRoot, uploadCredential } from "./tracing-engine.js";
 
 export async function handlePromptSubmit(input: PromptSubmitInput) {
   const command = parseTracingCommand(input.prompt);
   try {
     const config = await getConfig({ home: homeDirectory(), cwd: input.cwd, env: process.env });
+    await syncCaptureFlag(config).catch(() => undefined);
+    await recordHookFiring(config, input).catch(() => undefined);
     const mutedLocked = muteLocked(config);
     const result = await submitPreference(defaultPrivacyPath(), {
       sessionId: input.session_id,
@@ -61,4 +69,15 @@ export async function handlePromptSubmit(input: PromptSubmitInput) {
       reason: `${failure}. Repair the privacy file or permissions and retry. Command blocked; no model turn was started.`,
     };
   }
+}
+
+async function syncCaptureFlag(config: Config): Promise<void> {
+  const root = engineStorageRoot(homeDirectory());
+  const flag = join(root, CAPTURE_FLAG_FILE);
+  if (config.enabled && config.capture_hook_outputs) {
+    await mkdir(root, { recursive: true });
+    return writeFile(flag, "");
+  }
+  const { mtimeMs } = await stat(flag);
+  if (Date.now() - mtimeMs > CAPTURE_FLAG_KEEP_MS) await rm(flag, { force: true });
 }

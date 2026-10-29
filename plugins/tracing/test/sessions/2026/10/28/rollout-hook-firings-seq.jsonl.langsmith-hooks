@@ -1,0 +1,6 @@
+{"event":"SessionStart","turn_id":null,"tool_use_id":null,"time":1793244824931.226}
+{"event":"UserPromptSubmit","turn_id":"01a185b8-8097-71d1-b100-d678e20de9f3","tool_use_id":null,"time":1793244824992.57}
+{"event":"PreToolUse","turn_id":"01a185b8-8097-71d1-b100-d678e20de9f3","tool_use_id":"exec-30abaee0-1477-454b-9f0b-d2022cb59396","time":1793244827225.4}
+{"event":"PostToolUse","turn_id":"01a185b8-8097-71d1-b100-d678e20de9f3","tool_use_id":"exec-30abaee0-1477-454b-9f0b-d2022cb59396","time":1793244827340.511}
+{"event":"PreToolUse","turn_id":"01a185b8-8097-71d1-b100-d678e20de9f3","tool_use_id":"exec-f8371ce9-e121-4c9e-a2e1-d1cf6d6d69f0","time":1793244828969.684}
+{"event":"PostToolUse","turn_id":"01a185b8-8097-71d1-b100-d678e20de9f3","tool_use_id":"exec-f8371ce9-e121-4c9e-a2e1-d1cf6d6d69f0","time":1793244829079.015}

@@ -1723,3 +1723,222 @@ it("reports a later turn's own usage, not the session's running total", async ()
     total_tokens: 170,
   });
 });
+
+const HOOK_FILE = "/home/codex-user/.codex/sessions/2026/10/28/rollout-hooks.jsonl";
+const HOOK_START = Date.parse("2026-10-28T00:00:00.000Z");
+const item = (payload: object) => ({ type: "response_item", payload });
+const say = (role: string, text: string) =>
+  item({ type: "message", role, content: [{ type: "input_text", text }] });
+const ctx = (text: string | string[], created?: number) =>
+  item({
+    type: "message",
+    role: "developer",
+    content: [text].flat().map((part) => ({ type: "input_text", text: part })),
+    internal_chat_message_metadata_passthrough: {
+      content_item_kinds: ["hooks.additional_context"],
+      create_time: created,
+    },
+  });
+const call = (call_id: string, created?: number) =>
+  item({
+    type: "custom_tool_call",
+    status: "completed",
+    call_id,
+    name: `tool_${call_id}`,
+    input: "text(1);\n",
+    internal_chat_message_metadata_passthrough: { create_time: created },
+  });
+const out = (call_id: string) =>
+  item({ type: "custom_tool_call_output", call_id, output: [{ type: "input_text", text: "ok" }] });
+const event = (payload: object) => ({ type: "event_msg", payload });
+const done = (id: string) =>
+  event({ type: "item_completed", item: { type: "CommandExecution", id } });
+const start = (turn_id: string) => [
+  event({ type: "task_started", turn_id }),
+  { type: "turn_context", payload: { turn_id, cwd: "/w", model: "m" } },
+];
+const end = event({ type: "task_complete" });
+const fire = (event: string, tool_use_id?: string, turn_id: string | null = null) => ({
+  firing: { event, tool_use_id, turn_id },
+});
+const pre = (id: string) => fire("PreToolUse", id);
+const begin = (call_id: string) => event({ type: "exec_command_begin", call_id });
+const usage = event({ type: "token_count", info: { last_token_usage: { input_tokens: 5 } } });
+const fn = (call_id: string) =>
+  item({ type: "function_call", name: call_id, arguments: "{", call_id });
+const fnOut = (call_id: string) => item({ type: "function_call_output", call_id, output: "ok" });
+const post = (id: string) => fire("PostToolUse", id);
+const at = (second: number) => HOOK_START / 1000 + second;
+
+async function placeHooks(rollout: string, firings: string, captureHookOutputs: boolean) {
+  vol.reset();
+  vol.fromJSON({ [HOOK_FILE]: rollout, [`${HOOK_FILE}.langsmith-hooks`]: firings });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+  let count = 0;
+  await convertToRunTree(
+    { transcript_path: HOOK_FILE, turn_id: null },
+    {
+      replayHistory: true,
+      captureHookOutputs,
+      captureRun: async (run) => void runs.push(run),
+      nextRunId: () => `00000000-0000-4000-8000-${String(++count).padStart(12, "0")}`,
+      toolRunId: (callId) => `tool:${callId}`,
+    },
+  );
+  const roots = runs.filter(({ run_type }) => run_type === "chain");
+  const placed = runs.flatMap((run) =>
+    (["inputs", "outputs"] as const).flatMap((field) =>
+      (run[field]?.hooks ?? []).map(({ name, output }: { name: string; output: string }) => {
+        const where = roots.includes(run) ? `turn ${roots.indexOf(run) + 1}` : run.name;
+        return `${output.replace(/exec-[\w-]+/, "exec")}: ${name} on ${where} ${field}`;
+      }),
+    ),
+  );
+  const modelCalls = runs
+    .filter(({ run_type }) => run_type === "llm")
+    .map(({ id, inputs, outputs, extra }) => [id, inputs, outputs, extra?.metadata]);
+  const tools = runs.filter(({ run_type }) => run_type === "tool").map(({ name }) => name);
+  return { placed, modelCalls, tools, ids: runs.map(({ id }) => id) };
+}
+
+async function expectPlaced(rollout: string, firings: string, expected: string[]) {
+  const on = await placeHooks(rollout, firings, true);
+  const off = await placeHooks(rollout, firings, false);
+  expect(on.placed).toEqual(expected);
+  expect(off.placed).toEqual([]);
+  expect(on.modelCalls).toEqual(off.modelCalls);
+}
+
+it.each([
+  [
+    "finds a call made before a hook, and keeps a hook two calls could own on the turn",
+    [call("a"), pre("a"), ctx("1"), call("b"), post("a"), post("b"), ctx("2"), out("a"), out("b")],
+    ["2: PostToolUse on turn 1 outputs", "1: PreToolUse on tool_a inputs"],
+  ],
+  [
+    "puts hooks from two execs of one call on that call",
+    [call("c"), pre("x1"), pre("x2"), ctx("1"), done("x1"), done("x2"), out("c"), usage],
+    ["1: PreToolUse on tool_c inputs"],
+  ],
+  [
+    "keeps an exec hook on the turn when several calls were open as it ran",
+    [call("c1"), call("c2"), pre("x9"), ctx("1"), done("x9"), out("c1"), out("c2")],
+    ["1: PreToolUse on turn 1 inputs"],
+  ],
+  [
+    "puts an exec hook on the one call open when the exec last reported",
+    [call("d"), call("e"), pre("x7"), ctx("1"), begin("x7"), out("e"), done("x7"), out("d")],
+    ["1: PreToolUse on tool_d inputs"],
+  ],
+  [
+    "names a hook Hook once the model replied or reasoned after its firing",
+    [
+      fire("SubagentStart", "a"),
+      ctx(["child", "started"]),
+      call("a"),
+      post("a"),
+      say("assistant", "hm"),
+      ctx("after a reply"),
+      out("a"),
+      post("a"),
+      item({ type: "reasoning", summary: [] }),
+      ctx("after reasoning"),
+    ],
+    [
+      "child\nstarted: SubagentStart on turn 1 inputs",
+      "after a reply: Hook on turn 1 inputs",
+      "after reasoning: Hook on turn 1 inputs",
+    ],
+  ],
+  [
+    "names a hook by when Codex made it and the model items before it, not when they were written",
+    [pre("w"), call("w", at(3.2)), ctx("1"), post("w"), done("z"), ctx("2", at(4.8)), out("w")],
+    ["1: PreToolUse on tool_w inputs", "2: PreToolUse on tool_w inputs"],
+  ],
+  [
+    "keeps a tool hook on the turn when its call never becomes a tool run",
+    [fn("x"), post("x"), ctx("1"), pre("x5"), ctx("2"), done("x5"), fnOut("x")],
+    ["2: PreToolUse on turn 1 inputs", "1: PostToolUse on turn 1 outputs"],
+  ],
+  [
+    "names a hook by firings of its own turn",
+    [
+      call("a"),
+      out("a"),
+      fire("PostToolUse", "a", "turn-1"),
+      fire("SessionStart"),
+      end,
+      ctx("between"),
+      ...start("turn-2"),
+      say("user", "again"),
+      ctx("late"),
+    ],
+    ["between: SessionStart on turn 2 inputs", "late: Hook on turn 2 inputs"],
+  ],
+] as [string, object[], string[]][])("%s", async (_, lines, expected) => {
+  const { rollout, firings } = hookRollout(lines);
+  await expectPlaced(rollout, firings, expected);
+});
+
+function hookRollout(lines: object[]) {
+  const rows: string[] = [];
+  const firings: string[] = [];
+  const session = { id: "019a0000-0000-7000-8000-hooks0000000", cwd: "/w", cli_version: "0.163.0" };
+  const turn = [...start("turn-1"), say("user", "go"), ...lines, say("assistant", "done"), end];
+  for (const line of [{ type: "session_meta", payload: session }, ...turn]) {
+    const time = HOOK_START + rows.length * 1000;
+    if ("firing" in line)
+      firings.push(JSON.stringify({ ...(line.firing as object), time: time - 500 }));
+    else rows.push(JSON.stringify({ timestamp: new Date(time).toISOString(), ...line }));
+  }
+  return { rollout: rows.join("\n") + "\n", firings: firings.toReversed().join("\n") };
+}
+
+it("keeps main's tool runs when hook capture is off and adds the skipped ones when on", async () => {
+  const { rollout, firings } = hookRollout([call("a"), ctx("1"), call("b"), out("a"), out("b")]);
+  expect((await placeHooks(rollout, firings, false)).tools).toEqual(["tool_b"]);
+  expect((await placeHooks(rollout, firings, true)).tools).toEqual(["tool_b", "tool_a"]);
+});
+
+it("keeps an interrupted turn's hooks and tools on that turn when hook capture is on", async () => {
+  const lines = [call("a"), pre("a"), ctx("1"), out("a"), ...start("turn-2"), say("user", "again")];
+  const { rollout, firings } = hookRollout(lines);
+
+  expect((await placeHooks(rollout, firings, false)).modelCalls).toHaveLength(1);
+  const on = await placeHooks(rollout, firings, true);
+  expect(on.placed).toEqual(["1: PreToolUse on tool_a inputs"]);
+  expect(on.tools).toEqual(["tool_a"]);
+});
+
+it("gives every late run of every turn its own id", async () => {
+  const input = 'text(await tools.exec_command({cmd:"cat /h/skills/foo/SKILL.md"}));';
+  const read = (call_id: string) =>
+    item({ type: "custom_tool_call", status: "completed", call_id, name: "exec", input });
+  const lines = [read("s1"), ctx("1"), out("s1"), end, ...start("turn-2"), say("user", "again")];
+  const { rollout, firings } = hookRollout([...lines, read("s2"), ctx("2"), out("s2")]);
+
+  const { ids, tools } = await placeHooks(rollout, firings, true);
+  expect(tools).toEqual(["exec", "Skill", "exec", "Skill"]);
+  expect(new Set(ids).size).toBe(ids.length);
+});
+
+it("names and places each hook of a real Codex run by the firing it recorded", async () => {
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const source = path.join(__dirname, "sessions/2026/10/28/rollout-hook-firings-seq.jsonl");
+
+  const rollout = await fs.readFile(source, "utf8");
+  const firings = await fs.readFile(`${source}.langsmith-hooks`, "utf8");
+
+  expect((await placeHooks(rollout, firings, false)).tools).toEqual([]);
+  await expectPlaced(rollout, firings, [
+    "CTX|sync|SessionStart|-: SessionStart on turn 1 inputs",
+    "CTX|sync|UserPromptSubmit|-: UserPromptSubmit on turn 1 inputs",
+    "CTX|bg|PostToolUse|exec: Hook on turn 1 inputs",
+    "CTX|bg|PostToolUse|exec: Hook on turn 1 inputs",
+    "CTX|sync|PreToolUse|exec: PreToolUse on exec inputs",
+    "CTX|sync|PostToolUse|exec: PostToolUse on exec outputs",
+    "CTX|sync|PreToolUse|exec: PreToolUse on exec inputs",
+    "CTX|sync|PostToolUse|exec: PostToolUse on exec outputs",
+  ]);
+});

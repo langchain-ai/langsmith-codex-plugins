@@ -53,3 +53,30 @@ it("reads the user-level config in the prompt hook when HOME is unset", async ()
   const policy = JSON.parse(vol.readFileSync(privacyPath, "utf8") as string);
   expect(policy.threads.thread.turns.turn).toBe("full");
 });
+
+it("keeps the hook capture marker while any project captures, and drops it a day after", async () => {
+  const marker = path.join(HOME, ".codex", "langsmith_engine", "capture-hook-outputs");
+  vol.fromJSON({
+    [path.join(HOME, ".codex", "langsmith.json")]: JSON.stringify({ enabled: true }),
+    "/on/langsmith-plugins.json": JSON.stringify({ capture_hook_outputs: true }),
+    "/off/langsmith-plugins.json": "{}",
+    "/untraced/langsmith-plugins.json": JSON.stringify({
+      enabled: false,
+      capture_hook_outputs: true,
+    }),
+  });
+  const base = { session_id: "thread", turn_id: "turn", prompt: "work" };
+  const prompt = (cwd: string) =>
+    handlePromptSubmit({ ...base, cwd, transcript_path: `${cwd}/rollout.jsonl` });
+  const fired = (cwd: string) => vol.existsSync(`${cwd}/rollout.jsonl.langsmith-hooks`);
+
+  await prompt("/untraced");
+  expect(vol.existsSync(marker)).toBe(false);
+  await prompt("/on");
+  await prompt("/off");
+  expect(vol.existsSync(marker)).toBe(true);
+  expect([fired("/untraced"), fired("/on"), fired("/off")]).toEqual([false, true, false]);
+  vol.utimesSync(marker, 0, 0);
+  await prompt("/off");
+  expect(vol.existsSync(marker)).toBe(false);
+});

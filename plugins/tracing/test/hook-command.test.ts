@@ -82,7 +82,9 @@ function inSandbox(builds: string[], check: (dir: string) => void): void {
 it("gives every hook Windows wording that starts Node at an entry the plugin carries", () => {
   expect(entries.length).toBeGreaterThan(0);
   for (const entry of entries) {
-    expect(entry.commandWindows, entry.command).toBe('node "${PLUGIN_ROOT}/dist/index.mjs"');
+    expect(entry.commandWindows, entry.command).toMatch(
+      /^node "\$\{PLUGIN_ROOT\}\/dist\/index\.mjs"( --record-hook)?$/,
+    );
   }
   expect(existsSync(path.join(pluginRoot, "dist/index.mjs"))).toBe(true);
 });

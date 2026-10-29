@@ -194,6 +194,7 @@ function conversionOptions(
     toolRunId: toolRunIdGenerator(sessionId, turnId),
     privacyMode,
     attributor,
+    captureHookOutputs: config.capture_hook_outputs,
   };
 }
 

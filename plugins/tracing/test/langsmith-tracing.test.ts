@@ -370,3 +370,27 @@ it("the hook command points at a committed script the clone can execute", async 
   const tracked = await run("git", ["ls-files", "-s", relative], { cwd: pluginRoot });
   expect(tracked.stdout.split(" ")[0]).toBe("100755");
 });
+
+it("reads a hook firing and starts no build until hook capture is on", async () => {
+  await countingBuild(ARM64);
+  await pick("arm64");
+  const env = { ...process.env, PATH: `${root}:${process.env.PATH}`, PLUGIN_ROOT: root };
+  const record = (home?: string, redirect = "", input = "{}") =>
+    spawnSync("/bin/sh", ["-c", `"${path.join(root, relative)}" --record-hook ${redirect}`], {
+      encoding: "utf8",
+      input,
+      env: { ...env, HOME: home },
+    });
+  expect(record(root)).toMatchObject({ status: 0, stdout: "" });
+  expect(record(root, "0<&-", "")).toMatchObject({ status: 0, stdout: "" });
+  const pipe = `head -c 1048576 /dev/zero | "${path.join(root, relative)}" --record-hook`;
+  const read = spawnSync("/bin/bash", ["-c", `${pipe}; echo "\${PIPESTATUS[0]}"`], {
+    encoding: "utf8",
+    env: { ...env, HOME: root },
+  });
+  expect(read.stdout.trim()).toBe("0");
+  expect(record().stdout.trim()).toBe("build 2 bytes");
+  await fs.mkdir(path.join(root, ".codex/langsmith_engine"), { recursive: true });
+  await fs.writeFile(path.join(root, ".codex/langsmith_engine/capture-hook-outputs"), "");
+  expect(record(root).stdout.trim()).toBe("build 2 bytes");
+});

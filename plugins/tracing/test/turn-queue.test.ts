@@ -87,6 +87,24 @@ it("on the first Stop queues only the live turn and records the earlier turns as
   expect(await saved()).toEqual(["a", "b", "c"]);
 });
 
+it.each([
+  [false, ["c"]],
+  [true, ["a", "b", "c"]],
+])(
+  "on the first Stop with hook capture %s queues the earlier turns its prompt hook saw",
+  async (capture_hook_outputs, expected) => {
+    const unfinished = rolloutText("thread", ["a"]).replace(/\n.*"turn_complete".*/, "");
+    await writeFile(transcript, `${unfinished}\n${rolloutText("thread", ["b", "c"])}`);
+    await setPolicy({ a: "full", b: "full", c: "full" });
+    const firings = ["a", "b"].map((turn_id) => JSON.stringify({ turn_id, time: 1 }));
+    await writeFile(`${transcript}.langsmith-hooks`, firings.join("\n"));
+
+    await queueCodexTurns(fakeSession(), { ...config, capture_hook_outputs }, request("c"));
+
+    expect(queued.map(({ turnId }) => turnId)).toEqual(expected);
+  },
+);
+
 it("on a later Stop queues every completed turn that never had a Stop", async () => {
   await writeFile(transcript, rolloutText("thread", ["a", "b", "c"]));
   await setPolicy({ a: "full", b: "metadata", c: "full" });

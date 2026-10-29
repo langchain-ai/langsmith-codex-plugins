@@ -11,6 +11,7 @@
  */
 
 import type { Dirent } from "node:fs";
+import type { HookOutput } from "@langchain/plugins-base/tracing";
 
 type StringRecord = Record<string, unknown>;
 
@@ -59,6 +60,14 @@ type ResponseItemMessage = {
   content: Record<string, unknown>[];
   end_turn?: boolean;
   phase?: unknown;
+};
+
+export type WithPassthrough = {
+  internal_chat_message_metadata_passthrough?: {
+    content_item_kinds?: string[];
+    create_time?: number;
+    turn_id?: string;
+  };
 };
 
 type ResponseItemReasoning = {
@@ -424,6 +433,7 @@ export type Task = {
   isErrorInterrupt: boolean;
   isReviewResult: boolean;
   subagentThreads: string[];
+  hooks: TaskHook[];
   toolCalls: {
     [callId: string]: {
       error: string | undefined;
@@ -431,6 +441,11 @@ export type Task = {
       outputs: Record<string, unknown>;
     };
   };
+};
+
+export type TaskHook = HookOutput & {
+  toolUseIds?: (string | undefined)[] | undefined;
+  callId?: string | undefined;
 };
 
 export type ToolCallRecord = Task["toolCalls"][string];

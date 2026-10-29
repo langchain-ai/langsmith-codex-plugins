@@ -206,6 +206,12 @@ it("reads the strict auth switch from the environment", async () => {
   expect(config.strict_auth).toBe(true);
 });
 
+it("reads the hook capture switch from the environment", async () => {
+  vi.stubEnv("LANGSMITH_CODEX_CAPTURE_HOOK_OUTPUTS", "true");
+  const config = await getConfig({ home: HOME, cwd: CWD, env: process.env });
+  expect(config.capture_hook_outputs).toBe(true);
+});
+
 it("reads redact_extra_rules from the environment", async () => {
   vi.stubEnv(
     "LANGSMITH_CODEX_REDACT_EXTRA",
