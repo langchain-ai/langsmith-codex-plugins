@@ -287,6 +287,7 @@ describe("real SDK privacy for run trees the plugin creates", () => {
         ls_agent_purpose: "coding",
         ls_agent_type: "root",
         ls_integration: "openai-codex",
+        ls_harness_name: "openai-codex",
         ls_agent_runtime: "Codex",
         ls_trace_schema_version: "coding-agent-v1",
         thread_id: "trusted-thread",
