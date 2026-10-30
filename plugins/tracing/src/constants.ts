@@ -1,5 +1,6 @@
 // Frozen literals for the Codex integration (see validator.json).
 import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
+import type { QuotedLiteralPattern } from "./models/string-literals.js";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -173,11 +174,10 @@ export const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 
 // The `cmd:` string of one exec_command call, in double, single or backtick quotes.
 export const COMMAND_LITERAL =
-  /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+  /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g as QuotedLiteralPattern;
 
-// The `workdir:` string of one exec_command call, in the same quote styles.
 export const WORKDIR_LITERAL =
-  /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+  /(?:\bworkdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g as QuotedLiteralPattern;
 
 // The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;

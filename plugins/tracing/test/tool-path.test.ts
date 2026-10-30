@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, it } from "vitest";
 import { toolOriginFromArgs } from "../src/tool-path.js";
 
@@ -11,9 +14,31 @@ it.each([
     expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
   },
   {
-    name: "single quotes and backticks",
+    name: "single quotes",
     args: { input: program(`{cmd:'ls', workdir:'/work/b'}`) },
     expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "backticks",
+    args: { input: program("{cmd:`ls`, workdir:`/work/b`}") },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a quoted workdir key",
+    args: { input: program(`{"cmd":"ls","workdir":"/work/b"}`) },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when the text sits inside a command string",
+    args: {
+      input: program(
+        `{cmd:"grep \\"workdir: '/work/plain'\\" notes.md"}`,
+        `{cmd:'grep "workdir: \\'/work/plain\\'" notes.md'}`,
+        '{cmd:`echo workdir: "/work/plain"`}',
+        `{cmd:"workdir: '/work/plain'"}`,
+      ),
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
   },
   {
     name: "a relative workdir, resolved from the session folder",
@@ -75,4 +100,49 @@ it("skips a relative first file when the session folder is unknown and takes the
 
 it("reports a named path that cannot be resolved without a session folder", () => {
   expect(toolOriginFromArgs({ path: "rel.txt" }, undefined)).toEqual({ namedAPath: true });
+});
+
+function folders() {
+  const root = mkdtempSync(join(tmpdir(), "tool-path-"));
+  const repo = join(root, "repo");
+  const plain = join(root, "plain");
+  mkdirSync(join(repo, ".git"), { recursive: true });
+  mkdirSync(plain);
+  return { repo, plain };
+}
+
+it("prefers the first folder inside a repo over an earlier plain one", () => {
+  const { repo, plain } = folders();
+  const input = program(
+    `{cmd:"ls",workdir:${JSON.stringify(plain)}}`,
+    `{cmd:"ls",workdir:${JSON.stringify(repo)}}`,
+  );
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: repo,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("prefers a patched file inside a repo over an earlier plain file", () => {
+  const { repo, plain } = folders();
+  const input = `*** Begin Patch\n*** Update File: ${plain}/x.txt\n@@\n-x\n+y\n*** Update File: ${repo}/y.txt\n@@\n-x\n+y\n*** End Patch`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: `${repo}/y.txt`,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("falls back to the first folder when none is inside a repo", () => {
+  const { plain } = folders();
+  const input = program(
+    `{cmd:"ls",workdir:${JSON.stringify(plain)}}`,
+    `{cmd:"ls",workdir:"/work/other"}`,
+  );
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: plain,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
 });
