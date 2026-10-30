@@ -700,7 +700,7 @@ async function postToolRuns(
       .filter(({ name }) => !typedNames.has(name))
       .map((read) => ({
         name: read.name,
-        success: skillReadSucceeded(read, toolCall, task.toolCalls),
+        success: skillReadSucceeded(read, toolCall, task.toolCalls, { min, max }),
       }));
     await postSkillRuns(context, skills, { min, max });
   }

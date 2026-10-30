@@ -69,7 +69,7 @@ describe("skillReadsFromToolCall", () => {
     { command: `bash -c 'cat ${SKILL}' extra`, names: [] },
     { command: `bash -x 'cat ${SKILL}'`, names: [] },
     { command: "Get-Content C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
-    { command: "type C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
+    { command: "type C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: [] },
     {
       command: 'powershell -Command "Get-Content C:\\repo\\skills\\pr-creation\\SKILL.md"',
       names: FOUND,
@@ -331,7 +331,7 @@ function readCall(id: string, commands: string | string[], at: string): string[]
       name: "exec",
       input: `await Promise.all([${calls.join(",")}]);`,
     }),
-    line(at, "response_item", {
+    line(new Date(Date.parse(at) + 2000).toISOString(), "response_item", {
       type: "custom_tool_call_output",
       call_id: id,
       output: [{ type: "input_text", text: "Script completed" }],
@@ -472,6 +472,21 @@ describe("skills typed as $name", () => {
     expect(skills).toEqual([]);
   });
 
+  it("counts nothing when a skill tag sits in the middle of a user message", async () => {
+    const { skills } = await runsFor(
+      turn(
+        line("2026-09-14T00:00:05.000Z", "response_item", {
+          type: "message",
+          role: "user",
+          content: [
+            { type: "input_text", text: "explain <skill><name>plain-terms</name></skill>" },
+          ],
+        }),
+      ),
+    );
+    expect(skills).toEqual([]);
+  });
+
   it("counts nothing for a user message that only mentions a skill tag", async () => {
     const { skills } = await runsFor(
       turn(
@@ -502,18 +517,41 @@ describe("success of a skill the model read", () => {
     expect(skillOutputs(skills)).toEqual([{ output: { commandName: "plain-terms", success } }]);
   });
 
-  it("reports success when one of two reads in the same call worked", async () => {
-    const second = `sed -n 1,5p /h/.agents/skills/plain-terms/SKILL.md`;
+  it.each([
+    { order: "failed first", codes: [1, 0] },
+    { order: "worked first", codes: [0, 1] },
+  ])(
+    "reports success when one of two reads in the same call worked ($order)",
+    async ({ codes }) => {
+      const second = `sed -n 1,5p /h/.agents/skills/plain-terms/SKILL.md`;
+      const { skills } = await runsFor(
+        turn(
+          ...readCall("call_a", [READ, second], "2026-09-14T00:00:06.000Z"),
+          commandExecution(READ, codes[0], "2026-09-14T00:00:06.500Z"),
+          commandExecution(second, codes[1], "2026-09-14T00:00:07.000Z"),
+        ),
+      );
+      expect(skillOutputs(skills)).toEqual([
+        { output: { commandName: "plain-terms", success: true } },
+      ]);
+    },
+  );
+
+  it.each([
+    { order: "failure then success", codes: [1, 0] },
+    { order: "success then failure", codes: [0, 1] },
+  ])("judges a retried read by its own call ($order)", async ({ codes }) => {
     const { skills } = await runsFor(
       turn(
-        ...readCall("call_a", [READ, second], "2026-09-14T00:00:06.000Z"),
-        commandExecution(READ, 1, "2026-09-14T00:00:06.500Z"),
-        commandExecution(second, 0, "2026-09-14T00:00:07.000Z"),
+        ...readCall("call_a", READ, "2026-09-14T00:00:06.000Z"),
+        commandExecution(READ, codes[0], "2026-09-14T00:00:06.500Z"),
+        ...readCall("call_b", READ, "2026-09-14T00:00:10.000Z"),
+        commandExecution(READ, codes[1], "2026-09-14T00:00:10.500Z"),
       ),
     );
-    expect(skillOutputs(skills)).toEqual([
-      { output: { commandName: "plain-terms", success: true } },
-    ]);
+    expect(skillOutputs(skills)).toEqual(
+      codes.map((code) => ({ output: { commandName: "plain-terms", success: code === 0 } })),
+    );
   });
 
   it("does not let another skill or a command that only names the path decide success", async () => {

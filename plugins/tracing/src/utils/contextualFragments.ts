@@ -55,8 +55,8 @@ function unwrapPart(part: Record<string, unknown>): Record<string, unknown> {
 export function typedSkillNames(item: ResponseItem): string[] {
   if (item.type !== "message" || item.role !== "user") return [];
   return item.content.flatMap((part) => {
-    if (part.type !== "input_text" || typeof part.text !== "string") return [];
-    const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
+    if (typeof part.text !== "string") return [];
+    const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1];
     return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
   });
 }

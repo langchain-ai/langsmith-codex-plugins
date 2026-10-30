@@ -22230,9 +22230,9 @@ const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|type)\s/i;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content)\s/i;
 const RUNNER_PREFIX = /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
-const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/i;
+const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
 const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
@@ -22569,8 +22569,8 @@ function ranCommand(record, commands) {
 	const text = Array.isArray(command) ? command.at(-1) : command;
 	return typeof text === "string" && commands.includes(text);
 }
-function skillReadSucceeded(read, call, calls) {
-	const records = Object.values(calls).filter((record) => ranCommand(record, read.commands));
+function skillReadSucceeded(read, call, calls, window) {
+	const records = Object.values(calls).filter((record) => ranCommand(record, read.commands) && record.timings.some((time) => time >= window.min && time <= window.max));
 	return records.length > 0 ? records.some((record) => !commandFailed(record)) : !commandFailed(call);
 }
 //#endregion
@@ -22781,8 +22781,8 @@ function unwrapPart(part) {
 function typedSkillNames(item) {
 	if (item.type !== "message" || item.role !== "user") return [];
 	return item.content.flatMap((part) => {
-		if (part.type !== "input_text" || typeof part.text !== "string") return [];
-		const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
+		if (typeof part.text !== "string") return [];
+		const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1];
 		return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
 	});
 }
@@ -23472,7 +23472,10 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 		await options.captureRun(toolRun, mode, toolMetadata);
 		await postSkillRuns(context, skillReads.filter(({ name }) => !typedNames.has(name)).map((read) => ({
 			name: read.name,
-			success: skillReadSucceeded(read, toolCall, task.toolCalls)
+			success: skillReadSucceeded(read, toolCall, task.toolCalls, {
+				min,
+				max
+			})
 		})), {
 			min,
 			max

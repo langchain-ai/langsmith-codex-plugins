@@ -20,6 +20,7 @@ import {
   WRITES_TO_FILE,
 } from "./constants.js";
 import type { SkillRead, ToolCallRecord, TypedSkill } from "./models/rollout.js";
+import type { TimeWindow } from "./models/trace-conversion.js";
 import { customToolInput } from "./utils/customToolInput.js";
 
 // Split rather than match: one pattern spanning `/skills/<name>/SKILL.md` backtracks for seconds.
@@ -110,8 +111,13 @@ export function skillReadSucceeded(
   read: SkillRead,
   call: ToolCallRecord,
   calls: Record<string, ToolCallRecord>,
+  window: TimeWindow,
 ): boolean {
-  const records = Object.values(calls).filter((record) => ranCommand(record, read.commands));
+  const records = Object.values(calls).filter(
+    (record) =>
+      ranCommand(record, read.commands) &&
+      record.timings.some((time) => time >= window.min && time <= window.max),
+  );
   return records.length > 0
     ? records.some((record) => !commandFailed(record))
     : !commandFailed(call);
