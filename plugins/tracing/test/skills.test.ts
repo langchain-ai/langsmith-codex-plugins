@@ -459,7 +459,9 @@ describe("skills typed as $name", () => {
     const { skills } = await runsFor(
       turn(typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z")),
     );
-    expect(Date.parse(String(skills[0].start_time))).toBe(Date.parse("2026-09-14T00:00:05.000Z"));
+    const injected = Date.parse("2026-09-14T00:00:05.000Z");
+    expect(Date.parse(String(skills[0].start_time))).toBe(injected);
+    expect(Number(skills[0].end_time)).toBe(injected);
   });
 
   it.each([
@@ -598,30 +600,33 @@ describe("success of a skill the model read", () => {
     ]);
   });
 
-  it("reports a failure from the exit code of an exec_command_end event", async () => {
-    const { skills } = await runsFor(
-      turn(
-        line("2026-09-14T00:00:06.000Z", "response_item", {
-          type: "function_call",
-          call_id: "call_a",
-          name: "exec_command",
-          arguments: JSON.stringify({ cmd: READ }),
-        }),
-        line("2026-09-14T00:00:06.100Z", "response_item", {
-          type: "function_call_output",
-          call_id: "call_a",
-          output: "cat: no such file",
-        }),
-        line("2026-09-14T00:00:06.200Z", "event_msg", {
-          type: "exec_command_end",
-          call_id: "call_a",
-          exit_code: 1,
-          aggregated_output: "cat: no such file",
-        }),
-      ),
-    );
-    expect(skillOutputs(skills)).toEqual([
-      { output: { commandName: "plain-terms", success: false } },
-    ]);
-  });
+  it.each([1, -1])(
+    "reports a failure from exit code %i of an exec_command_end event",
+    async (exitCode) => {
+      const { skills } = await runsFor(
+        turn(
+          line("2026-09-14T00:00:06.000Z", "response_item", {
+            type: "function_call",
+            call_id: "call_a",
+            name: "exec_command",
+            arguments: JSON.stringify({ cmd: READ }),
+          }),
+          line("2026-09-14T00:00:06.100Z", "response_item", {
+            type: "function_call_output",
+            call_id: "call_a",
+            output: "cat: no such file",
+          }),
+          line("2026-09-14T00:00:06.200Z", "event_msg", {
+            type: "exec_command_end",
+            call_id: "call_a",
+            exit_code: exitCode,
+            aggregated_output: "cat: no such file",
+          }),
+        ),
+      );
+      expect(skillOutputs(skills)).toEqual([
+        { output: { commandName: "plain-terms", success: false } },
+      ]);
+    },
+  );
 });

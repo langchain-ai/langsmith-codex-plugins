@@ -22235,6 +22235,8 @@ const RUNNER_PREFIX = /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*
 const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
 const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
+const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
@@ -22246,8 +22248,6 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /((?:"[^"]*"|'[^']*'|[^;|&\n"'])+)(&&|[;|&\n])?/g;
 const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
-const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
-const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 const CONTEXTUAL_USER_FRAGMENTS = [
 	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
 	/^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,

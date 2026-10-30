@@ -176,6 +176,8 @@ export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([
 ]);
 export const SYSTEM_SKILL_DIR = ".system";
 export const SKILL_FILE_NAME = "SKILL.md";
+export const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+export const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 
 // A write, not a read; the digit guard spares `2>/dev/null`.
 export const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
@@ -194,8 +196,6 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /((?:"[^"]*"|'[^']*'|[^;|&\n"'])+)(&&|[;|&\n])?/g;
 export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
-export const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
-export const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 
 // Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs,
 // except the user's own shell commands, plus the tags around pasted images.
