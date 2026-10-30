@@ -75,7 +75,7 @@ it("snapshots new healthy turns full; controls preserve active and queued turns"
   await submitPreference(file, { sessionId: "other-thread", turnId: "first", enabled: true });
   expect(savedTurnMode(file, "other-thread", "first")).toBe("full");
 });
-it("controls block locally and save even when master off; off turns stay off", async () => {
+it("controls reach the model with their reply and save even when master off; off turns stay off", async () => {
   const input = {
     session_id: "thread",
     turn_id: "control",
@@ -84,12 +84,14 @@ it("controls block locally and save even when master off; off turns stay off", a
   };
   const result = await handlePromptSubmit(input);
   expect(result).toEqual({
-    decision: "block",
-    reason: expect.stringContaining(
-      "Preference saved for the next turn; the current turn is unchanged.",
-    ),
+    hookSpecificOutput: {
+      hookEventName: "UserPromptSubmit",
+      additionalContext: expect.stringMatching(
+        /^\[LangSmith tracing command\] .*Preference saved for the next turn; the current turn is unchanged\./su,
+      ),
+    },
   });
-  expect(result?.reason).toContain("Master tracing is disabled");
+  expect(result?.hookSpecificOutput?.additionalContext).toContain("Master tracing is disabled");
   expect(savedTurnMode(file, "thread", "control")).toBe("off");
   vi.stubEnv("TRACE_TO_LANGSMITH", "true");
   expect(await handlePromptSubmit({ ...input, prompt: "work", turn_id: "next" })).toBeUndefined();
@@ -107,20 +109,20 @@ it.each(["{", "null", '{"version":1,"threads":{"x":{"preference":"full","turns":
       cwd: home,
       prompt: "langsmith-tracing:unmute",
     });
-    expect(result?.decision).toBe("block");
-    expect(result?.reason).toContain("Refusing to overwrite");
+    expect(result?.decision).toBeUndefined();
+    expect(result?.hookSpecificOutput?.additionalContext).toContain("Refusing to overwrite");
     expect(await fs.readFile(file, "utf8")).toBe(raw);
   },
 );
-it("missing IDs refuse a control without accepting it as model input", async () => {
+it("missing IDs refuse to save a control and pass the failure through as the reply", async () => {
   const result = await handlePromptSubmit({
     session_id: "thread",
     turn_id: "",
     cwd: home,
     prompt: "langsmith-tracing:mute",
   });
-  expect(result?.decision).toBe("block");
-  expect(result?.reason).toContain("native session_id and turn_id");
+  expect(result?.decision).toBeUndefined();
+  expect(result?.hookSpecificOutput?.additionalContext).toContain("native session_id and turn_id");
 });
 it("keeps a thread named like an object prototype key", async () => {
   await submitPreference(file, {
@@ -149,7 +151,9 @@ it("shows the save warning the shared store returns in the control reply", async
     cwd: home,
     prompt: "langsmith-tracing:unmute",
   });
-  expect(result?.reason).toContain("Warning: directory sync failed.");
+  expect(result?.hookSpecificOutput?.additionalContext).toContain(
+    "Warning: directory sync failed.",
+  );
 });
 it.each(["corrupt", "unreadable", "locked"] as const)(
   "an ordinary prompt goes through with a warning when the preference file is %s",
@@ -346,8 +350,7 @@ it("unmute under default mute saves an explicit override even while master off",
     prompt: "langsmith-tracing:unmute",
   };
   const result = await handlePromptSubmit(input);
-  expect(result?.decision).toBe("block");
-  expect(result?.reason).toContain("Master tracing is disabled");
+  expect(result?.hookSpecificOutput?.additionalContext).toContain("Master tracing is disabled");
   vi.stubEnv("TRACE_TO_LANGSMITH", "true");
   expect(await handlePromptSubmit({ ...input, turn_id: "next", prompt: "work" })).toBeUndefined();
   expect(savedTurnMode(file, "thread", "off")).toBe("off");
@@ -400,8 +403,10 @@ it.skipIf(process.platform === "win32")(
       });
       expect(await submit("other", "first")).toBeUndefined();
       const reply = await submit("thread", "control", "langsmith-tracing:mute");
-      expect(reply?.reason).toContain("aren't owned by root");
-      expect(reply?.reason).not.toContain("Master tracing is disabled");
+      expect(reply?.hookSpecificOutput?.additionalContext).toContain("aren't owned by root");
+      expect(reply?.hookSpecificOutput?.additionalContext).not.toContain(
+        "Master tracing is disabled",
+      );
       expect(shown).toEqual([]);
     } finally {
       await fs.rm(path.join(managed, "managed.json"));

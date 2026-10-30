@@ -1,3 +1,5 @@
+import type { UploadCredential } from "@langchain/plugins-base/auth";
+import type { toSdkReplicas } from "@langchain/plugins-base/settings";
 import type { PluginSessionOptions } from "@langchain/plugins-base/plugin";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import type { ReconstructionOutput } from "@langchain/plugins-base/tracing/reconstruction";
@@ -54,3 +56,10 @@ export interface ParentDestination {
   agentId?: string;
   projectName?: string;
 }
+
+export type UploadAuth =
+  | Exclude<UploadCredential, { kind: "none" }>
+  | { kind: "none"; apiKey: string; apiUrl: string };
+
+export type UploadReplicas = ReturnType<typeof toSdkReplicas>;
+export type UploadReplica = NonNullable<UploadReplicas>[number];

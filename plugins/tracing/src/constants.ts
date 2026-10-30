@@ -57,7 +57,21 @@ export const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 export const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
 export const MUTE_COMMAND = "langsmith-tracing:mute";
 export const UNMUTE_COMMAND = "langsmith-tracing:unmute";
+export const USER_PROMPT_SUBMIT_EVENT = "UserPromptSubmit";
+export const SETUP_COMMAND_PATTERN = /^langsmith-tracing:setup(\s[\s\S]*)?$/u;
 export const LOCKED_MUTE_REPLY = "Thread tracing stays muted because your admin locked muting.";
+export const MUTED_REPLY_STATE = "muted (metadata-only)";
+export const UNMUTED_REPLY_STATE = "unmuted (full content)";
+export const PREFERENCE_REPLY =
+  "Thread tracing {state}. Preference saved for the next turn; the current turn is unchanged.";
+export const PREFERENCE_REPLY_STATE = "{state}";
+export const MASTER_DISABLED_REPLY =
+  "Master tracing is disabled; this preference does not enable it.";
+export const PREFERENCE_REPLY_WARNING = "Warning:";
+export const EVIDENCE_FAILURE_PREFIX = "Could not save tracing preference/turn evidence:";
+export const EVIDENCE_REPAIR_HINT = "Repair the privacy file or permissions and retry.";
+export const REPLY_SEPARATOR = "\n\n";
+export const SENTENCE_END = ".";
 
 export const SUBAGENT_SCOPE_RESET = {
   approval_policy: undefined,

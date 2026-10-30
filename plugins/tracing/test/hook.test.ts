@@ -180,14 +180,16 @@ it("the production bundle consumes exact controls with no credentials, across re
   expect(muted.code).toBe(0);
   expect(muted.stderr).toBe("");
   expect(JSON.parse(muted.stdout)).toEqual({
-    decision: "block",
-    reason: expect.stringContaining(
-      "Preference saved for the next turn; the current turn is unchanged.",
-    ),
+    hookSpecificOutput: {
+      hookEventName: "UserPromptSubmit",
+      additionalContext: expect.stringContaining(
+        "Preference saved for the next turn; the current turn is unchanged.",
+      ),
+    },
   });
   expect((await hook("work", "private", true)).stdout).toBe("");
   const unmuted = await hook("langsmith-tracing:unmute", "private", true);
-  expect(JSON.parse(unmuted.stdout).decision).toBe("block");
+  expect(JSON.parse(unmuted.stdout).hookSpecificOutput.additionalContext).toContain("unmuted");
   expect((await hook("work", "future", true)).stdout).toBe("");
   const policy = JSON.parse(
     await fs.readFile(path.join(home, ".codex/langsmith_state_privacy.json"), "utf8"),
@@ -198,14 +200,15 @@ it("the production bundle consumes exact controls with no credentials, across re
     future: "full",
   });
 });
-it("the bundle blocks corruption without overwriting it", async () => {
+it("the bundle reports corruption without overwriting it", async () => {
   await fs.mkdir(path.join(home, ".codex"));
   const file = path.join(home, ".codex/langsmith_state_privacy.json");
   await fs.writeFile(file, "broken");
   const result = await hook("langsmith-tracing:unmute", "control");
   expect(result.code).toBe(0);
-  expect(JSON.parse(result.stdout).decision).toBe("block");
-  expect(JSON.parse(result.stdout).reason).toContain("Refusing to overwrite");
+  expect(JSON.parse(result.stdout).hookSpecificOutput.additionalContext).toContain(
+    "Refusing to overwrite",
+  );
   expect(await fs.readFile(file, "utf8")).toBe("broken");
 });
 it("serializes independent hook processes and retains preferences after restart", async () => {
