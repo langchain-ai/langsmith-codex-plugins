@@ -1,6 +1,5 @@
 // Frozen literals for the Codex integration (see validator.json).
 import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
-import type { QuotedLiteralPattern } from "./models/string-literals.js";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -72,6 +71,7 @@ export const SKILL_SCOPE_RESET = {
 
 export const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
 export const TOOL_PATH_INPUT_KEYS = ["file_path", "path", "workdir", "cwd"] as const;
+export const PATCH_START = "*** Begin Patch";
 export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
 export const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
@@ -174,10 +174,10 @@ export const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 
 // The `cmd:` string of one exec_command call, in double, single or backtick quotes.
 export const COMMAND_LITERAL =
-  /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g as QuotedLiteralPattern;
+  /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 
 export const WORKDIR_LITERAL =
-  /(?<=[{,]\s*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g as QuotedLiteralPattern;
+  /(?<=[{,](?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g;
 
 // The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;

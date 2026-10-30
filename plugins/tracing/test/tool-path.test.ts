@@ -66,6 +66,51 @@ it.each([
     expected: { namedAPath: false, cwd: "/work/a" },
   },
   {
+    name: "a single-quoted workdir key",
+    args: { input: program(`{cmd:"ls",'workdir':"/work/b"}`) },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a workdir that comes first in the object",
+    args: { input: program(`{workdir:"/work/b",cmd:"ls"}`) },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a workdir after a block comment",
+    args: { input: program(`{cmd:"ls", /* r */ workdir:"/work/b"}`) },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a workdir after a line comment",
+    args: { input: `text(await tools.exec_command({cmd:"ls", // r\n workdir:"/work/b"}));` },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when an object sits inside a double-quoted string",
+    args: { input: program(`{cmd:"echo {workdir:'/work/plain'}"}`) },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when an object sits inside a single-quoted string",
+    args: { input: program(`{cmd:'echo {workdir:"/work/plain"}'}`) },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when an object sits inside a backtick string",
+    args: { input: program("{cmd:`echo {workdir:'/work/plain'}`}") },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when an object sits inside a line comment",
+    args: { input: `// {workdir:"/work/plain"}\n${program(`{cmd:"ls"}`)}` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when an object sits inside a multi-line block comment",
+    args: { input: `/* first\n{workdir:"/work/plain"}\n*/\n${program(`{cmd:"ls"}`)}` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
     name: "no workdir when the text sits inside a command string",
     args: {
       input: program(
@@ -198,4 +243,18 @@ it("does not count a folder whose .git pointer is broken as a repo", () => {
     namedAPath: true,
     cwd: "/work/a",
   });
+});
+
+it("takes a patch's repo from its file paths and not from workdir text in the added content", () => {
+  const { repo, plain } = folders();
+  const input = `*** Begin Patch\n*** Add File: ${plain}/x.js\n+{cmd:"ls",workdir:${JSON.stringify(repo)}}\n*** End Patch`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: `${plain}/x.js`,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("leaves a relative folder unresolved when the session folder is relative", () => {
+  expect(toolOriginFromArgs({ workdir: "b" }, "rel")).toEqual({ namedAPath: true, cwd: "rel" });
 });

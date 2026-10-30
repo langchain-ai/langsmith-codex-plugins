@@ -22234,7 +22234,7 @@ const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const WORKDIR_LITERAL = /(?<=[{,]\s*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g;
+const WORKDIR_LITERAL = /(?<=[{,](?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g;
 const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 const STRING_ESCAPES = {
 	n: "\n",
@@ -22497,7 +22497,7 @@ function toolOutputText(value) {
 //#endregion
 //#region src/utils/stringLiterals.ts
 function stringLiterals(program, pattern) {
-	return [...program.matchAll(pattern)].filter(([, double, single, backtick]) => (double ?? single ?? backtick) !== void 0).map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+	return [...program.matchAll(pattern)].map(([, ...groups]) => groups.find((group) => group !== void 0)).filter((literal) => literal !== void 0).map((literal) => literal.replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
 }
 //#endregion
 //#region src/skills.ts
@@ -22761,7 +22761,7 @@ function usageSince(total, start) {
 function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
 	const args = customToolInput(toolArgs);
-	const named = typeof args === "string" ? [...[...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file), ...stringLiterals(args, WORKDIR_LITERAL)] : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
+	const named = typeof args === "string" ? args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : stringLiterals(args, WORKDIR_LITERAL) : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
 	const paths = [];
 	for (const value of named) {
 		if (typeof value !== "string" || value.length === 0) continue;
