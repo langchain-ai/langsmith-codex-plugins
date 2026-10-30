@@ -606,10 +606,8 @@ async function postSkillRun(
       id: options.nextRunId(),
       name: "Skill",
       run_type: "tool",
-      // Only the call's own window is known, not when each read ran inside it.
       start_time: window.min,
       end_time: window.max,
-      // Wrapped like every other tool run, so one JSON path fits every harness.
       inputs: { input: { skill: skillName } },
       outputs: { output: { commandName: skillName, success } },
       extra: {
