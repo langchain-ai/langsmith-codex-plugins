@@ -41,7 +41,7 @@
     "lint:dist": "pnpm run build && git diff --exit-code -- plugins/tracing/dist/index.mjs"
   },
   "dependencies": {
-    "langsmith": "^0.11.4",
+    "langsmith": "^0.11.6",
     "uuid": "^14.0.2"
   },
   "devDependencies": {
