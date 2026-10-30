@@ -257,6 +257,9 @@ async function reconstructTranscript(
     childRunIds: children.map(({ run: child }) => child.id),
     closureState: "authoritative" as const,
   };
+  // Keep the full receipt manifest on roots. Each LLM/tool contributes its own
+  // ID to settlement, including when a live root was already saved, without
+  // repeating the full manifest on every record.
   const outputs: ReconstructionOutput[] = [];
   for (const { metadata, mode, run } of runs) {
     const submission = postSubmission(run, mode, metadata);
@@ -265,7 +268,10 @@ async function reconstructTranscript(
       outputs.push({
         eventId: `${TRACE_RUN_EVENT_PREFIX}${run.id}`,
         sourceRef: transcriptRef,
-        turnEvidence,
+        turnEvidence:
+          metadata.runType === "root" || metadata.runType === "interrupted"
+            ? turnEvidence
+            : { ...turnEvidence, childRunIds: [run.id] },
         submission,
       });
     } else if (run === root.run) {
