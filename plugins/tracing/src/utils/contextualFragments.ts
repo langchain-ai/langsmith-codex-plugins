@@ -1,4 +1,4 @@
-import type { ResponseItem } from "../models/rollout.js";
+import type { ResponseItem, TypedSkillFragment } from "../models/rollout.js";
 import {
   CONTEXTUAL_USER_FRAGMENTS,
   HOOK_PROMPT_PATTERN,
@@ -52,12 +52,12 @@ function unwrapPart(part: Record<string, unknown>): Record<string, unknown> {
   return text == null ? part : { ...part, text };
 }
 
-export function typedSkillNames(item: ResponseItem): string[] {
+export function typedSkillFragments(item: ResponseItem): TypedSkillFragment[] {
   if (item.type !== "message" || item.role !== "user") return [];
   return item.content.flatMap((part) => {
     if (typeof part.text !== "string") return [];
-    const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1];
-    return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
+    const [, name, path] = TYPED_SKILL_FRAGMENT.exec(part.text.trim()) ?? [];
+    return name != null && TYPED_SKILL_NAME.test(name) ? [{ name, path }] : [];
   });
 }
 

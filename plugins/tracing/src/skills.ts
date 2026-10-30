@@ -1,9 +1,11 @@
 // Codex has no skill tool, so reading `.../skills/<name>/SKILL.md` is the only sign of one.
 
 import {
+  ANCHORED_PATH,
   BACKSLASH_ESCAPE,
   CHANGE_DIRECTORY,
   COMMAND_LITERAL,
+  MAX_TRACKED_DIRECTORY_PARTS,
   QUOTED_RUN,
   READ_COMMAND,
   RUNNER_PREFIX,
@@ -56,25 +58,47 @@ function shellCommands(toolArgs: unknown): string[] {
   );
 }
 
+function resolveDirectory(base: string[] | undefined, target: string): string[] {
+  const stack = ANCHORED_PATH.test(target) ? [] : [...(base ?? [])];
+  for (const part of target.split(/[/\\]/)) {
+    if (part === "..") {
+      stack.pop();
+    } else if (part !== "." && (part !== "" || stack.length === 0)) {
+      stack.push(part);
+    }
+  }
+  return stack.slice(-MAX_TRACKED_DIRECTORY_PARTS);
+}
+
+function placedIn(directory: string[] | undefined, word: string): string {
+  return directory == null || ANCHORED_PATH.test(word) ? word : [...directory, word].join("/");
+}
+
 // Gate each segment on its own: a `cat` in one command must not excuse a `git diff` in the next.
-function collectSkillNames(command: string, directory: string | undefined, names: Set<string>) {
+function collectSkillReads(
+  command: string,
+  directory: string[] | undefined,
+  nameByPath: Map<string, string>,
+) {
   let current = directory;
   for (const [, segment, separator] of command.matchAll(SHELL_SEGMENT)) {
     const inner = wrappedCommand(segment);
     if (inner != null) {
-      collectSkillNames(inner, current, names);
+      collectSkillReads(inner, current, nameByPath);
       continue;
     }
     const target = CHANGE_DIRECTORY.exec(segment);
     if (target != null) {
-      if (separator === "&&") current = target[1] ?? target[2] ?? target[3];
+      if (separator === "&&")
+        current = resolveDirectory(current, target[1] ?? target[2] ?? target[3]);
       continue;
     }
     const read = segment.replace(RUNNER_PREFIX, "");
     if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
     for (const word of read.match(SHELL_WORD) ?? []) {
-      const name = skillDirectoryInPath(current == null ? word : `${current}/${word}`);
-      if (name != null) names.add(name);
+      const path = placedIn(current, word);
+      const name = skillDirectoryInPath(path);
+      if (name != null) nameByPath.set(path, name);
     }
   }
 }
@@ -82,18 +106,22 @@ function collectSkillNames(command: string, directory: string | undefined, names
 export function skillReadsFromToolCall(toolName: string | undefined, args: unknown): SkillRead[] {
   if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
 
-  const commandsByName = new Map<string, string[]>();
+  const readsByName = new Map<string, SkillRead>();
   for (const command of shellCommands(args)) {
-    const names = new Set<string>();
-    collectSkillNames(command, undefined, names);
-    for (const name of names)
-      commandsByName.set(name, [...(commandsByName.get(name) ?? []), command]);
+    const nameByPath = new Map<string, string>();
+    collectSkillReads(command, undefined, nameByPath);
+    for (const [path, name] of nameByPath) {
+      const read = readsByName.get(name) ?? { name, paths: [], commands: [] };
+      if (!read.paths.includes(path)) read.paths.push(path);
+      if (!read.commands.includes(command)) read.commands.push(command);
+      readsByName.set(name, read);
+    }
   }
-  return [...commandsByName].map(([name, commands]) => ({ name, commands }));
+  return [...readsByName.values()];
 }
 
-export function namesCoveredByTypedSkills(typedSkills: TypedSkill[]): Set<string> {
-  return new Set(typedSkills.flatMap(({ name }) => [name, name.slice(name.lastIndexOf(":") + 1)]));
+export function typedSkillCoversRead(typedSkills: TypedSkill[], read: SkillRead): boolean {
+  return typedSkills.some((typed) => read.paths.includes(typed.path));
 }
 
 function commandFailed(toolCall: ToolCallRecord): boolean {
@@ -118,7 +146,9 @@ export function skillReadSucceeded(
       ranCommand(record, read.commands) &&
       record.timings.some((time) => time >= window.min && time <= window.max),
   );
-  return records.length > 0
-    ? records.some((record) => !commandFailed(record))
-    : !commandFailed(call);
+  const outcomes = read.commands.flatMap((command) => {
+    const ran = records.filter((record) => ranCommand(record, [command]));
+    return ran.length > 0 ? [ran.every((record) => !commandFailed(record))] : [];
+  });
+  return outcomes.length > 0 ? outcomes.some(Boolean) : !commandFailed(call);
 }

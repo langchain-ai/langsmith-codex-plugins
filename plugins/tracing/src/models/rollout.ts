@@ -411,9 +411,11 @@ export type MergedMessage<TMessage> = {
   subagentThreads: string[];
 };
 
-export type TypedSkill = { name: string; timestamp: number };
+export type TypedSkill = { name: string; path: string; timestamp: number };
 
-export type SkillRead = { name: string; commands: string[] };
+export type SkillRead = { name: string; paths: string[]; commands: string[] };
+
+export type TypedSkillFragment = { name: string; path: string };
 
 export type SkillOutcome = { name: string; success: boolean };
 

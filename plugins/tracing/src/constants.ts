@@ -168,6 +168,8 @@ export const RUNNER_PREFIX =
   /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 export const SHELL_WRAPPER =
   /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
+export const ANCHORED_PATH = /^(?:[/~\\]|[A-Za-z]:)/;
+export const MAX_TRACKED_DIRECTORY_PARTS = 8;
 export const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 export const SKILLS_DIR = "skills";
 export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([
@@ -177,7 +179,8 @@ export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([
 export const SYSTEM_SKILL_DIR = ".system";
 export const SKILL_FILE_NAME = "SKILL.md";
 export const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
-export const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
+export const TYPED_SKILL_FRAGMENT =
+  /^<skill>\s*<name>([^<]*)<\/name>\s*<path>([^<]*)<\/path>[\s\S]*<\/skill>$/;
 
 // A write, not a read; the digit guard spares `2>/dev/null`.
 export const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;

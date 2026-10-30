@@ -22233,10 +22233,11 @@ const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content)\s/i;
 const RUNNER_PREFIX = /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
+const ANCHORED_PATH = /^(?:[/~\\]|[A-Za-z]:)/;
 const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
-const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
+const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>\s*<path>([^<]*)<\/path>[\s\S]*<\/skill>$/;
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
@@ -22523,42 +22524,58 @@ function shellCommands(toolArgs) {
 	}
 	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
 }
-function collectSkillNames(command, directory, names) {
+function resolveDirectory(base, target) {
+	const stack = ANCHORED_PATH.test(target) ? [] : [...base ?? []];
+	for (const part of target.split(/[/\\]/)) if (part === "..") stack.pop();
+	else if (part !== "." && (part !== "" || stack.length === 0)) stack.push(part);
+	return stack.slice(-8);
+}
+function placedIn(directory, word) {
+	return directory == null || ANCHORED_PATH.test(word) ? word : [...directory, word].join("/");
+}
+function collectSkillReads(command, directory, nameByPath) {
 	let current = directory;
 	for (const [, segment, separator] of command.matchAll(SHELL_SEGMENT)) {
 		const inner = wrappedCommand(segment);
 		if (inner != null) {
-			collectSkillNames(inner, current, names);
+			collectSkillReads(inner, current, nameByPath);
 			continue;
 		}
 		const target = CHANGE_DIRECTORY.exec(segment);
 		if (target != null) {
-			if (separator === "&&") current = target[1] ?? target[2] ?? target[3];
+			if (separator === "&&") current = resolveDirectory(current, target[1] ?? target[2] ?? target[3]);
 			continue;
 		}
 		const read = segment.replace(RUNNER_PREFIX, "");
 		if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
 		for (const word of read.match(SHELL_WORD) ?? []) {
-			const name = skillDirectoryInPath(current == null ? word : `${current}/${word}`);
-			if (name != null) names.add(name);
+			const path = placedIn(current, word);
+			const name = skillDirectoryInPath(path);
+			if (name != null) nameByPath.set(path, name);
 		}
 	}
 }
 function skillReadsFromToolCall(toolName, args) {
 	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
-	const commandsByName = /* @__PURE__ */ new Map();
+	const readsByName = /* @__PURE__ */ new Map();
 	for (const command of shellCommands(args)) {
-		const names = /* @__PURE__ */ new Set();
-		collectSkillNames(command, void 0, names);
-		for (const name of names) commandsByName.set(name, [...commandsByName.get(name) ?? [], command]);
+		const nameByPath = /* @__PURE__ */ new Map();
+		collectSkillReads(command, void 0, nameByPath);
+		for (const [path, name] of nameByPath) {
+			const read = readsByName.get(name) ?? {
+				name,
+				paths: [],
+				commands: []
+			};
+			if (!read.paths.includes(path)) read.paths.push(path);
+			if (!read.commands.includes(command)) read.commands.push(command);
+			readsByName.set(name, read);
+		}
 	}
-	return [...commandsByName].map(([name, commands]) => ({
-		name,
-		commands
-	}));
+	return [...readsByName.values()];
 }
-function namesCoveredByTypedSkills(typedSkills) {
-	return new Set(typedSkills.flatMap(({ name }) => [name, name.slice(name.lastIndexOf(":") + 1)]));
+function typedSkillCoversRead(typedSkills, read) {
+	return typedSkills.some((typed) => read.paths.includes(typed.path));
 }
 function commandFailed(toolCall) {
 	const exitCode = toolCall.outputs.exit_code;
@@ -22571,7 +22588,11 @@ function ranCommand(record, commands) {
 }
 function skillReadSucceeded(read, call, calls, window) {
 	const records = Object.values(calls).filter((record) => ranCommand(record, read.commands) && record.timings.some((time) => time >= window.min && time <= window.max));
-	return records.length > 0 ? records.some((record) => !commandFailed(record)) : !commandFailed(call);
+	const outcomes = read.commands.flatMap((command) => {
+		const ran = records.filter((record) => ranCommand(record, [command]));
+		return ran.length > 0 ? [ran.every((record) => !commandFailed(record))] : [];
+	});
+	return outcomes.length > 0 ? outcomes.some(Boolean) : !commandFailed(call);
 }
 //#endregion
 //#region src/utils/isPrimitive.ts
@@ -22778,12 +22799,15 @@ function unwrapPart(part) {
 		text
 	};
 }
-function typedSkillNames(item) {
+function typedSkillFragments(item) {
 	if (item.type !== "message" || item.role !== "user") return [];
 	return item.content.flatMap((part) => {
 		if (typeof part.text !== "string") return [];
-		const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1];
-		return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
+		const [, name, path] = TYPED_SKILL_FRAGMENT.exec(part.text.trim()) ?? [];
+		return name != null && TYPED_SKILL_NAME.test(name) ? [{
+			name,
+			path
+		}] : [];
 	});
 }
 function isReviewResult(item) {
@@ -23421,7 +23445,6 @@ async function postSkillRuns(context, skills, window) {
 async function postToolRuns(context, aiMessage, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const options = context.request.options;
-	const typedNames = namesCoveredByTypedSkills(task.typedSkills);
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -23470,7 +23493,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
 		await options.captureRun(toolRun, mode, toolMetadata);
-		await postSkillRuns(context, skillReads.filter(({ name }) => !typedNames.has(name)).map((read) => ({
+		await postSkillRuns(context, skillReads.filter((read) => !typedSkillCoversRead(task.typedSkills, read)).map((read) => ({
 			name: read.name,
 			success: skillReadSucceeded(read, toolCall, task.toolCalls, {
 				min,
@@ -23595,10 +23618,11 @@ function recordResponseItem(walk, item, timestamp) {
 	walk.task ??= createTask();
 	const task = walk.task;
 	if (isReviewResult(item)) task.isReviewResult = true;
-	for (const name of typedSkillNames(item)) {
+	for (const { name, path } of typedSkillFragments(item)) {
 		if (task.typedSkills.some((typed) => typed.name === name)) continue;
 		task.typedSkills.push({
 			name,
+			path,
 			timestamp: Date.parse(timestamp)
 		});
 	}

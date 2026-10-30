@@ -37,7 +37,7 @@ import {
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
-import { namesCoveredByTypedSkills, skillReadSucceeded, skillReadsFromToolCall } from "./skills.js";
+import { skillReadSucceeded, skillReadsFromToolCall, typedSkillCoversRead } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
@@ -45,7 +45,7 @@ import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
 import {
   isReviewResult,
-  typedSkillNames,
+  typedSkillFragments,
   withoutCodexMarkup,
 } from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
@@ -628,7 +628,6 @@ async function postToolRuns(
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
   const options = context.request.options;
-  const typedNames = namesCoveredByTypedSkills(task.typedSkills);
   for (const toolMessage of toolMessages) {
     if (toolMessage.message.role !== "tool") continue;
     const toolCallId =
@@ -697,7 +696,7 @@ async function postToolRuns(
     await options.captureRun(toolRun, mode, toolMetadata);
 
     const skills = skillReads
-      .filter(({ name }) => !typedNames.has(name))
+      .filter((read) => !typedSkillCoversRead(task.typedSkills, read))
       .map((read) => ({
         name: read.name,
         success: skillReadSucceeded(read, toolCall, task.toolCalls, { min, max }),
@@ -896,9 +895,9 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
   walk.task ??= createTask();
   const task = walk.task;
   if (isReviewResult(item)) task.isReviewResult = true;
-  for (const name of typedSkillNames(item)) {
+  for (const { name, path } of typedSkillFragments(item)) {
     if (task.typedSkills.some((typed) => typed.name === name)) continue;
-    task.typedSkills.push({ name, timestamp: Date.parse(timestamp) });
+    task.typedSkills.push({ name, path, timestamp: Date.parse(timestamp) });
   }
   const payload = withoutCodexMarkup(item);
   if (payload == null) return;

@@ -83,7 +83,12 @@ describe("skillReadsFromToolCall", () => {
     { command: "cd .agents/skills/pr-creation && cat SKILL.md", names: FOUND },
     { command: "cd '/Users/a b/.agents/skills/pr-creation' && cat SKILL.md", names: FOUND },
     { command: "cd .agents/skills/pr-creation && bash -lc 'cat SKILL.md'", names: FOUND },
+    { command: "cd .agents/skills && cd pr-creation && cat SKILL.md", names: FOUND },
+    { command: "cd .agents/skills/other && cd ../pr-creation && cat SKILL.md", names: FOUND },
+    { command: "cd .agents && cd ./skills//pr-creation && cat SKILL.md", names: FOUND },
+    { command: "cd /h/skills && cd /h/.agents/skills/pr-creation && cat SKILL.md", names: FOUND },
     { command: "cd /repo && cat SKILL.md", names: [] },
+    { command: "cd /repo/skills/x && cd .. && cat SKILL.md", names: [] },
     { command: "cd .agents/skills || cat pr-creation/SKILL.md", names: [] },
     { command: "cd .agents/skills; cat pr-creation/SKILL.md", names: [] },
     {
@@ -147,10 +152,54 @@ describe("skillReadsFromToolCall", () => {
     expect(namesOf(toolName, program)).toEqual([]);
   });
 
+  it.each([
+    {
+      command: "cd /r && cat /h/.agents/skills/foo/SKILL.md",
+      path: "/h/.agents/skills/foo/SKILL.md",
+    },
+    { command: "cd /r/skills && cat foo/SKILL.md", path: "/r/skills/foo/SKILL.md" },
+    { command: "cat ~/.agents/skills/foo/SKILL.md", path: "~/.agents/skills/foo/SKILL.md" },
+    {
+      command: "cd /r && cat ~/.agents/skills/foo/SKILL.md",
+      path: "~/.agents/skills/foo/SKILL.md",
+    },
+    {
+      command: "cd /r && cat C:\\skills\\foo\\SKILL.md",
+      path: "C:\\skills\\foo\\SKILL.md",
+    },
+    { command: "cd a && cd .. && cat skills/foo/SKILL.md", path: "skills/foo/SKILL.md" },
+    {
+      command: "cd /r && cd /h/.agents/skills/foo && cat SKILL.md",
+      path: "/h/.agents/skills/foo/SKILL.md",
+    },
+  ])("names the file read as $path", ({ command, path }) => {
+    expect(skillReadsFromToolCall("exec_command", { cmd: command })).toEqual([
+      { name: "foo", paths: [path], commands: [command] },
+    ]);
+  });
+
   it("scans a long run of cd commands and reads in linear time", () => {
     const crafted = `${"cd /a/skills/x && ".repeat(10_000)}${"cat SKILL.md && ".repeat(10_000)}`;
     const started = performance.now();
     expect(inCommand(crafted)).toEqual(["x"]);
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
+  it("lists each path and command once when two commands read the same file", () => {
+    const first = "cat /h/.agents/skills/foo/SKILL.md";
+    const second = "head -5 /h/.agents/skills/foo/SKILL.md";
+    const program = [first, second, first]
+      .map((cmd) => `tools.exec_command({cmd:${JSON.stringify(cmd)}})`)
+      .join(";");
+    expect(skillReadsFromToolCall("exec", program)).toEqual([
+      { name: "foo", paths: ["/h/.agents/skills/foo/SKILL.md"], commands: [first, second] },
+    ]);
+  });
+
+  it("scans a long run of relative cd commands in linear time", () => {
+    const crafted = `${"cd x && ".repeat(10_000)}${"cat SKILL.md && ".repeat(10_000)}`;
+    const started = performance.now();
+    expect(inCommand(crafted)).toEqual([]);
     expect(performance.now() - started).toBeLessThan(250);
   });
 
@@ -311,8 +360,13 @@ function line(timestamp: string, type: string, payload: Record<string, unknown>)
   return JSON.stringify({ timestamp, type, payload });
 }
 
-function typedSkillMessage(name: string, at: string, role = "user"): string {
-  const text = `<skill>\n<name>${name}</name>\n<path>/h/.agents/skills/${name}/SKILL.md</path>\n${SKILL_BODY}\n</skill>`;
+function typedSkillMessage(
+  name: string,
+  at: string,
+  role = "user",
+  path = `/h/.agents/skills/${name}/SKILL.md`,
+): string {
+  const text = `<skill>\n<name>${name}</name>\n<path>${path}</path>\n${SKILL_BODY}\n</skill>`;
   return line(at, "response_item", {
     type: "message",
     role,
@@ -445,14 +499,33 @@ describe("skills typed as $name", () => {
     ]);
   });
 
-  it("counts a namespaced plugin skill once when the model reads its folder", async () => {
+  it("counts a namespaced plugin skill once when the model reads the file Codex injected", async () => {
+    const path = "/h/plugins/cache/tracing/skills/trace/SKILL.md";
     const { skills } = await runsFor(
       turn(
-        typedSkillMessage("tracing:trace", "2026-09-14T00:00:05.000Z"),
-        ...readCall("call_a", "cat /h/.agents/skills/trace/SKILL.md", "2026-09-14T00:00:06.000Z"),
+        typedSkillMessage("tracing:trace", "2026-09-14T00:00:05.000Z", "user", path),
+        ...readCall("call_a", `cat ${path}`, "2026-09-14T00:00:06.000Z"),
       ),
     );
     expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual(["tracing:trace"]);
+  });
+
+  it("keeps a read of a different file that shares the typed skill's folder name", async () => {
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage(
+          "tracing:trace",
+          "2026-09-14T00:00:05.000Z",
+          "user",
+          "/h/plugins/cache/tracing/skills/trace/SKILL.md",
+        ),
+        ...readCall("call_a", "cat /h/.agents/skills/trace/SKILL.md", "2026-09-14T00:00:06.000Z"),
+      ),
+    );
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
+      "tracing:trace",
+      "trace",
+    ]);
   });
 
   it("starts the typed run when Codex injected the skill", async () => {
@@ -474,15 +547,21 @@ describe("skills typed as $name", () => {
     expect(skills).toEqual([]);
   });
 
-  it("counts nothing when a skill tag sits in the middle of a user message", async () => {
+  it.each([
+    { what: "no path or closing tag", text: "<skill><name>plain-terms</name> is what I typed" },
+    { what: "no path", text: "<skill><name>plain-terms</name>body</skill>" },
+    {
+      what: "text after the closing tag",
+      text: "<skill><name>plain-terms</name><path>/p</path>body</skill> and more",
+    },
+    { what: "no closing tag", text: "<skill><name>plain-terms</name><path>/p</path>body" },
+  ])("counts nothing for a user message with $what", async ({ text }) => {
     const { skills } = await runsFor(
       turn(
         line("2026-09-14T00:00:05.000Z", "response_item", {
           type: "message",
           role: "user",
-          content: [
-            { type: "input_text", text: "explain <skill><name>plain-terms</name></skill>" },
-          ],
+          content: [{ type: "input_text", text }],
         }),
       ),
     );
@@ -554,6 +633,21 @@ describe("success of a skill the model read", () => {
     expect(skillOutputs(skills)).toEqual(
       codes.map((code) => ({ output: { commandName: "plain-terms", success: code === 0 } })),
     );
+  });
+
+  it("fails every call that ran the same read at the same time when one of them failed", async () => {
+    const { skills } = await runsFor(
+      turn(
+        ...readCall("call_a", READ, "2026-09-14T00:00:06.000Z"),
+        ...readCall("call_b", READ, "2026-09-14T00:00:06.100Z"),
+        commandExecution(READ, 1, "2026-09-14T00:00:06.500Z"),
+        commandExecution(READ, 0, "2026-09-14T00:00:07.000Z"),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: false } },
+      { output: { commandName: "plain-terms", success: false } },
+    ]);
   });
 
   it("does not let another skill or a command that only names the path decide success", async () => {
