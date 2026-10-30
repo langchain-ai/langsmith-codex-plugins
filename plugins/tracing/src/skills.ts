@@ -4,7 +4,7 @@ import {
   BACKSLASH_ESCAPE,
   CHANGE_DIRECTORY,
   COMMAND_LITERAL,
-  COMMAND_PREFIX,
+  RUNNER_PREFIX,
   MAX_SHELL_WRAP_DEPTH,
   QUOTED_RUN,
   READ_COMMAND,
@@ -12,7 +12,7 @@ import {
   SHELL_TOOL_NAMES,
   SHELL_WORD,
   SHELL_WRAPPER,
-  SKILL_CONTAINER_DIRS,
+  SKILL_PARENT_DIRS,
   SKILL_DIR_NAME,
   SKILL_FILE_NAME,
   STRING_ESCAPES,
@@ -33,7 +33,7 @@ function skillDirectoryInPath(word: string): string | undefined {
   if (parts.at(-1) !== SKILL_FILE_NAME || name == null || !SKILL_DIR_NAME.test(name))
     return undefined;
   const container = parts.at(-3);
-  if (container != null && SKILL_CONTAINER_DIRS.has(container)) return name;
+  if (container != null && SKILL_PARENT_DIRS.has(container)) return name;
   return container === SYSTEM_SKILL_DIR && parts.at(-4) === "skills" ? name : undefined;
 }
 
@@ -80,7 +80,7 @@ function collectSkillNames(
       shell.directory = placedIn(shell.directory, target[1] ?? target[2] ?? target[3]);
       continue;
     }
-    const read = segment.replace(COMMAND_PREFIX, "");
+    const read = segment.replace(RUNNER_PREFIX, "");
     if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
     for (const word of read.match(SHELL_WORD) ?? []) {
       const name = skillDirectoryInPath(placedIn(shell.directory, word));
@@ -109,8 +109,7 @@ function commandText(toolCall: ToolCallRecord): string {
   return Array.isArray(command) ? command.join(" ") : String(command ?? "");
 }
 
-// A script's own commands are logged as separate records, so match them to the skill by their text.
-export function skillReadSucceeded(
+export function skillReadSucceededByCommandRecords(
   skillName: string,
   call: ToolCallRecord,
   calls: Record<string, ToolCallRecord>,

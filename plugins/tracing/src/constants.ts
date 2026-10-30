@@ -165,20 +165,16 @@ export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 export const READ_COMMAND =
   /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
 
-// Leading `FOO=1`, `sudo`, `env` and similar, which run the read without being it.
-export const COMMAND_PREFIX =
+export const RUNNER_PREFIX =
   /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 
-// `bash -lc '...'`, `sh -c "..."`, `powershell -Command ...` and `cmd /c ...`, up to the inner command.
 export const SHELL_WRAPPER =
   /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
 export const MAX_SHELL_WRAP_DEPTH = 2;
 
-// The folder `cd` moves to, so a bare `cat SKILL.md` after it can be placed.
 export const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
 
-// Folders whose children are skills, so `skills/foo/references/SKILL.md` is not one.
-export const SKILL_CONTAINER_DIRS: ReadonlySet<string> = new Set([
+export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([
   "skills",
   "migrated-command-skills",
 ]);

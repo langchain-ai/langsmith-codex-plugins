@@ -22231,10 +22231,10 @@ const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "app
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
-const COMMAND_PREFIX = /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
+const RUNNER_PREFIX = /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 const SHELL_WRAPPER = /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
 const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
-const SKILL_CONTAINER_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
+const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
@@ -22508,7 +22508,7 @@ function skillDirectoryInPath(word) {
 	const name = parts.at(-2);
 	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
 	const container = parts.at(-3);
-	if (container != null && SKILL_CONTAINER_DIRS.has(container)) return name;
+	if (container != null && SKILL_PARENT_DIRS.has(container)) return name;
 	return container === ".system" && parts.at(-4) === "skills" ? name : void 0;
 }
 function wrappedCommand(segment) {
@@ -22538,7 +22538,7 @@ function collectSkillNames(command, shell, names, depth) {
 			shell.directory = placedIn(shell.directory, target[1] ?? target[2] ?? target[3]);
 			continue;
 		}
-		const read = segment.replace(COMMAND_PREFIX, "");
+		const read = segment.replace(RUNNER_PREFIX, "");
 		if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
 		for (const word of read.match(SHELL_WORD) ?? []) {
 			const name = skillDirectoryInPath(placedIn(shell.directory, word));
@@ -22560,7 +22560,7 @@ function commandText(toolCall) {
 	const { command } = toolCall.outputs;
 	return Array.isArray(command) ? command.join(" ") : String(command ?? "");
 }
-function skillReadSucceeded(skillName, call, calls) {
+function skillReadSucceededByCommandRecords(skillName, call, calls) {
 	const reads = Object.values(calls).filter((record) => {
 		const text = commandText(record);
 		return text.includes("SKILL.md") && (text.includes(`/${skillName}`) || text.includes(`\\${skillName}`));
@@ -23469,7 +23469,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 		await options.captureRun(toolRun, mode, toolMetadata);
 		for (const skillName of skillNames) {
 			if (typedNames.has(skillName)) continue;
-			const success = skillReadSucceeded(skillName, toolCall, task.toolCalls);
+			const success = skillReadSucceededByCommandRecords(skillName, toolCall, task.toolCalls);
 			await postSkillRun(context, skillName, {
 				min,
 				max

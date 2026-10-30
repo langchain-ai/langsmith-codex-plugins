@@ -36,7 +36,7 @@ import {
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
-import { skillNamesFromToolCall, skillReadSucceeded } from "./skills.js";
+import { skillNamesFromToolCall, skillReadSucceededByCommandRecords } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
@@ -705,7 +705,7 @@ async function postToolRuns(
 
     for (const skillName of skillNames) {
       if (typedNames.has(skillName)) continue;
-      const success = skillReadSucceeded(skillName, toolCall, task.toolCalls);
+      const success = skillReadSucceededByCommandRecords(skillName, toolCall, task.toolCalls);
       await postSkillRun(context, skillName, { min, max }, success);
     }
   }
