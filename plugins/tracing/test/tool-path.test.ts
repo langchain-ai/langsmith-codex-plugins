@@ -2,7 +2,6 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { PROGRAM_SCAN_LIMIT } from "../src/constants.js";
 import { toolOriginFromArgs } from "../src/tool-path.js";
 
 const program = (...calls: string[]) =>
@@ -416,23 +415,133 @@ it.each([
 });
 
 it("ignores a program longer than the scan limit", () => {
-  const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}${" ".repeat(PROGRAM_SCAN_LIMIT)}`;
+  const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}${" ".repeat(200_000)}`;
   expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
 });
 
-it("reads a patch of 150 thousand files without throwing and takes the first", () => {
+it("ignores a patch of 150 thousand files without throwing", () => {
   const files = Array.from(
     { length: 150_000 },
     (_, n) => `*** Add File: /work/plain/f${n}.txt\n+x`,
   );
   const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
-  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
-    path: "/work/plain/f0.txt",
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
+
+const padTo = (text: string, length: number, filler: string) =>
+  text + filler.repeat(length - text.length);
+
+it.each([
+  { name: "a patch exactly at the scan limit", length: 200_000, found: true },
+  { name: "a patch one past the scan limit", length: 200_001, found: false },
+])("reads $name", ({ length, found }) => {
+  const head = "*** Begin Patch\n*** Add File: /work/b/x.txt\n+";
+  const input = padTo(head, length, "x");
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual(
+    found
+      ? { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" }
+      : { namedAPath: false, cwd: "/work/a" },
+  );
+});
+
+it.each([
+  { name: "a program exactly at the scan limit", length: 200_000, found: true },
+  { name: "a program one past the scan limit", length: 200_001, found: false },
+])("reads $name", ({ length, found }) => {
+  const input = padTo(program(`{cmd:"ls",workdir:"/work/b"}`), length, " ");
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual(
+    found
+      ? { path: "/work/b", namedAPath: true, cwd: "/work/a" }
+      : { namedAPath: false, cwd: "/work/a" },
+  );
+});
+
+it("counts the hundredth named file but not the one after it", () => {
+  const { repo, plain } = folders();
+  const filesBefore = (count: number) =>
+    Array.from({ length: count }, (_, n) => `*** Add File: ${plain}/f${n}.txt\n+x`);
+  const patch = (files: string[]) => `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
+  const lastInRepo = patch([...filesBefore(99), `*** Add File: ${repo}/late.txt\n+x`]);
+  expect(toolOriginFromArgs({ input: lastInRepo }, "/work/a")).toEqual({
+    path: `${repo}/late.txt`,
     namedAPath: true,
     cwd: "/work/a",
   });
 });
 
+it.each([
+  { name: "a program workdir", input: program(`{cmd:"ls",workdir:"/${"a/".repeat(40_000)}"}`) },
+  {
+    name: "a patch path",
+    input: `*** Begin Patch\n*** Add File: /${"a/".repeat(75_000)}x.txt\n+x\n*** End Patch`,
+  },
+])("skips a very deep $name quickly", ({ input }) => {
+  const started = performance.now();
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: true, cwd: "/work/a" });
+  expect(performance.now() - started).toBeLessThan(1000);
+});
+
+it.each([
+  { name: "at the length limit", length: 4096, found: true },
+  { name: "one past the length limit", length: 4097, found: false },
+])("reads a path $name", ({ length, found }) => {
+  const path = padTo("/work/", length, "a");
+  expect(toolOriginFromArgs({ path }, "/work/a")).toEqual(
+    found ? { path, namedAPath: true, cwd: "/work/a" } : { namedAPath: true, cwd: "/work/a" },
+  );
+});
+
+it.each([
+  { name: "an empty workdir in a program", args: { input: program(`{cmd:"ls",workdir:""}`) } },
+  { name: "an empty path key", args: { path: "" } },
+])("does not count $name as named", ({ args }) => {
+  expect(toolOriginFromArgs(args, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
+
+it("keeps the workdir read before a patch call whose text is not a literal", () => {
+  const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}\ntext(await tools.apply_patch(patchText));`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: "/work/b",
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it.each([
+  { escape: "\\n", decoded: "\n" },
+  { escape: "\\t", decoded: "\t" },
+  { escape: "\\r", decoded: "\r" },
+  { escape: '\\"', decoded: '"' },
+  { escape: "\\'", decoded: "'" },
+  { escape: "\\`", decoded: "`" },
+  { escape: "\\\\", decoded: "\\" },
+])("decodes the escape $escape in a workdir", ({ escape, decoded }) => {
+  const input = program(`{cmd:"ls",workdir:"/work/x${escape}y"}`);
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: `/work/x${decoded}y`,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it.each(["\\u00e9", "\\x2f", "\\0", "\\b"])(
+  "ignores a workdir written with the escape %s",
+  (escape) => {
+    const input = program(`{cmd:"ls",workdir:"/work/x${escape}y"}`);
+    expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+  },
+);
+
+it("ignores a patch written with an escape it cannot decode", () => {
+  const patch = "*** Begin Patch\n*** Add File: /work/caf\\u00e9.txt\n+hi\n*** End Patch";
+  const input = `tools.apply_patch(${JSON.stringify(patch).replace("\\\\u", "\\u")});`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
+
+it("loses a workdir that follows a regex literal ending in two slashes on the same line", () => {
+  const input = `const r = /\\/\\//; text(await tools.exec_command({cmd:"ls",workdir:"/work/b"}));`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
 it("falls back to no path when reading the arguments throws", () => {
   const args = {
     get path(): string {

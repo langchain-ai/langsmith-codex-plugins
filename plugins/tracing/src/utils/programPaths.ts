@@ -12,7 +12,7 @@ import {
   OPEN_PAREN,
   PATCH_FILE_PATTERN,
   PLACEHOLDER_START,
-  PROGRAM_SCAN_LIMIT,
+  PLAIN_LITERAL,
   PROGRAM_TOKEN,
   TOOLS_NAMESPACE,
   WHITESPACE_ONLY,
@@ -34,7 +34,11 @@ function programTokens(program: string): ProgramToken[] {
 }
 
 function plainLiteral(literal: string | undefined): string | undefined {
-  return literal === undefined || literal.includes(PLACEHOLDER_START) ? undefined : literal;
+  return literal === undefined ||
+    literal.includes(PLACEHOLDER_START) ||
+    !PLAIN_LITERAL.test(literal)
+    ? undefined
+    : literal;
 }
 
 function isToolCall(tokens: ProgramToken[], nameIndex: number, name: string): boolean {
@@ -50,7 +54,6 @@ function isWorkdirKey(token: ProgramToken): boolean {
 }
 
 export function programPaths(program: string): string[] {
-  if (program.length > PROGRAM_SCAN_LIMIT) return [];
   const tokens = programTokens(program);
   const paths: string[] = [];
   let depth = 0;

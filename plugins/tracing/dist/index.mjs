@@ -22235,6 +22235,7 @@ const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 const PROGRAM_TOKEN = /\s+|\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|"((?:[^"\\]|\\[\s\S])*)"|"(?:[^"\\]|\\[\s\S])*\\?$|'((?:[^'\\]|\\[\s\S])*)'|'(?:[^'\\]|\\[\s\S])*\\?$|`((?:[^`\\]|\\[\s\S])*)`|`(?:[^`\\]|\\[\s\S])*\\?$|[A-Za-z_$][\w$]*|[\s\S]/g;
+const PLAIN_LITERAL = /^(?:[^\\]|\\[ntr\\"'`])*$/;
 const WHITESPACE_ONLY = /^\s+$/;
 const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 const STRING_ESCAPES = {
@@ -22771,7 +22772,7 @@ function programTokens(program) {
 	return tokens;
 }
 function plainLiteral(literal) {
-	return literal === void 0 || literal.includes("${") ? void 0 : literal;
+	return literal === void 0 || literal.includes("${") || !PLAIN_LITERAL.test(literal) ? void 0 : literal;
 }
 function isToolCall(tokens, nameIndex, name) {
 	return tokens[nameIndex]?.text === name && (tokens[nameIndex - 1]?.text !== "." || tokens[nameIndex - 2]?.text === "tools");
@@ -22780,7 +22781,6 @@ function isWorkdirKey(token) {
 	return token.text === "workdir" || token.literal === "workdir";
 }
 function programPaths(program) {
-	if (program.length > 2e5) return [];
 	const tokens = programTokens(program);
 	const paths = [];
 	let depth = 0;
@@ -22812,7 +22812,10 @@ function programPaths(program) {
 //#endregion
 //#region src/tool-path.ts
 function namedValues(args) {
-	if (typeof args === "string") return args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : programPaths(args);
+	if (typeof args === "string") {
+		if (args.length > 2e5) return [];
+		return args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : programPaths(args);
+	}
 	return isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
 }
 function toolOriginFromArgs(toolArgs, cwd) {
@@ -22820,8 +22823,10 @@ function toolOriginFromArgs(toolArgs, cwd) {
 	try {
 		const named = namedValues(customToolInput(toolArgs)).slice(0, 100).filter((value) => typeof value === "string" && value.length > 0);
 		const paths = [];
-		for (const value of named) if (isAbsolute(value)) paths.push(value);
-		else if (cwd && isAbsolute(cwd)) paths.push(resolve(cwd, value));
+		for (const value of named) {
+			const candidate = isAbsolute(value) ? value : cwd && isAbsolute(cwd) ? resolve(cwd, value) : void 0;
+			if (candidate !== void 0 && candidate.length <= 4096) paths.push(candidate);
+		}
 		const path = paths.find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
 		return {
 			...path === void 0 ? {} : { path },

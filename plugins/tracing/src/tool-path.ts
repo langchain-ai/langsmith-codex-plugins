@@ -3,8 +3,10 @@ import { rootFromGitMarker } from "@langchain/plugins-base/git";
 import type { ReconstructionToolOrigin } from "@langchain/plugins-base/tracing/reconstruction";
 import {
   MAX_NAMED_PATHS,
+  MAX_PATH_LENGTH,
   PATCH_FILE_PATTERN,
   PATCH_START,
+  TOOL_INPUT_SCAN_LIMIT,
   TOOL_PATH_INPUT_KEYS,
 } from "./constants.js";
 import { customToolInput } from "./utils/customToolInput.js";
@@ -13,6 +15,7 @@ import { programPaths } from "./utils/programPaths.js";
 
 function namedValues(args: unknown): unknown[] {
   if (typeof args === "string") {
+    if (args.length > TOOL_INPUT_SCAN_LIMIT) return [];
     return args.trimStart().startsWith(PATCH_START)
       ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file)
       : programPaths(args);
@@ -31,8 +34,12 @@ export function toolOriginFromArgs(
       .filter((value): value is string => typeof value === "string" && value.length > 0);
     const paths: string[] = [];
     for (const value of named) {
-      if (isAbsolute(value)) paths.push(value);
-      else if (cwd && isAbsolute(cwd)) paths.push(resolve(cwd, value));
+      const candidate = isAbsolute(value)
+        ? value
+        : cwd && isAbsolute(cwd)
+          ? resolve(cwd, value)
+          : undefined;
+      if (candidate !== undefined && candidate.length <= MAX_PATH_LENGTH) paths.push(candidate);
     }
     const path =
       paths.find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
