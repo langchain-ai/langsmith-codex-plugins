@@ -116,20 +116,13 @@ it("refuses a setup prompt that turns tracing on with nothing signed in", async 
   expect(result?.reason).toContain("not signed in to LangSmith");
 });
 
-it("still refuses a command when the preference file is broken", async () => {
-  await fs.mkdir(path.join(home, ".codex"));
-  await fs.writeFile(path.join(home, ".codex", "langsmith_state_privacy.json"), "{not json");
-
-  const result = await submit("one", "langsmith-tracing:mute");
-
-  expect(result?.decision).toBe("block");
-  expect(result?.reason).toMatch(/^Could not save tracing preference.*\n\nkey rejected$/su);
-});
-
-it("still refuses an ordinary prompt when the preference file is broken", async () => {
+it("still refuses a command and an ordinary prompt when the preference file is broken", async () => {
   await fs.mkdir(path.join(home, ".codex"));
   await fs.writeFile(path.join(home, ".codex", "langsmith_state_privacy.json"), "{not json");
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-  expect(await submit("one")).toEqual({ decision: "block", reason: "key rejected" });
+  expect((await submit("one", "langsmith-tracing:mute"))?.reason).toMatch(
+    /^Could not save tracing preference.*\n\nkey rejected$/su,
+  );
+  expect(await submit("two")).toEqual({ decision: "block", reason: "key rejected" });
 });

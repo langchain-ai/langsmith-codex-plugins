@@ -1,39 +1,104 @@
+import type { UploadCredential } from "@langchain/plugins-base/auth";
 import { commandReplyContext } from "@langchain/plugins-base/plugin";
+import {
+  describeSetup,
+  parseSetupArguments,
+  writeSetupConfig,
+  type SetupOutcome,
+} from "@langchain/plugins-base/settings";
 import { getConfig } from "./config.js";
 import { loginNotices } from "./login-notice.js";
 import {
+  CODEX_CONFIG_DIRECTORY,
+  DEFAULT_LANGSMITH_API_URL,
   EVIDENCE_FAILURE_PREFIX,
   EVIDENCE_REPAIR_HINT,
   LOCKED_MUTE_REPLY,
   MASTER_DISABLED_REPLY,
+  MODE_METADATA,
   MUTED_REPLY_STATE,
   NOTICE_KIND_MANAGED,
   PREFERENCE_REPLY,
   PREFERENCE_REPLY_STATE,
   PREFERENCE_REPLY_WARNING,
   REPLY_SEPARATOR,
+  SENTENCE_END,
+  SETUP_COMMAND_PATTERN,
   STRICT_NOTICE_KINDS,
   PREFERENCE_WARNING_PREFIX,
   UNMUTED_REPLY_STATE,
   USER_PROMPT_SUBMIT_EVENT,
 } from "./constants.js";
-import type { Config } from "./models/config.js";
-import type { PromptSubmitInput } from "./models/hook-input.js";
-import type { PromptSubmitOutput } from "./models/hook-output.js";
-import type { TurnEvidence } from "./models/prompt-submit.js";
+import type { Config, SetupCredential } from "./models/config.js";
+import type { PromptSubmitInput, PromptSubmitOutput, TurnEvidence } from "./models/hook-input.js";
 import type { TracingCommand } from "./models/tracing-policy.js";
-import { endSentence } from "./utils/endSentence.js";
-import { errorText } from "./utils/errorText.js";
 import { homeDirectory } from "./utils/home.js";
 import { showNotices } from "./notices.js";
-import { parseSetupCommand, runSetup } from "./setup.js";
 import {
   defaultPrivacyPath,
   muteLocked,
   parseTracingCommand,
+  previewTurnMode,
   submitPreference,
 } from "./tracing-policy.js";
-import { uploadCredential } from "./tracing-engine.js";
+import { loginRefusal, uploadAuth, uploadCredential, uploadReplicas } from "./tracing-engine.js";
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function endSentence(text: string): string {
+  return text.endsWith(SENTENCE_END) ? text : `${text}${SENTENCE_END}`;
+}
+
+export function parseSetupCommand(prompt: string): string | undefined {
+  const match = SETUP_COMMAND_PATTERN.exec(prompt);
+  return match ? (match[1] ?? "") : undefined;
+}
+
+function signInKind(kind: UploadCredential["kind"] | undefined): SetupOutcome["signIn"] {
+  if (kind === undefined) return "none";
+  return kind === "login" ? "login" : "api-key";
+}
+
+function setupCredential(config: Config): SetupCredential {
+  const credential = uploadCredential(config);
+  const auth = uploadAuth(config);
+  const paused = loginNotices(homeDirectory(), config, credential).find(({ kind }) =>
+    STRICT_NOTICE_KINDS.includes(kind),
+  );
+  const problem = config.managedConfigProblem ?? paused?.text ?? loginRefusal(config, credential);
+  const replicas = auth === undefined ? undefined : uploadReplicas(config, auth);
+  return {
+    apiUrl: auth?.apiUrl ?? config.api_url ?? DEFAULT_LANGSMITH_API_URL,
+    signIn: signInKind(auth?.kind),
+    replicaCount: replicas?.length ?? 0,
+    ...(problem === undefined ? {} : { credentialProblem: problem }),
+  };
+}
+
+export async function runSetup(
+  cwd: string,
+  sessionId: string,
+  argumentText: string,
+): Promise<string> {
+  try {
+    const requested = parseSetupArguments(argumentText);
+    const path = writeSetupConfig(homeDirectory(), CODEX_CONFIG_DIRECTORY, requested);
+    const config = await getConfig({ home: homeDirectory(), cwd, env: process.env });
+    return describeSetup({
+      path,
+      requested,
+      enabled: config.enabled,
+      muted: previewTurnMode(defaultPrivacyPath(), sessionId, config) === MODE_METADATA,
+      project: config.project,
+      ...(config.agent_id === undefined ? {} : { agentId: config.agent_id }),
+      ...setupCredential(config),
+    });
+  } catch (error) {
+    return errorText(error);
+  }
+}
 
 function preferenceReply(
   command: TracingCommand,

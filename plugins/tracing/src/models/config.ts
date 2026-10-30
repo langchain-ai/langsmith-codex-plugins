@@ -1,4 +1,4 @@
-import type { CommonConfig, LockableField } from "@langchain/plugins-base/settings";
+import type { CommonConfig, LockableField, SetupOutcome } from "@langchain/plugins-base/settings";
 
 export type ParentHeaders = Record<string, string> & { "langsmith-trace": string };
 
@@ -26,3 +26,8 @@ export interface EnvironmentLayer {
   common: CommonConfig;
   parentHeaders?: ParentHeaders;
 }
+
+export type SetupCredential = Pick<
+  SetupOutcome,
+  "apiUrl" | "signIn" | "credentialProblem" | "replicaCount"
+>;
