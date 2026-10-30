@@ -23793,7 +23793,14 @@ function toPlainObject(value) {
 //#endregion
 //#region src/tracing-engine-payload.ts
 function postSubmission(run, privacyMode, metadataOptions, status = runStatus(run)) {
-	const payload = toPlainObject(run.toJSON());
+	const children = run.child_runs;
+	let payload;
+	try {
+		run.child_runs = [];
+		payload = toPlainObject(normalizedSnapshot(run.toJSON()));
+	} finally {
+		run.child_runs = children;
+	}
 	const provenance = prepareCodingAgentMetadataProvenance(toPlainObject(metadataOptions), LS_INTEGRATION, privacyMode, status);
 	if (provenance.status !== "ready") throw new Error("Codex trace metadata has no trusted thread ID");
 	return {
@@ -23802,7 +23809,7 @@ function postSubmission(run, privacyMode, metadataOptions, status = runStatus(ru
 		privacyMode,
 		metadata: provenance.value,
 		privacyContext: { status },
-		run: normalizedSnapshot(payload)
+		run: payload
 	};
 }
 function openRootSubmission(run, privacyMode, metadataOptions) {
@@ -24062,7 +24069,10 @@ async function reconstructTranscript(job, workerConfig, home, plugin) {
 		if (saved === void 0) outputs.push({
 			eventId: `${TRACE_RUN_EVENT_PREFIX}${run.id}`,
 			sourceRef: transcriptRef,
-			turnEvidence,
+			turnEvidence: metadata.runType === "root" || metadata.runType === "interrupted" ? turnEvidence : {
+				...turnEvidence,
+				childRunIds: [run.id]
+			},
 			submission
 		});
 		else if (run === root.run) {
