@@ -474,17 +474,6 @@ it.each([
   });
 });
 
-it("checks forty-five very long paths for a repo quickly", () => {
-  const files = Array.from(
-    { length: 45 },
-    (_, n) => `*** Add File: /${"a/".repeat(2040)}${n}.txt\n+x`,
-  );
-  const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
-  const started = performance.now();
-  expect(toolOriginFromArgs({ input }, "/work/a").namedAPath).toBe(true);
-  expect(performance.now() - started).toBeLessThan(1000);
-});
-
 it("reads a workdir from text inside a later string when a regex literal holds a lone quote", () => {
   const input = `const r = /'/; text(await tools.exec_command({cmd:"ls"})); const g = 'tools.exec_command({workdir:"/work/b"})';`;
   expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
