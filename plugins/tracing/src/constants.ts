@@ -168,8 +168,11 @@ export const RUNNER_PREFIX =
   /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 export const SHELL_WRAPPER =
   /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
-export const ANCHORED_PATH = /^(?:[/~\\]|[A-Za-z]:)/;
+export const ANCHORED_PATH = /^(?:[/~\\$]|[A-Za-z]:)/;
+export const HOME_PREFIX = /^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/;
+export const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:\/)/;
 export const MAX_TRACKED_DIRECTORY_PARTS = 8;
+export const TRUNCATED_DIRECTORY = "…";
 export const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 export const SKILLS_DIR = "skills";
 export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([

@@ -37,6 +37,7 @@ import {
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
+import { homeDirectory } from "./utils/home.js";
 import { skillReadSucceeded, skillReadsFromToolCall, typedSkillCoversRead } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
@@ -696,7 +697,7 @@ async function postToolRuns(
     await options.captureRun(toolRun, mode, toolMetadata);
 
     const skills = skillReads
-      .filter((read) => !typedSkillCoversRead(task.typedSkills, read))
+      .filter((read) => !typedSkillCoversRead(task.typedSkills, read, homeDirectory(), context.cwd))
       .map((read) => ({
         name: read.name,
         success: skillReadSucceeded(read, toolCall, task.toolCalls, { min, max }),

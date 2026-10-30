@@ -19,11 +19,13 @@ import {
   SKILLS_DIR,
   STRING_ESCAPES,
   SYSTEM_SKILL_DIR,
+  TRUNCATED_DIRECTORY,
   WRITES_TO_FILE,
 } from "./constants.js";
 import type { SkillRead, ToolCallRecord, TypedSkill } from "./models/rollout.js";
 import type { TimeWindow } from "./models/trace-conversion.js";
 import { customToolInput } from "./utils/customToolInput.js";
+import { normalizedPath } from "./utils/skillPaths.js";
 
 // Split rather than match: one pattern spanning `/skills/<name>/SKILL.md` backtracks for seconds.
 function skillDirectoryInPath(word: string): string | undefined {
@@ -67,7 +69,9 @@ function resolveDirectory(base: string[] | undefined, target: string): string[] 
       stack.push(part);
     }
   }
-  return stack.slice(-MAX_TRACKED_DIRECTORY_PARTS);
+  return stack.length > MAX_TRACKED_DIRECTORY_PARTS
+    ? [TRUNCATED_DIRECTORY, ...stack.slice(1 - MAX_TRACKED_DIRECTORY_PARTS)]
+    : stack;
 }
 
 function placedIn(directory: string[] | undefined, word: string): string {
@@ -120,8 +124,20 @@ export function skillReadsFromToolCall(toolName: string | undefined, args: unkno
   return [...readsByName.values()];
 }
 
-export function typedSkillCoversRead(typedSkills: TypedSkill[], read: SkillRead): boolean {
-  return typedSkills.some((typed) => read.paths.includes(typed.path));
+export function typedSkillCoversRead(
+  typedSkills: TypedSkill[],
+  read: SkillRead,
+  home: string,
+  cwd: string | undefined,
+): boolean {
+  return typedSkills.some((typed) => {
+    const typedPath = normalizedPath(typed.path, home, cwd);
+    return read.paths.some((path) => {
+      const readPath = normalizedPath(path, home, cwd);
+      const unplaced = readPath.split("/").includes(TRUNCATED_DIRECTORY);
+      return readPath === typedPath || (unplaced && read.name === typed.name);
+    });
+  });
 }
 
 function commandFailed(toolCall: ToolCallRecord): boolean {

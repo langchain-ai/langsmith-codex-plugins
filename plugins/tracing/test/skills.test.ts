@@ -169,6 +169,10 @@ describe("skillReadsFromToolCall", () => {
     },
     { command: "cd a && cd .. && cat skills/foo/SKILL.md", path: "skills/foo/SKILL.md" },
     {
+      command: "cd /r && cat $HOME/.agents/skills/foo/SKILL.md",
+      path: "$HOME/.agents/skills/foo/SKILL.md",
+    },
+    {
       command: "cd /r && cd /h/.agents/skills/foo && cat SKILL.md",
       path: "/h/.agents/skills/foo/SKILL.md",
     },
@@ -526,6 +530,58 @@ describe("skills typed as $name", () => {
       "tracing:trace",
       "trace",
     ]);
+  });
+
+  const SAME_FILE: { spelling: string; read: string; typed?: string }[] = [
+    { spelling: "a ~ path", read: "cat ~/.agents/skills/plain-terms/SKILL.md" },
+    { spelling: "a $HOME path", read: "cat $HOME/.agents/skills/plain-terms/SKILL.md" },
+    { spelling: "a ${HOME} path", read: "cat ${HOME}/.agents/skills/plain-terms/SKILL.md" },
+    { spelling: "a cd to a ~ folder", read: "cd ~/.agents/skills/plain-terms && cat SKILL.md" },
+    { spelling: "a . segment", read: "cat /h/.agents/./skills/plain-terms/SKILL.md" },
+    { spelling: "a .. segment", read: "cat /h/.agents/other/../skills/plain-terms/SKILL.md" },
+    {
+      spelling: "a cd too deep to track",
+      read: "cd /a/b/c/d/e/f/g/h/i/skills/plain-terms && cat SKILL.md",
+    },
+    {
+      spelling: "a path relative to the session folder",
+      read: "cat .agents/skills/plain-terms/SKILL.md",
+      typed: "/Users/dev/sample-project/.agents/skills/plain-terms/SKILL.md",
+    },
+    {
+      spelling: "a Windows path with the other slash",
+      read: "Get-Content C:/Users/a/.agents/skills/plain-terms/SKILL.md",
+      typed: "C:\\Users\\a\\.agents\\skills\\plain-terms\\SKILL.md",
+    },
+  ];
+
+  it.each(SAME_FILE)(
+    "counts a skill once when the model reads $spelling",
+    async ({ read, typed }) => {
+      vi.stubEnv("HOME", "/h");
+      const { skills } = await runsFor(
+        turn(
+          typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z", "user", typed),
+          ...readCall("call_a", read, "2026-09-14T00:00:06.000Z"),
+        ),
+      );
+      expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual(["plain-terms"]);
+    },
+  );
+
+  it("keeps a read of the same skill under another home", async () => {
+    vi.stubEnv("HOME", "/other");
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z"),
+        ...readCall(
+          "call_a",
+          "cat ~/.agents/skills/plain-terms/SKILL.md",
+          "2026-09-14T00:00:06.000Z",
+        ),
+      ),
+    );
+    expect(skills).toHaveLength(2);
   });
 
   it("starts the typed run when Codex injected the skill", async () => {

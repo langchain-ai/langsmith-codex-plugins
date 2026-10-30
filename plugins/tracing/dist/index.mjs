@@ -22233,7 +22233,9 @@ const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content)\s/i;
 const RUNNER_PREFIX = /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/;
-const ANCHORED_PATH = /^(?:[/~\\]|[A-Za-z]:)/;
+const ANCHORED_PATH = /^(?:[/~\\$]|[A-Za-z]:)/;
+const HOME_PREFIX = /^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/;
+const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:\/)/;
 const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
@@ -22479,6 +22481,11 @@ const findLast = (array, predicate) => {
 	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
 };
 //#endregion
+//#region src/utils/home.ts
+function homeDirectory() {
+	return process.env.HOME ?? os.homedir();
+}
+//#endregion
 //#region src/utils/customToolInput.ts
 function customToolInput(args) {
 	return isRecord(args) && Object.keys(args).length === 1 && typeof args.input === "string" ? args.input : args;
@@ -22499,6 +22506,20 @@ function toolOutputText(value) {
 		return exitCode == null || exitCode === 0 ? record.output : `${record.output.trimEnd()}\n\nExit code: ${String(exitCode)}`;
 	}
 	return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+//#endregion
+//#region src/utils/skillPaths.ts
+function normalizedPath(path, home, cwd) {
+	const expanded = path.replaceAll("\\", "/").replace(HOME_PREFIX, home.replaceAll("\\", "/"));
+	const anchored = ABSOLUTE_PATH.test(expanded) || cwd == null ? expanded : `${cwd.replaceAll("\\", "/")}/${expanded}`;
+	const parts = [];
+	for (const part of anchored.split("/")) {
+		const rooted = parts[0] === "" || /^[A-Za-z]:$/.test(parts[0] ?? "");
+		if (part === "..") {
+			if (parts.length > (rooted ? 1 : 0)) parts.pop();
+		} else if (part !== "." && (part !== "" || parts.length === 0)) parts.push(part);
+	}
+	return parts.join("/");
 }
 //#endregion
 //#region src/skills.ts
@@ -22528,7 +22549,7 @@ function resolveDirectory(base, target) {
 	const stack = ANCHORED_PATH.test(target) ? [] : [...base ?? []];
 	for (const part of target.split(/[/\\]/)) if (part === "..") stack.pop();
 	else if (part !== "." && (part !== "" || stack.length === 0)) stack.push(part);
-	return stack.slice(-8);
+	return stack.length > 8 ? ["…", ...stack.slice(-7)] : stack;
 }
 function placedIn(directory, word) {
 	return directory == null || ANCHORED_PATH.test(word) ? word : [...directory, word].join("/");
@@ -22574,8 +22595,15 @@ function skillReadsFromToolCall(toolName, args) {
 	}
 	return [...readsByName.values()];
 }
-function typedSkillCoversRead(typedSkills, read) {
-	return typedSkills.some((typed) => read.paths.includes(typed.path));
+function typedSkillCoversRead(typedSkills, read, home, cwd) {
+	return typedSkills.some((typed) => {
+		const typedPath = normalizedPath(typed.path, home, cwd);
+		return read.paths.some((path) => {
+			const readPath = normalizedPath(path, home, cwd);
+			const unplaced = readPath.split("/").includes("…");
+			return readPath === typedPath || unplaced && read.name === typed.name;
+		});
+	});
 }
 function commandFailed(toolCall) {
 	const exitCode = toolCall.outputs.exit_code;
@@ -22651,11 +22679,6 @@ function createRunTree(config, mode = MODE_FULL, parent) {
 	const run = createCodingAgentRunTree(config, LS_INTEGRATION, mode);
 	if (mode === "metadata") metadataProtectedRunTrees.add(run);
 	return run;
-}
-//#endregion
-//#region src/utils/home.ts
-function homeDirectory() {
-	return process.env.HOME ?? os.homedir();
 }
 //#endregion
 //#region src/utils/validation/tracing-policy.ts
@@ -23493,7 +23516,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
 		await options.captureRun(toolRun, mode, toolMetadata);
-		await postSkillRuns(context, skillReads.filter((read) => !typedSkillCoversRead(task.typedSkills, read)).map((read) => ({
+		await postSkillRuns(context, skillReads.filter((read) => !typedSkillCoversRead(task.typedSkills, read, homeDirectory(), context.cwd)).map((read) => ({
 			name: read.name,
 			success: skillReadSucceeded(read, toolCall, task.toolCalls, {
 				min,
