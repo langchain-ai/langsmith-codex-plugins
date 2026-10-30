@@ -5,8 +5,8 @@ import {
   QUESTION_REPLY_PATTERN,
   REALTIME_DELEGATION_PATTERN,
   REVIEW_RESULT_PATTERN,
-  SKILL_DIR_NAME,
   TYPED_SKILL_FRAGMENT,
+  TYPED_SKILL_NAME,
   USER_SHELL_COMMAND_PATTERN,
   XML_ENTITIES,
   XML_ENTITY_PATTERN,
@@ -57,7 +57,7 @@ export function typedSkillNames(item: ResponseItem): string[] {
   return item.content.flatMap((part) => {
     if (part.type !== "input_text" || typeof part.text !== "string") return [];
     const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
-    return name != null && SKILL_DIR_NAME.test(name) ? [name] : [];
+    return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
   });
 }
 

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vol } from "memfs";
 import * as path from "node:path";
 
-import { skillNamesFromToolCall } from "../src/skills.js";
+import { skillReadsFromToolCall } from "../src/skills.js";
 import { convertToRunTree } from "./utils/convert.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
@@ -21,9 +21,12 @@ vi.mock("node:fs", async () => {
 beforeEach(() => vol.reset());
 afterEach(() => vi.unstubAllEnvs());
 
-describe("skillNamesFromToolCall", () => {
+const namesOf = (toolName: string | undefined, args: unknown) =>
+  skillReadsFromToolCall(toolName, args).map(({ name }) => name);
+
+describe("skillReadsFromToolCall", () => {
   // Commands below follow the shapes seen in real 0.153/0.154 rollouts.
-  const skills = (program: string) => skillNamesFromToolCall("exec", program);
+  const skills = (program: string) => namesOf("exec", program);
   const inCommand = (command: string) =>
     skills(`text(await tools.exec_command({cmd:${JSON.stringify(command)}}));`);
 
@@ -54,33 +57,46 @@ describe("skillNamesFromToolCall", () => {
     // Writing the file is not reading it.
     { command: `cat ${SKILL} > copy.md`, names: [] },
     { command: `sed -i '' 's/a/b/' ${SKILL}`, names: [] },
-    // Wrappers and prefixes that still run the read.
     { command: `bash -lc 'cat ${SKILL}'`, names: FOUND },
     { command: `/bin/zsh -lc "cat ${SKILL}"`, names: FOUND },
     { command: `sh -c 'bash -c "cat ${SKILL}"'`, names: FOUND },
+    { command: `bash -l -c 'cat ${SKILL}'`, names: FOUND },
     { command: `FOO=1 BAR="a b" cat ${SKILL}`, names: FOUND },
+    { command: `env FOO=1 cat ${SKILL}`, names: FOUND },
     { command: `sudo -n cat ${SKILL}`, names: FOUND },
     { command: `bash -lc 'cat ${SKILL} > copy.md'`, names: [] },
-    { command: `bash -c 'bash -c "bash -c cat ${SKILL}"'`, names: [] },
-    // Windows readers.
+    { command: `bash -c cat ${SKILL}`, names: [] },
+    { command: `bash -c 'cat ${SKILL}' extra`, names: [] },
+    { command: `bash -x 'cat ${SKILL}'`, names: [] },
     { command: "Get-Content C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
     { command: "type C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
     {
       command: 'powershell -Command "Get-Content C:\\repo\\skills\\pr-creation\\SKILL.md"',
       names: FOUND,
     },
-    // A bare SKILL.md is placed by the folder `cd` moved to.
+    {
+      command:
+        'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Get-Content C:\\repo\\skills\\pr-creation\\SKILL.md"',
+      names: FOUND,
+    },
+    { command: `pwsh -NoLogo -Command 'Get-Content ${SKILL}'`, names: FOUND },
     { command: "cd .agents/skills/pr-creation && cat SKILL.md", names: FOUND },
-    { command: "cd '/Users/a b/.agents/skills/pr-creation'; cat SKILL.md", names: FOUND },
+    { command: "cd '/Users/a b/.agents/skills/pr-creation' && cat SKILL.md", names: FOUND },
+    { command: "cd .agents/skills/pr-creation && bash -lc 'cat SKILL.md'", names: FOUND },
     { command: "cd /repo && cat SKILL.md", names: [] },
-    // Where Codex keeps skills.
+    { command: "cd .agents/skills || cat pr-creation/SKILL.md", names: [] },
+    { command: "cd .agents/skills; cat pr-creation/SKILL.md", names: [] },
+    {
+      command: `bash -lc 'cd .agents/skills && cat pr-creation/SKILL.md'; cat other/SKILL.md`,
+      names: FOUND,
+    },
     { command: "cat /root/.codex/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
+    { command: "cat /root/.codex/other/.system/openai-docs/SKILL.md", names: [] },
     {
       command:
         "cat /h/.codex/plugins/cache/m/p/1.0/.codex-plugin/migrated-command-skills/trace/SKILL.md",
       names: ["trace"],
     },
-    // Only the skill's own folder holds its SKILL.md.
     { command: "cat .agents/skills/pr-creation/references/SKILL.md", names: [] },
     { command: "cat .agents/skills/pr-creation/templates/deep/SKILL.md", names: [] },
     { command: "cat .agents/skills/.cache/pr-creation/SKILL.md", names: [] },
@@ -119,7 +135,7 @@ describe("skillNamesFromToolCall", () => {
 
   it("reads the pre-0.153 exec_command argument object", () => {
     expect(
-      skillNamesFromToolCall("exec_command", {
+      namesOf("exec_command", {
         cmd: "cat .agents/skills/local-development/SKILL.md",
       }),
     ).toEqual(["local-development"]);
@@ -128,7 +144,14 @@ describe("skillNamesFromToolCall", () => {
   // A shell tool would find a skill in this program, so only the tool name empties it.
   it.each(["apply_patch", "shell", undefined])("ignores the %s tool", (toolName) => {
     const program = `text(await tools.exec_command({cmd:"cat ${SKILL}"}));`;
-    expect(skillNamesFromToolCall(toolName, program)).toEqual([]);
+    expect(namesOf(toolName, program)).toEqual([]);
+  });
+
+  it("scans a long run of cd commands and reads in linear time", () => {
+    const crafted = `${"cd /a/skills/x && ".repeat(10_000)}${"cat SKILL.md && ".repeat(10_000)}`;
+    const started = performance.now();
+    expect(inCommand(crafted)).toEqual(["x"]);
+    expect(performance.now() - started).toBeLessThan(250);
   });
 
   it("scans a long run of skills segments in linear time", () => {
@@ -288,22 +311,25 @@ function line(timestamp: string, type: string, payload: Record<string, unknown>)
   return JSON.stringify({ timestamp, type, payload });
 }
 
-function typedSkillMessage(name: string, at: string): string {
+function typedSkillMessage(name: string, at: string, role = "user"): string {
   const text = `<skill>\n<name>${name}</name>\n<path>/h/.agents/skills/${name}/SKILL.md</path>\n${SKILL_BODY}\n</skill>`;
   return line(at, "response_item", {
     type: "message",
-    role: "user",
+    role,
     content: [{ type: "input_text", text }],
   });
 }
 
-function readCall(id: string, command: string, at: string): string[] {
+function readCall(id: string, commands: string | string[], at: string): string[] {
+  const calls = [commands]
+    .flat()
+    .map((command) => `tools.exec_command({cmd:${JSON.stringify(command)}})`);
   return [
     line(at, "response_item", {
       type: "custom_tool_call",
       call_id: id,
       name: "exec",
-      input: `text(await tools.exec_command({cmd:${JSON.stringify(command)}}));`,
+      input: `await Promise.all([${calls.join(",")}]);`,
     }),
     line(at, "response_item", {
       type: "custom_tool_call_output",
@@ -419,6 +445,33 @@ describe("skills typed as $name", () => {
     ]);
   });
 
+  it("counts a namespaced plugin skill once when the model reads its folder", async () => {
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage("tracing:trace", "2026-09-14T00:00:05.000Z"),
+        ...readCall("call_a", "cat /h/.agents/skills/trace/SKILL.md", "2026-09-14T00:00:06.000Z"),
+      ),
+    );
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual(["tracing:trace"]);
+  });
+
+  it("starts the typed run when Codex injected the skill", async () => {
+    const { skills } = await runsFor(
+      turn(typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z")),
+    );
+    expect(Date.parse(String(skills[0].start_time))).toBe(Date.parse("2026-09-14T00:00:05.000Z"));
+  });
+
+  it.each([
+    { what: "an assistant message", name: "plain-terms", role: "assistant" },
+    { what: "a name that is not a skill name", name: "../etc", role: "user" },
+  ])("counts nothing for $what carrying a skill tag", async ({ name, role }) => {
+    const { skills } = await runsFor(
+      turn(typedSkillMessage(name, "2026-09-14T00:00:05.000Z", role)),
+    );
+    expect(skills).toEqual([]);
+  });
+
   it("counts nothing for a user message that only mentions a skill tag", async () => {
     const { skills } = await runsFor(
       turn(
@@ -449,16 +502,61 @@ describe("success of a skill the model read", () => {
     expect(skillOutputs(skills)).toEqual([{ output: { commandName: "plain-terms", success } }]);
   });
 
-  it("reports success when a failed read is followed by one that worked", async () => {
+  it("reports success when one of two reads in the same call worked", async () => {
+    const second = `sed -n 1,5p /h/.agents/skills/plain-terms/SKILL.md`;
     const { skills } = await runsFor(
       turn(
-        ...readCall("call_a", READ, "2026-09-14T00:00:06.000Z"),
+        ...readCall("call_a", [READ, second], "2026-09-14T00:00:06.000Z"),
         commandExecution(READ, 1, "2026-09-14T00:00:06.500Z"),
-        commandExecution(`${READ} | head`, 0, "2026-09-14T00:00:07.000Z"),
+        commandExecution(second, 0, "2026-09-14T00:00:07.000Z"),
       ),
     );
     expect(skillOutputs(skills)).toEqual([
       { output: { commandName: "plain-terms", success: true } },
+    ]);
+  });
+
+  it("does not let another skill or a command that only names the path decide success", async () => {
+    const sibling = "cat /h/.agents/skills/plain-terms-extra/SKILL.md";
+    const echo = "echo /plain-terms SKILL.md";
+    const { skills } = await runsFor(
+      turn(
+        ...readCall("call_a", [READ, sibling], "2026-09-14T00:00:06.000Z"),
+        commandExecution(READ, 1, "2026-09-14T00:00:06.500Z"),
+        commandExecution(sibling, 0, "2026-09-14T00:00:07.000Z"),
+        commandExecution(echo, 0, "2026-09-14T00:00:07.500Z"),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: false } },
+      { output: { commandName: "plain-terms-extra", success: true } },
+    ]);
+  });
+
+  it("reports a failure from the failed status of an exec_command_end event", async () => {
+    const { skills } = await runsFor(
+      turn(
+        line("2026-09-14T00:00:06.000Z", "response_item", {
+          type: "function_call",
+          call_id: "call_a",
+          name: "exec_command",
+          arguments: JSON.stringify({ cmd: READ }),
+        }),
+        line("2026-09-14T00:00:06.100Z", "response_item", {
+          type: "function_call_output",
+          call_id: "call_a",
+          output: "denied",
+        }),
+        line("2026-09-14T00:00:06.200Z", "event_msg", {
+          type: "exec_command_end",
+          call_id: "call_a",
+          status: "failed",
+          aggregated_output: "denied",
+        }),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: false } },
     ]);
   });
 

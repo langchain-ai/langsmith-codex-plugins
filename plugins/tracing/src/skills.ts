@@ -4,27 +4,23 @@ import {
   BACKSLASH_ESCAPE,
   CHANGE_DIRECTORY,
   COMMAND_LITERAL,
-  RUNNER_PREFIX,
-  MAX_SHELL_WRAP_DEPTH,
   QUOTED_RUN,
   READ_COMMAND,
+  RUNNER_PREFIX,
   SHELL_SEGMENT,
   SHELL_TOOL_NAMES,
   SHELL_WORD,
   SHELL_WRAPPER,
-  SKILL_PARENT_DIRS,
   SKILL_DIR_NAME,
   SKILL_FILE_NAME,
+  SKILL_PARENT_DIRS,
+  SKILLS_DIR,
   STRING_ESCAPES,
   SYSTEM_SKILL_DIR,
   WRITES_TO_FILE,
 } from "./constants.js";
-import type { ToolCallRecord } from "./models/rollout.js";
+import type { SkillRead, ToolCallRecord, TypedSkill } from "./models/rollout.js";
 import { customToolInput } from "./utils/customToolInput.js";
-
-function placedIn(directory: string | undefined, word: string): string {
-  return directory == null ? word : `${directory}/${word}`;
-}
 
 // Split rather than match: one pattern spanning `/skills/<name>/SKILL.md` backtracks for seconds.
 function skillDirectoryInPath(word: string): string | undefined {
@@ -34,17 +30,14 @@ function skillDirectoryInPath(word: string): string | undefined {
     return undefined;
   const container = parts.at(-3);
   if (container != null && SKILL_PARENT_DIRS.has(container)) return name;
-  return container === SYSTEM_SKILL_DIR && parts.at(-4) === "skills" ? name : undefined;
+  return container === SYSTEM_SKILL_DIR && parts.at(-4) === SKILLS_DIR ? name : undefined;
 }
 
 function wrappedCommand(segment: string): string | undefined {
   const prefix = SHELL_WRAPPER.exec(segment);
   if (prefix == null) return undefined;
   const rest = segment.slice(prefix[0].length).trim();
-  const quote = rest.at(0);
-  return (quote === '"' || quote === "'") && rest.length > 1 && rest.at(-1) === quote
-    ? rest.slice(1, -1)
-    : rest;
+  return rest.length > 1 && rest.at(-1) === rest.at(0) ? rest.slice(1, -1) : undefined;
 }
 
 // Codex 0.153+ sends a JS program that may call exec_command more than once; before that, `{cmd}`.
@@ -63,40 +56,43 @@ function shellCommands(toolArgs: unknown): string[] {
 }
 
 // Gate each segment on its own: a `cat` in one command must not excuse a `git diff` in the next.
-function collectSkillNames(
-  command: string,
-  shell: { directory: string | undefined },
-  names: Set<string>,
-  depth: number,
-) {
-  for (const segment of command.match(SHELL_SEGMENT) ?? []) {
-    const inner = depth < MAX_SHELL_WRAP_DEPTH ? wrappedCommand(segment) : undefined;
+function collectSkillNames(command: string, directory: string | undefined, names: Set<string>) {
+  let current = directory;
+  for (const [, segment, separator] of command.matchAll(SHELL_SEGMENT)) {
+    const inner = wrappedCommand(segment);
     if (inner != null) {
-      collectSkillNames(inner, shell, names, depth + 1);
+      collectSkillNames(inner, current, names);
       continue;
     }
     const target = CHANGE_DIRECTORY.exec(segment);
     if (target != null) {
-      shell.directory = placedIn(shell.directory, target[1] ?? target[2] ?? target[3]);
+      if (separator === "&&") current = target[1] ?? target[2] ?? target[3];
       continue;
     }
     const read = segment.replace(RUNNER_PREFIX, "");
     if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
     for (const word of read.match(SHELL_WORD) ?? []) {
-      const name = skillDirectoryInPath(placedIn(shell.directory, word));
+      const name = skillDirectoryInPath(current == null ? word : `${current}/${word}`);
       if (name != null) names.add(name);
     }
   }
 }
 
-export function skillNamesFromToolCall(toolName: string | undefined, args: unknown): string[] {
+export function skillReadsFromToolCall(toolName: string | undefined, args: unknown): SkillRead[] {
   if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
 
-  const names = new Set<string>();
+  const commandsByName = new Map<string, string[]>();
   for (const command of shellCommands(args)) {
-    collectSkillNames(command, { directory: undefined }, names, 0);
+    const names = new Set<string>();
+    collectSkillNames(command, undefined, names);
+    for (const name of names)
+      commandsByName.set(name, [...(commandsByName.get(name) ?? []), command]);
   }
-  return [...names];
+  return [...commandsByName].map(([name, commands]) => ({ name, commands }));
+}
+
+export function namesCoveredByTypedSkills(typedSkills: TypedSkill[]): Set<string> {
+  return new Set(typedSkills.flatMap(({ name }) => [name, name.slice(name.lastIndexOf(":") + 1)]));
 }
 
 function commandFailed(toolCall: ToolCallRecord): boolean {
@@ -104,22 +100,19 @@ function commandFailed(toolCall: ToolCallRecord): boolean {
   return toolCall.error != null || (typeof exitCode === "number" && exitCode !== 0);
 }
 
-function commandText(toolCall: ToolCallRecord): string {
-  const { command } = toolCall.outputs;
-  return Array.isArray(command) ? command.join(" ") : String(command ?? "");
+function ranCommand(record: ToolCallRecord, commands: string[]): boolean {
+  const { command } = record.outputs;
+  const text = Array.isArray(command) ? command.at(-1) : command;
+  return typeof text === "string" && commands.includes(text);
 }
 
-export function skillReadSucceededByCommandRecords(
-  skillName: string,
+export function skillReadSucceeded(
+  read: SkillRead,
   call: ToolCallRecord,
   calls: Record<string, ToolCallRecord>,
 ): boolean {
-  const reads = Object.values(calls).filter((record) => {
-    const text = commandText(record);
-    return (
-      text.includes(SKILL_FILE_NAME) &&
-      (text.includes(`/${skillName}`) || text.includes(`\\${skillName}`))
-    );
-  });
-  return reads.length > 0 ? reads.some((read) => !commandFailed(read)) : !commandFailed(call);
+  const records = Object.values(calls).filter((record) => ranCommand(record, read.commands));
+  return records.length > 0
+    ? records.some((record) => !commandFailed(record))
+    : !commandFailed(call);
 }

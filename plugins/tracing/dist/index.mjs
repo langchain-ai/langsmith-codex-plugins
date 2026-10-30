@@ -22230,10 +22230,10 @@ const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const READ_COMMAND = /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
-const RUNNER_PREFIX = /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
-const SHELL_WRAPPER = /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
-const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|type)\s/i;
+const RUNNER_PREFIX = /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
+const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/i;
+const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
 const SKILL_PARENT_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
@@ -22244,8 +22244,9 @@ const STRING_ESCAPES = {
 	t: "	",
 	r: "\r"
 };
-const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+const SHELL_SEGMENT = /((?:"[^"]*"|'[^']*'|[^;|&\n"'])+)(&&|[;|&\n])?/g;
 const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 const CONTEXTUAL_USER_FRAGMENTS = [
 	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
@@ -22500,9 +22501,6 @@ function toolOutputText(value) {
 }
 //#endregion
 //#region src/skills.ts
-function placedIn(directory, word) {
-	return directory == null ? word : `${directory}/${word}`;
-}
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
 	const name = parts.at(-2);
@@ -22515,8 +22513,7 @@ function wrappedCommand(segment) {
 	const prefix = SHELL_WRAPPER.exec(segment);
 	if (prefix == null) return void 0;
 	const rest = segment.slice(prefix[0].length).trim();
-	const quote = rest.at(0);
-	return (quote === "\"" || quote === "'") && rest.length > 1 && rest.at(-1) === quote ? rest.slice(1, -1) : rest;
+	return rest.length > 1 && rest.at(-1) === rest.at(0) ? rest.slice(1, -1) : void 0;
 }
 function shellCommands(toolArgs) {
 	const args = customToolInput(toolArgs);
@@ -22526,46 +22523,55 @@ function shellCommands(toolArgs) {
 	}
 	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
 }
-function collectSkillNames(command, shell, names, depth) {
-	for (const segment of command.match(SHELL_SEGMENT) ?? []) {
-		const inner = depth < 2 ? wrappedCommand(segment) : void 0;
+function collectSkillNames(command, directory, names) {
+	let current = directory;
+	for (const [, segment, separator] of command.matchAll(SHELL_SEGMENT)) {
+		const inner = wrappedCommand(segment);
 		if (inner != null) {
-			collectSkillNames(inner, shell, names, depth + 1);
+			collectSkillNames(inner, current, names);
 			continue;
 		}
 		const target = CHANGE_DIRECTORY.exec(segment);
 		if (target != null) {
-			shell.directory = placedIn(shell.directory, target[1] ?? target[2] ?? target[3]);
+			if (separator === "&&") current = target[1] ?? target[2] ?? target[3];
 			continue;
 		}
 		const read = segment.replace(RUNNER_PREFIX, "");
 		if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
 		for (const word of read.match(SHELL_WORD) ?? []) {
-			const name = skillDirectoryInPath(placedIn(shell.directory, word));
+			const name = skillDirectoryInPath(current == null ? word : `${current}/${word}`);
 			if (name != null) names.add(name);
 		}
 	}
 }
-function skillNamesFromToolCall(toolName, args) {
+function skillReadsFromToolCall(toolName, args) {
 	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
-	const names = /* @__PURE__ */ new Set();
-	for (const command of shellCommands(args)) collectSkillNames(command, { directory: void 0 }, names, 0);
-	return [...names];
+	const commandsByName = /* @__PURE__ */ new Map();
+	for (const command of shellCommands(args)) {
+		const names = /* @__PURE__ */ new Set();
+		collectSkillNames(command, void 0, names);
+		for (const name of names) commandsByName.set(name, [...commandsByName.get(name) ?? [], command]);
+	}
+	return [...commandsByName].map(([name, commands]) => ({
+		name,
+		commands
+	}));
+}
+function namesCoveredByTypedSkills(typedSkills) {
+	return new Set(typedSkills.flatMap(({ name }) => [name, name.slice(name.lastIndexOf(":") + 1)]));
 }
 function commandFailed(toolCall) {
 	const exitCode = toolCall.outputs.exit_code;
 	return toolCall.error != null || typeof exitCode === "number" && exitCode !== 0;
 }
-function commandText(toolCall) {
-	const { command } = toolCall.outputs;
-	return Array.isArray(command) ? command.join(" ") : String(command ?? "");
+function ranCommand(record, commands) {
+	const { command } = record.outputs;
+	const text = Array.isArray(command) ? command.at(-1) : command;
+	return typeof text === "string" && commands.includes(text);
 }
-function skillReadSucceededByCommandRecords(skillName, call, calls) {
-	const reads = Object.values(calls).filter((record) => {
-		const text = commandText(record);
-		return text.includes("SKILL.md") && (text.includes(`/${skillName}`) || text.includes(`\\${skillName}`));
-	});
-	return reads.length > 0 ? reads.some((read) => !commandFailed(read)) : !commandFailed(call);
+function skillReadSucceeded(read, call, calls) {
+	const records = Object.values(calls).filter((record) => ranCommand(record, read.commands));
+	return records.length > 0 ? records.some((record) => !commandFailed(record)) : !commandFailed(call);
 }
 //#endregion
 //#region src/utils/isPrimitive.ts
@@ -22777,7 +22783,7 @@ function typedSkillNames(item) {
 	return item.content.flatMap((part) => {
 		if (part.type !== "input_text" || typeof part.text !== "string") return [];
 		const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
-		return name != null && SKILL_DIR_NAME.test(name) ? [name] : [];
+		return name != null && TYPED_SKILL_NAME.test(name) ? [name] : [];
 	});
 }
 function isReviewResult(item) {
@@ -23384,41 +23390,38 @@ async function postModelRun(context, fullMessages, output) {
 		subagentThreads
 	};
 }
-async function postSkillRun(context, skillName, window, success) {
+async function postSkillRuns(context, skills, window) {
 	const { metadataContext, childMetadataBase, mode, parent } = context;
+	const { min, max } = window;
 	const options = context.request.options;
-	const skillMetadata = {
-		...metadataContext,
-		runType: "tool",
-		clearSubagent: true,
-		skillName,
-		base: childMetadataBase
-	};
-	const skillRun = createRunTree({
-		id: options.nextRunId(),
-		name: "Skill",
-		run_type: "tool",
-		start_time: window.min,
-		end_time: window.max,
-		inputs: { input: { skill: skillName } },
-		outputs: { output: {
-			commandName: skillName,
-			success
-		} },
-		extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
-	}, mode, parent);
-	await options.captureRun(skillRun, mode, skillMetadata);
-}
-async function postTypedSkillRuns(context) {
-	for (const { name, timestamp } of context.task.typedSkills) await postSkillRun(context, name, {
-		min: timestamp,
-		max: timestamp
-	}, true);
+	for (const { name: skillName, success } of skills) {
+		const skillMetadata = {
+			...metadataContext,
+			runType: "tool",
+			clearSubagent: true,
+			skillName,
+			base: childMetadataBase
+		};
+		const skillRun = createRunTree({
+			id: options.nextRunId(),
+			name: "Skill",
+			run_type: "tool",
+			start_time: min,
+			end_time: max,
+			inputs: { input: { skill: skillName } },
+			outputs: { output: {
+				commandName: skillName,
+				success
+			} },
+			extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
+		}, mode, parent);
+		await options.captureRun(skillRun, mode, skillMetadata);
+	}
 }
 async function postToolRuns(context, aiMessage, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const options = context.request.options;
-	const typedNames = new Set(task.typedSkills.map(({ name }) => name));
+	const typedNames = namesCoveredByTypedSkills(task.typedSkills);
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -23434,7 +23437,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 		const max = Math.max(toolMessage.timestamp.end, ...toolCall.timings);
 		const nativeToolName = typeof msgToolCall.name === "string" ? msgToolCall.name : void 0;
 		const runName = nativeToolName ?? "openai.codex.tool";
-		const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+		const skillReads = skillReadsFromToolCall(nativeToolName, msgToolCall.args);
 		const toolMetadata = {
 			...metadataContext,
 			runType: "tool",
@@ -23467,19 +23470,24 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
 		await options.captureRun(toolRun, mode, toolMetadata);
-		for (const skillName of skillNames) {
-			if (typedNames.has(skillName)) continue;
-			const success = skillReadSucceededByCommandRecords(skillName, toolCall, task.toolCalls);
-			await postSkillRun(context, skillName, {
-				min,
-				max
-			}, success);
-		}
+		await postSkillRuns(context, skillReads.filter(({ name }) => !typedNames.has(name)).map((read) => ({
+			name: read.name,
+			success: skillReadSucceeded(read, toolCall, task.toolCalls)
+		})), {
+			min,
+			max
+		});
 	}
 }
 async function postModelAndToolRuns(context, messages) {
 	const fullMessages = mergeMessages([...getSystemMessage(context.sessionMeta, context.task), ...messages]);
-	await postTypedSkillRuns(context);
+	for (const { name, timestamp } of context.task.typedSkills) await postSkillRuns(context, [{
+		name,
+		success: true
+	}], {
+		min: timestamp,
+		max: timestamp
+	});
 	for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
 		const { aiMessage, toolMessages, subagentThreads } = await postModelRun(context, fullMessages, output);
 		await postToolRuns(context, aiMessage, toolMessages);

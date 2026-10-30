@@ -163,19 +163,15 @@ export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // Anchored, so a read verb inside a path argument is not mistaken for the command.
 export const READ_COMMAND =
-  /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
-
+  /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|type)\s/i;
 export const RUNNER_PREFIX =
-  /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
-
+  /^\s*(?:(?:sudo|env)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
 export const SHELL_WRAPPER =
-  /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
-export const MAX_SHELL_WRAP_DEPTH = 2;
-
-export const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
-
+  /^\s*(?:\S*\/)?(?:(?:ba|z)?sh(?:\s+-[il])*\s+-[il]?c|(?:powershell|pwsh)(?:\.exe)?(?:\s+-(?:NoProfile|NonInteractive|NoLogo|ExecutionPolicy\s+\w+))*\s+-Command)\s+(?=["'])/i;
+export const CHANGE_DIRECTORY = /^\s*cd\s+(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/;
+export const SKILLS_DIR = "skills";
 export const SKILL_PARENT_DIRS: ReadonlySet<string> = new Set([
-  "skills",
+  SKILLS_DIR,
   "migrated-command-skills",
 ]);
 export const SYSTEM_SKILL_DIR = ".system";
@@ -196,8 +192,9 @@ export const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
 
 // One command per run of non-separator characters; a quoted separator does not split.
-export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+export const SHELL_SEGMENT = /((?:"[^"]*"|'[^']*'|[^;|&\n"'])+)(&&|[;|&\n])?/g;
 export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+export const TYPED_SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 export const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 
 // Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs,

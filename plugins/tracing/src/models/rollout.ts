@@ -413,6 +413,10 @@ export type MergedMessage<TMessage> = {
 
 export type TypedSkill = { name: string; timestamp: number };
 
+export type SkillRead = { name: string; commands: string[] };
+
+export type SkillOutcome = { name: string; success: boolean };
+
 export type Task = {
   turnId: { id: string; timestamp: number } | undefined;
   // 1-based native turn index within the thread.
