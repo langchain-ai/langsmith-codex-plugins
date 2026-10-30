@@ -4,7 +4,12 @@ import { saveJobContext } from "./job-context.js";
 import type { Config } from "./models/config.js";
 import type { CodexTurnRequest } from "./models/tracing-engine.js";
 import type { TracingMode } from "./models/tracing-policy.js";
-import { loadUploadedTurnIds, markTurnUploaded, withSidecarLockOrWithout } from "./sidecar.js";
+import {
+  loadHookFirings,
+  loadUploadedTurnIds,
+  markTurnUploaded,
+  withSidecarLockOrWithout,
+} from "./sidecar.js";
 import { listCompletedTurnIds } from "./trace.js";
 import { hasUnclosedLiveRoot } from "./tracing-engine.js";
 import {
@@ -32,14 +37,17 @@ async function queueUnhandledTurns(
 ): Promise<void> {
   const handled = await loadUploadedTurnIds(request.transcriptPath);
   const firstStop = handled.size === 0;
+  const fired = config.capture_hook_outputs ? await loadHookFirings(session.sessionId) : [];
   const completed = await listCompletedTurnIds({
     transcript_path: request.transcriptPath,
     turn_id: request.turnId,
+    firings: config.capture_hook_outputs ? fired : undefined,
   });
   for (const turnId of completed) {
     if (handled.has(turnId) && !(await hasUnclosedLiveRoot(session, turnId))) continue;
     const mode = lockedTurnMode(config, session.sessionId, turnId);
-    if (mode === MODE_OFF || (firstStop && turnId !== request.turnId)) {
+    const prompted = fired.some(({ turn_id }) => turn_id === turnId);
+    if (mode === MODE_OFF || (firstStop && turnId !== request.turnId && !prompted)) {
       await markTurnUploaded(request.transcriptPath, turnId);
       continue;
     }

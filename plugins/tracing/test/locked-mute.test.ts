@@ -75,6 +75,22 @@ it("traces a helper thread's tool call without content while muting is locked", 
   expect(liveModes).toEqual(["metadata"]);
 });
 
+it("leaves a tool for Stop while hook capture is on", async () => {
+  const transcript_path = path.join(home, "rollout.jsonl");
+  const input = {
+    hook_event_name: "PostToolUse",
+    session_id: "thread",
+    turn_id: "turn",
+    cwd: home,
+  };
+  liveModes.length = 0;
+  locked.capture_hook_outputs = true;
+  await handlePostToolUse({ ...input, transcript_path, tool_use_id: "call", prompt: "" });
+  delete locked.capture_hook_outputs;
+
+  expect(liveModes).toEqual([]);
+});
+
 it("forgets an unmute refused under a locked mute once the lock is lifted", async () => {
   await submit("refused", "langsmith-tracing:unmute");
   locked.locked = [];

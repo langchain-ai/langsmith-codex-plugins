@@ -1,5 +1,6 @@
 // Frozen literals for the Codex integration (see validator.json).
 import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
+import type { HookPlacement } from "./models/hook-input.js";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -34,6 +35,7 @@ export const ENV_SUFFIXES = {
   redact: "REDACT",
   redactExtraRules: "REDACT_EXTRA",
   strictAuth: "STRICT_AUTH",
+  captureHookOutputs: "CAPTURE_HOOK_OUTPUTS",
   parentHeaders: "PARENT_HEADERS",
   noticeCooldown: "NOTICE_COOLDOWN",
 } as const;
@@ -87,6 +89,9 @@ export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
 ] as const;
 export const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
 export const ENGINE_WORKER_FLAG = "--engine-worker";
+export const RECORD_HOOK_FLAG = "--record-hook";
+export const CAPTURE_FLAG_FILE = "capture-hook-outputs";
+export const CAPTURE_FLAG_KEEP_MS = 86_400_000;
 export const DEFAULT_LANGSMITH_API_URL = "https://api.smith.langchain.com";
 export const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 export const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
@@ -115,6 +120,27 @@ export const TOOL_ITEM_TYPES: readonly unknown[] = [
   "McpToolCall",
 ];
 export const FAILED_TOOL_STATUSES: readonly unknown[] = ["failed", "declined"];
+export const TOOL_RESULT_TYPE_SUFFIX = "_output";
+export const HOOK_CONTEXT_KIND = "hooks.additional_context";
+export const HOOK_FIRINGS_PREFIX = "hook-firings-";
+export const HOOK_FIRINGS_SESSION_TURN = "session";
+export const HOOK_FIRINGS_EXTENSION = ".jsonl";
+export const UNSAFE_FILE_NAME_CHARS = /[^A-Za-z0-9_-]/g;
+export const UNKNOWN_HOOK_NAME = "Hook";
+export const LATE_RUN_ID_PREFIX = "late:";
+export const TURN_END_EVENTS: readonly unknown[] = [
+  "task_complete",
+  "turn_complete",
+  "turn_aborted",
+];
+export const UNKNOWN_HOOK_PLACEMENT: HookPlacement = { direction: "input", scope: "turn" };
+export const HOOK_PLACEMENTS: Record<string, HookPlacement> = {
+  SessionStart: { direction: "input", scope: "turn" },
+  UserPromptSubmit: { direction: "input", scope: "turn" },
+  SubagentStart: { direction: "input", scope: "turn" },
+  PreToolUse: { direction: "input", scope: "tool" },
+  PostToolUse: { direction: "output", scope: "tool" },
+};
 export const TOOL_STATUS_ERROR_PREFIX = "Tool ";
 export const SUBAGENT_AGENT_TYPE = "subagent";
 export const OPEN_CLOSURE = "open";

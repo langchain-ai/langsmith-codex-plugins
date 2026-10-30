@@ -51,6 +51,7 @@ import type {
   ParentDestination,
 } from "./models/tracing-engine.js";
 import type { TracingMode } from "./models/tracing-policy.js";
+import { pruneHookFirings } from "./sidecar.js";
 import { convertToRunTree } from "./trace.js";
 import { transcriptPathFromRef } from "./tracing-engine-locator.js";
 import {
@@ -194,6 +195,7 @@ function conversionOptions(
     toolRunId: toolRunIdGenerator(sessionId, turnId),
     privacyMode,
     attributor,
+    captureHookOutputs: config.capture_hook_outputs,
   };
 }
 
@@ -205,6 +207,7 @@ function reportRecovery(result: CodexRecoveryResult): void {
 export async function runCodexEngineWorker(sessionId: string, cwd: string): Promise<void> {
   const home = homeDirectory();
   const config = await getConfig({ home, cwd, env: process.env });
+  await pruneHookFirings();
   const session = createCodexTracingSession(config, sessionId, cwd, home);
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
@@ -247,7 +250,7 @@ async function reconstructTranscript(
     : workerConfig;
   const runs: CodexReconstructedRun[] = [];
   await convertToRunTree(
-    { transcript_path: transcriptPath, turn_id: job.turnId },
+    { transcript_path: transcriptPath, turn_id: job.turnId, session_id: job.sessionId },
     conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs, home),
   );
   const [root, ...children] = runs;

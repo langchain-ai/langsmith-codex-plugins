@@ -110,6 +110,7 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
     redact_extra_rules: parseJson(envVariable(env, ENV_SUFFIXES.redactExtraRules)),
     notice_cooldown: parseCooldown(envVariable(env, ENV_SUFFIXES.noticeCooldown)),
     strict_auth: parseBoolean(envVariable(env, ENV_SUFFIXES.strictAuth)),
+    capture_hook_outputs: parseBoolean(envVariable(env, ENV_SUFFIXES.captureHookOutputs)),
   };
   const parsed = parseCommonConfig(
     Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)),

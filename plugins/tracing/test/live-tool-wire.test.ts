@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -13,6 +14,7 @@ const VLR = "call_VLRlIzWNfD2jSDW47dX5eEMz";
 const wire = liveWire();
 const workspace = (name = "live", rows = lines) => wire.workspace(name, rows);
 const toolPost = () => wire.sent("post").find(({ name }) => name === "exec_command");
+const engine = () => join(wire.dir(), "live/home/.codex/langsmith_engine");
 const rootClosed = () => wire.sent("patch").some((run) => run.outputs && run.end_time);
 
 it("uploads a finished tool's run and its open turn root before Stop runs", async () => {
@@ -26,6 +28,40 @@ it("uploads a finished tool's run and its open turn root before Stop runs", asyn
   const tool = runs.find(({ name }) => name === "exec_command")!;
   expect(root.end_time).toBeUndefined();
   expect(tool).toMatchObject({ parent_run_id: root.id, trace_id: root.id });
+  expect(await fs.readdir(engine())).not.toContainEqual(expect.stringMatching(/^hook-firings-/));
+  expect(existsSync(join(engine(), "capture-hook-outputs"))).toBe(false);
+});
+
+it("uploads each tool once at Stop with hook output when hook capture is on", async () => {
+  const kinds = { content_item_kinds: ["hooks.additional_context"], create_time: 9e9 };
+  const content = [{ type: "input_text", text: "ctx" }];
+  const hook = { type: "message", role: "developer", content };
+  const payload = { ...hook, internal_chat_message_metadata_passthrough: kinds };
+  const { timestamp } = JSON.parse(lines[outputLine(VLR)]);
+  const rows = lines.toSpliced(
+    outputLine(VLR) + 1,
+    0,
+    JSON.stringify({ timestamp, type: "response_item", payload }),
+  );
+  const live = await wire.workspace("live", rows, { capture_hook_outputs: true });
+  await live.hook({ hook_event_name: "PreToolUse", tool_use_id: VLR }, ["--record-hook"]);
+  await live.tool(VLR);
+  await live.settle();
+  expect(wire.received).toHaveLength(0);
+  const firings = join(engine(), `hook-firings-${session}-${turn}.jsonl`);
+  expect((await fs.readFile(firings, "utf8")).match(/"event":"\w+"/g)).toEqual([
+    '"event":"UserPromptSubmit"',
+    '"event":"PreToolUse"',
+  ]);
+  expect(existsSync(join(engine(), "capture-hook-outputs"))).toBe(true);
+  await live.write();
+  await live.stop();
+  await live.settle();
+
+  const { runs, posts } = wire.trace("live");
+  expect([...posts.values()].every((count) => count === 1)).toBe(true);
+  const tool = runs.get(toolRunIdGenerator(session, turn)(VLR))!;
+  expect(tool.inputs.hooks).toEqual([{ name: "PreToolUse", output: "ctx" }]);
 });
 
 it("uploads every run once and ends with the Stop-only trace when one tool hook is late and one never fires", async () => {

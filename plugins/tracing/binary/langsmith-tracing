@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+if [ "${1-}" = --record-hook ] && [ -n "${HOME-}" ] && [ ! -e "$HOME/.codex/langsmith_engine/capture-hook-outputs" ]; then
+  cat >/dev/null || :
+  exit 0
+fi
+
 OUR_EXIT_CODES="0"
 
 here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)

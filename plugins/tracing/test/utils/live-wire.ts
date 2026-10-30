@@ -66,13 +66,14 @@ export function liveWire() {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  async function workspace(name: string, rows: string[]) {
+  async function workspace(name: string, rows: string[], extra: Record<string, unknown> = {}) {
     const [session, turn] = ids(rows);
     const home = join(dir, name, "home");
     const cwd = join(dir, name, "project");
     await fs.mkdir(join(home, ".codex"), { recursive: true });
     await fs.mkdir(cwd, { recursive: true });
     const settings = { enabled: true, api_url: api, api_key: name, project: "live", replicas: [] };
+    Object.assign(settings, extra);
     await fs.writeFile(join(cwd, "langsmith-plugins.json"), JSON.stringify(settings));
     const transcript = join(cwd, "rollout.jsonl");
     const marker = `${transcript}.langsmith`;

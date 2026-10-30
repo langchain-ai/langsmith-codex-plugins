@@ -1,6 +1,7 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { RepositoryAttributor } from "@langchain/plugins-base/git";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
+import type { HookFiring } from "./hook-input.js";
 import type { Session, Task, TokenCount } from "./rollout.js";
 import type { TracingMode, TurnMode } from "./tracing-policy.js";
 
@@ -26,12 +27,15 @@ export interface TraceConversionOptions {
   replayHistory?: boolean;
   privacyMode?: TurnMode;
   attributor?: RepositoryAttributor;
+  captureHookOutputs?: boolean | undefined;
 }
 
 export interface TraceInput {
   transcript_path: string;
   turn_id: string | null;
   includeOpenTurn?: boolean;
+  firings?: HookFiring[] | undefined;
+  session_id?: string | undefined;
 }
 
 export interface TurnRequest {
@@ -87,6 +91,8 @@ export interface RolloutWalk {
   turnNumber: number;
   spawnAgentMessages: Map<string, { subagentThreads: string[] }>;
   sessionTokenTotal: TokenCount | undefined;
+  firings: HookFiring[] | undefined;
+  lastModelItemTime: number;
 }
 
 export interface TurnPosition {

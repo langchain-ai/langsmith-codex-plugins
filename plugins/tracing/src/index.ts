@@ -4,11 +4,12 @@ import { dispatchHookCommand } from "@langchain/plugins-base/plugin";
 import { createCodexTracingSession, runCodexEngineWorker } from "./tracing-engine.js";
 import { queueCodexTurns } from "./turn-queue.js";
 import { getConfig } from "./config.js";
-import { ENGINE_WORKER_FLAG, LS_INTEGRATION_VERSION } from "./constants.js";
+import { ENGINE_WORKER_FLAG, LS_INTEGRATION_VERSION, RECORD_HOOK_FLAG } from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import type { CodexHookInput } from "./models/hook-input.js";
 import { handlePostToolUse } from "./post-tool-use.js";
+import { recordHookFiring } from "./sidecar.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { homeDirectory } from "./utils/home.js";
 import { showPendingWarning } from "./warnings.js";
@@ -44,6 +45,12 @@ async function runHook() {
   });
 }
 
+async function recordFiring() {
+  const content = await readStdin<CodexHookInput>();
+  const config = await getConfig({ home: homeDirectory(), cwd: content.cwd, env: process.env });
+  await recordHookFiring(config, content);
+}
+
 const USAGE = usage(binary.target.executableName);
 const args = process.argv.slice(2);
 
@@ -55,7 +62,7 @@ if (args.length === 0) {
   await dispatchHookCommand(args, {
     usage: USAGE,
     version: LS_INTEGRATION_VERSION ?? "development",
-    hooks: {},
+    hooks: { [RECORD_HOOK_FLAG]: () => recordFiring().catch(() => undefined) },
     worker: {
       command: ENGINE_WORKER_FLAG,
       run: ([sessionId, cwd]) => {

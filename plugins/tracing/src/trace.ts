@@ -1,6 +1,7 @@
 import type {
   AggregateMessage,
   EventMsgLine,
+  LineSchema,
   EventMsgPayload,
   MergedMessage,
   ResponseItem,
@@ -10,8 +11,10 @@ import type {
   StandardMessage,
   SubagentSource,
   Task,
+  TaskHook,
   TokenCount,
   ToolCallRecord,
+  WithPassthrough,
 } from "./models/rollout.js";
 import type {
   CompletedTurn,
@@ -28,14 +31,17 @@ import type {
   TurnRunContext,
 } from "./models/trace-conversion.js";
 import type { TurnMode } from "./models/tracing-policy.js";
+import type { HookFiring, HookPlacement } from "./models/hook-input.js";
 import type { RunTree, RunTreeConfig } from "langsmith";
 import type { ReconstructionToolOrigin } from "@langchain/plugins-base/tracing/reconstruction";
+import { hookOutputs } from "@langchain/plugins-base/tracing";
 import {
   buildCodingAgentMetadata,
   type CodingAgentMetadataOptions,
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
+import { loadHookFirings, removeHookFirings } from "./sidecar.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
@@ -54,7 +60,11 @@ import {
   CHILD_SCOPE_RESET,
   DATA_URL_PATTERN,
   FAILED_TOOL_STATUSES,
+  HOOK_CONTEXT_KIND,
+  HOOK_PLACEMENTS,
   ITEM_COMPLETED_EVENT,
+  LATE_RUN_ID_PREFIX,
+  TURN_END_EVENTS,
   LS_INTEGRATION,
   LS_INTEGRATION_VERSION,
   MODE_FULL,
@@ -65,7 +75,10 @@ import {
   SUBAGENT_SCOPE_RESET,
   TOOL_END_EVENT_SUFFIX,
   TOOL_ITEM_TYPES,
+  TOOL_RESULT_TYPE_SUFFIX,
   TOOL_STATUS_ERROR_PREFIX,
+  UNKNOWN_HOOK_NAME,
+  UNKNOWN_HOOK_PLACEMENT,
 } from "./constants.js";
 
 function formatError(value: unknown): string | undefined {
@@ -428,6 +441,7 @@ async function createParentRun(
   agent: MergedMessage<StandardMessage>[],
 ): Promise<RunTree> {
   const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
+  const hooks = task.hooks.filter(({ callId }) => callId === undefined);
   const { mode, parentStartTime } = draft;
   const options = draft.request.options;
   const parentEndTime = agent.at(-1)?.timestamp.end ?? parentStartTime;
@@ -453,8 +467,11 @@ async function createParentRun(
     project_name: options.projectName,
     run_type: "chain",
     replicas: options.replicas,
-    inputs: { messages: user != null ? [user.message] : [] },
-    outputs: { messages: agent.map((i) => i.message) },
+    inputs: {
+      messages: user != null ? [user.message] : [],
+      ...hookOutputs(hooksIn(hooks, "input")),
+    },
+    outputs: { messages: agent.map((i) => i.message), ...hookOutputs(hooksIn(hooks, "output")) },
     error: task.error,
     start_time: parentStartTime,
     end_time: parentEndTime,
@@ -500,6 +517,24 @@ function modelSpans(
   });
 }
 
+function lateRunIds({ toolRunId, nextRunId }: TraceConversionOptions, scope: string) {
+  let count = 0;
+  return () => toolRunId?.(`${LATE_RUN_ID_PREFIX}${scope}:${count++}`) ?? nextRunId();
+}
+
+function toolsOutsideSpans(fullMessages: MergedMessage<StandardMessage>[], spans: ModelSpan[]) {
+  return fullMessages.filter(
+    ({ message }, index) =>
+      message.role === "tool" &&
+      !spans.some(
+        ({ start, length }) =>
+          index > start &&
+          index < start + length &&
+          fullMessages[start].message.content.some(isCallTo(message.tool_call_id)),
+      ),
+  );
+}
+
 async function postSubagentThread(context: TurnRunContext, subagentThread: string) {
   if (context.postedSubagentThreads.has(subagentThread)) return;
   context.postedSubagentThreads.add(subagentThread);
@@ -514,7 +549,11 @@ async function postSubagentThread(context: TurnRunContext, subagentThread: strin
   ) as { payload: { turn_id: string } } | undefined;
 
   await convertToRunTree(
-    { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
+    {
+      transcript_path: subagentFile,
+      turn_id: lastEvent?.payload.turn_id ?? null,
+      session_id: subagentThread,
+    },
     { ...context.request.options, parentRunTree: context.parent, replayHistory: true },
   );
 }
@@ -568,7 +607,11 @@ async function postModelRun(
       run_type: "llm",
       start_time: outputStartTime,
       end_time: outputEndTime,
-      inputs: { messages: inputMessages.map((i) => i.message) },
+      inputs: {
+        messages: withoutHookTexts(inputMessages, shownHookTexts(task, options)).map(
+          (i) => i.message,
+        ),
+      },
       outputs: { messages: aiMessage.map((i) => i.message) },
       extra: {
         metadata: buildChildRunMetadata(llmMetadata),
@@ -624,7 +667,7 @@ async function postSkillRuns(
 
 async function postToolRuns(
   context: TurnRunContext,
-  aiMessage: MergedMessage<StandardMessage>[],
+  callers: MergedMessage<StandardMessage>[],
   toolMessages: MergedMessage<StandardMessage>[],
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
@@ -636,9 +679,8 @@ async function postToolRuns(
         ? toolMessage.message.tool_call_id
         : undefined;
 
-    const msgToolCall = aiMessage
-      .at(0)
-      ?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
+    const caller = findLast(callers, ({ message }) => message.content.some(isCallTo(toolCallId)));
+    const msgToolCall = caller?.message.content.find(isCallTo(toolCallId));
 
     // Ignore tool calls that don't have a tool call id
     if (toolCallId == null || msgToolCall == null) continue;
@@ -650,7 +692,7 @@ async function postToolRuns(
     };
 
     // Span the tool from its call to its output (begin/end events if present).
-    const callTime = aiMessage.at(0)?.timestamp.start;
+    const callTime = caller?.timestamp.start;
     const min = Math.min(
       toolMessage.timestamp.start,
       ...(callTime != null ? [callTime] : []),
@@ -676,6 +718,7 @@ async function postToolRuns(
       },
       base: toolMetadataBase(context, msgToolCall.args),
     };
+    const toolHooks = task.hooks.filter(({ callId }) => callId === toolCallId);
     const sequentialId = options.nextRunId();
     const toolRun = createRunTree(
       {
@@ -684,8 +727,12 @@ async function postToolRuns(
         run_type: "tool",
         start_time: min,
         end_time: max,
-        inputs: { input: msgToolCall.args },
-        outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
+        inputs: { input: msgToolCall.args, ...hookOutputs(hooksIn(toolHooks, "input")) },
+        outputs: {
+          ...toolCall.outputs,
+          messages: [toolMessage.message],
+          ...hookOutputs(hooksIn(toolHooks, "output")),
+        },
         error: toolCall.error,
         extra: {
           metadata: buildChildRunMetadata(toolMetadata),
@@ -702,13 +749,8 @@ async function postToolRuns(
 
 async function postModelAndToolRuns(
   context: TurnRunContext,
-  messages: AggregateMessage<StandardMessage>[],
+  fullMessages: MergedMessage<StandardMessage>[],
 ) {
-  const fullMessages = mergeMessages([
-    ...getSystemMessage(context.sessionMeta, context.task),
-    ...messages,
-  ]);
-
   for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
     const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
       context,
@@ -754,6 +796,12 @@ async function postTurn(
   }
 
   const parentStartTime = task.turnId?.timestamp ?? fallbackTime;
+  const fullMessages = mergeMessages([...getSystemMessage(sessionMeta, task), ...messages]);
+  const posted = postedCallIds(fullMessages);
+  task.hooks = task.hooks.map((hook) => ({
+    ...hook,
+    callId: hook.toolUseIds && hookCallId(task, posted, hook.toolUseIds),
+  }));
 
   const unattributed = turnMetadata(task, sessionMeta, request.options);
   const attributor = mode === MODE_FULL ? request.options.attributor : undefined;
@@ -773,15 +821,26 @@ async function postTurn(
     ...draft,
     childMetadataBase: childBase(draft.metadataBase, draft),
     unattributedChildBase: childBase(unattributed.metadataBase, draft),
-    parent: await createParentRun(draft, user, agent),
+    parent: await createParentRun(
+      draft,
+      user,
+      withoutHookTexts(agent, shownHookTexts(task, request.options)),
+    ),
     postedSubagentThreads: new Set<string>(),
   };
 
-  if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
+  if (!task.isReviewResult) await postModelAndToolRuns(context, fullMessages);
 
   // Canonical activity records can arrive without a matching response item.
   for (const subagentThread of task.subagentThreads) {
     await postSubagentThread(context, subagentThread);
+  }
+  if (request.options.captureHookOutputs && !task.isReviewResult) {
+    const spans = modelSpans(fullMessages, request.includeOpenTurn);
+    const scope = `${sessionMeta?.session_id}:${task.turnId?.id}`;
+    const options = { ...request.options, nextRunId: lateRunIds(request.options, scope) };
+    const late = { ...context, request: { ...request, options } };
+    await postToolRuns(late, fullMessages, toolsOutsideSpans(fullMessages, spans));
   }
 }
 
@@ -842,6 +901,7 @@ function createTask(): Task {
     isErrorInterrupt: false,
     isReviewResult: false,
     subagentThreads: [],
+    hooks: [],
     toolCalls: {},
   };
 }
@@ -881,6 +941,127 @@ function readSessionMeta(payload: SessionMetaPayload): Session {
   };
 }
 
+function passthrough(item: ResponseItem) {
+  return (item as WithPassthrough).internal_chat_message_metadata_passthrough;
+}
+
+function isHookItem(item: ResponseItem): item is ResponseItemOf<"message"> {
+  return (
+    item.type === "message" &&
+    passthrough(item)?.content_item_kinds?.includes(HOOK_CONTEXT_KIND) === true
+  );
+}
+
+function shownHookTexts(task: Task, options: TurnRequest["options"]): Set<string> {
+  if (!options.captureHookOutputs) return new Set();
+  return new Set(
+    task.messages.flatMap(({ message }) =>
+      isHookItem(message) ? message.content.map(({ text }) => String(text)) : [],
+    ),
+  );
+}
+
+function withoutHookTexts(messages: MergedMessage<StandardMessage>[], hookTexts: Set<string>) {
+  if (hookTexts.size === 0) return messages;
+  return messages.flatMap((merged) => {
+    if (merged.message.role !== "system") return [merged];
+    const content = merged.message.content.filter(({ text }) => !hookTexts.has(String(text)));
+    return content.length === 0 ? [] : [{ ...merged, message: { ...merged.message, content } }];
+  });
+}
+
+function createdAt(item: ResponseItem, written: number): number {
+  const created = passthrough(item)?.create_time;
+  return created === undefined ? written : created * 1000;
+}
+
+function isModelItem(item: ResponseItem): boolean {
+  return (
+    "call_id" in item ||
+    item.type === "reasoning" ||
+    (item.type === "message" && item.role === "assistant")
+  );
+}
+
+function recordHookOutput(
+  walk: RolloutWalk,
+  task: Task,
+  item: ResponseItemOf<"message">,
+  at: number,
+) {
+  const turnId = passthrough(item)?.turn_id ?? task.turnId?.id;
+  const started = task.turnId?.timestamp ?? -Infinity;
+  const firings = (walk.firings ?? []).filter(
+    (each) => each.turn_id === turnId || (each.turn_id == null && each.time >= started),
+  );
+  const latest = findLast(firings, (each) => each.time <= at);
+  const firing = latest && latest.time >= walk.lastModelItemTime ? latest : undefined;
+  const name = firing?.event ?? UNKNOWN_HOOK_NAME;
+  const toolUseIds =
+    firing && hookPlacement(name).scope === "tool" ? firedTools(firings, firing) : undefined;
+  task.hooks.push({ name, output: item.content.map((part) => part.text).join("\n"), toolUseIds });
+}
+
+function firedTools(firings: HookFiring[], latest: HookFiring): (string | undefined)[] {
+  const tools: (string | undefined)[] = [];
+  for (let i = firings.indexOf(latest); i >= 0 && firings[i].event === latest.event; i--) {
+    tools.push(firings[i].tool_use_id ?? undefined);
+  }
+  return tools;
+}
+
+function hookPlacement(name: string): HookPlacement {
+  return Object.hasOwn(HOOK_PLACEMENTS, name) ? HOOK_PLACEMENTS[name] : UNKNOWN_HOOK_PLACEMENT;
+}
+
+function hooksIn(hooks: TaskHook[], direction: HookPlacement["direction"]): TaskHook[] {
+  return hooks.filter(({ name }) => hookPlacement(name).direction === direction);
+}
+
+function isCallTo(callId: unknown) {
+  return (part: StandardMessage["content"][number]) =>
+    part.type === "tool_call" && part.id === callId;
+}
+
+function postedCallIds(fullMessages: MergedMessage<StandardMessage>[]): Set<string> {
+  const called = new Set<unknown>();
+  const posted = new Set<string>();
+  for (const { message } of fullMessages) {
+    const id = message.tool_call_id;
+    if (message.role === "tool" && typeof id === "string" && called.has(id)) posted.add(id);
+    for (const part of message.content) if (part.type === "tool_call") called.add(part.id);
+  }
+  return posted;
+}
+
+function hookCallId(
+  task: Task,
+  posted: Set<string>,
+  toolUseIds: (string | undefined)[],
+): string | undefined {
+  const calls = new Set(toolUseIds.map((id) => callIdFor(task, posted, id)));
+  const [only] = calls;
+  return calls.size === 1 && only !== undefined && posted.has(only) ? only : undefined;
+}
+
+function callIdFor(task: Task, posted: Set<string>, toolUseId: string | undefined) {
+  if (toolUseId === undefined || posted.has(toolUseId)) return toolUseId;
+  const at = task.toolCalls[toolUseId]?.timings.at(-1);
+  if (at === undefined) return undefined;
+  const [only, ...others] = openCallIds(task.messages.filter(({ timestamp }) => timestamp <= at));
+  return others.length === 0 && typeof only === "string" ? only : undefined;
+}
+
+function openCallIds(messages: AggregateMessage<ResponseItem>[]): unknown[] {
+  const open: unknown[] = [];
+  for (const { message } of messages) {
+    if (!("call_id" in message)) continue;
+    if (!message.type.endsWith(TOOL_RESULT_TYPE_SUFFIX)) open.push(message.call_id);
+    else if (open.includes(message.call_id)) open.splice(open.indexOf(message.call_id), 1);
+  }
+  return open;
+}
+
 function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: string) {
   walk.task ??= createTask();
   const task = walk.task;
@@ -893,7 +1074,16 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
     tokenCount: undefined,
     subagentThreads: [],
   };
+  if (walk.firings && isHookItem(payload)) {
+    recordHookOutput(walk, task, payload, createdAt(payload, message.timestamp));
+  }
   task.messages.push(message);
+  if (isModelItem(payload)) {
+    walk.lastModelItemTime = Math.max(
+      walk.lastModelItemTime,
+      createdAt(payload, message.timestamp),
+    );
+  }
 
   // multi_agent_v1 discovery: attach the child id from spawn_agent's output.
   if (payload.type === "function_call" && payload.name === "spawn_agent") {
@@ -1011,7 +1201,7 @@ function recordTurnError(task: Task, payload: EventMsgPayload) {
 function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTime: number) {
   if (payload.type === "task_started") {
     // TODO: should we try to flush?
-    walk.task = createTask();
+    walk.task = { ...createTask(), hooks: walk.task?.hooks ?? [] };
     walk.turnNumber += 1;
     walk.task.turnId = { id: payload.turn_id, timestamp: eventTime };
     walk.task.turnNumber = walk.turnNumber;
@@ -1077,8 +1267,21 @@ function endsTurn(
     payload.type === "task_complete" ||
     payload.type === "turn_complete" ||
     payload.type === "turn_aborted" ||
+    payload.type === OPEN_TURN_END ||
     (walk.task != null && position.index === position.length - 1 && input.turn_id != null)
   );
+}
+
+function endInterruptedTurns(events: LineSchema[]): LineSchema[] {
+  let open = false;
+  return events.flatMap((event): LineSchema[] => {
+    if (event.type !== "event_msg") return [event];
+    const starts = event.payload.type === "task_started";
+    const end: EventMsgLine = { ...event, payload: { type: OPEN_TURN_END } };
+    const ended = starts && open ? [end, event] : [event];
+    if (starts || TURN_END_EVENTS.includes(event.payload.type)) open = starts;
+    return ended;
+  });
 }
 
 async function walkCompletedTurns(
@@ -1094,6 +1297,8 @@ async function walkCompletedTurns(
     // function_call_output attaches there.
     spawnAgentMessages: new Map<string, { subagentThreads: string[] }>(),
     sessionTokenTotal: undefined,
+    firings: input.firings,
+    lastModelItemTime: -Infinity,
   };
 
   const events = await loadSession(input.transcript_path);
@@ -1106,7 +1311,8 @@ async function walkCompletedTurns(
     };
     events.push(end);
   }
-  for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
+  const lines = input.firings ? endInterruptedTurns(events) : events;
+  for (const [index, { type, payload, timestamp }, arr] of enumerate(lines)) {
     if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 
     if (type === "response_item") recordResponseItem(walk, payload, timestamp);
@@ -1146,6 +1352,9 @@ async function walkCompletedTurns(
 export async function convertToRunTree(input: TraceInput, options: TraceConversionOptions) {
   const seenTurnIds = new Set<string>();
   const skipBacklog = options.replayHistory !== true;
+  if (options.captureHookOutputs) {
+    input = { ...input, firings: input.session_id ? await loadHookFirings(input.session_id) : [] };
+  }
   await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
     const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
     const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
@@ -1155,6 +1364,9 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
         includeOpenTurn: input.includeOpenTurn,
         options,
       });
+      if (input.firings && input.session_id && completedTurnId) {
+        await removeHookFirings(input.session_id, completedTurnId);
+      }
     }
     if (completedTurnId != null) seenTurnIds.add(completedTurnId);
   });
