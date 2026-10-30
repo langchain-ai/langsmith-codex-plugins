@@ -1,7 +1,7 @@
 import * as nodeFsPromises from "node:fs/promises";
 import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodeFs from "node:fs";
-import { accessSync, closeSync, constants, copyFileSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { accessSync, closeSync, constants, copyFileSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
@@ -10295,7 +10295,7 @@ async function readdir$1(dir) {
 async function stat$1(filePath) {
 	return nodeFsPromises.stat(filePath);
 }
-function existsSync$1(p) {
+function existsSync(p) {
 	return nodeFs.existsSync(p);
 }
 function mkdirSync$1(dir) {
@@ -10522,13 +10522,13 @@ var PromptCache = class {
 		const entries = {};
 		for (const [key, entry] of this.cache.entries()) entries[key] = entry.value;
 		const dir = path.dirname(filePath);
-		if (!existsSync$1(dir)) mkdirSync$1(dir);
+		if (!existsSync(dir)) mkdirSync$1(dir);
 		const tempPath = `${filePath}.tmp`;
 		try {
 			writeFileSync$1(tempPath, JSON.stringify({ entries }, null, 2));
 			renameSync$1(tempPath, filePath);
 		} catch (e) {
-			if (existsSync$1(tempPath)) unlinkSync(tempPath);
+			if (existsSync(tempPath)) unlinkSync(tempPath);
 			throw e;
 		}
 	}
@@ -10540,7 +10540,7 @@ var PromptCache = class {
 	* @returns Number of entries loaded.
 	*/
 	load(filePath) {
-		if (!existsSync$1(filePath)) return 0;
+		if (!existsSync(filePath)) return 0;
 		let entries;
 		try {
 			const content = readFileSync$1(filePath);
@@ -10731,7 +10731,7 @@ function resolveProfileName(config, selected) {
 function loadProfileState(selection = {}) {
 	if (isBrowserLikeRuntime()) return;
 	const configPath = getProfileConfigPath(selection.configPath);
-	if (!configPath || !existsSync$1(configPath)) return;
+	if (!configPath || !existsSync(configPath)) return;
 	try {
 		const config = JSON.parse(readFileSync$1(configPath));
 		const profileName = resolveProfileName(config, selection.profile);
@@ -22161,7 +22161,7 @@ const TOOL_PATH_INPUT_KEYS = [
 	"workdir",
 	"cwd"
 ];
-const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/m;
+const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
 const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
 	"start_time",
@@ -22234,6 +22234,7 @@ const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const WORKDIR_LITERAL = /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 const STRING_ESCAPES = {
 	n: "\n",
@@ -22494,6 +22495,11 @@ function toolOutputText(value) {
 	return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 //#endregion
+//#region src/utils/stringLiterals.ts
+function stringLiterals(program, pattern) {
+	return [...program.matchAll(pattern)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+}
+//#endregion
 //#region src/skills.ts
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
@@ -22507,7 +22513,7 @@ function shellCommands(toolArgs) {
 		const cmd = args?.cmd;
 		return typeof cmd === "string" ? [cmd] : [];
 	}
-	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+	return stringLiterals(args, COMMAND_LITERAL);
 }
 function skillNamesFromToolCall(toolName, args) {
 	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
@@ -22755,7 +22761,7 @@ function usageSince(total, start) {
 function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
 	const args = customToolInput(toolArgs);
-	const named = typeof args === "string" ? [PATCH_FILE_PATTERN.exec(args)?.[1]] : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
+	const named = typeof args === "string" ? [...[...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file), ...stringLiterals(args, WORKDIR_LITERAL)] : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
 	let namedAPath = false;
 	for (const value of named) {
 		if (typeof value !== "string" || value.length === 0) continue;
@@ -22766,9 +22772,8 @@ function toolOriginFromArgs(toolArgs, cwd) {
 			...session
 		};
 		if (!cwd || !isAbsolute(cwd)) continue;
-		const resolved = resolve(cwd, value);
-		if (existsSync(resolved)) return {
-			path: resolved,
+		return {
+			path: resolve(cwd, value),
 			namedAPath,
 			...session
 		};

@@ -68,14 +68,21 @@ function transcript(cwd: string, other: string, patched: string): string {
   ].join("\n");
 }
 
-async function convert(privacyMode?: TracingMode) {
+async function sessionAndOtherRepositories(): Promise<string> {
   const [session, other, patched] = await Promise.all([
     repository("session-repo", "Session Author"),
     repository("other-repo", "Other Author"),
     repository("patched-repo", "Patched Author"),
   ]);
+  return transcript(session, other, patched);
+}
+
+async function convert(
+  privacyMode?: TracingMode,
+  buildTranscript: () => Promise<string> = sessionAndOtherRepositories,
+) {
   const transcript_path = path.join(dir, "rollout.jsonl");
-  await writeFile(transcript_path, transcript(session, other, patched));
+  await writeFile(transcript_path, await buildTranscript());
   const threads = { [THREAD]: { turns: { [TURN]: "full" } } };
   await mkdir(path.dirname(defaultPrivacyPath()), { recursive: true });
   await writeFile(defaultPrivacyPath(), JSON.stringify({ version: 1, threads }));
@@ -132,4 +139,73 @@ it("leaves repository and author off a metadata-only turn without running git fo
     expect(run.extra?.metadata).not.toHaveProperty("repository_name");
     expect(run.extra?.metadata).not.toHaveProperty("ls_attribution_identifier");
   }
+});
+
+async function wrappedTranscript(): Promise<string> {
+  const plain = path.join(dir, "plain");
+  await mkdir(plain);
+  const [first, second] = await Promise.all([
+    repository("first-repo", "First Author"),
+    repository("second-repo", "Second Author"),
+  ]);
+  const line = (type: string, payload: Record<string, unknown>) =>
+    JSON.stringify({ timestamp: "2026-06-01T12:00:01.000Z", type, payload });
+  const program = (call_id: string, source: string) => [
+    line("response_item", { type: "custom_tool_call", name: "exec", call_id, input: source }),
+    line("response_item", { type: "custom_tool_call_output", call_id, output: "ok" }),
+  ];
+  return [
+    line("session_meta", { id: THREAD, cwd: plain, cli_version: "0.163.0", source: "cli" }),
+    line("event_msg", { type: "task_started", turn_id: TURN }),
+    line("turn_context", { turn_id: TURN, cwd: plain, model: "gpt-5.4" }),
+    line("response_item", { type: "message", role: "user", content: [] }),
+    ...program(
+      "call_wrapped",
+      `text(await tools.exec_command({cmd:"git status",workdir:${JSON.stringify(first)}}));`,
+    ),
+    ...program(
+      "call_relative",
+      `text(await tools.exec_command({cmd:"git log",workdir:${JSON.stringify(path.relative(plain, second))}}));`,
+    ),
+    line("response_item", {
+      type: "custom_tool_call",
+      name: "apply_patch",
+      call_id: "call_new_file",
+      input: `*** Begin Patch\n*** Add File: ${path.relative(plain, path.join(second, "new.txt"))}\n+hi\n*** End Patch`,
+    }),
+    line("response_item", {
+      type: "custom_tool_call_output",
+      call_id: "call_new_file",
+      output: "ok",
+    }),
+    line("response_item", { type: "message", role: "assistant", content: [] }),
+    line("event_msg", { type: "task_complete", turn_id: TURN }),
+  ].join("\n");
+}
+
+it("finds the repository for a shell call wrapped in a program, a relative folder, and a new file", async () => {
+  const { metadata } = await convert(undefined, wrappedTranscript);
+  const byInput = (name: string, arg: string) =>
+    metadata((run) => run.name === name && JSON.stringify(run.inputs).includes(arg));
+
+  expect(byInput("exec", "git status")).toMatchObject({
+    repository_name: "acme/first-repo",
+    ls_attribution_identifier: "First Author",
+  });
+  expect(byInput("exec", "git log")).toMatchObject({
+    repository_name: "acme/second-repo",
+    ls_attribution_identifier: "Second Author",
+  });
+  expect(byInput("apply_patch", "Add File")).toMatchObject({
+    repository_name: "acme/second-repo",
+    ls_attribution_identifier: "Second Author",
+  });
+});
+
+it("labels the turn with the first repository its tools reached when the session folder is in none", async () => {
+  const { metadata } = await convert(undefined, wrappedTranscript);
+  expect(metadata((run) => run.name === "openai.codex")).toMatchObject({
+    repository_name: "acme/first-repo",
+    ls_attribution_identifier: "First Author",
+  });
 });

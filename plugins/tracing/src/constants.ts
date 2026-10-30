@@ -71,7 +71,7 @@ export const SKILL_SCOPE_RESET = {
 
 export const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
 export const TOOL_PATH_INPUT_KEYS = ["file_path", "path", "workdir", "cwd"] as const;
-export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/m;
+export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
 export const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
   "start_time",
@@ -174,6 +174,10 @@ export const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 // The `cmd:` string of one exec_command call, in double, single or backtick quotes.
 export const COMMAND_LITERAL =
   /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+
+// The `workdir:` string of one exec_command call, in the same quote styles.
+export const WORKDIR_LITERAL =
+  /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 
 // The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;

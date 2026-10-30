@@ -1,7 +1,6 @@
 // Codex has no skill tool, so reading `.../skills/<name>/SKILL.md` is the only sign of one.
 
 import {
-  BACKSLASH_ESCAPE,
   COMMAND_LITERAL,
   QUOTED_RUN,
   READ_COMMAND,
@@ -9,10 +8,10 @@ import {
   SHELL_TOOL_NAMES,
   SHELL_WORD,
   SKILL_DIR_NAME,
-  STRING_ESCAPES,
   WRITES_TO_FILE,
 } from "./constants.js";
 import { customToolInput } from "./utils/customToolInput.js";
+import { stringLiterals } from "./utils/stringLiterals.js";
 
 // Split rather than match: one pattern spanning `/skills/<name>/SKILL.md` backtracks for seconds.
 function skillDirectoryInPath(word: string): string | undefined {
@@ -29,12 +28,7 @@ function shellCommands(toolArgs: unknown): string[] {
     const cmd = (args as { cmd?: unknown } | undefined)?.cmd;
     return typeof cmd === "string" ? [cmd] : [];
   }
-  return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) =>
-    (double ?? single ?? backtick).replace(
-      BACKSLASH_ESCAPE,
-      (_, char: string) => STRING_ESCAPES[char] ?? char,
-    ),
-  );
+  return stringLiterals(args, COMMAND_LITERAL);
 }
 
 // Gate each segment on its own: a `cat` in one command must not excuse a `git diff` in the next.
