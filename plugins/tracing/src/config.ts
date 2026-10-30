@@ -23,10 +23,10 @@ import {
   STRICT_TRUE_VALUE,
 } from "./constants.js";
 import type {
-  Config,
   ConfigEnv,
   ConfigOptions,
   EnvironmentLayer,
+  LoadedConfig,
   ParentHeaders,
 } from "./models/config.js";
 import { silenceWarnings } from "./utils/console/silence-warnings.js";
@@ -120,7 +120,7 @@ function readEnvironment(env: ConfigEnv): EnvironmentLayer {
   return { common: parsed.common, parentHeaders };
 }
 
-export async function getConfig({ home, cwd, env }: ConfigOptions): Promise<Config> {
+export async function getConfig({ home, cwd, env }: ConfigOptions): Promise<LoadedConfig> {
   const files = readCommonConfigFiles({ cwd, home, harnessDirectory: CODEX_CONFIG_DIRECTORY });
   const environment = readEnvironment(env);
   const { managed } = files;

@@ -18,6 +18,8 @@ import type { Config } from "./models/config.js";
 import type {
   PreferenceRequest,
   ThreadPolicy,
+  TracingCommand,
+  TurnModeRequest,
   TracingPolicy,
   TurnMode,
 } from "./models/tracing-policy.js";
@@ -75,7 +77,7 @@ export function lockedTurnMode(config: Config, sessionId: string, turnId: string
 }
 
 /** Exact, argument-free commands only; ordinary prompts are never interpreted. */
-export function parseTracingCommand(prompt: string): "mute" | "unmute" | undefined {
+export function parseTracingCommand(prompt: string): TracingCommand | undefined {
   if (prompt === MUTE_COMMAND) return "mute";
   if (prompt === UNMUTE_COMMAND) return "unmute";
   return undefined;
@@ -89,31 +91,39 @@ function requireIds(sessionId: string, turnId?: string): void {
   }
 }
 
+function newTurnMode(thread: ThreadPolicy, request: TurnModeRequest): TurnMode {
+  const { enabled, defaultMuted = false, mutedLocked = false } = request;
+  if (mutedLocked && enabled) return MODE_METADATA;
+  if (thread.inherited !== undefined) return thread.inherited;
+  if (!enabled) return MODE_OFF;
+  if (thread.preference !== undefined) return thread.preference;
+  return defaultMuted ? MODE_METADATA : MODE_FULL;
+}
+
+export function previewTurnMode(file: string, sessionId: string, config: Config): TurnMode {
+  try {
+    const policy = readPolicyFile(adoptLegacyPreferences(file), POLICY_FILE);
+    return newTurnMode(threadPolicy(policy, sessionId) ?? { turns: {} }, {
+      enabled: config.enabled,
+      defaultMuted: config.defaultMuted,
+      mutedLocked: muteLocked(config),
+    });
+  } catch {
+    return MODE_METADATA;
+  }
+}
+
 /** One atomic transaction preserves active/queued snapshots before changing preference. */
 export async function submitPreference(
   file: string,
   request: PreferenceRequest,
 ): Promise<PolicyUpdateResult> {
-  const {
-    sessionId,
-    turnId,
-    enabled,
-    command,
-    defaultMuted = false,
-    mutedLocked = false,
-  } = request;
-  const lockedMode = mutedLocked && enabled ? MODE_METADATA : undefined;
+  const { sessionId, turnId, command, mutedLocked = false } = request;
   requireIds(sessionId, turnId);
   return updatePolicyFile(adoptLegacyPreferences(file), POLICY_FILE, (policy) => {
     const thread: ThreadPolicy = threadPolicy(policy, sessionId) ?? { turns: {} };
     if (!Object.hasOwn(thread.turns, turnId)) {
-      thread.turns = {
-        ...thread.turns,
-        [turnId]:
-          lockedMode ??
-          thread.inherited ??
-          (enabled ? (thread.preference ?? (defaultMuted ? MODE_METADATA : MODE_FULL)) : MODE_OFF),
-      };
+      thread.turns = { ...thread.turns, [turnId]: newTurnMode(thread, request) };
     }
     if (command && !(mutedLocked && command === "unmute"))
       thread.preference = command === "mute" ? MODE_METADATA : MODE_FULL;

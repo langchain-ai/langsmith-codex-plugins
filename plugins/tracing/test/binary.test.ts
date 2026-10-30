@@ -80,13 +80,15 @@ describe("the macOS entitlements", () => {
 });
 
 describe.runIf(binaryExists)("the standalone binary", () => {
-  it("blocks the turn and saves the policy when the prompt is a mute command", async () => {
+  it("lets the turn through with the reply and saves the policy when the prompt is a mute command", async () => {
     const result = await runHook("UserPromptSubmit", "langsmith-tracing:mute");
     expect(result.code).toBe(0);
     expect(result.stderr).toBe("");
     expect(JSON.parse(result.stdout)).toEqual({
-      decision: "block",
-      reason: expect.stringContaining("Thread tracing muted (metadata-only)."),
+      hookSpecificOutput: {
+        hookEventName: "UserPromptSubmit",
+        additionalContext: expect.stringContaining("Thread tracing muted (metadata-only)."),
+      },
     });
     const policy = JSON.parse(
       await fs.readFile(path.join(codexHome, ".codex/langsmith_state_privacy.json"), "utf8"),

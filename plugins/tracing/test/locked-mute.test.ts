@@ -52,9 +52,9 @@ it("keeps a thread muted while the managed file locks muting, even after an earl
   const mute = await submit("muted", "langsmith-tracing:mute");
 
   expect(savedTurnMode(defaultPrivacyPath(), "thread", "saved")).toBe("metadata");
-  expect(unmute).toEqual({ decision: "block", reason: expect.stringContaining("admin locked") });
+  expect(unmute?.hookSpecificOutput?.additionalContext).toContain("admin locked");
   expect(savedTurnMode(defaultPrivacyPath(), "thread", "after")).toBe("metadata");
-  expect(mute?.reason).toContain("muted (metadata-only)");
+  expect(mute?.hookSpecificOutput?.additionalContext).toContain("muted (metadata-only)");
 });
 
 it("traces a helper thread's tool call without content while muting is locked", async () => {
@@ -85,4 +85,15 @@ it("forgets an unmute refused under a locked mute once the lock is lifted", asyn
   }
 
   expect(savedTurnMode(defaultPrivacyPath(), "thread", "unlocked")).toBe("metadata");
+});
+
+it("warns that setup keeps a thread muted while the admin locks muting, even after an unmute", async () => {
+  await fs.writeFile(
+    defaultPrivacyPath(),
+    JSON.stringify({ version: 1, threads: { thread: { preference: "full", turns: {} } } }),
+  );
+
+  const reply = await submit("setup", "langsmith-tracing:setup");
+
+  expect(reply?.hookSpecificOutput?.additionalContext).toContain("This thread is muted");
 });

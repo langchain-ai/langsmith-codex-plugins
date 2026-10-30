@@ -12,6 +12,8 @@ export interface Config extends CommonConfig {
   parent_headers?: ParentHeaders;
 }
 
+export type LoadedConfig = Config & { project: string };
+
 export interface ConfigOptions {
   home: string;
   cwd: string;

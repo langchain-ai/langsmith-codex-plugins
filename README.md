@@ -70,7 +70,9 @@ Strict auth refuses every prompt until your sign-in or key works again, even if 
 
 ## Turn on tracing
 
-Tracing is off until you switch it on in `~/.codex/langsmith.json`, unless your admin already turned it on with a [managed file](#lock-settings-with-a-managed-file). Send traces to an agent with `agent_id`:
+Tracing is off until you switch it on in `~/.codex/langsmith.json`, unless your admin already turned it on with a [managed file](#lock-settings-with-a-managed-file). The quickest way is to send `langsmith-tracing:setup [project] [https://your-langsmith-url]` as a message, which turns tracing on from your next turn and can set the project and LangSmith URL, though it never sets your API key. The URL needs its `http://` or `https://`, since a bare hostname becomes part of the project name.
+
+Or edit the file yourself and send traces to an agent with `agent_id`:
 
 ```json
 { "enabled": true, "agent_id": "shared-codex" }
@@ -122,7 +124,7 @@ langsmith-tracing:mute
 langsmith-tracing:unmute
 ```
 
-The confirmation appears as a prompt blocked by a hook. That's how Codex shows a plugin's reply, so nothing went wrong and the message never reaches the model.
+The plugin hands its confirmation to the model, which replies with it.
 
 A muted thread keeps its structure in LangSmith but leaves out the content. Muting starts from your next turn, so wait for the confirmation before you send anything sensitive. If no confirmation appears then assume it didn't work.
 
