@@ -159,7 +159,8 @@ export const TOOLS_WITH_END_EVENTS = new Set([...SHELL_TOOL_NAMES, "apply_patch"
 
 // A shell word: no whitespace, no quotes.
 export const SHELL_WORD = /[^\s"']+/g;
-export const SKILLS_FOLDERS = new Set(["skills", ".system", "migrated-command-skills"]);
+export const SKILLS_FOLDERS = new Set(["skills", "migrated-command-skills"]);
+export const NON_SKILL_SUBFOLDERS = new Set(["references", "scripts", "assets", "templates"]);
 export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // Anchored, so a read verb inside a path argument is not mistaken for the command.

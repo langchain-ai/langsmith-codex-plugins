@@ -151,6 +151,13 @@ it.each([
     expected: (_cwd: string, other: string) => path.join(other, "a.txt"),
   },
   {
+    gap: "an existing absolute path later in a patch",
+    args: (_cwd: string, other: string) => ({
+      input: `*** Begin Patch\n*** Add File: /nonexistent-dir/new.txt\n+x\n*** Update File: ${other}/a.txt\n@@\n-x\n+y\n*** End Patch`,
+    }),
+    expected: (_cwd: string, other: string) => path.join(other, "a.txt"),
+  },
+  {
     gap: "a new file under another repo",
     args: (_cwd: string, other: string) => ({
       input: `*** Begin Patch\n*** Add File: ../${path.basename(other)}/src/new/file.ts\n+x\n*** End Patch`,

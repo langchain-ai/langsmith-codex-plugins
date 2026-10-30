@@ -22229,10 +22229,12 @@ const LS_INTEGRATION_VERSION = "0.4.1";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
-const SKILLS_FOLDERS = /* @__PURE__ */ new Set([
-	"skills",
-	".system",
-	"migrated-command-skills"
+const SKILLS_FOLDERS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
+const NON_SKILL_SUBFOLDERS = /* @__PURE__ */ new Set([
+	"references",
+	"scripts",
+	"assets",
+	"templates"
 ]);
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
@@ -22511,7 +22513,8 @@ function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
 	const name = parts.at(-2);
 	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
-	return SKILLS_FOLDERS.has(parts.at(-3) ?? "") ? name : void 0;
+	if (NON_SKILL_SUBFOLDERS.has(name)) return void 0;
+	return parts.slice(0, -2).some((part) => SKILLS_FOLDERS.has(part)) ? name : void 0;
 }
 function shellCommands(toolArgs) {
 	const args = customToolInput(toolArgs);
@@ -22527,17 +22530,18 @@ function unwrapped(command) {
 }
 function skillNamesFromToolCall(toolName, args) {
 	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
-	const segments = shellCommands(args).flatMap((command) => unwrapped(command).match(SHELL_SEGMENT) ?? []);
 	const names = /* @__PURE__ */ new Set();
-	let folder = "";
-	for (const segment of segments) {
-		const [verb, target] = segment.match(SHELL_WORD) ?? [];
-		if (verb === "cd" && target != null) folder = `${target}/`;
-		const unquoted = segment.replace(QUOTED_RUN, " ");
-		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
-		for (const word of segment.match(SHELL_WORD) ?? []) {
-			const name = skillDirectoryInPath(word.startsWith("/") ? word : folder + word);
-			if (name != null) names.add(name);
+	for (const command of shellCommands(args)) {
+		let folder = "";
+		for (const segment of unwrapped(command).match(SHELL_SEGMENT) ?? []) {
+			const [verb, target] = segment.match(SHELL_WORD) ?? [];
+			if (verb === "cd" && target != null) folder = `${target}/`;
+			const unquoted = segment.replace(QUOTED_RUN, " ");
+			if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
+			for (const word of segment.match(SHELL_WORD) ?? []) {
+				const name = skillDirectoryInPath(word.startsWith("/") ? word : folder + word);
+				if (name != null) names.add(name);
+			}
 		}
 	}
 	return [...names];
@@ -22784,11 +22788,15 @@ function toolOriginFromArgs(toolArgs, cwd) {
 	for (const value of named) {
 		if (typeof value !== "string" || value.length === 0) continue;
 		namedAPath = true;
-		if (isAbsolute(value)) return {
-			path: value,
-			namedAPath,
-			...session
-		};
+		if (isAbsolute(value)) {
+			if (existsSync(value)) return {
+				path: value,
+				namedAPath,
+				...session
+			};
+			fallback ??= value;
+			continue;
+		}
 		if (!cwd || !isAbsolute(cwd)) continue;
 		const resolved = resolve(cwd, value);
 		let nearest = resolved;

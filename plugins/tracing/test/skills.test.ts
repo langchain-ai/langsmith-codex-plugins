@@ -46,6 +46,7 @@ describe("skillNamesFromToolCall", () => {
     { command: `git diff\ncat ${SKILL}`, names: FOUND },
     { command: "cat notskills/pr-creation/SKILL.md", names: [] },
     { command: "cat .agents/skills/foo/references/SKILL.md", names: [] },
+    { command: "cat .agents/skills/category/pr-creation/SKILL.md", names: FOUND },
     { command: "cat /root/.codex/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
     { command: "cat migrated-command-skills/pr-creation/SKILL.md", names: FOUND },
     { command: `bash -lc 'cat ${SKILL}'`, names: FOUND },
@@ -91,6 +92,13 @@ describe("skillNamesFromToolCall", () => {
     },
   ])("$what", ({ program, names }) => {
     expect(skills(program)).toEqual(names);
+  });
+
+  it("does not carry a cd folder into the next call in one program", () => {
+    const program =
+      `text(await tools.exec_command({cmd:"cd .agents/skills/pr-creation"}));\n` +
+      `text(await tools.exec_command({cmd:"cat SKILL.md"}));`;
+    expect(skills(program)).toEqual([]);
   });
 
   it("reads the pre-0.153 exec_command argument object", () => {

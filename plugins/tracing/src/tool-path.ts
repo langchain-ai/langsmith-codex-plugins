@@ -25,7 +25,11 @@ export function toolOriginFromArgs(
   for (const value of named) {
     if (typeof value !== "string" || value.length === 0) continue;
     namedAPath = true;
-    if (isAbsolute(value)) return { path: value, namedAPath, ...session };
+    if (isAbsolute(value)) {
+      if (existsSync(value)) return { path: value, namedAPath, ...session };
+      fallback ??= value;
+      continue;
+    }
     if (!cwd || !isAbsolute(cwd)) continue;
     const resolved = resolve(cwd, value);
     let nearest = resolved;
