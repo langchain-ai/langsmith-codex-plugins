@@ -22821,13 +22821,18 @@ function namedValues(args) {
 function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
 	try {
-		const named = namedValues(customToolInput(toolArgs)).slice(0, 100).filter((value) => typeof value === "string" && value.length > 0);
+		const named = namedValues(customToolInput(toolArgs)).filter((value) => typeof value === "string" && value.length > 0);
 		const paths = [];
 		for (const value of named) {
 			const candidate = isAbsolute(value) ? value : cwd && isAbsolute(cwd) ? resolve(cwd, value) : void 0;
 			if (candidate !== void 0 && candidate.length <= 4096) paths.push(candidate);
 		}
-		const path = paths.find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
+		const roots = /* @__PURE__ */ new Map();
+		const inRepository = (candidate) => {
+			if (!roots.has(candidate)) roots.set(candidate, rootFromGitMarker(candidate));
+			return typeof roots.get(candidate) === "string";
+		};
+		const path = paths.slice(0, 20).find(inRepository) ?? paths[0];
 		return {
 			...path === void 0 ? {} : { path },
 			namedAPath: named.length > 0,

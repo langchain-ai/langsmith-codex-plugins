@@ -179,7 +179,7 @@ export const COMMAND_LITERAL =
 export const PROGRAM_TOKEN =
   /\s+|\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|"((?:[^"\\]|\\[\s\S])*)"|"(?:[^"\\]|\\[\s\S])*\\?$|'((?:[^'\\]|\\[\s\S])*)'|'(?:[^'\\]|\\[\s\S])*\\?$|`((?:[^`\\]|\\[\s\S])*)`|`(?:[^`\\]|\\[\s\S])*\\?$|[A-Za-z_$][\w$]*|[\s\S]/g;
 export const TOOL_INPUT_SCAN_LIMIT = 200_000;
-export const MAX_NAMED_PATHS = 100;
+export const MAX_REPO_CHECKS = 20;
 export const MAX_PATH_LENGTH = 4096;
 export const PLAIN_LITERAL = /^(?:[^\\]|\\[ntr\\"'`])*$/;
 export const WHITESPACE_ONLY = /^\s+$/;

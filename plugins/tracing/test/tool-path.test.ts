@@ -456,14 +456,39 @@ it.each([
   );
 });
 
-it("counts the hundredth named file but not the one after it", () => {
+it.each([
+  { name: "the twentieth", plainBefore: 19, found: true },
+  { name: "the twenty-first", plainBefore: 20, found: false },
+])("counts $name named file for a repo", ({ plainBefore, found }) => {
   const { repo, plain } = folders();
-  const filesBefore = (count: number) =>
-    Array.from({ length: count }, (_, n) => `*** Add File: ${plain}/f${n}.txt\n+x`);
-  const patch = (files: string[]) => `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
-  const lastInRepo = patch([...filesBefore(99), `*** Add File: ${repo}/late.txt\n+x`]);
-  expect(toolOriginFromArgs({ input: lastInRepo }, "/work/a")).toEqual({
-    path: `${repo}/late.txt`,
+  const files = Array.from(
+    { length: plainBefore },
+    (_, n) => `*** Add File: ${plain}/f${n}.txt\n+x`,
+  );
+  files.push(`*** Add File: ${repo}/late.txt\n+x`);
+  const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: found ? `${repo}/late.txt` : `${plain}/f0.txt`,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("checks forty-five very long paths for a repo quickly", () => {
+  const files = Array.from(
+    { length: 45 },
+    (_, n) => `*** Add File: /${"a/".repeat(2040)}${n}.txt\n+x`,
+  );
+  const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
+  const started = performance.now();
+  expect(toolOriginFromArgs({ input }, "/work/a").namedAPath).toBe(true);
+  expect(performance.now() - started).toBeLessThan(1000);
+});
+
+it("reads a workdir from text inside a later string when a regex literal holds a lone quote", () => {
+  const input = `const r = /'/; text(await tools.exec_command({cmd:"ls"})); const g = 'tools.exec_command({workdir:"/work/b"})';`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: "/work/b",
     namedAPath: true,
     cwd: "/work/a",
   });
