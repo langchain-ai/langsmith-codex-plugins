@@ -9,7 +9,7 @@ export interface CodexHookInput {
 }
 
 export type PromptSubmitInput = Pick<CodexHookInput, "session_id" | "turn_id" | "cwd" | "prompt"> &
-  Partial<Pick<CodexHookInput, "transcript_path" | "hook_event_name">>;
+  Partial<Pick<CodexHookInput, "hook_event_name">>;
 
 export interface HookPlacement {
   direction: "input" | "output";

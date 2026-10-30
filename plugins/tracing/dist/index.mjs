@@ -22213,7 +22213,9 @@ const TOOL_ITEM_TYPES = [
 	"McpToolCall"
 ];
 const FAILED_TOOL_STATUSES = ["failed", "declined"];
-const HOOK_FIRINGS_SUFFIX = ".langsmith-hooks";
+const HOOK_FIRINGS_PREFIX = "hook-firings-";
+const HOOK_FIRINGS_EXTENSION = ".jsonl";
+const UNSAFE_FILE_NAME_CHARS = /[^A-Za-z0-9_-]/g;
 const TURN_END_EVENTS = [
 	"task_complete",
 	"turn_complete",
@@ -22508,23 +22510,10 @@ async function removeJobContext(home, sessionId, contextRef) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs-constants.js
-const HOOK_OUTPUTS_KEY = "hooks";
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs.js
-function hookOutputs(hooks) {
-	const valid = hooks.filter(({ name, output }) => typeof name === "string" && typeof output === "string");
-	if (valid.length === 0) return {};
-	return { [HOOK_OUTPUTS_KEY]: valid.map(({ name, output }) => ({
-		name,
-		output
-	})) };
+//#region src/utils/home.ts
+function homeDirectory() {
+	return process.env.HOME ?? os.homedir();
 }
-//#endregion
-//#region src/utils/findLast.ts
-const findLast = (array, predicate) => {
-	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
-};
 //#endregion
 //#region src/sidecar.ts
 function withSidecarLock(rolloutFile, action) {
@@ -22553,18 +22542,28 @@ async function markTurnUploaded(rolloutFile, turnId) {
 		return false;
 	}
 }
+function hookFiringsName(sessionId, turnId) {
+	const name = `${sessionId}-${turnId ?? "session"}`;
+	return `${HOOK_FIRINGS_PREFIX}${name.replace(UNSAFE_FILE_NAME_CHARS, "_")}${HOOK_FIRINGS_EXTENSION}`;
+}
 async function recordHookFiring(config, input) {
-	if (!config.enabled || !config.capture_hook_outputs || !input.transcript_path) return;
+	if (!config.enabled || !config.capture_hook_outputs || !input.session_id) return;
 	const firing = {
 		event: input.hook_event_name,
 		turn_id: input.turn_id,
 		tool_use_id: input.tool_use_id,
 		time: performance.timeOrigin
 	};
-	await nodeFsPromises.appendFile(`${input.transcript_path}${HOOK_FIRINGS_SUFFIX}`, `${JSON.stringify(firing)}\n`);
+	const root = engineStorageRoot(homeDirectory());
+	await nodeFsPromises.mkdir(root, { recursive: true });
+	const file = nodePath.join(root, hookFiringsName(input.session_id, input.turn_id));
+	await nodeFsPromises.appendFile(file, `${JSON.stringify(firing)}\n`);
 }
-async function loadHookFirings(rolloutFile) {
-	return (await nodeFsPromises.readFile(`${rolloutFile}${HOOK_FIRINGS_SUFFIX}`, "utf-8").catch(() => "")).split("\n").flatMap((line) => {
+async function loadHookFirings(sessionId) {
+	const root = engineStorageRoot(homeDirectory());
+	const prefix = `${HOOK_FIRINGS_PREFIX}${sessionId.replace(UNSAFE_FILE_NAME_CHARS, "_")}-`;
+	const files = (await nodeFsPromises.readdir(root).catch(() => [])).filter((name) => name.startsWith(prefix)).map((name) => nodeFsPromises.readFile(nodePath.join(root, name), "utf-8").catch(() => ""));
+	return (await Promise.all(files)).join("\n").split("\n").flatMap((line) => {
 		try {
 			return [JSON.parse(line)];
 		} catch {
@@ -22572,6 +22571,37 @@ async function loadHookFirings(rolloutFile) {
 		}
 	}).toSorted((a, b) => a.time - b.time);
 }
+async function removeHookFirings(sessionId, turnId) {
+	const root = engineStorageRoot(homeDirectory());
+	await nodeFsPromises.rm(nodePath.join(root, hookFiringsName(sessionId, turnId)), { force: true });
+}
+async function pruneHookFirings(now = Date.now()) {
+	const root = engineStorageRoot(homeDirectory());
+	const names = await nodeFsPromises.readdir(root).catch(() => []);
+	for (const name of names.filter((each) => each.startsWith(HOOK_FIRINGS_PREFIX))) {
+		const file = nodePath.join(root, name);
+		const { mtimeMs } = await nodeFsPromises.stat(file).catch(() => ({ mtimeMs: now }));
+		if (now - mtimeMs > 216e5) await nodeFsPromises.rm(file, { force: true });
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs-constants.js
+const HOOK_OUTPUTS_KEY = "hooks";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugin-binar_15826d76c8cbce3098f3e5e77706038f/node_modules/@langchain/plugins-base/dist/tracing/hook-outputs.js
+function hookOutputs(hooks) {
+	const valid = hooks.filter(({ name, output }) => typeof name === "string" && typeof output === "string");
+	if (valid.length === 0) return {};
+	return { [HOOK_OUTPUTS_KEY]: valid.map(({ name, output }) => ({
+		name,
+		output
+	})) };
+}
+//#endregion
+//#region src/utils/findLast.ts
+const findLast = (array, predicate) => {
+	for (let i = array.length - 1; i >= 0; i--) if (predicate(array[i])) return array[i];
+};
 //#endregion
 //#region src/utils/customToolInput.ts
 function customToolInput(args) {
@@ -22681,11 +22711,6 @@ function createRunTree(config, mode = MODE_FULL, parent) {
 	const run = createCodingAgentRunTree(config, LS_INTEGRATION, mode);
 	if (mode === "metadata") metadataProtectedRunTrees.add(run);
 	return run;
-}
-//#endregion
-//#region src/utils/home.ts
-function homeDirectory() {
-	return process.env.HOME ?? os.homedir();
 }
 //#endregion
 //#region src/utils/validation/tracing-policy.ts
@@ -23399,7 +23424,8 @@ async function postSubagentThread(context, subagentThread) {
 	const events = await loadSession(subagentFile);
 	await convertToRunTree({
 		transcript_path: subagentFile,
-		turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
+		turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null,
+		session_id: subagentThread
 	}, {
 		...context.request.options,
 		parentRunTree: context.parent,
@@ -23958,16 +23984,19 @@ async function convertToRunTree(input, options) {
 	const skipBacklog = options.replayHistory !== true;
 	if (options.captureHookOutputs) input = {
 		...input,
-		firings: await loadHookFirings(input.transcript_path)
+		firings: input.session_id ? await loadHookFirings(input.session_id) : []
 	};
 	await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
 		const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
 		const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
-		if (!alreadySeen && !isBacklog) await postTurn(task, sessionMeta, privacyTurnId, {
-			rolloutFile: input.transcript_path,
-			includeOpenTurn: input.includeOpenTurn,
-			options
-		});
+		if (!alreadySeen && !isBacklog) {
+			await postTurn(task, sessionMeta, privacyTurnId, {
+				rolloutFile: input.transcript_path,
+				includeOpenTurn: input.includeOpenTurn,
+				options
+			});
+			if (input.firings && input.session_id && completedTurnId) await removeHookFirings(input.session_id, completedTurnId);
+		}
 		if (completedTurnId != null) seenTurnIds.add(completedTurnId);
 	});
 }
@@ -24275,6 +24304,7 @@ async function runCodexEngineWorker(sessionId, cwd) {
 		cwd,
 		env: process.env
 	});
+	if (config.capture_hook_outputs) await pruneHookFirings();
 	const session = createCodexTracingSession(config, sessionId, cwd, home);
 	if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
 	const result = await session.session.drain();
@@ -24305,7 +24335,8 @@ async function reconstructTranscript(job, workerConfig, home, plugin) {
 	const runs = [];
 	await convertToRunTree({
 		transcript_path: transcriptPath,
-		turn_id: job.turnId
+		turn_id: job.turnId,
+		session_id: job.sessionId
 	}, conversionOptions(config, job.sessionId, job.turnId, job.privacyMode, runs, home));
 	const [root, ...children] = runs;
 	if (root === void 0) throw new Error("Codex transcript has no completed target turn");
@@ -24410,7 +24441,7 @@ function queueCodexTurns(session, config, request) {
 async function queueUnhandledTurns(session, config, request) {
 	const handled = await loadUploadedTurnIds(request.transcriptPath);
 	const firstStop = handled.size === 0;
-	const fired = config.capture_hook_outputs ? await loadHookFirings(request.transcriptPath) : [];
+	const fired = config.capture_hook_outputs ? await loadHookFirings(session.sessionId) : [];
 	const completed = await listCompletedTurnIds({
 		transcript_path: request.transcriptPath,
 		turn_id: request.turnId,

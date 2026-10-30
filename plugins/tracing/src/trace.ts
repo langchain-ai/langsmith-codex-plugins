@@ -41,7 +41,7 @@ import {
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
-import { loadHookFirings } from "./sidecar.js";
+import { loadHookFirings, removeHookFirings } from "./sidecar.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
@@ -549,7 +549,11 @@ async function postSubagentThread(context: TurnRunContext, subagentThread: strin
   ) as { payload: { turn_id: string } } | undefined;
 
   await convertToRunTree(
-    { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
+    {
+      transcript_path: subagentFile,
+      turn_id: lastEvent?.payload.turn_id ?? null,
+      session_id: subagentThread,
+    },
     { ...context.request.options, parentRunTree: context.parent, replayHistory: true },
   );
 }
@@ -1349,7 +1353,7 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
   const seenTurnIds = new Set<string>();
   const skipBacklog = options.replayHistory !== true;
   if (options.captureHookOutputs) {
-    input = { ...input, firings: await loadHookFirings(input.transcript_path) };
+    input = { ...input, firings: input.session_id ? await loadHookFirings(input.session_id) : [] };
   }
   await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
     const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
@@ -1360,6 +1364,9 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
         includeOpenTurn: input.includeOpenTurn,
         options,
       });
+      if (input.firings && input.session_id && completedTurnId) {
+        await removeHookFirings(input.session_id, completedTurnId);
+      }
     }
     if (completedTurnId != null) seenTurnIds.add(completedTurnId);
   });

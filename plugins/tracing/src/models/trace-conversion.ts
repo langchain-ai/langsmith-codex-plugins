@@ -35,6 +35,7 @@ export interface TraceInput {
   turn_id: string | null;
   includeOpenTurn?: boolean;
   firings?: HookFiring[] | undefined;
+  session_id?: string | undefined;
 }
 
 export interface TurnRequest {

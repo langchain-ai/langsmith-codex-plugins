@@ -37,7 +37,7 @@ async function queueUnhandledTurns(
 ): Promise<void> {
   const handled = await loadUploadedTurnIds(request.transcriptPath);
   const firstStop = handled.size === 0;
-  const fired = config.capture_hook_outputs ? await loadHookFirings(request.transcriptPath) : [];
+  const fired = config.capture_hook_outputs ? await loadHookFirings(session.sessionId) : [];
   const completed = await listCompletedTurnIds({
     transcript_path: request.transcriptPath,
     turn_id: request.turnId,

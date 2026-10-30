@@ -14,6 +14,7 @@ const VLR = "call_VLRlIzWNfD2jSDW47dX5eEMz";
 const wire = liveWire();
 const workspace = (name = "live", rows = lines) => wire.workspace(name, rows);
 const toolPost = () => wire.sent("post").find(({ name }) => name === "exec_command");
+const engine = () => join(wire.dir(), "live/home/.codex/langsmith_engine");
 const rootClosed = () => wire.sent("patch").some((run) => run.outputs && run.end_time);
 
 it("uploads a finished tool's run and its open turn root before Stop runs", async () => {
@@ -27,10 +28,8 @@ it("uploads a finished tool's run and its open turn root before Stop runs", asyn
   const tool = runs.find(({ name }) => name === "exec_command")!;
   expect(root.end_time).toBeUndefined();
   expect(tool).toMatchObject({ parent_run_id: root.id, trace_id: root.id });
-  expect(existsSync(`${live.transcript}.langsmith-hooks`)).toBe(false);
-  expect(
-    existsSync(join(wire.dir(), "live/home/.codex/langsmith_engine/capture-hook-outputs")),
-  ).toBe(false);
+  expect(await fs.readdir(engine())).not.toContainEqual(expect.stringMatching(/^hook-firings-/));
+  expect(existsSync(join(engine(), "capture-hook-outputs"))).toBe(false);
 });
 
 it("uploads each tool once at Stop with hook output when hook capture is on", async () => {
@@ -49,17 +48,16 @@ it("uploads each tool once at Stop with hook output when hook capture is on", as
   await live.tool(VLR);
   await live.settle();
   expect(wire.received).toHaveLength(0);
+  const firings = join(engine(), `hook-firings-${session}-${turn}.jsonl`);
+  expect((await fs.readFile(firings, "utf8")).match(/"event":"\w+"/g)).toEqual([
+    '"event":"UserPromptSubmit"',
+    '"event":"PreToolUse"',
+  ]);
+  expect(existsSync(join(engine(), "capture-hook-outputs"))).toBe(true);
   await live.write();
   await live.stop();
   await live.settle();
 
-  const firings = await fs.readFile(`${live.transcript}.langsmith-hooks`, "utf8");
-  expect(firings.match(/"event":"\w+"/g)).toEqual([
-    '"event":"UserPromptSubmit"',
-    '"event":"PreToolUse"',
-  ]);
-  const marker = "live/home/.codex/langsmith_engine/capture-hook-outputs";
-  expect(existsSync(join(wire.dir(), marker))).toBe(true);
   const { runs, posts } = wire.trace("live");
   expect([...posts.values()].every((count) => count === 1)).toBe(true);
   const tool = runs.get(toolRunIdGenerator(session, turn)(VLR))!;

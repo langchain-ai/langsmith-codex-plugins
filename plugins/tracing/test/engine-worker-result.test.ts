@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -7,6 +7,7 @@ const engine = vi.hoisted(() => ({
   result: "completed",
   apiKey: "synthetic-worker-result-key" as string | undefined,
   profile: undefined as string | undefined,
+  capture: false,
 }));
 
 vi.mock("@langchain/plugins-base/plugin", async (importOriginal) => ({
@@ -23,6 +24,7 @@ vi.mock("../src/config.js", () => ({
     project: "worker-result",
     redact: false,
     locked: [],
+    capture_hook_outputs: engine.capture,
   }),
 }));
 
@@ -39,6 +41,7 @@ afterEach(async () => {
   engine.result = "completed";
   engine.apiKey = "synthetic-worker-result-key";
   engine.profile = undefined;
+  engine.capture = false;
   vi.unstubAllEnvs();
   await rm(home, { recursive: true, force: true });
 });
@@ -49,6 +52,19 @@ it("fails the worker and leaves a warning for the next hook when work is dropped
   engine.result = "dropped";
   await expect(runCodexEngineWorker("thread", process.cwd())).rejects.toThrow("dropped");
   expect(await readFile(warningFile(), "utf8")).toContain("API key");
+});
+
+it("clears hook firings left for more than six hours when hook capture is on", async () => {
+  const engineFolder = path.join(home, ".codex", "langsmith_engine");
+  await mkdir(engineFolder);
+  await writeFile(path.join(engineFolder, "hook-firings-old-t.jsonl"), "");
+  const sevenHoursAgo = new Date(Date.now() - 7 * 60 * 60 * 1000);
+  await utimes(path.join(engineFolder, "hook-firings-old-t.jsonl"), sevenHoursAgo, sevenHoursAgo);
+  engine.capture = true;
+
+  await runCodexEngineWorker("thread", process.cwd());
+
+  expect(await readdir(engineFolder)).toEqual([]);
 });
 
 it("fails the worker without a warning when the account changed", async () => {

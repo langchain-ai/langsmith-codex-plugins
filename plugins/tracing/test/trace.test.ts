@@ -6,6 +6,8 @@ import type { RunTree } from "langsmith";
 
 import * as path from "node:path";
 import { mockClient } from "./utils/mock_client.js";
+import { engineStorageRoot } from "../src/tracing-engine.js";
+import { homeDirectory } from "../src/utils/home.js";
 import { asTree, getAssumedTreeFromCalls } from "./utils/tree.js";
 
 // Build-time injected plugin version (see vitest.config.ts / tsdown.config.ts).
@@ -1725,6 +1727,9 @@ it("reports a later turn's own usage, not the session's running total", async ()
 });
 
 const HOOK_FILE = "/home/codex-user/.codex/sessions/2026/10/28/rollout-hooks.jsonl";
+const HOOK_SESSION = "019a0000-0000-7000-8000-hooks0000000";
+const firingsFile = (session: string, turn: string) =>
+  path.join(engineStorageRoot(homeDirectory()), `hook-firings-${session}-${turn}.jsonl`);
 const HOOK_START = Date.parse("2026-10-28T00:00:00.000Z");
 const item = (payload: object) => ({ type: "response_item", payload });
 const say = (role: string, text: string) =>
@@ -1772,12 +1777,13 @@ const at = (second: number) => HOOK_START / 1000 + second;
 
 async function placeHooks(rollout: string, firings: string, captureHookOutputs: boolean) {
   vol.reset();
-  vol.fromJSON({ [HOOK_FILE]: rollout, [`${HOOK_FILE}.langsmith-hooks`]: firings });
+  const session_id = JSON.parse(rollout.split("\n")[0]).payload.id;
+  vol.fromJSON({ [HOOK_FILE]: rollout, [firingsFile(session_id, "recorded")]: firings });
   seedFullLaunchEvidence();
   const runs: RunTree[] = [];
   let count = 0;
   await convertToRunTree(
-    { transcript_path: HOOK_FILE, turn_id: null },
+    { transcript_path: HOOK_FILE, turn_id: null, session_id },
     {
       replayHistory: true,
       captureHookOutputs,
@@ -1903,7 +1909,7 @@ it.each([
 function hookRollout(lines: object[]) {
   const rows: string[] = [];
   const firings: string[] = [];
-  const session = { id: "019a0000-0000-7000-8000-hooks0000000", cwd: "/w", cli_version: "0.163.0" };
+  const session = { id: HOOK_SESSION, cwd: "/w", cli_version: "0.163.0" };
   const turn = [...start("turn-1"), say("user", "go"), ...lines, say("assistant", "done"), end];
   for (const line of [{ type: "session_meta", payload: session }, ...turn]) {
     const time = HOOK_START + rows.length * 1000;
@@ -1942,11 +1948,29 @@ it("gives every late run of every turn its own id", async () => {
   expect(new Set(ids).size).toBe(ids.length);
 });
 
+it("deletes a turn's hook firings once it posts and keeps another turn's", async () => {
+  const { rollout } = hookRollout([end, ...start("turn-2"), say("user", "again")]);
+  const files = ["turn-1", "turn-2"].map((turn) => firingsFile(HOOK_SESSION, turn));
+  vol.reset();
+  vol.fromJSON({ [HOOK_FILE]: rollout, [files[0]]: "", [files[1]]: "" });
+  seedFullLaunchEvidence();
+
+  await convertToRunTree(
+    { transcript_path: HOOK_FILE, turn_id: "turn-2", session_id: HOOK_SESSION },
+    { captureHookOutputs: true, captureRun: async () => undefined },
+  );
+
+  expect(files.map((file) => vol.existsSync(file))).toEqual([true, false]);
+});
+
 it("shows a real Codex run's hook text only under hooks when hook capture is on", async () => {
   const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
   const source = path.join(__dirname, "sessions/2026/10/28/rollout-hook-firings-seq.jsonl");
   const rollout = await fs.readFile(source, "utf8");
-  const firings = await fs.readFile(`${source}.langsmith-hooks`, "utf8");
+  const firings = await fs.readFile(
+    path.join(path.dirname(source), "hook-firings-seq.jsonl"),
+    "utf8",
+  );
   const outsideHooks = (runs: RunTree[]) =>
     runs.filter((run) =>
       JSON.stringify([
@@ -1964,7 +1988,10 @@ it("names and places each hook of a real Codex run by the firing it recorded", a
   const source = path.join(__dirname, "sessions/2026/10/28/rollout-hook-firings-seq.jsonl");
 
   const rollout = await fs.readFile(source, "utf8");
-  const firings = await fs.readFile(`${source}.langsmith-hooks`, "utf8");
+  const firings = await fs.readFile(
+    path.join(path.dirname(source), "hook-firings-seq.jsonl"),
+    "utf8",
+  );
 
   expect((await placeHooks(rollout, firings, false)).tools).toEqual([]);
   await expectPlaced(rollout, firings, [

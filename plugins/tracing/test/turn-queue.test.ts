@@ -97,7 +97,9 @@ it.each([
     await writeFile(transcript, `${unfinished}\n${rolloutText("thread", ["b", "c"])}`);
     await setPolicy({ a: "full", b: "full", c: "full" });
     const firings = ["a", "b"].map((turn_id) => JSON.stringify({ turn_id, time: 1 }));
-    await writeFile(`${transcript}.langsmith-hooks`, firings.join("\n"));
+    const engine = path.join(dir, ".codex", "langsmith_engine");
+    await mkdir(engine, { recursive: true });
+    await writeFile(path.join(engine, "hook-firings-thread-a.jsonl"), firings.join("\n"));
 
     await queueCodexTurns(fakeSession(), { ...config, capture_hook_outputs }, request("c"));
 
