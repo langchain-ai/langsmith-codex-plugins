@@ -176,8 +176,11 @@ export const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 export const COMMAND_LITERAL =
   /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 
-export const WORKDIR_LITERAL =
-  /(?<=[{,](?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g;
+export const PROGRAM_TOKEN =
+  /\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`|[A-Za-z_$][\w$]*|[\s\S]/g;
+export const WORKDIR_KEY = "workdir";
+export const EXEC_COMMAND_NAME = "exec_command";
+export const APPLY_PATCH_NAME = "apply_patch";
 
 // The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;

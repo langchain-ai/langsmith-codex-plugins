@@ -22234,7 +22234,7 @@ const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const WORKDIR_LITERAL = /(?<=[{,](?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*)(?:workdir|"workdir"|'workdir')\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`$\\]|\$(?!\{)|\\[\s\S])*)`)(?=\s*[,}])|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'|`(?:[^`\\]|\\[\s\S])*`/g;
+const PROGRAM_TOKEN = /\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`|[A-Za-z_$][\w$]*|[\s\S]/g;
 const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 const STRING_ESCAPES = {
 	n: "\n",
@@ -22496,8 +22496,11 @@ function toolOutputText(value) {
 }
 //#endregion
 //#region src/utils/stringLiterals.ts
+function unescapeLiteral(literal) {
+	return literal.replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char);
+}
 function stringLiterals(program, pattern) {
-	return [...program.matchAll(pattern)].map(([, ...groups]) => groups.find((group) => group !== void 0)).filter((literal) => literal !== void 0).map((literal) => literal.replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
+	return [...program.matchAll(pattern)].map(([, ...groups]) => groups.find((group) => group !== void 0)).filter((literal) => literal !== void 0).map(unescapeLiteral);
 }
 //#endregion
 //#region src/skills.ts
@@ -22757,11 +22760,54 @@ function usageSince(total, start) {
 	return Object.fromEntries(Object.entries(total).map(([key, value]) => [key, typeof value === "number" ? value - (start[key] ?? 0) : value]));
 }
 //#endregion
+//#region src/utils/programPaths.ts
+function programTokens(program) {
+	return [...program.matchAll(PROGRAM_TOKEN)].map(([text, double, single, backtick]) => ({
+		text,
+		literal: double ?? single ?? backtick
+	})).filter(({ text }) => !/^\s+$/.test(text) && !text.startsWith("//") && !text.startsWith("/*"));
+}
+function plainLiteral(token) {
+	return token?.literal === void 0 || token.literal.includes("${") ? void 0 : token.literal;
+}
+function isWorkdirKey(token) {
+	return token.text === "workdir" || token.literal === "workdir";
+}
+function programPaths(program) {
+	const tokens = programTokens(program);
+	const paths = [];
+	let depth = 0;
+	let execDepth;
+	tokens.forEach((token, index) => {
+		const [before, previous, next, value, after] = [
+			tokens[index - 2],
+			tokens[index - 1],
+			tokens[index + 1],
+			tokens[index + 2],
+			tokens[index + 3]
+		];
+		if ("{[(".includes(token.text)) {
+			depth++;
+			if (token.text === "{" && previous?.text === "(" && before?.text === "exec_command") execDepth = depth;
+		} else if ("}])".includes(token.text)) {
+			if (depth === execDepth) execDepth = void 0;
+			depth--;
+		} else if (depth === execDepth && isWorkdirKey(token) && (previous?.text === "{" || previous?.text === ",") && next?.text === ":" && (after?.text === "," || after?.text === "}")) {
+			const workdir = plainLiteral(value);
+			if (workdir !== void 0) paths.push(unescapeLiteral(workdir));
+		} else if (token.text === "apply_patch" && next?.text === "(" && value?.literal !== void 0) {
+			const patch = unescapeLiteral(value.literal);
+			paths.push(...[...patch.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file));
+		}
+	});
+	return paths;
+}
+//#endregion
 //#region src/tool-path.ts
 function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
 	const args = customToolInput(toolArgs);
-	const named = typeof args === "string" ? args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : stringLiterals(args, WORKDIR_LITERAL) : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
+	const named = typeof args === "string" ? args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : programPaths(args) : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
 	const paths = [];
 	for (const value of named) {
 		if (typeof value !== "string" || value.length === 0) continue;

@@ -1,15 +1,10 @@
 import { isAbsolute, resolve } from "node:path";
 import { rootFromGitMarker } from "@langchain/plugins-base/git";
 import type { ReconstructionToolOrigin } from "@langchain/plugins-base/tracing/reconstruction";
-import {
-  PATCH_FILE_PATTERN,
-  PATCH_START,
-  TOOL_PATH_INPUT_KEYS,
-  WORKDIR_LITERAL,
-} from "./constants.js";
+import { PATCH_FILE_PATTERN, PATCH_START, TOOL_PATH_INPUT_KEYS } from "./constants.js";
 import { customToolInput } from "./utils/customToolInput.js";
 import { isRecord } from "./utils/isRecord.js";
-import { stringLiterals } from "./utils/stringLiterals.js";
+import { programPaths } from "./utils/programPaths.js";
 
 export function toolOriginFromArgs(
   toolArgs: unknown,
@@ -21,7 +16,7 @@ export function toolOriginFromArgs(
     typeof args === "string"
       ? args.trimStart().startsWith(PATCH_START)
         ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file)
-        : stringLiterals(args, WORKDIR_LITERAL)
+        : programPaths(args)
       : isRecord(args)
         ? TOOL_PATH_INPUT_KEYS.map((key) => args[key])
         : [];
