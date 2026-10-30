@@ -9,6 +9,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { TracingMode } from "../src/models/tracing-policy.js";
 import { convertToRunTree } from "./utils/convert.js";
 import { defaultPrivacyPath } from "../src/tracing-policy.js";
+import { toolOriginFromArgs } from "../src/tool-path.js";
 
 const THREAD = "0199cccc-1111-2222-3333-attribution01";
 const TURN = "0199cccc-tttt-0001";
@@ -132,4 +133,41 @@ it("leaves repository and author off a metadata-only turn without running git fo
     expect(run.extra?.metadata).not.toHaveProperty("repository_name");
     expect(run.extra?.metadata).not.toHaveProperty("ls_attribution_identifier");
   }
+});
+
+it.each([
+  {
+    gap: "a workdir inside a wrapped program",
+    args: (cwd: string, other: string) => ({
+      input: `text(await tools.exec_command({cmd:"ls", workdir:"${other}"}));`,
+    }),
+    expected: (_cwd: string, other: string) => other,
+  },
+  {
+    gap: "an existing file later in a multi-file patch",
+    args: (_cwd: string, other: string) => ({
+      input: `*** Begin Patch\n*** Add File: brand-new.txt\n+x\n*** Update File: ../${path.basename(other)}/a.txt\n@@\n-x\n+y\n*** End Patch`,
+    }),
+    expected: (_cwd: string, other: string) => path.join(other, "a.txt"),
+  },
+  {
+    gap: "an existing absolute path later in a patch",
+    args: (_cwd: string, other: string) => ({
+      input: `*** Begin Patch\n*** Add File: /nonexistent-dir/new.txt\n+x\n*** Update File: ${other}/a.txt\n@@\n-x\n+y\n*** End Patch`,
+    }),
+    expected: (_cwd: string, other: string) => path.join(other, "a.txt"),
+  },
+  {
+    gap: "a new file under another repo",
+    args: (_cwd: string, other: string) => ({
+      input: `*** Begin Patch\n*** Add File: ../${path.basename(other)}/src/new/file.ts\n+x\n*** End Patch`,
+    }),
+    expected: (_cwd: string, other: string) => other,
+  },
+])("finds the folder for $gap", async ({ args, expected }) => {
+  const [session, other] = await Promise.all([
+    repository("session-repo", "Session Author"),
+    repository("other-repo", "Other Author"),
+  ]);
+  expect(toolOriginFromArgs(args(session, other), session).path).toBe(expected(session, other));
 });

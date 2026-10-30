@@ -45,6 +45,13 @@ describe("skillNamesFromToolCall", () => {
     // An escaped newline in the source literal still ends the command.
     { command: `git diff\ncat ${SKILL}`, names: FOUND },
     { command: "cat notskills/pr-creation/SKILL.md", names: [] },
+    { command: "cat .agents/skills/foo/references/SKILL.md", names: [] },
+    { command: "cat .agents/skills/category/pr-creation/SKILL.md", names: FOUND },
+    { command: "cat /root/.codex/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
+    { command: "cat migrated-command-skills/pr-creation/SKILL.md", names: FOUND },
+    { command: `bash -lc 'cat ${SKILL}'`, names: FOUND },
+    { command: `sh -c "cd .agents/skills/pr-creation && cat SKILL.md"`, names: FOUND },
+    { command: "cd .agents/skills/pr-creation && cat SKILL.md", names: FOUND },
     { command: `cat ${SKILL}.bak`, names: [] },
     // An unexpanded variable is not a skill name.
     { command: "cat .agents/skills/$name/SKILL.md", names: [] },
@@ -85,6 +92,13 @@ describe("skillNamesFromToolCall", () => {
     },
   ])("$what", ({ program, names }) => {
     expect(skills(program)).toEqual(names);
+  });
+
+  it("does not carry a cd folder into the next call in one program", () => {
+    const program =
+      `text(await tools.exec_command({cmd:"cd .agents/skills/pr-creation"}));\n` +
+      `text(await tools.exec_command({cmd:"cat SKILL.md"}));`;
+    expect(skills(program)).toEqual([]);
   });
 
   it("reads the pre-0.153 exec_command argument object", () => {
@@ -248,4 +262,45 @@ it("drops a configured usage_metadata from a Skill run", async () => {
   expect(turn?.extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 999 });
   expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();
   expect(skills[1].extra?.metadata?.usage_metadata).toBeUndefined();
+});
+
+it("reports success false when the read's output carries a non-zero exit code", async () => {
+  const envelope = JSON.stringify({ output: "cat: no such file", exit_code: 1 });
+  const failed = (await fixture()).replace(
+    "Report the widget count from widgets.txt.\\n",
+    envelope.replaceAll('"', '\\"'),
+  );
+  const { skills } = await runsFor(failed);
+
+  expect(skills.map((run) => run.outputs)).toEqual([
+    { output: { commandName: "widget-report", success: false } },
+    { output: { commandName: "teapot-check", success: false } },
+  ]);
+});
+
+it("emits a Skill run for a typed skill once, skipping one the turn also read", async () => {
+  const fragment = (name: string) =>
+    JSON.stringify({
+      timestamp: "2026-09-14T00:00:04.500Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: `<skill>\n<name>${name}</name>\n<path>/h/skills/${name}/SKILL.md</path>\nBody\n</skill>`,
+          },
+        ],
+      },
+    });
+  const lines = (await fixture()).trimEnd().split("\n");
+  lines.splice(3, 0, fragment("typed-one"), fragment("typed-one"), fragment("widget-report"));
+  const { skills } = await runsFor(`${lines.join("\n")}\n`);
+
+  expect(skills.map((run) => run.inputs)).toEqual([
+    { input: { skill: "typed-one" } },
+    { input: { skill: "widget-report" } },
+    { input: { skill: "teapot-check" } },
+  ]);
 });

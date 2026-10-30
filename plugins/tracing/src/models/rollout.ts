@@ -423,6 +423,7 @@ export type Task = {
   error: string | undefined;
   isErrorInterrupt: boolean;
   isReviewResult: boolean;
+  typedSkills: string[];
   subagentThreads: string[];
   toolCalls: {
     [callId: string]: {

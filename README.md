@@ -108,7 +108,7 @@ Replicas replace the normal destination instead of adding to it. An empty list t
 
 Each model call includes the conversation so far and the reply along with the model name, provider, stop reason and token counts. Tool calls, shell commands, file reads and web searches include their inputs and outputs. Subagent threads appear under the turn that started them.
 
-A tool call that touches a file inside a git repo is tagged with the repository name, branch, commit and author. A cancelled turn still uploads.
+A tool call that touches a file inside a git repo is tagged with the repository name, branch, commit and author. Shell commands wrapped in a script and file patches are tagged the same way, and a skill you type as `$name` shows up as a Skill run. A cancelled turn still uploads.
 
 ## Hide a conversation
 
