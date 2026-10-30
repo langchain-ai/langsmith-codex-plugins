@@ -207,7 +207,7 @@ function reportRecovery(result: CodexRecoveryResult): void {
 export async function runCodexEngineWorker(sessionId: string, cwd: string): Promise<void> {
   const home = homeDirectory();
   const config = await getConfig({ home, cwd, env: process.env });
-  if (config.capture_hook_outputs) await pruneHookFirings();
+  await pruneHookFirings();
   const session = createCodexTracingSession(config, sessionId, cwd, home);
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
