@@ -54,6 +54,36 @@ describe("skillNamesFromToolCall", () => {
     // Writing the file is not reading it.
     { command: `cat ${SKILL} > copy.md`, names: [] },
     { command: `sed -i '' 's/a/b/' ${SKILL}`, names: [] },
+    // Wrappers and prefixes that still run the read.
+    { command: `bash -lc 'cat ${SKILL}'`, names: FOUND },
+    { command: `/bin/zsh -lc "cat ${SKILL}"`, names: FOUND },
+    { command: `sh -c 'bash -c "cat ${SKILL}"'`, names: FOUND },
+    { command: `FOO=1 BAR="a b" cat ${SKILL}`, names: FOUND },
+    { command: `sudo -n cat ${SKILL}`, names: FOUND },
+    { command: `bash -lc 'cat ${SKILL} > copy.md'`, names: [] },
+    { command: `bash -c 'bash -c "bash -c cat ${SKILL}"'`, names: [] },
+    // Windows readers.
+    { command: "Get-Content C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
+    { command: "type C:\\repo\\.agents\\skills\\pr-creation\\SKILL.md", names: FOUND },
+    {
+      command: 'powershell -Command "Get-Content C:\\repo\\skills\\pr-creation\\SKILL.md"',
+      names: FOUND,
+    },
+    // A bare SKILL.md is placed by the folder `cd` moved to.
+    { command: "cd .agents/skills/pr-creation && cat SKILL.md", names: FOUND },
+    { command: "cd '/Users/a b/.agents/skills/pr-creation'; cat SKILL.md", names: FOUND },
+    { command: "cd /repo && cat SKILL.md", names: [] },
+    // Where Codex keeps skills.
+    { command: "cat /root/.codex/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
+    {
+      command:
+        "cat /h/.codex/plugins/cache/m/p/1.0/.codex-plugin/migrated-command-skills/trace/SKILL.md",
+      names: ["trace"],
+    },
+    // Only the skill's own folder holds its SKILL.md.
+    { command: "cat .agents/skills/pr-creation/references/SKILL.md", names: [] },
+    { command: "cat .agents/skills/pr-creation/templates/deep/SKILL.md", names: [] },
+    { command: "cat .agents/skills/.cache/pr-creation/SKILL.md", names: [] },
   ])("$command", ({ command, names }) => {
     expect(inCommand(command)).toEqual(names);
   });
@@ -248,4 +278,214 @@ it("drops a configured usage_metadata from a Skill run", async () => {
   expect(turn?.extra?.metadata?.usage_metadata).toMatchObject({ total_tokens: 999 });
   expect(skills[0].extra?.metadata?.usage_metadata).toBeUndefined();
   expect(skills[1].extra?.metadata?.usage_metadata).toBeUndefined();
+});
+
+const ITEM_COMPLETED = "item_completed";
+const TURN_ID = "019900aa-tttt-0001";
+const SKILL_BODY = "---\nname: plain-terms\n---\nAnswer first.";
+
+function line(timestamp: string, type: string, payload: Record<string, unknown>): string {
+  return JSON.stringify({ timestamp, type, payload });
+}
+
+function typedSkillMessage(name: string, at: string): string {
+  const text = `<skill>\n<name>${name}</name>\n<path>/h/.agents/skills/${name}/SKILL.md</path>\n${SKILL_BODY}\n</skill>`;
+  return line(at, "response_item", {
+    type: "message",
+    role: "user",
+    content: [{ type: "input_text", text }],
+  });
+}
+
+function readCall(id: string, command: string, at: string): string[] {
+  return [
+    line(at, "response_item", {
+      type: "custom_tool_call",
+      call_id: id,
+      name: "exec",
+      input: `text(await tools.exec_command({cmd:${JSON.stringify(command)}}));`,
+    }),
+    line(at, "response_item", {
+      type: "custom_tool_call_output",
+      call_id: id,
+      output: [{ type: "input_text", text: "Script completed" }],
+    }),
+  ];
+}
+
+function commandExecution(command: string, exitCode: number, at: string): string {
+  return line(at, "event_msg", {
+    type: ITEM_COMPLETED,
+    item: {
+      type: "CommandExecution",
+      id: `exec-${command.length}-${exitCode}`,
+      command: ["/bin/zsh", "-lc", command],
+      status: exitCode === 0 ? "completed" : "failed",
+      exit_code: exitCode,
+      aggregated_output: exitCode === 0 ? "ok" : "cat: no such file",
+    },
+  });
+}
+
+function turn(...middle: string[]): string {
+  return `${[
+    line("2026-09-14T00:00:02.000Z", "session_meta", {
+      id: "019900aa-0000-7000-8000-skillsthread",
+      cwd: "/Users/dev/sample-project",
+      originator: "codex_exec",
+      cli_version: "0.154.0",
+      source: "exec",
+      model_provider: "openai",
+    }),
+    line("2026-09-14T00:00:03.000Z", "event_msg", { type: "task_started", turn_id: TURN_ID }),
+    line("2026-09-14T00:00:04.000Z", "response_item", {
+      type: "message",
+      role: "user",
+      content: [{ type: "input_text", text: "Use $plain-terms" }],
+    }),
+    ...middle,
+    line("2026-09-14T00:00:20.000Z", "response_item", {
+      type: "message",
+      role: "assistant",
+      content: [{ type: "output_text", text: "done" }],
+    }),
+    line("2026-09-14T00:00:21.000Z", "event_msg", { type: "task_complete", turn_id: TURN_ID }),
+  ].join("\n")}\n`;
+}
+
+const skillOutputs = (skills: { outputs?: unknown }[]) => skills.map((run) => run.outputs);
+
+describe("skills typed as $name", () => {
+  it("counts the injected skill once, with its name and success true", async () => {
+    const {
+      turn: root,
+      skills,
+      childrenOf,
+    } = await runsFor(turn(typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z")));
+
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual(["plain-terms"]);
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: true } },
+    ]);
+    expect(skills.map((run) => run.parent_run_id)).toEqual([root?.id]);
+    expect(childrenOf(skills[0].id)).toEqual([]);
+  });
+
+  it("does not put the skill body into the user message", async () => {
+    const { turn: root } = await runsFor(
+      turn(typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z")),
+    );
+    expect(JSON.stringify(root?.inputs)).not.toContain("Answer first.");
+  });
+
+  it("counts a skill the model also reads in the same turn once", async () => {
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z"),
+        ...readCall(
+          "call_a",
+          "cat /h/.agents/skills/plain-terms/SKILL.md",
+          "2026-09-14T00:00:06.000Z",
+        ),
+      ),
+    );
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual(["plain-terms"]);
+  });
+
+  it("counts a typed skill and a different skill the model reads separately", async () => {
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z"),
+        ...readCall("call_a", "cat /h/.agents/skills/ship-pr/SKILL.md", "2026-09-14T00:00:06.000Z"),
+      ),
+    );
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name).sort()).toEqual([
+      "plain-terms",
+      "ship-pr",
+    ]);
+  });
+
+  it("counts two typed skills and ignores a repeat of the same one", async () => {
+    const { skills } = await runsFor(
+      turn(
+        typedSkillMessage("plain-terms", "2026-09-14T00:00:05.000Z"),
+        typedSkillMessage("ship-pr", "2026-09-14T00:00:05.100Z"),
+        typedSkillMessage("plain-terms", "2026-09-14T00:00:05.200Z"),
+      ),
+    );
+    expect(skills.map((run) => run.extra?.metadata?.ls_skill_name)).toEqual([
+      "plain-terms",
+      "ship-pr",
+    ]);
+  });
+
+  it("counts nothing for a user message that only mentions a skill tag", async () => {
+    const { skills } = await runsFor(
+      turn(
+        line("2026-09-14T00:00:05.000Z", "response_item", {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "what is <skill> for?" }],
+        }),
+      ),
+    );
+    expect(skills).toEqual([]);
+  });
+});
+
+describe("success of a skill the model read", () => {
+  const READ = "cat /h/.agents/skills/plain-terms/SKILL.md";
+
+  it.each([
+    { what: "a failed command", exitCode: 1, success: false },
+    { what: "a command that exited 0", exitCode: 0, success: true },
+  ])("reports $what from the script's own command record", async ({ exitCode, success }) => {
+    const { skills } = await runsFor(
+      turn(
+        ...readCall("call_a", READ, "2026-09-14T00:00:06.000Z"),
+        commandExecution(READ, exitCode, "2026-09-14T00:00:06.500Z"),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([{ output: { commandName: "plain-terms", success } }]);
+  });
+
+  it("reports success when a failed read is followed by one that worked", async () => {
+    const { skills } = await runsFor(
+      turn(
+        ...readCall("call_a", READ, "2026-09-14T00:00:06.000Z"),
+        commandExecution(READ, 1, "2026-09-14T00:00:06.500Z"),
+        commandExecution(`${READ} | head`, 0, "2026-09-14T00:00:07.000Z"),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: true } },
+    ]);
+  });
+
+  it("reports a failure from the exit code of an exec_command_end event", async () => {
+    const { skills } = await runsFor(
+      turn(
+        line("2026-09-14T00:00:06.000Z", "response_item", {
+          type: "function_call",
+          call_id: "call_a",
+          name: "exec_command",
+          arguments: JSON.stringify({ cmd: READ }),
+        }),
+        line("2026-09-14T00:00:06.100Z", "response_item", {
+          type: "function_call_output",
+          call_id: "call_a",
+          output: "cat: no such file",
+        }),
+        line("2026-09-14T00:00:06.200Z", "event_msg", {
+          type: "exec_command_end",
+          call_id: "call_a",
+          exit_code: 1,
+          aggregated_output: "cat: no such file",
+        }),
+      ),
+    );
+    expect(skillOutputs(skills)).toEqual([
+      { output: { commandName: "plain-terms", success: false } },
+    ]);
+  });
 });

@@ -36,13 +36,17 @@ import {
 } from "@langchain/plugins-base/metadata";
 
 import { findLast } from "./utils/findLast.js";
-import { skillNamesFromToolCall } from "./skills.js";
+import { skillNamesFromToolCall, skillReadSucceeded } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
-import { isReviewResult, withoutCodexMarkup } from "./utils/contextualFragments.js";
+import {
+  isReviewResult,
+  typedSkillNames,
+  withoutCodexMarkup,
+} from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
 import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
@@ -582,43 +586,45 @@ async function postModelRun(
   return { aiMessage, toolMessages, subagentThreads };
 }
 
-async function postSkillRuns(
+async function postSkillRun(
   context: TurnRunContext,
-  skillNames: string[],
+  skillName: string,
   window: TimeWindow,
-  toolCall: Task["toolCalls"][string],
+  success: boolean,
 ) {
   const { metadataContext, childMetadataBase, mode, parent } = context;
-  const { min, max } = window;
   const options = context.request.options;
-  for (const skillName of skillNames) {
-    const skillMetadata: CodingAgentMetadataOptions = {
-      ...metadataContext,
-      runType: "tool",
-      clearSubagent: true,
-      skillName,
-      base: childMetadataBase,
-    };
-    const skillRun = createRunTree(
-      {
-        id: options.nextRunId(),
-        name: "Skill",
-        run_type: "tool",
-        // Only the call's own window is known, not when each read ran inside it.
-        start_time: min,
-        end_time: max,
-        // Wrapped like every other tool run, so one JSON path fits every harness.
-        inputs: { input: { skill: skillName } },
-        // The rollout never shows the skill's own result, only the read's.
-        outputs: { output: { commandName: skillName, success: toolCall.error == null } },
-        extra: {
-          metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET),
-        },
+  const skillMetadata: CodingAgentMetadataOptions = {
+    ...metadataContext,
+    runType: "tool",
+    clearSubagent: true,
+    skillName,
+    base: childMetadataBase,
+  };
+  const skillRun = createRunTree(
+    {
+      id: options.nextRunId(),
+      name: "Skill",
+      run_type: "tool",
+      // Only the call's own window is known, not when each read ran inside it.
+      start_time: window.min,
+      end_time: window.max,
+      // Wrapped like every other tool run, so one JSON path fits every harness.
+      inputs: { input: { skill: skillName } },
+      outputs: { output: { commandName: skillName, success } },
+      extra: {
+        metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET),
       },
-      mode,
-      parent,
-    );
-    await options.captureRun(skillRun, mode, skillMetadata);
+    },
+    mode,
+    parent,
+  );
+  await options.captureRun(skillRun, mode, skillMetadata);
+}
+
+async function postTypedSkillRuns(context: TurnRunContext) {
+  for (const { name, timestamp } of context.task.typedSkills) {
+    await postSkillRun(context, name, { min: timestamp, max: timestamp }, true);
   }
 }
 
@@ -629,6 +635,7 @@ async function postToolRuns(
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
   const options = context.request.options;
+  const typedNames = new Set(task.typedSkills.map(({ name }) => name));
   for (const toolMessage of toolMessages) {
     if (toolMessage.message.role !== "tool") continue;
     const toolCallId =
@@ -696,7 +703,11 @@ async function postToolRuns(
     );
     await options.captureRun(toolRun, mode, toolMetadata);
 
-    await postSkillRuns(context, skillNames, { min, max }, toolCall);
+    for (const skillName of skillNames) {
+      if (typedNames.has(skillName)) continue;
+      const success = skillReadSucceeded(skillName, toolCall, task.toolCalls);
+      await postSkillRun(context, skillName, { min, max }, success);
+    }
   }
 }
 
@@ -708,6 +719,8 @@ async function postModelAndToolRuns(
     ...getSystemMessage(context.sessionMeta, context.task),
     ...messages,
   ]);
+
+  await postTypedSkillRuns(context);
 
   for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
     const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
@@ -841,6 +854,7 @@ function createTask(): Task {
     error: undefined,
     isErrorInterrupt: false,
     isReviewResult: false,
+    typedSkills: [],
     subagentThreads: [],
     toolCalls: {},
   };
@@ -885,6 +899,10 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
   walk.task ??= createTask();
   const task = walk.task;
   if (isReviewResult(item)) task.isReviewResult = true;
+  for (const name of typedSkillNames(item)) {
+    if (task.typedSkills.some((typed) => typed.name === name)) continue;
+    task.typedSkills.push({ name, timestamp: Date.parse(timestamp) });
+  }
   const payload = withoutCodexMarkup(item);
   if (payload == null) return;
   const message = {

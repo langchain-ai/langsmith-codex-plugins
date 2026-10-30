@@ -163,7 +163,27 @@ export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // Anchored, so a read verb inside a path argument is not mistaken for the command.
 export const READ_COMMAND =
-  /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+  /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
+
+// Leading `FOO=1`, `sudo`, `env` and similar, which run the read without being it.
+export const COMMAND_PREFIX =
+  /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
+
+// `bash -lc '...'`, `sh -c "..."`, `powershell -Command ...` and `cmd /c ...`, up to the inner command.
+export const SHELL_WRAPPER =
+  /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
+export const MAX_SHELL_WRAP_DEPTH = 2;
+
+// The folder `cd` moves to, so a bare `cat SKILL.md` after it can be placed.
+export const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
+
+// Folders whose children are skills, so `skills/foo/references/SKILL.md` is not one.
+export const SKILL_CONTAINER_DIRS: ReadonlySet<string> = new Set([
+  "skills",
+  "migrated-command-skills",
+]);
+export const SYSTEM_SKILL_DIR = ".system";
+export const SKILL_FILE_NAME = "SKILL.md";
 
 // A write, not a read; the digit guard spares `2>/dev/null`.
 export const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
@@ -182,6 +202,8 @@ export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r
 // One command per run of non-separator characters; a quoted separator does not split.
 export const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 export const STRICT_NOTICE_KINDS: readonly string[] = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+export const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
+
 // Mirrors Codex's own list in codex-rs/core/src/context/contextual_user_message.rs,
 // except the user's own shell commands, plus the tags around pasted images.
 export const CONTEXTUAL_USER_FRAGMENTS: readonly RegExp[] = [

@@ -411,6 +411,8 @@ export type MergedMessage<TMessage> = {
   subagentThreads: string[];
 };
 
+export type TypedSkill = { name: string; timestamp: number };
+
 export type Task = {
   turnId: { id: string; timestamp: number } | undefined;
   // 1-based native turn index within the thread.
@@ -423,6 +425,7 @@ export type Task = {
   error: string | undefined;
   isErrorInterrupt: boolean;
   isReviewResult: boolean;
+  typedSkills: TypedSkill[];
   subagentThreads: string[];
   toolCalls: {
     [callId: string]: {

@@ -22230,7 +22230,11 @@ const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const READ_COMMAND = /^\s*(?:\S*[/\\])?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump|get-content|gc|type)\s/i;
+const COMMAND_PREFIX = /^\s*(?:(?:sudo|env|command|time|exec)\s+(?:-\S+\s+)*|[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s+)+/;
+const SHELL_WRAPPER = /^\s*(?:\S*[/\\])?(?:(?:ba|z|da|k)?sh|pwsh|powershell|cmd)(?:\.exe)?(?:\s+-\w+)*?\s+(?:-\w*c\w*|-Command|\/c)\s+/i;
+const CHANGE_DIRECTORY = /^\s*cd\s+(?:\/d\s+)?(?:"([^"]*)"|'([^']*)'|(\S+))\s*$/i;
+const SKILL_CONTAINER_DIRS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
@@ -22242,6 +22246,7 @@ const STRING_ESCAPES = {
 };
 const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
 const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+const TYPED_SKILL_FRAGMENT = /^<skill>\s*<name>([^<]*)<\/name>/;
 const CONTEXTUAL_USER_FRAGMENTS = [
 	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
 	/^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
@@ -22495,11 +22500,23 @@ function toolOutputText(value) {
 }
 //#endregion
 //#region src/skills.ts
+function placedIn(directory, word) {
+	return directory == null ? word : `${directory}/${word}`;
+}
 function skillDirectoryInPath(word) {
 	const parts = word.split(/[/\\]/);
 	const name = parts.at(-2);
 	if (parts.at(-1) !== "SKILL.md" || name == null || !SKILL_DIR_NAME.test(name)) return void 0;
-	return parts.slice(0, -2).includes("skills") ? name : void 0;
+	const container = parts.at(-3);
+	if (container != null && SKILL_CONTAINER_DIRS.has(container)) return name;
+	return container === ".system" && parts.at(-4) === "skills" ? name : void 0;
+}
+function wrappedCommand(segment) {
+	const prefix = SHELL_WRAPPER.exec(segment);
+	if (prefix == null) return void 0;
+	const rest = segment.slice(prefix[0].length).trim();
+	const quote = rest.at(0);
+	return (quote === "\"" || quote === "'") && rest.length > 1 && rest.at(-1) === quote ? rest.slice(1, -1) : rest;
 }
 function shellCommands(toolArgs) {
 	const args = customToolInput(toolArgs);
@@ -22509,19 +22526,46 @@ function shellCommands(toolArgs) {
 	}
 	return [...args.matchAll(COMMAND_LITERAL)].map(([, double, single, backtick]) => (double ?? single ?? backtick).replace(BACKSLASH_ESCAPE, (_, char) => STRING_ESCAPES[char] ?? char));
 }
-function skillNamesFromToolCall(toolName, args) {
-	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
-	const segments = shellCommands(args).flatMap((command) => command.match(SHELL_SEGMENT) ?? []);
-	const names = /* @__PURE__ */ new Set();
-	for (const segment of segments) {
-		const unquoted = segment.replace(QUOTED_RUN, " ");
-		if (!READ_COMMAND.test(segment) || WRITES_TO_FILE.test(unquoted)) continue;
-		for (const word of segment.match(SHELL_WORD) ?? []) {
-			const name = skillDirectoryInPath(word);
+function collectSkillNames(command, shell, names, depth) {
+	for (const segment of command.match(SHELL_SEGMENT) ?? []) {
+		const inner = depth < 2 ? wrappedCommand(segment) : void 0;
+		if (inner != null) {
+			collectSkillNames(inner, shell, names, depth + 1);
+			continue;
+		}
+		const target = CHANGE_DIRECTORY.exec(segment);
+		if (target != null) {
+			shell.directory = placedIn(shell.directory, target[1] ?? target[2] ?? target[3]);
+			continue;
+		}
+		const read = segment.replace(COMMAND_PREFIX, "");
+		if (!READ_COMMAND.test(read) || WRITES_TO_FILE.test(read.replace(QUOTED_RUN, " "))) continue;
+		for (const word of read.match(SHELL_WORD) ?? []) {
+			const name = skillDirectoryInPath(placedIn(shell.directory, word));
 			if (name != null) names.add(name);
 		}
 	}
+}
+function skillNamesFromToolCall(toolName, args) {
+	if (toolName == null || !SHELL_TOOL_NAMES.has(toolName)) return [];
+	const names = /* @__PURE__ */ new Set();
+	for (const command of shellCommands(args)) collectSkillNames(command, { directory: void 0 }, names, 0);
 	return [...names];
+}
+function commandFailed(toolCall) {
+	const exitCode = toolCall.outputs.exit_code;
+	return toolCall.error != null || typeof exitCode === "number" && exitCode !== 0;
+}
+function commandText(toolCall) {
+	const { command } = toolCall.outputs;
+	return Array.isArray(command) ? command.join(" ") : String(command ?? "");
+}
+function skillReadSucceeded(skillName, call, calls) {
+	const reads = Object.values(calls).filter((record) => {
+		const text = commandText(record);
+		return text.includes("SKILL.md") && (text.includes(`/${skillName}`) || text.includes(`\\${skillName}`));
+	});
+	return reads.length > 0 ? reads.some((read) => !commandFailed(read)) : !commandFailed(call);
 }
 //#endregion
 //#region src/utils/isPrimitive.ts
@@ -22727,6 +22771,14 @@ function unwrapPart(part) {
 		...part,
 		text
 	};
+}
+function typedSkillNames(item) {
+	if (item.type !== "message" || item.role !== "user") return [];
+	return item.content.flatMap((part) => {
+		if (part.type !== "input_text" || typeof part.text !== "string") return [];
+		const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
+		return name != null && SKILL_DIR_NAME.test(name) ? [name] : [];
+	});
 }
 function isReviewResult(item) {
 	return item.type === "message" && item.role === "user" && item.content.some((part) => typeof part.text === "string" && REVIEW_RESULT_PATTERN.test(part.text.trim()));
@@ -23332,37 +23384,41 @@ async function postModelRun(context, fullMessages, output) {
 		subagentThreads
 	};
 }
-async function postSkillRuns(context, skillNames, window, toolCall) {
+async function postSkillRun(context, skillName, window, success) {
 	const { metadataContext, childMetadataBase, mode, parent } = context;
-	const { min, max } = window;
 	const options = context.request.options;
-	for (const skillName of skillNames) {
-		const skillMetadata = {
-			...metadataContext,
-			runType: "tool",
-			clearSubagent: true,
-			skillName,
-			base: childMetadataBase
-		};
-		const skillRun = createRunTree({
-			id: options.nextRunId(),
-			name: "Skill",
-			run_type: "tool",
-			start_time: min,
-			end_time: max,
-			inputs: { input: { skill: skillName } },
-			outputs: { output: {
-				commandName: skillName,
-				success: toolCall.error == null
-			} },
-			extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
-		}, mode, parent);
-		await options.captureRun(skillRun, mode, skillMetadata);
-	}
+	const skillMetadata = {
+		...metadataContext,
+		runType: "tool",
+		clearSubagent: true,
+		skillName,
+		base: childMetadataBase
+	};
+	const skillRun = createRunTree({
+		id: options.nextRunId(),
+		name: "Skill",
+		run_type: "tool",
+		start_time: window.min,
+		end_time: window.max,
+		inputs: { input: { skill: skillName } },
+		outputs: { output: {
+			commandName: skillName,
+			success
+		} },
+		extra: { metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET) }
+	}, mode, parent);
+	await options.captureRun(skillRun, mode, skillMetadata);
+}
+async function postTypedSkillRuns(context) {
+	for (const { name, timestamp } of context.task.typedSkills) await postSkillRun(context, name, {
+		min: timestamp,
+		max: timestamp
+	}, true);
 }
 async function postToolRuns(context, aiMessage, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const options = context.request.options;
+	const typedNames = new Set(task.typedSkills.map(({ name }) => name));
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
@@ -23411,14 +23467,19 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 			extra: { metadata: buildChildRunMetadata(toolMetadata) }
 		}, mode, parent);
 		await options.captureRun(toolRun, mode, toolMetadata);
-		await postSkillRuns(context, skillNames, {
-			min,
-			max
-		}, toolCall);
+		for (const skillName of skillNames) {
+			if (typedNames.has(skillName)) continue;
+			const success = skillReadSucceeded(skillName, toolCall, task.toolCalls);
+			await postSkillRun(context, skillName, {
+				min,
+				max
+			}, success);
+		}
 	}
 }
 async function postModelAndToolRuns(context, messages) {
 	const fullMessages = mergeMessages([...getSystemMessage(context.sessionMeta, context.task), ...messages]);
+	await postTypedSkillRuns(context);
 	for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
 		const { aiMessage, toolMessages, subagentThreads } = await postModelRun(context, fullMessages, output);
 		await postToolRuns(context, aiMessage, toolMessages);
@@ -23492,6 +23553,7 @@ function createTask() {
 		error: void 0,
 		isErrorInterrupt: false,
 		isReviewResult: false,
+		typedSkills: [],
 		subagentThreads: [],
 		toolCalls: {}
 	};
@@ -23522,6 +23584,13 @@ function recordResponseItem(walk, item, timestamp) {
 	walk.task ??= createTask();
 	const task = walk.task;
 	if (isReviewResult(item)) task.isReviewResult = true;
+	for (const name of typedSkillNames(item)) {
+		if (task.typedSkills.some((typed) => typed.name === name)) continue;
+		task.typedSkills.push({
+			name,
+			timestamp: Date.parse(timestamp)
+		});
+	}
 	const payload = withoutCodexMarkup(item);
 	if (payload == null) return;
 	const message = {

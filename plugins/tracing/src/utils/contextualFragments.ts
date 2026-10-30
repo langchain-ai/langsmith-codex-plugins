@@ -5,6 +5,8 @@ import {
   QUESTION_REPLY_PATTERN,
   REALTIME_DELEGATION_PATTERN,
   REVIEW_RESULT_PATTERN,
+  SKILL_DIR_NAME,
+  TYPED_SKILL_FRAGMENT,
   USER_SHELL_COMMAND_PATTERN,
   XML_ENTITIES,
   XML_ENTITY_PATTERN,
@@ -48,6 +50,15 @@ function unwrapPart(part: Record<string, unknown>): Record<string, unknown> {
   if (part.type !== "input_text" || typeof part.text !== "string") return part;
   const text = unwrappedText(part.text.trim());
   return text == null ? part : { ...part, text };
+}
+
+export function typedSkillNames(item: ResponseItem): string[] {
+  if (item.type !== "message" || item.role !== "user") return [];
+  return item.content.flatMap((part) => {
+    if (part.type !== "input_text" || typeof part.text !== "string") return [];
+    const name = TYPED_SKILL_FRAGMENT.exec(part.text.trim())?.[1].trim();
+    return name != null && SKILL_DIR_NAME.test(name) ? [name] : [];
+  });
 }
 
 export function isReviewResult(item: ResponseItem): boolean {
