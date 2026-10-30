@@ -46,6 +46,7 @@ describe("skillNamesFromToolCall", () => {
     { command: `git diff\ncat ${SKILL}`, names: FOUND },
     { command: "cat notskills/pr-creation/SKILL.md", names: [] },
     { command: "cat .agents/skills/foo/references/SKILL.md", names: [] },
+    { command: "cat /root/.codex/skills/.system/openai-docs/SKILL.md", names: ["openai-docs"] },
     { command: "cat migrated-command-skills/pr-creation/SKILL.md", names: FOUND },
     { command: `bash -lc 'cat ${SKILL}'`, names: FOUND },
     { command: `sh -c "cd .agents/skills/pr-creation && cat SKILL.md"`, names: FOUND },

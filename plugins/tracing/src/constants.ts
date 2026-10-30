@@ -179,11 +179,12 @@ export const COMMAND_LITERAL =
 export const WORKDIR_LITERAL =
   /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 
-// The literal is source text, so `\n` between two commands arrives as two characters.
 export const SHELL_WRAPPER =
   /^\s*(?:\S*\/)?(?:ba|z)?sh\s+-\w*c\s+(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)')\s*$/;
 export const SKILL_FRAGMENT_NAME = /^<skill>\s*<name>([^<\s]+)<\/name>/i;
 export const NONZERO_EXIT_SUFFIX = /\n\nExit code: -?[1-9]\d*\s*$/;
+
+// The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 export const STRING_ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
 
