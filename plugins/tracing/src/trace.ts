@@ -603,7 +603,11 @@ async function postModelRun(
       run_type: "llm",
       start_time: outputStartTime,
       end_time: outputEndTime,
-      inputs: { messages: inputMessages.map((i) => i.message) },
+      inputs: {
+        messages: withoutHookTexts(inputMessages, shownHookTexts(task, options)).map(
+          (i) => i.message,
+        ),
+      },
       outputs: { messages: aiMessage.map((i) => i.message) },
       extra: {
         metadata: buildChildRunMetadata(llmMetadata),
@@ -813,7 +817,11 @@ async function postTurn(
     ...draft,
     childMetadataBase: childBase(draft.metadataBase, draft),
     unattributedChildBase: childBase(unattributed.metadataBase, draft),
-    parent: await createParentRun(draft, user, agent),
+    parent: await createParentRun(
+      draft,
+      user,
+      withoutHookTexts(agent, shownHookTexts(task, request.options)),
+    ),
     postedSubagentThreads: new Set<string>(),
   };
 
@@ -938,6 +946,24 @@ function isHookItem(item: ResponseItem): item is ResponseItemOf<"message"> {
     item.type === "message" &&
     passthrough(item)?.content_item_kinds?.includes(HOOK_CONTEXT_KIND) === true
   );
+}
+
+function shownHookTexts(task: Task, options: TurnRequest["options"]): Set<string> {
+  if (!options.captureHookOutputs) return new Set();
+  return new Set(
+    task.messages.flatMap(({ message }) =>
+      isHookItem(message) ? message.content.map(({ text }) => String(text)) : [],
+    ),
+  );
+}
+
+function withoutHookTexts(messages: MergedMessage<StandardMessage>[], hookTexts: Set<string>) {
+  if (hookTexts.size === 0) return messages;
+  return messages.flatMap((merged) => {
+    if (merged.message.role !== "system") return [merged];
+    const content = merged.message.content.filter(({ text }) => !hookTexts.has(String(text)));
+    return content.length === 0 ? [] : [{ ...merged, message: { ...merged.message, content } }];
+  });
 }
 
 function createdAt(item: ResponseItem, written: number): number {

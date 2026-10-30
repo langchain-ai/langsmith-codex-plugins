@@ -1799,7 +1799,7 @@ async function placeHooks(rollout: string, firings: string, captureHookOutputs: 
     .filter(({ run_type }) => run_type === "llm")
     .map(({ id, inputs, outputs, extra }) => [id, inputs, outputs, extra?.metadata]);
   const tools = runs.filter(({ run_type }) => run_type === "tool").map(({ name }) => name);
-  return { placed, modelCalls, tools, ids: runs.map(({ id }) => id) };
+  return { placed, modelCalls, tools, runs, ids: runs.map(({ id }) => id) };
 }
 
 async function expectPlaced(rollout: string, firings: string, expected: string[]) {
@@ -1807,7 +1807,26 @@ async function expectPlaced(rollout: string, firings: string, expected: string[]
   const off = await placeHooks(rollout, firings, false);
   expect(on.placed).toEqual(expected);
   expect(off.placed).toEqual([]);
-  expect(on.modelCalls).toEqual(off.modelCalls);
+  const hookTexts = new Set(
+    on.runs.flatMap((run) =>
+      [...(run.inputs?.hooks ?? []), ...(run.outputs?.hooks ?? [])].flatMap(({ output }) =>
+        output.split("\n"),
+      ),
+    ),
+  );
+  const shown = (messages: { role: string; content: { text?: string }[] }[]) =>
+    messages.flatMap((message) => {
+      if (message.role !== "system") return [message];
+      const content = message.content.filter(({ text }) => !hookTexts.has(text));
+      return content.length === 0 ? [] : [{ ...message, content }];
+    });
+  expect(on.modelCalls).toEqual(
+    off.modelCalls.map(([id, inputs, ...rest]) => [
+      id,
+      { ...inputs, messages: shown(inputs.messages) },
+      ...rest,
+    ]),
+  );
 }
 
 it.each([
@@ -1921,6 +1940,23 @@ it("gives every late run of every turn its own id", async () => {
   const { ids, tools } = await placeHooks(rollout, firings, true);
   expect(tools).toEqual(["exec", "Skill", "exec", "Skill"]);
   expect(new Set(ids).size).toBe(ids.length);
+});
+
+it("shows a real Codex run's hook text only under hooks when hook capture is on", async () => {
+  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const source = path.join(__dirname, "sessions/2026/10/28/rollout-hook-firings-seq.jsonl");
+  const rollout = await fs.readFile(source, "utf8");
+  const firings = await fs.readFile(`${source}.langsmith-hooks`, "utf8");
+  const outsideHooks = (runs: RunTree[]) =>
+    runs.filter((run) =>
+      JSON.stringify([
+        { ...run.inputs, hooks: [] },
+        { ...run.outputs, hooks: [] },
+      ]).includes("CTX|"),
+    ).length;
+
+  expect(outsideHooks((await placeHooks(rollout, firings, false)).runs)).toBeGreaterThan(0);
+  expect(outsideHooks((await placeHooks(rollout, firings, true)).runs)).toBe(0);
 });
 
 it("names and places each hook of a real Codex run by the firing it recorded", async () => {

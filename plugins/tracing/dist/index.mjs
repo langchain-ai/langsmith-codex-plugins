@@ -23436,7 +23436,7 @@ async function postModelRun(context, fullMessages, output) {
 		run_type: "llm",
 		start_time: outputStartTime,
 		end_time: outputEndTime,
-		inputs: { messages: inputMessages.map((i) => i.message) },
+		inputs: { messages: withoutHookTexts(inputMessages, shownHookTexts(task, options)).map((i) => i.message) },
 		outputs: { messages: aiMessage.map((i) => i.message) },
 		extra: { metadata: buildChildRunMetadata(llmMetadata) }
 	}, mode, parent);
@@ -23577,7 +23577,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 		...draft,
 		childMetadataBase: childBase(draft.metadataBase, draft),
 		unattributedChildBase: childBase(unattributed.metadataBase, draft),
-		parent: await createParentRun(draft, user, agent),
+		parent: await createParentRun(draft, user, withoutHookTexts(agent, shownHookTexts(task, request.options))),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
 	if (!task.isReviewResult) await postModelAndToolRuns(context, fullMessages);
@@ -23665,6 +23665,24 @@ function passthrough(item) {
 }
 function isHookItem(item) {
 	return item.type === "message" && passthrough(item)?.content_item_kinds?.includes("hooks.additional_context") === true;
+}
+function shownHookTexts(task, options) {
+	if (!options.captureHookOutputs) return /* @__PURE__ */ new Set();
+	return new Set(task.messages.flatMap(({ message }) => isHookItem(message) ? message.content.map(({ text }) => String(text)) : []));
+}
+function withoutHookTexts(messages, hookTexts) {
+	if (hookTexts.size === 0) return messages;
+	return messages.flatMap((merged) => {
+		if (merged.message.role !== "system") return [merged];
+		const content = merged.message.content.filter(({ text }) => !hookTexts.has(String(text)));
+		return content.length === 0 ? [] : [{
+			...merged,
+			message: {
+				...merged.message,
+				content
+			}
+		}];
+	});
 }
 function createdAt(item, written) {
 	const created = passthrough(item)?.create_time;
