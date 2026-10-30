@@ -22827,12 +22827,7 @@ function toolOriginFromArgs(toolArgs, cwd) {
 			const candidate = isAbsolute(value) ? value : cwd && isAbsolute(cwd) ? resolve(cwd, value) : void 0;
 			if (candidate !== void 0 && candidate.length <= 4096) paths.push(candidate);
 		}
-		const roots = /* @__PURE__ */ new Map();
-		const inRepository = (candidate) => {
-			if (!roots.has(candidate)) roots.set(candidate, rootFromGitMarker(candidate));
-			return typeof roots.get(candidate) === "string";
-		};
-		const path = paths.slice(0, 20).find(inRepository) ?? paths[0];
+		const path = [...new Set(paths)].slice(0, 20).find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
 		return {
 			...path === void 0 ? {} : { path },
 			namedAPath: named.length > 0,

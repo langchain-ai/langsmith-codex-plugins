@@ -229,6 +229,15 @@ it("falls back to the first folder when none is inside a repo", () => {
   });
 });
 
+it("finds a repo named after twenty repeats of the same plain folder", () => {
+  const { repo, plain } = folders();
+  const input = program(
+    ...Array.from({ length: 20 }, () => `{cmd:"ls",workdir:${JSON.stringify(plain)}}`),
+    `{cmd:"ls",workdir:${JSON.stringify(repo)}}`,
+  );
+  expect(toolOriginFromArgs({ input }, SESSION)).toEqual(found(repo));
+});
+
 it("does not count a folder whose .git pointer is broken as a repo", () => {
   const { repo, plain } = folders();
   const broken = join(plain, "broken");

@@ -41,12 +41,10 @@ export function toolOriginFromArgs(
           : undefined;
       if (candidate !== undefined && candidate.length <= MAX_PATH_LENGTH) paths.push(candidate);
     }
-    const roots = new Map<string, ReturnType<typeof rootFromGitMarker>>();
-    const inRepository = (candidate: string) => {
-      if (!roots.has(candidate)) roots.set(candidate, rootFromGitMarker(candidate));
-      return typeof roots.get(candidate) === "string";
-    };
-    const path = paths.slice(0, MAX_REPO_CHECKS).find(inRepository) ?? paths[0];
+    const path =
+      [...new Set(paths)]
+        .slice(0, MAX_REPO_CHECKS)
+        .find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
     return { ...(path === undefined ? {} : { path }), namedAPath: named.length > 0, ...session };
   } catch {
     return { namedAPath: false, ...session };
