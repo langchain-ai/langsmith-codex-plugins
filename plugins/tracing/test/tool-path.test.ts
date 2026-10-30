@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
@@ -27,6 +27,43 @@ it.each([
     name: "a quoted workdir key",
     args: { input: program(`{"cmd":"ls","workdir":"/work/b"}`) },
     expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a real workdir after a comment holding a quote",
+    args: {
+      input: `// don't use "x"\ntext(await tools.exec_command({cmd:"ls",workdir:"/work/b"}));`,
+    },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "a template with no placeholder",
+    args: { input: program("{cmd:`ls`, workdir:`/work/b`}") },
+    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when it only appears in a line comment",
+    args: { input: `// workdir: "/work/b"\n${program(`{cmd:"ls"}`)}` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when it only appears in a block comment",
+    args: { input: `/* {workdir: "/work/b"} */\n${program(`{cmd:"ls"}`)}` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when the value is a template with a placeholder",
+    args: { input: program("{cmd:`ls`,workdir:`${base}/repo`}") },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when the value is joined from two strings",
+    args: { input: program(`{cmd:"ls",workdir:"/w/"+"repo"}`) },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when the key belongs to a property access",
+    args: { input: program(`{cmd:"ls"}`) + `\nopts.workdir:"/work/b"}` },
+    expected: { namedAPath: false, cwd: "/work/a" },
   },
   {
     name: "no workdir when the text sits inside a command string",
@@ -142,6 +179,22 @@ it("falls back to the first folder when none is inside a repo", () => {
   );
   expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
     path: plain,
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("does not count a folder whose .git pointer is broken as a repo", () => {
+  const { repo, plain } = folders();
+  const broken = join(plain, "broken");
+  mkdirSync(broken);
+  writeFileSync(join(broken, ".git"), "gitdir: /nowhere/at/all\n");
+  const input = program(
+    `{cmd:"ls",workdir:${JSON.stringify(broken)}}`,
+    `{cmd:"ls",workdir:${JSON.stringify(repo)}}`,
+  );
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: repo,
     namedAPath: true,
     cwd: "/work/a",
   });
