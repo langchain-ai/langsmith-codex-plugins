@@ -177,7 +177,21 @@ export const COMMAND_LITERAL =
   /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
 
 export const PROGRAM_TOKEN =
-  /\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`|[A-Za-z_$][\w$]*|[\s\S]/g;
+  /\s+|\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|"((?:[^"\\]|\\[\s\S])*)"|"(?:[^"\\]|\\[\s\S])*\\?$|'((?:[^'\\]|\\[\s\S])*)'|'(?:[^'\\]|\\[\s\S])*\\?$|`((?:[^`\\]|\\[\s\S])*)`|`(?:[^`\\]|\\[\s\S])*\\?$|[A-Za-z_$][\w$]*|[\s\S]/g;
+export const PROGRAM_SCAN_LIMIT = 200_000;
+export const MAX_NAMED_PATHS = 100;
+export const WHITESPACE_ONLY = /^\s+$/;
+export const LINE_COMMENT_START = "//";
+export const BLOCK_COMMENT_START = "/*";
+export const PLACEHOLDER_START = "${";
+export const OPEN_BRACE = "{";
+export const CLOSE_BRACE = "}";
+export const OPEN_PAREN = "(";
+export const CLOSE_PAREN = ")";
+export const COMMA = ",";
+export const KEY_SEPARATOR = ":";
+export const MEMBER_ACCESS = ".";
+export const TOOLS_NAMESPACE = "tools";
 export const WORKDIR_KEY = "workdir";
 export const EXEC_COMMAND_NAME = "exec_command";
 export const APPLY_PATCH_NAME = "apply_patch";

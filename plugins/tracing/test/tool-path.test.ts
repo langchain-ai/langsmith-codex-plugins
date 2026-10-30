@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
+import { PROGRAM_SCAN_LIMIT } from "../src/constants.js";
 import { toolOriginFromArgs } from "../src/tool-path.js";
 
 const program = (...calls: string[]) =>
@@ -176,6 +177,69 @@ it.each([
     expected: { namedAPath: false, cwd: "/work/a" },
   },
   {
+    name: "a bare apply_patch call",
+    args: {
+      input: `apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/b/x.txt\n+hi\n*** End Patch")});`,
+    },
+    expected: { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "no patch when the call belongs to another object",
+    args: {
+      input: `foo.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")});`,
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no patch when the text goes to some other function",
+    args: {
+      input: `f(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")});`,
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no patch when the path is built with a placeholder",
+    args: {
+      input:
+        "tools.apply_patch(`*** Begin Patch\n*** Add File: ${base}/x.txt\n+hi\n*** End Patch`);",
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no patch when the text is joined from several strings",
+    args: {
+      input: `tools.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/")} + name);`,
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no patch when there is no opening bracket after the name",
+    args: {
+      input: `tools.apply_patch ; ${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")})`,
+    },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when the call name only ends like exec_command",
+    args: { input: `text(await $exec_command({cmd:"ls",workdir:"/work/plain"}));` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when exec_command belongs to another object",
+    args: { input: `text(await foo.exec_command({cmd:"ls",workdir:"/work/plain"}));` },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
+    name: "a template holding a dollar sign and a brace but no placeholder",
+    args: { input: program("{cmd:`ls`,workdir:`/work/$b{x}`}") },
+    expected: { path: "/work/$b{x}", namedAPath: true, cwd: "/work/a" },
+  },
+  {
+    name: "no workdir when a placeholder sits mid-path",
+    args: { input: program("{cmd:`ls`,workdir:`/work/${b}`}") },
+    expected: { namedAPath: false, cwd: "/work/a" },
+  },
+  {
     name: "no workdir when the key is a property access",
     args: { input: program(`{cmd:"ls", opts.workdir:"/work/plain"}`) },
     expected: { namedAPath: false, cwd: "/work/a" },
@@ -332,6 +396,58 @@ it("leaves a relative folder unresolved when the session folder is relative", ()
 it.each(["file_path", "path", "workdir", "cwd"])("reads the %s key of a plain call", (key) => {
   expect(toolOriginFromArgs({ [key]: "/work/b" }, "/work/a")).toEqual({
     path: "/work/b",
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it.each([
+  { name: "escaped double quotes with no closing quote", text: `"${'\\"'.repeat(90_000)}` },
+  { name: "escaped single quotes with no closing quote", text: `'${"\\'".repeat(90_000)}` },
+  { name: "escaped backticks with no closing backtick", text: `\`${"\\`".repeat(90_000)}` },
+  { name: "block comment openers with no end", text: "/*a".repeat(60_000) },
+])("reads a long program of $name in linear time", ({ text }) => {
+  const started = performance.now();
+  expect(toolOriginFromArgs({ input: text }, "/work/a")).toEqual({
+    namedAPath: false,
+    cwd: "/work/a",
+  });
+  expect(performance.now() - started).toBeLessThan(1000);
+});
+
+it("ignores a program longer than the scan limit", () => {
+  const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}${" ".repeat(PROGRAM_SCAN_LIMIT)}`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
+
+it("reads a patch of 150 thousand files without throwing and takes the first", () => {
+  const files = Array.from(
+    { length: 150_000 },
+    (_, n) => `*** Add File: /work/plain/f${n}.txt\n+x`,
+  );
+  const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: "/work/plain/f0.txt",
+    namedAPath: true,
+    cwd: "/work/a",
+  });
+});
+
+it("falls back to no path when reading the arguments throws", () => {
+  const args = {
+    get path(): string {
+      throw new Error("boom");
+    },
+  };
+  expect(toolOriginFromArgs(args, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
+});
+
+it("only looks at the first hundred named files", () => {
+  const { repo, plain } = folders();
+  const files = Array.from({ length: 100 }, (_, n) => `*** Add File: ${plain}/f${n}.txt\n+x`);
+  const input = `*** Begin Patch\n${files.join("\n")}\n*** Add File: ${repo}/late.txt\n+x\n*** End Patch`;
+  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
+    path: `${plain}/f0.txt`,
     namedAPath: true,
     cwd: "/work/a",
   });

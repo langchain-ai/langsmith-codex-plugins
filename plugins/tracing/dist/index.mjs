@@ -22234,7 +22234,8 @@ const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail
 const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
 const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const PROGRAM_TOKEN = /\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/|"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`|[A-Za-z_$][\w$]*|[\s\S]/g;
+const PROGRAM_TOKEN = /\s+|\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|"((?:[^"\\]|\\[\s\S])*)"|"(?:[^"\\]|\\[\s\S])*\\?$|'((?:[^'\\]|\\[\s\S])*)'|'(?:[^'\\]|\\[\s\S])*\\?$|`((?:[^`\\]|\\[\s\S])*)`|`(?:[^`\\]|\\[\s\S])*\\?$|[A-Za-z_$][\w$]*|[\s\S]/g;
+const WHITESPACE_ONLY = /^\s+$/;
 const BACKSLASH_ESCAPE = /\\([\s\S])/g;
 const STRING_ESCAPES = {
 	n: "\n",
@@ -22762,65 +22763,77 @@ function usageSince(total, start) {
 //#endregion
 //#region src/utils/programPaths.ts
 function programTokens(program) {
-	return [...program.matchAll(PROGRAM_TOKEN)].map(([text, double, single, backtick]) => ({
+	const tokens = [];
+	for (const [text, double, single, backtick] of program.matchAll(PROGRAM_TOKEN)) if (!(WHITESPACE_ONLY.test(text) || text.startsWith("//") || text.startsWith("/*"))) tokens.push({
 		text,
 		literal: double ?? single ?? backtick
-	})).filter(({ text }) => !/^\s+$/.test(text) && !text.startsWith("//") && !text.startsWith("/*"));
+	});
+	return tokens;
 }
-function plainLiteral(token) {
-	return token?.literal === void 0 || token.literal.includes("${") ? void 0 : token.literal;
+function plainLiteral(literal) {
+	return literal === void 0 || literal.includes("${") ? void 0 : literal;
+}
+function isToolCall(tokens, nameIndex, name) {
+	return tokens[nameIndex]?.text === name && (tokens[nameIndex - 1]?.text !== "." || tokens[nameIndex - 2]?.text === "tools");
 }
 function isWorkdirKey(token) {
 	return token.text === "workdir" || token.literal === "workdir";
 }
 function programPaths(program) {
+	if (program.length > 2e5) return [];
 	const tokens = programTokens(program);
 	const paths = [];
 	let depth = 0;
 	let execDepth;
 	tokens.forEach((token, index) => {
-		const [before, previous, next, value, after] = [
-			tokens[index - 2],
+		const [previous, next, value, after] = [
 			tokens[index - 1],
 			tokens[index + 1],
 			tokens[index + 2],
 			tokens[index + 3]
 		];
-		if ("{[(".includes(token.text)) {
+		if (token.text === "{") {
 			depth++;
-			if (token.text === "{" && previous?.text === "(" && before?.text === "exec_command") execDepth = depth;
-		} else if ("}])".includes(token.text)) {
+			if (previous?.text === "(" && isToolCall(tokens, index - 2, "exec_command")) execDepth = depth;
+		} else if (token.text === "}") {
 			if (depth === execDepth) execDepth = void 0;
 			depth--;
 		} else if (depth === execDepth && isWorkdirKey(token) && (previous?.text === "{" || previous?.text === ",") && next?.text === ":" && (after?.text === "," || after?.text === "}")) {
-			const workdir = plainLiteral(value);
+			const workdir = plainLiteral(value?.literal);
 			if (workdir !== void 0) paths.push(unescapeLiteral(workdir));
-		} else if (token.text === "apply_patch" && next?.text === "(" && value?.literal !== void 0) {
-			const patch = unescapeLiteral(value.literal);
-			paths.push(...[...patch.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file));
+		} else if (isToolCall(tokens, index, "apply_patch") && next?.text === "(" && after?.text === ")") {
+			const patch = plainLiteral(value?.literal);
+			if (patch === void 0) return;
+			for (const [, file] of unescapeLiteral(patch).matchAll(PATCH_FILE_PATTERN)) paths.push(file);
 		}
 	});
 	return paths;
 }
 //#endregion
 //#region src/tool-path.ts
+function namedValues(args) {
+	if (typeof args === "string") return args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : programPaths(args);
+	return isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
+}
 function toolOriginFromArgs(toolArgs, cwd) {
 	const session = cwd === void 0 ? {} : { cwd };
-	const args = customToolInput(toolArgs);
-	const named = typeof args === "string" ? args.trimStart().startsWith("*** Begin Patch") ? [...args.matchAll(PATCH_FILE_PATTERN)].map(([, file]) => file) : programPaths(args) : isRecord(args) ? TOOL_PATH_INPUT_KEYS.map((key) => args[key]) : [];
-	const paths = [];
-	for (const value of named) {
-		if (typeof value !== "string" || value.length === 0) continue;
-		if (isAbsolute(value)) paths.push(value);
+	try {
+		const named = namedValues(customToolInput(toolArgs)).slice(0, 100).filter((value) => typeof value === "string" && value.length > 0);
+		const paths = [];
+		for (const value of named) if (isAbsolute(value)) paths.push(value);
 		else if (cwd && isAbsolute(cwd)) paths.push(resolve(cwd, value));
+		const path = paths.find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
+		return {
+			...path === void 0 ? {} : { path },
+			namedAPath: named.length > 0,
+			...session
+		};
+	} catch {
+		return {
+			namedAPath: false,
+			...session
+		};
 	}
-	const namedAPath = named.some((value) => typeof value === "string" && value.length > 0);
-	const path = paths.find((candidate) => typeof rootFromGitMarker(candidate) === "string") ?? paths[0];
-	return {
-		...path === void 0 ? {} : { path },
-		namedAPath,
-		...session
-	};
 }
 //#endregion
 //#region src/utils/rollout.ts
