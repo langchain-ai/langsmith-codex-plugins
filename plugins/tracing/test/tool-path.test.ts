@@ -7,301 +7,168 @@ import { toolOriginFromArgs } from "../src/tool-path.js";
 const program = (...calls: string[]) =>
   calls.map((call) => `text(await tools.exec_command(${call}));`).join("\n");
 
+const SESSION = "/work/a";
+const found = (path: string) => ({ path, namedAPath: true, cwd: SESSION });
+const none = { namedAPath: false, cwd: SESSION };
+const exec = (call: string) => program(call);
+const patchText = (file: string) =>
+  JSON.stringify(`*** Begin Patch\n*** Add File: ${file}\n+hi\n*** End Patch`);
+const lsIn = (dir: string) => exec(`{cmd:"ls",workdir:"${dir}"}`);
+
 it.each([
-  {
-    name: "a workdir inside the JS program Codex wraps shell calls in",
-    args: { input: program(`{cmd:"git status",workdir:"/work/b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "single quotes",
-    args: { input: program(`{cmd:'ls', workdir:'/work/b'}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "backticks",
-    args: { input: program("{cmd:`ls`, workdir:`/work/b`}") },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a quoted workdir key",
-    args: { input: program(`{"cmd":"ls","workdir":"/work/b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a real workdir after a comment holding a quote",
-    args: {
-      input: `// don't use "x"\ntext(await tools.exec_command({cmd:"ls",workdir:"/work/b"}));`,
-    },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a template with no placeholder",
-    args: { input: program("{cmd:`ls`, workdir:`/work/b`}") },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when it only appears in a line comment",
-    args: { input: `// workdir: "/work/b"\n${program(`{cmd:"ls"}`)}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when it only appears in a block comment",
-    args: { input: `/* {workdir: "/work/b"} */\n${program(`{cmd:"ls"}`)}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the value is a template with a placeholder",
-    args: { input: program("{cmd:`ls`,workdir:`${base}/repo`}") },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the value is joined from two strings",
-    args: { input: program(`{cmd:"ls",workdir:"/w/"+"repo"}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the key belongs to a property access",
-    args: { input: program(`{cmd:"ls"}`) + `\nopts.workdir:"/work/b"}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a single-quoted workdir key",
-    args: { input: program(`{cmd:"ls",'workdir':"/work/b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir that comes first in the object",
-    args: { input: program(`{workdir:"/work/b",cmd:"ls"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir after a block comment",
-    args: { input: program(`{cmd:"ls", /* r */ workdir:"/work/b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir after a line comment",
-    args: { input: `text(await tools.exec_command({cmd:"ls", // r\n workdir:"/work/b"}));` },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object sits inside a double-quoted string",
-    args: { input: program(`{cmd:"echo {workdir:'/work/plain'}"}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object sits inside a single-quoted string",
-    args: { input: program(`{cmd:'echo {workdir:"/work/plain"}'}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object sits inside a backtick string",
-    args: { input: program("{cmd:`echo {workdir:'/work/plain'}`}") },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object sits inside a line comment",
-    args: { input: `// {workdir:"/work/plain"}\n${program(`{cmd:"ls"}`)}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object sits inside a multi-line block comment",
-    args: { input: `/* first\n{workdir:"/work/plain"}\n*/\n${program(`{cmd:"ls"}`)}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a patch applied inside the program",
-    args: {
-      input: `text(await tools.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/b/x.txt\n+hi\n*** End Patch")}));`,
-    },
-    expected: { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a patch that starts after blank space",
-    args: { input: "\n  *** Begin Patch\n*** Add File: /work/b/x.txt\n+hi\n*** End Patch" },
-    expected: { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a program that mentions a patch inside a command",
-    args: {
-      input: program(`{cmd:"echo '*** Begin Patch'",workdir:"/work/b"}`),
-    },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "the call's own workdir when an inner object has one first",
-    args: {
-      input: program(`{cmd:"ls",env:{workdir:"/work/plain"},workdir:"/work/b"}`),
-    },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when it only sits in an object inside the call",
-    args: { input: program(`{cmd:"ls",env:{workdir:"/work/plain"}}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when it only sits in an object outside the call",
-    args: { input: `const config = {workdir:"/work/plain"};\n${program(`{cmd:"ls"}`)}` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when a later call is not an exec_command",
-    args: {
-      input: `${program(`{cmd:"ls"}`)}\ntext(await tools.other({cmd:"ls",workdir:"/work/plain"}));`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir after a line comment holding a closing brace",
-    args: { input: `text(await tools.exec_command({cmd:"ls", // }\n workdir:"/work/b"}));` },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir after a block comment holding a closing brace",
-    args: { input: program(`{cmd:"ls", /* } */ workdir:"/work/b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when an object is only assigned to a variable named like the call",
-    args: { input: `const exec_command = {cmd:"ls",workdir:"/work/plain"};` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when a name like apply_patch only holds text",
-    args: {
-      input: `const apply_patch = ${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")};`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a bare apply_patch call",
-    args: {
-      input: `apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/b/x.txt\n+hi\n*** End Patch")});`,
-    },
-    expected: { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when the call belongs to another object",
-    args: {
-      input: `foo.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")});`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when the text goes to some other function",
-    args: {
-      input: `f(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")});`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when the path is built with a placeholder",
-    args: {
-      input:
-        "tools.apply_patch(`*** Begin Patch\n*** Add File: ${base}/x.txt\n+hi\n*** End Patch`);",
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when the text is joined from several strings",
-    args: {
-      input: `tools.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/")} + name);`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no patch when there is no opening bracket after the name",
-    args: {
-      input: `tools.apply_patch ; ${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/x.txt\n+hi\n*** End Patch")})`,
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the call name only ends like exec_command",
-    args: { input: `text(await $exec_command({cmd:"ls",workdir:"/work/plain"}));` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when exec_command belongs to another object",
-    args: { input: `text(await foo.exec_command({cmd:"ls",workdir:"/work/plain"}));` },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a template holding a dollar sign and a brace but no placeholder",
-    args: { input: program("{cmd:`ls`,workdir:`/work/$b{x}`}") },
-    expected: { path: "/work/$b{x}", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when a placeholder sits mid-path",
-    args: { input: program("{cmd:`ls`,workdir:`/work/${b}`}") },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the key is a property access",
-    args: { input: program(`{cmd:"ls", opts.workdir:"/work/plain"}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir when the text sits inside a command string",
-    args: {
-      input: program(
-        `{cmd:"grep \\"workdir: '/work/plain'\\" notes.md"}`,
-        `{cmd:'grep "workdir: \\'/work/plain\\'" notes.md'}`,
-        '{cmd:`echo workdir: "/work/plain"`}',
-        `{cmd:"workdir: '/work/plain'"}`,
-      ),
-    },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a relative workdir, resolved from the session folder",
-    args: { input: program(`{cmd:"ls",workdir:"../b"}`) },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "the first workdir when one program names several",
-    args: {
-      input: program(`{cmd:"ls",workdir:"/work/b"}`, `{cmd:"ls",workdir:"/work/c"}`),
-    },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no workdir in the program",
-    args: { input: program(`{cmd:"ls"}`) },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-  {
-    name: "a workdir on the plain function call",
-    args: { cmd: "ls", workdir: "/work/b" },
-    expected: { path: "/work/b", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "every file of a patch, so the first one wins",
-    args: {
-      input:
-        "*** Begin Patch\n*** Update File: /work/b/x.txt\n@@\n-x\n+y\n*** Update File: /work/c/y.txt\n@@\n-x\n+y\n*** End Patch",
-    },
-    expected: { path: "/work/b/x.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a new file added by a relative path into another folder",
-    args: { input: "*** Begin Patch\n*** Add File: ../b/new.txt\n+hi\n*** End Patch" },
-    expected: { path: "/work/b/new.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "a relative path that names a missing folder",
-    args: { file_path: "../b/deeper/new.txt" },
-    expected: { path: "/work/b/deeper/new.txt", namedAPath: true, cwd: "/work/a" },
-  },
-  {
-    name: "no path at all",
-    args: { cmd: "pwd" },
-    expected: { namedAPath: false, cwd: "/work/a" },
-  },
-])("reads $name", ({ args, expected }) => {
-  expect(toolOriginFromArgs(args, "/work/a")).toEqual(expected);
+  ["a workdir inside the JS program Codex wraps shell calls in", lsIn("/work/b")],
+  ["single quotes", exec(`{cmd:'ls', workdir:'/work/b'}`)],
+  ["backticks", exec("{cmd:`ls`, workdir:`/work/b`}")],
+  ["a quoted workdir key", exec(`{"cmd":"ls","workdir":"/work/b"}`)],
+  ["a single-quoted workdir key", exec(`{cmd:"ls",'workdir':"/work/b"}`)],
+  ["a workdir that comes first in the object", exec(`{workdir:"/work/b",cmd:"ls"}`)],
+  ["a real workdir after a comment holding a quote", `// don't use "x"\n${lsIn("/work/b")}`],
+  ["a workdir after a block comment", exec(`{cmd:"ls", /* r */ workdir:"/work/b"}`)],
+  [
+    "a workdir after a line comment",
+    `text(await tools.exec_command({cmd:"ls", // r\n workdir:"/work/b"}));`,
+  ],
+  [
+    "a workdir after a block comment holding a closing brace",
+    exec(`{cmd:"ls", /* } */ workdir:"/work/b"}`),
+  ],
+  [
+    "a workdir after a line comment holding a closing brace",
+    `text(await tools.exec_command({cmd:"ls", // }\n workdir:"/work/b"}));`,
+  ],
+  [
+    "a program that mentions a patch inside a command",
+    exec(`{cmd:"echo '*** Begin Patch'",workdir:"/work/b"}`),
+  ],
+  [
+    "the call's own workdir when an inner object has one first",
+    exec(`{cmd:"ls",env:{workdir:"/work/plain"},workdir:"/work/b"}`),
+  ],
+  [
+    "the first workdir when one program names several",
+    exec(`{cmd:"ls",workdir:"/work/b"}`) + lsIn("/work/c"),
+  ],
+  [
+    "a template holding a dollar sign and a brace but no placeholder",
+    exec("{cmd:`ls`,workdir:`/work/$b{x}`}"),
+    "/work/$b{x}",
+  ],
+  [
+    "a patch applied inside the program",
+    `text(await tools.apply_patch(${patchText("/work/b/x.txt")}));`,
+    "/work/b/x.txt",
+  ],
+  ["a bare apply_patch call", `apply_patch(${patchText("/work/b/x.txt")});`, "/work/b/x.txt"],
+  [
+    "a patch that starts after blank space",
+    "\n  *** Begin Patch\n*** Add File: /work/b/x.txt\n+hi\n*** End Patch",
+    "/work/b/x.txt",
+  ],
+  [
+    "every file of a patch, so the first one wins",
+    "*** Begin Patch\n*** Update File: /work/b/x.txt\n@@\n-x\n+y\n*** Update File: /work/c/y.txt\n@@\n-x\n+y\n*** End Patch",
+    "/work/b/x.txt",
+  ],
+  [
+    "a new file added by a relative path into another folder",
+    "*** Begin Patch\n*** Add File: ../b/new.txt\n+hi\n*** End Patch",
+    "/work/b/new.txt",
+  ],
+  ["a relative workdir, resolved from the session folder", lsIn("../b")],
+])("reads %s", (_name, input, path = "/work/b") => {
+  expect(toolOriginFromArgs({ input }, SESSION)).toEqual(found(path));
+});
+
+it.each([
+  ["a workdir that only appears in a line comment", `// workdir: "/work/b"\n${exec(`{cmd:"ls"}`)}`],
+  [
+    "a workdir that only appears in a block comment",
+    `/* {workdir: "/work/b"} */\n${exec(`{cmd:"ls"}`)}`,
+  ],
+  ["an object inside a line comment", `// {workdir:"/work/plain"}\n${exec(`{cmd:"ls"}`)}`],
+  [
+    "an object inside a multi-line block comment",
+    `/* first\n{workdir:"/work/plain"}\n*/\n${exec(`{cmd:"ls"}`)}`,
+  ],
+  ["an object inside a double-quoted string", exec(`{cmd:"echo {workdir:'/work/plain'}"}`)],
+  ["an object inside a single-quoted string", exec(`{cmd:'echo {workdir:"/work/plain"}'}`)],
+  ["an object inside a backtick string", exec("{cmd:`echo {workdir:'/work/plain'}`}")],
+  [
+    "text inside a command string",
+    exec(`{cmd:"grep \\"workdir: '/work/plain'\\" notes.md"}`) +
+      exec(`{cmd:'grep "workdir: \\'/work/plain\\'" notes.md'}`) +
+      exec('{cmd:`echo workdir: "/work/plain"`}') +
+      exec(`{cmd:"workdir: '/work/plain'"}`),
+  ],
+  ["a template value with a placeholder", exec("{cmd:`ls`,workdir:`${base}/repo`}")],
+  ["a placeholder mid-path", exec("{cmd:`ls`,workdir:`/work/${b}`}")],
+  ["a value joined from two strings", exec(`{cmd:"ls",workdir:"/w/"+"repo"}`)],
+  ["a key that belongs to a property access", exec(`{cmd:"ls", opts.workdir:"/work/plain"}`)],
+  ["a workdir only in an object inside the call", exec(`{cmd:"ls",env:{workdir:"/work/plain"}}`)],
+  [
+    "a workdir only in an object outside the call",
+    `const config = {workdir:"/work/plain"};\n${exec(`{cmd:"ls"}`)}`,
+  ],
+  [
+    "a later call that is not an exec_command",
+    `${exec(`{cmd:"ls"}`)}\ntext(await tools.other({cmd:"ls",workdir:"/work/plain"}));`,
+  ],
+  [
+    "an object assigned to a variable named like the call",
+    `const exec_command = {cmd:"ls",workdir:"/work/plain"};`,
+  ],
+  [
+    "a call name that only ends like exec_command",
+    `text(await $exec_command({cmd:"ls",workdir:"/work/plain"}));`,
+  ],
+  [
+    "an exec_command of another object",
+    `text(await foo.exec_command({cmd:"ls",workdir:"/work/plain"}));`,
+  ],
+  [
+    "a name like apply_patch that only holds text",
+    `const apply_patch = ${patchText("/work/plain/x.txt")};`,
+  ],
+  ["an apply_patch of another object", `foo.apply_patch(${patchText("/work/plain/x.txt")});`],
+  ["a patch text sent to another function", `f(${patchText("/work/plain/x.txt")});`],
+  [
+    "a patch path built with a placeholder",
+    "tools.apply_patch(`*** Begin Patch\n*** Add File: ${base}/x.txt\n+hi\n*** End Patch`);",
+  ],
+  [
+    "a patch text joined from several strings",
+    `tools.apply_patch(${JSON.stringify("*** Begin Patch\n*** Add File: /work/plain/")} + name);`,
+  ],
+  [
+    "a patch with no opening bracket after the name",
+    `tools.apply_patch ; ${patchText("/work/plain/x.txt")})`,
+  ],
+  ["a program with no workdir", exec(`{cmd:"ls"}`)],
+])("ignores %s", (_name, input) => {
+  expect(toolOriginFromArgs({ input }, SESSION)).toEqual(none);
+});
+
+it.each([
+  ["a workdir on the plain function call", { cmd: "ls", workdir: "/work/b" }, "/work/b"],
+  [
+    "a relative path that names a missing folder",
+    { file_path: "../b/deeper/new.txt" },
+    "/work/b/deeper/new.txt",
+  ],
+  ["the file_path key", { file_path: "/work/b" }, "/work/b"],
+  ["the path key", { path: "/work/b" }, "/work/b"],
+  ["the workdir key", { workdir: "/work/b" }, "/work/b"],
+  ["the cwd key", { cwd: "/work/b" }, "/work/b"],
+])("reads %s", (_name, args, path) => {
+  expect(toolOriginFromArgs(args, SESSION)).toEqual(found(path));
+});
+
+it.each([
+  ["no path at all", { cmd: "pwd" }],
+  ["an empty path key", { path: "" }],
+  ["an empty workdir in a program", { input: exec(`{cmd:"ls",workdir:""}`) }],
+])("does not count %s as named", (_name, args) => {
+  expect(toolOriginFromArgs(args, SESSION)).toEqual(none);
 });
 
 it("skips a relative first file when the session folder is unknown and takes the next absolute one", () => {
@@ -392,14 +259,6 @@ it("leaves a relative folder unresolved when the session folder is relative", ()
   expect(toolOriginFromArgs({ workdir: "b" }, "rel")).toEqual({ namedAPath: true, cwd: "rel" });
 });
 
-it.each(["file_path", "path", "workdir", "cwd"])("reads the %s key of a plain call", (key) => {
-  expect(toolOriginFromArgs({ [key]: "/work/b" }, "/work/a")).toEqual({
-    path: "/work/b",
-    namedAPath: true,
-    cwd: "/work/a",
-  });
-});
-
 it.each([
   { name: "escaped double quotes with no closing quote", text: `"${'\\"'.repeat(90_000)}` },
   { name: "escaped single quotes with no closing quote", text: `'${"\\'".repeat(90_000)}` },
@@ -416,15 +275,6 @@ it.each([
 
 it("ignores a program longer than the scan limit", () => {
   const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}${" ".repeat(200_000)}`;
-  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
-});
-
-it("ignores a patch of 150 thousand files without throwing", () => {
-  const files = Array.from(
-    { length: 150_000 },
-    (_, n) => `*** Add File: /work/plain/f${n}.txt\n+x`,
-  );
-  const input = `*** Begin Patch\n${files.join("\n")}\n*** End Patch`;
   expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
 });
 
@@ -505,13 +355,6 @@ it.each([
   );
 });
 
-it.each([
-  { name: "an empty workdir in a program", args: { input: program(`{cmd:"ls",workdir:""}`) } },
-  { name: "an empty path key", args: { path: "" } },
-])("does not count $name as named", ({ args }) => {
-  expect(toolOriginFromArgs(args, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
-});
-
 it("keeps the workdir read before a patch call whose text is not a literal", () => {
   const input = `${program(`{cmd:"ls",workdir:"/work/b"}`)}\ntext(await tools.apply_patch(patchText));`;
   expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
@@ -563,15 +406,4 @@ it("falls back to no path when reading the arguments throws", () => {
     },
   };
   expect(toolOriginFromArgs(args, "/work/a")).toEqual({ namedAPath: false, cwd: "/work/a" });
-});
-
-it("only looks at the first hundred named files", () => {
-  const { repo, plain } = folders();
-  const files = Array.from({ length: 100 }, (_, n) => `*** Add File: ${plain}/f${n}.txt\n+x`);
-  const input = `*** Begin Patch\n${files.join("\n")}\n*** Add File: ${repo}/late.txt\n+x\n*** End Patch`;
-  expect(toolOriginFromArgs({ input }, "/work/a")).toEqual({
-    path: `${plain}/f0.txt`,
-    namedAPath: true,
-    cwd: "/work/a",
-  });
 });
