@@ -12,15 +12,15 @@ importers:
   .:
     dependencies:
       langsmith:
-        specifier: ^0.11.4
-        version: 0.11.4(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
+        specifier: ^0.11.6
+        version: 0.11.6(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
       uuid:
         specifier: ^14.0.2
         version: 14.0.2
     devDependencies:
       '@langchain/plugins-base':
         specifier: 0.5.1
-        version: 0.5.1(langsmith@0.11.4(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
+        version: 0.5.1(langsmith@0.11.6(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
@@ -1079,8 +1079,8 @@ packages:
     resolution: {integrity: sha512-vXoV9PjKHEednCUu01e98TkImxy67e3BJXbTIOmIq4Hyzw3IAwYRcuPkfeTzJzwyyts4kjuA73x+pWJLc4f86A==}
     engines: {node: ^22.18.0 || >=24.0.0}
 
-  langsmith@0.11.4:
-    resolution: {integrity: sha512-sasOaKuuZ3OKSE9XIXSAxBUX1/r6t2z0SUe2VgBPLQHKKyLayYzKwU38nKzz0cQoMpN4zpSxz7poQwSTt1OdoA==}
+  langsmith@0.11.6:
+    resolution: {integrity: sha512-5hfJM5DEZpXFxUS3U9nY2CMyBRmFnhkJj7znUODJ8vsr/Jx38tGJl4GIhV484xAY7yQFWrFOTDr33PB95kHUKg==}
     peerDependencies:
       '@opentelemetry/api': '*'
       '@opentelemetry/exporter-trace-otlp-proto': '*'
@@ -1652,9 +1652,9 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@langchain/plugins-base@0.5.1(langsmith@0.11.4(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
+  '@langchain/plugins-base@0.5.1(langsmith@0.11.6(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)))':
     dependencies:
-      langsmith: 0.11.4(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
+      langsmith: 0.11.6(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1))
 
   '@napi-rs/wasm-runtime@1.2.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -2171,7 +2171,7 @@ snapshots:
 
   import-without-cache@0.4.1: {}
 
-  langsmith@0.11.4(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)):
+  langsmith@0.11.6(@opentelemetry/api@1.9.1)(@opentelemetry/exporter-trace-otlp-proto@0.215.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.0(@opentelemetry/api@1.9.1)):
     dependencies:
       p-queue: 6.6.2
     optionalDependencies:
