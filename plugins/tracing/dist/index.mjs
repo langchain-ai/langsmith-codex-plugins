@@ -7,11 +7,11 @@ import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
+import * as os from "node:os";
+import { arch, homedir, platform, userInfo } from "node:os";
 import { Worker } from "node:worker_threads";
 import { execFileSync, spawn } from "node:child_process";
 import * as tls from "node:tls";
-import * as os from "node:os";
-import { arch, homedir, platform, userInfo } from "node:os";
 import { isDeepStrictEqual } from "node:util";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
@@ -36,7 +36,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -49,7 +49,7 @@ function failureStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/constants.js
 const POLICY_LOCK_TIMEOUT_MS = 2e3;
 const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
 const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
@@ -81,7 +81,7 @@ const HOOK_ERROR_HANDLER_WARNING = "The hook error handler failed:";
 const NOTICE_MINUTE_MS = 6e4;
 const NOTICE_STATE_FILE = "notices.json";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
 async function dispatchHookCommand(argv, options) {
 	assertHookOptions(options);
 	const [argument, ...rest] = argv;
@@ -109,7 +109,7 @@ function reportHookError(name, error, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/constants.js
 const FILE_MISSING_CODE = "ENOENT";
 const WINDOWS_PLATFORM = "win32";
 const FILE_EXISTS_CODE = "EEXIST";
@@ -120,7 +120,7 @@ const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
 const INVALID_ARGUMENT_CODE = "EINVAL";
 const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
 	DIRECTORY_NOT_EMPTY_CODE,
@@ -130,7 +130,7 @@ const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_ACCESS_DENIED_CODE
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
 async function removeFileIfPresent(path) {
 	try {
 		await unlink(path);
@@ -160,7 +160,7 @@ async function removeEmptyAncestors(directory, root) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -203,12 +203,12 @@ const STORAGE_ENGINE_FILE_PATTERNS = [
 ];
 const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_JOBS_DIRECTORY = "jobs";
 const CAPTURE_SESSIONS_DIRECTORY = "sessions";
 const CAPTURE_TURNS_DIRECTORY = "turns";
@@ -247,7 +247,7 @@ const CAPTURE_FILE_EXTENSION = ".json";
 const CAPTURE_LOCK_EXTENSION = ".lock";
 const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -286,7 +286,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -353,7 +353,7 @@ function parseJsonObject(contents, message) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	blockedPath;
 	constructor(blockedPath) {
@@ -373,7 +373,7 @@ var StorageNotWritableError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
 const heartbeats = /* @__PURE__ */ new Map();
 function startHeartbeat(path, id) {
 	const timer = setInterval(() => {
@@ -391,7 +391,7 @@ function warnUnlessMissing(error) {
 	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
 function processIsAlive(pid) {
 	try {
 		process.kill(pid, 0);
@@ -424,7 +424,7 @@ function waitForNextScan(deadline, blockedPath) {
 	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
 async function createLegacyGate(gatePath) {
 	await mkdir(gatePath, { mode: 448 });
 	const stat = await lstat(gatePath);
@@ -578,7 +578,7 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function parseClaim(value, id) {
 	if (!isPlainRecord(value)) return void 0;
 	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
@@ -888,7 +888,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
 function readPolicyFile(path, options) {
 	let raw;
 	try {
@@ -986,11 +986,11 @@ function findLockTimeout(error) {
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
 var CaptureRecordInvalidError = class extends Error {};
 var CaptureRecordVersionError = class extends Error {};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
 function publishByRename(path, contents, tempSuffix, mode) {
 	const temp = `${path}.${randomUUID()}${tempSuffix}`;
 	const fd = openSync(temp, "wx", mode);
@@ -1002,7 +1002,7 @@ function publishByRename(path, contents, tempSuffix, mode) {
 	renameSync(temp, path);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
 const STATE_TEMP_SUFFIX = ".state.tmp";
 const STATE_CORRUPT_SUFFIX = ".corrupt";
 const STATE_FILE_ENCODING = "utf-8";
@@ -1015,7 +1015,7 @@ const PENDING_STATE_FILE_SUFFIX = ".json";
 const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
 const STATE_CLAIM_SUFFIX = ".claim";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
 let sequence = 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function diffValue(path, before, after, operations) {
@@ -1171,7 +1171,7 @@ function removePending(stateFilePath, files) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/state-store.js
 function createStateStore(options) {
 	const { path } = options;
 	const warn = options.warn ?? console.warn;
@@ -1251,7 +1251,7 @@ async function withStateFileLock(path, warn, callback, waitMs) {
 	return true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
 async function claimStateEntry(path, key, windowMs) {
 	mkdirSync(dirname(path), {
 		recursive: true,
@@ -1277,7 +1277,7 @@ async function claimStateEntry(path, key, windowMs) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -1327,7 +1327,7 @@ function recordLockPath(root, scope) {
 	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
 }
@@ -1482,7 +1482,7 @@ async function syncDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -1509,7 +1509,7 @@ async function lstatDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
 function scopeOf(value) {
 	return {
 		integration: value.integration,
@@ -1527,19 +1527,19 @@ function scopeKey(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/compare.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/compare.js
 function compareText(left, right) {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
 function compareCaptureOrder(left, right) {
 	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
 	return compareText(left.eventId, right.eventId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
 function captureContentDigest(record) {
 	const content = { ...record };
 	delete content.version;
@@ -1549,7 +1549,7 @@ function captureContentDigest(record) {
 	return createHash("sha256").update(canonicalJson(content)).digest("hex");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
 function markerPath(root, scope) {
 	const path = eventPath(root, scope);
 	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
@@ -1677,7 +1677,7 @@ async function removeOldMarkers(root, directory, modifiedBeforeMs) {
 	return removed;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
 	const storageRoot = {
 		root: resolve(root),
@@ -2132,17 +2132,17 @@ function failure(code, error) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/format.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
 function isWaitingForOtherSetting(record, accountFingerprint) {
 	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
 function liveTurnSpans(captures) {
 	const spans = /* @__PURE__ */ new Map();
 	for (const { record, capturedAtMs } of captures) {
@@ -2198,7 +2198,7 @@ async function removeExpiredCaptures(options) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_LOCK_FILE = "worker";
 const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
 const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
@@ -2237,7 +2237,7 @@ const BACKGROUND_WORKER_FILE_PREFIX = "wake";
 const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
 const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -2270,13 +2270,13 @@ function scopedWorkerFileName(scope, name) {
 	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
 function assertPlainFile(entry, message) {
 	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
 }
@@ -2364,7 +2364,7 @@ function parseAttempt(contents, markerId, attempt) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const context = createWorkerContext(options);
@@ -2604,7 +2604,7 @@ async function readLaunch(storageRoot, scope) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
 function ifMissing(fallback) {
 	return (error) => {
 		if (errorCode(error) === "ENOENT") return fallback;
@@ -2612,7 +2612,7 @@ function ifMissing(fallback) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
 async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
 	let removed = 0;
 	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
@@ -2674,13 +2674,13 @@ const DELIVERY_DRAIN_LOCK = "delivery";
 const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
 const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
 const PROCESS_STARTED_AT_MS = Date.now();
 function isWaitingForRetry(retry, now = Date.now()) {
 	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
 function createBatch() {
 	return {
 		candidates: [],
@@ -2704,7 +2704,7 @@ function joinBatch(batch, candidate) {
 	batch.bytes += payloadBytes(candidate.entry.record);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
 function isRetryable(error) {
 	return error?.retryable !== false;
 }
@@ -2727,7 +2727,7 @@ function nextRetry(previous, baseMs) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
 function emptyDestinationResult() {
 	return {
 		delivered: 0,
@@ -2808,7 +2808,7 @@ async function settleDroppedDependency(drainCache, candidate, destination, resul
 	result.progressed = true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
 async function trySend(context, destination, candidates) {
 	const { policy, request } = context;
 	const { writer } = request;
@@ -2871,7 +2871,7 @@ async function deliverBatch(context, destination, candidates) {
 	return settleFailed(context, destination, candidates, error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
 function deliveryKey(scope, destination) {
 	return JSON.stringify([scopeKey(scope), destination]);
 }
@@ -2935,7 +2935,7 @@ async function countPending(drainCache, entries, destinations) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
 async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
 	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
@@ -3055,7 +3055,7 @@ async function dropPending(drainCache, candidate, reason) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
 function validateDrainRequest(request) {
 	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
 	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
@@ -3105,7 +3105,7 @@ function resolvePolicy(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 async function drainUnderLock(context, request, drainCache) {
 	const { captureStore, integration, sessionId, storageRoot, policy } = context;
 	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
@@ -3172,12 +3172,12 @@ function createDeliveryCoordinator(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
 const SDK_DOUBLE_QUOTED = /^"(.*)"$/;
 const SDK_SINGLE_QUOTED = /^'(.*)'$/;
 const SDK_PROFILE_QUOTES = /^["']|["']$/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
 function sdkSetting(value) {
 	if (typeof value !== "string") return void 0;
 	const trimmed = value.trim().replace(SDK_DOUBLE_QUOTED, "$1").replace(SDK_SINGLE_QUOTED, "$1");
@@ -3188,7 +3188,7 @@ function sdkProfileValue(value) {
 	return value.trim().replace(SDK_PROFILE_QUOTES, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/auth/constants.js
 const LOGIN_CONFIG_FILE_VARIABLE = "LANGSMITH_CONFIG_FILE";
 const LOGIN_HOME_VARIABLES = ["HOME", "USERPROFILE"];
 const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
@@ -3237,7 +3237,7 @@ const LOGIN_WORKSPACE_INVALID_REASON = [
 const LOGIN_WORKSPACE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/profile.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/auth/profile.js
 function readLoginProfile(env, profile) {
 	const configPath = loginConfigPath(env);
 	return configPath === void 0 ? void 0 : readProfileAt(configPath, profile || env["LANGSMITH_PROFILE"] || void 0);
@@ -3300,7 +3300,7 @@ function credentialHash(value) {
 	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
 const LOGIN_PAUSED_NOTICE = [
 	LOGIN_NOTICE_HEADING,
 	"Your LangSmith login expired so this session isn't being traced.",
@@ -3323,7 +3323,7 @@ const LOGIN_STATE_FILE = "sign-in.json";
 const LOGIN_NOTICE_KIND = "login-expired";
 const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/auth/expiry.js
 const unrecorded = /* @__PURE__ */ new Set();
 async function recordExpiredLogin(login, sentTokenHash, storageRoot, denied = false) {
 	try {
@@ -3409,7 +3409,7 @@ function loginStore(storageRoot) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const GIT_METADATA_KEYS = {
@@ -3625,7 +3625,7 @@ const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
 const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
 const CODING_AGENT_REVISION_ID_KEY = "revision_id";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field$2(key, options = {}) {
 	return {
 		key,
@@ -3762,7 +3762,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
 function withBothGitMetadataNames(metadata) {
 	const both = { ...metadata };
 	for (const role of Object.keys(GIT_METADATA_KEYS)) {
@@ -3774,7 +3774,7 @@ function withBothGitMetadataNames(metadata) {
 	return both;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function metadataFieldTypeIssue(field, value) {
 	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
 }
@@ -3826,7 +3826,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -3884,7 +3884,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
 function forwardsEnvironmentVariable(name, value, environmentMetadata) {
 	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
 }
@@ -3911,7 +3911,7 @@ function buildCodingAgentRuntimeMetadata(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -3928,7 +3928,7 @@ function metadataForMode(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -3988,7 +3988,7 @@ function projectedString(source, key) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/tslib.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/tslib.mjs
 function __classPrivateFieldSet(receiver, state, value, kind, f) {
 	if (kind === "m") throw new TypeError("Private method is not writable");
 	if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -4001,7 +4001,7 @@ function __classPrivateFieldGet(receiver, state, kind, f) {
 	return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/uuid.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/uuid.mjs
 /**
 * https://stackoverflow.com/a/2117523
 */
@@ -4016,7 +4016,7 @@ let uuid4 = function() {
 	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (+c ^ randomByte() & 15 >> +c / 4).toString(16));
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/errors.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/errors.mjs
 function isAbortError(err) {
 	return typeof err === "object" && err !== null && ("name" in err && err.name === "AbortError" || "message" in err && String(err.message).includes("FetchRequestCanceledException"));
 }
@@ -4039,7 +4039,7 @@ const castToError = (err) => {
 	return new Error(err);
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/error.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/error.mjs
 var LangsmithError = class extends Error {};
 var APIError = class APIError extends LangsmithError {
 	constructor(status, error, message, headers) {
@@ -4118,7 +4118,7 @@ var UnprocessableEntityError = class extends APIError {};
 var RateLimitError = class extends APIError {};
 var InternalServerError = class extends APIError {};
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/values.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/values.mjs
 const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
 	return startsWithSchemeRegexp.test(url);
@@ -4151,13 +4151,13 @@ const safeJSON = (text) => {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/sleep.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/sleep.mjs
 const sleep$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/version.mjs
-const VERSION = "0.11.4";
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/version.mjs
+const VERSION = "0.11.6";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/detect-platform.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/detect-platform.mjs
 /**
 * Note this does not detect 'browser'; for that, use getBrowserInfo().
 */
@@ -4272,7 +4272,7 @@ const getPlatformHeaders = () => {
 	return _platformHeaders ?? (_platformHeaders = getPlatformProperties());
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/shims.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/shims.mjs
 function getDefaultFetch() {
 	if (typeof fetch !== "undefined") return fetch;
 	throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Langsmith({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
@@ -4346,7 +4346,7 @@ async function CancelReadableStream(stream) {
 	await cancelPromise;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/request-options.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/request-options.mjs
 const FallbackEncoder = ({ headers, body }) => {
 	return {
 		bodyHeaders: { "content-type": "application/json" },
@@ -4354,7 +4354,7 @@ const FallbackEncoder = ({ headers, body }) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/formats.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/qs/formats.mjs
 const default_format = "RFC3986";
 const default_formatter = (v) => String(v);
 const formatters = {
@@ -4362,7 +4362,7 @@ const formatters = {
 	RFC3986: default_formatter
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/utils.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/qs/utils.mjs
 let has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
 const hex_table = /* @__PURE__ */ (() => {
 	const array = [];
@@ -4421,7 +4421,7 @@ function maybe_map(val, fn) {
 	return fn(val);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/qs/stringify.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/qs/stringify.mjs
 const array_prefix_generators = {
 	brackets(prefix) {
 		return String(prefix) + "[]";
@@ -4597,12 +4597,12 @@ function stringify(object, opts = {}) {
 	return joined.length > 0 ? prefix + joined : "";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/query.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/query.mjs
 function stringifyQuery(query) {
 	return stringify(query, { arrayFormat: "repeat" });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/bytes.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/bytes.mjs
 function concatBytes(buffers) {
 	let length = 0;
 	for (const buffer of buffers) length += buffer.length;
@@ -4625,7 +4625,7 @@ function decodeUTF8(bytes) {
 	return (decodeUTF8_ ?? (decoder = new globalThis.TextDecoder(), decodeUTF8_ = decoder.decode.bind(decoder)))(bytes);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/decoders/line.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/decoders/line.mjs
 var _LineDecoder_buffer;
 var _LineDecoder_carriageReturnIndex;
 /**
@@ -4721,7 +4721,7 @@ function findDoubleNewlineIndex(buffer) {
 	return -1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/log.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/log.mjs
 const levelNumbers = {
 	off: 0,
 	error: 200,
@@ -4774,7 +4774,7 @@ const formatRequestDetails = (details) => {
 	return details;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/streaming.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/streaming.mjs
 var _Stream_client;
 var Stream = class Stream {
 	constructor(iterator, controller, client) {
@@ -5012,7 +5012,7 @@ function partition(str, delimiter) {
 	];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/parse.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/parse.mjs
 async function defaultParseResponse(client, props) {
 	const { response, requestLogID, retryOfRequestLogID, startTime } = props;
 	const body = await (async () => {
@@ -5040,7 +5040,7 @@ async function defaultParseResponse(client, props) {
 	return body;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/api-promise.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/api-promise.mjs
 var _APIPromise_client;
 /**
 * A subclass of `Promise` providing additional helper methods
@@ -5122,7 +5122,7 @@ var APIPromise = class APIPromise extends Promise {
 };
 _APIPromise_client = /* @__PURE__ */ new WeakMap();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/pagination.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/pagination.mjs
 var _AbstractPage_client;
 var AbstractPage = class {
 	constructor(client, response, body, options) {
@@ -5345,7 +5345,7 @@ var ItemsCursorGetPagination = class extends AbstractPage {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/uploads.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/uploads.mjs
 const checkFileSupport = () => {
 	if (typeof File === "undefined") {
 		const { process } = globalThis;
@@ -5366,7 +5366,7 @@ function getName(value) {
 }
 const isAsyncIterable = (value) => value != null && typeof value === "object" && typeof value[Symbol.asyncIterator] === "function";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/to-file.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/to-file.mjs
 /**
 * This check adds the arrayBuffer() method type because it is available and used at runtime
 */
@@ -5424,7 +5424,7 @@ function propsForError(value) {
 	return `; props: [${Object.getOwnPropertyNames(value).map((p) => `"${p}"`).join(", ")}]`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/resource.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/resource.mjs
 var APIResource = class {
 	constructor(client) {
 		Object.defineProperty(this, "_client", {
@@ -5437,7 +5437,7 @@ var APIResource = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/headers.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/headers.mjs
 const brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
 	if (!headers) return;
@@ -5497,7 +5497,7 @@ const buildHeaders = (newHeaders) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/path.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/path.mjs
 /**
 * Percent-encode everything that isn't safe to have in a path without encoding safe chars.
 *
@@ -5554,7 +5554,7 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
 */
 const path$1 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/agents.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/agents.mjs
 var Agents = class extends APIResource {
 	/**
 	* Creates an Agent with a caller-assigned ID. Returns 409 if the ID already
@@ -5625,7 +5625,7 @@ var Agents = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/items.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/annotation-queues/items.mjs
 var Items = class extends APIResource {
 	/**
 	* Add RUN or THREAD items to a single annotation queue. RUN items require run_id
@@ -5712,7 +5712,7 @@ var Items = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/runs.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/annotation-queues/runs.mjs
 var Runs$2 = class extends APIResource {
 	/**
 	* Add Runs To Annotation Queue
@@ -5785,7 +5785,7 @@ var Runs$2 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/annotation-queues/annotation-queues.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/annotation-queues/annotation-queues.mjs
 var AnnotationQueues = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -5922,7 +5922,7 @@ var AnnotationQueues = class extends APIResource {
 AnnotationQueues.Runs = Runs$2;
 AnnotationQueues.Items = Items;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/examples.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/datasets/examples.mjs
 var Examples = class extends APIResource {
 	/**
 	* Soft-delete an example, preserving prior versions and their attachments. If the
@@ -5941,7 +5941,7 @@ var Examples = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/experiment-runs.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/datasets/experiment-runs.mjs
 var ExperimentRuns = class extends APIResource {
 	/**
 	* Returns a paginated page of dataset examples with runs from the requested
@@ -5958,7 +5958,7 @@ var ExperimentRuns = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/datasets/datasets.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/datasets/datasets.mjs
 var Datasets = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -5979,7 +5979,31 @@ var Datasets = class extends APIResource {
 Datasets.Examples = Examples;
 Datasets.ExperimentRuns = ExperimentRuns;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/fleet/threads.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/evaluators.mjs
+var Evaluators = class extends APIResource {
+	/**
+	* List all run rules.
+	*/
+	list(query = {}, options) {
+		return this._client.get("/api/v1/runs/rules", {
+			query,
+			...options
+		});
+	}
+	/**
+	* Create a decision-model evaluator (Jev, SemIf or OpenAI Decisions) from its
+	* prompt and questions, and attach it to a project or dataset. Each question's key
+	* becomes a feedback key.
+	*/
+	createDecisionModel(body, options) {
+		return this._client.post("/api/v1/runs/rules/decision-models", {
+			body,
+			...options
+		});
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/fleet/threads.mjs
 var Threads$1 = class extends APIResource {
 	/**
 	* Starts or resumes the sandbox referenced by the thread and returns when it is
@@ -5991,7 +6015,7 @@ var Threads$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/fleet/fleet.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/fleet/fleet.mjs
 var Fleet = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -6005,7 +6029,7 @@ var Fleet = class extends APIResource {
 };
 Fleet.Threads = Threads$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/info.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/info.mjs
 var Info = class extends APIResource {
 	/**
 	* Returns information about the current LangSmith deployment: version, instance
@@ -6017,7 +6041,7 @@ var Info = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/issues.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/issues.mjs
 var Issues = class extends APIResource {
 	/**
 	* **Beta:** This endpoint is in active development and may change without notice.
@@ -6044,7 +6068,7 @@ var Issues = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/online-evaluators.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/online-evaluators.mjs
 var OnlineEvaluators = class extends APIResource {
 	/**
 	* Create a new LLM or code evaluator for the current workspace.
@@ -6125,7 +6149,7 @@ var OnlineEvaluators = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/product-feedback.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/product-feedback.mjs
 var ProductFeedback = class extends APIResource {
 	/**
 	* **Alpha:** This endpoint is in active development and may change without notice.
@@ -6148,7 +6172,7 @@ var ProductFeedback = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/prompt-webhooks.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/prompt-webhooks.mjs
 var PromptWebhooks = class extends APIResource {
 	/**
 	* Create a new prompt webhook.
@@ -6212,7 +6236,7 @@ var PromptWebhooks = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/public/runs.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/public/runs.mjs
 var Runs$1 = class extends APIResource {
 	/**
 	* Returns one run within the trace identified by the share token. The request
@@ -6263,7 +6287,7 @@ var Runs$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/public/public.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/public/public.mjs
 var Public = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -6277,7 +6301,7 @@ var Public = class extends APIResource {
 };
 Public.Runs = Runs$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/share.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/runs/share.mjs
 var Share$1 = class extends APIResource {
 	/**
 	* Creates or returns a share token for a run. Child runs share their trace root.
@@ -6324,7 +6348,7 @@ var Share$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/core/query-streaming.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/core/query-streaming.mjs
 /**
 * Yields the items of a streamed query one at a time and follows the next page cursor across pages.
 *
@@ -6379,7 +6403,7 @@ function escapeRegExp(value) {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/streaming.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/runs/streaming.mjs
 var Streaming$2 = class extends APIResource {
 	/**
 	* Returns a paginated list of runs for the given projects within min/max
@@ -6430,7 +6454,7 @@ var Streaming$2 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/runs/runs.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/runs/runs.mjs
 var Runs = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -6534,7 +6558,7 @@ var Runs = class extends APIResource {
 Runs.Streaming = Streaming$2;
 Runs.Share = Share$1;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/boxes.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/sandboxes/boxes.mjs
 var Boxes = class extends APIResource {
 	/**
 	* Create a new sandbox from a snapshot. Provide at most one of `snapshot_id` or
@@ -6696,7 +6720,7 @@ var Boxes = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/registries.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/sandboxes/registries.mjs
 var Registries = class extends APIResource {
 	/**
 	* Create a sandbox registry for pulling private images.
@@ -6746,7 +6770,7 @@ var Registries = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/snapshots.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/sandboxes/snapshots.mjs
 var Snapshots = class extends APIResource {
 	/**
 	* Create a snapshot from a Docker image (async build). Names use lowercase
@@ -6801,7 +6825,7 @@ var Snapshots = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sandboxes/sandboxes.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/sandboxes/sandboxes.mjs
 var Sandboxes = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -6844,8 +6868,28 @@ Sandboxes.Boxes = Boxes;
 Sandboxes.Registries = Registries;
 Sandboxes.Snapshots = Snapshots;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/sessions.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/sessions.mjs
 var Sessions = class extends APIResource {
+	/**
+	* Create a new project.
+	*/
+	create(params, options) {
+		const { upsert, ...body } = params;
+		return this._client.post("/api/v1/sessions", {
+			query: { upsert },
+			body,
+			...options
+		});
+	}
+	/**
+	* Update a project.
+	*/
+	update(project_id, body, options) {
+		return this._client.patch(path$1`/api/v1/sessions/${project_id}`, {
+			body,
+			...options
+		});
+	}
 	/**
 	* Returns the tracing project (session) an address names. An address is an AGENT
 	* (`id` and `environment`), an EXPERIMENT (`id`), or an EVALUATOR (no `id`:
@@ -6864,7 +6908,7 @@ var Sessions = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/share.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/threads/share.mjs
 var Share = class extends APIResource {
 	/**
 	* Mints a public share token for a thread. Idempotent: sharing an already-shared
@@ -6924,7 +6968,7 @@ var Share = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/streaming.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/threads/streaming.mjs
 var Streaming$1 = class extends APIResource {
 	/**
 	* GET with body payload — no resources created. Returns the threads in a tracing
@@ -6975,7 +7019,7 @@ var Streaming$1 = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/threads/threads.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/threads/threads.mjs
 var Threads = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -7096,7 +7140,7 @@ var Threads = class extends APIResource {
 Threads.Streaming = Streaming$1;
 Threads.Share = Share;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/traces/streaming.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/traces/streaming.mjs
 var Streaming = class extends APIResource {
 	/**
 	* Returns a paginated list of traces (root runs) for a single tracing project.
@@ -7155,7 +7199,7 @@ var Streaming = class extends APIResource {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/resources/traces/traces.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/resources/traces/traces.mjs
 var Traces = class extends APIResource {
 	constructor() {
 		super(...arguments);
@@ -7227,7 +7271,7 @@ var Traces = class extends APIResource {
 };
 Traces.Streaming = Streaming;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/internal/utils/env.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/internal/utils/env.mjs
 /**
 * Read an environment variable.
 *
@@ -7240,7 +7284,7 @@ const readEnv = (env) => {
 	if (typeof globalThis.Deno !== "undefined") return globalThis.Deno.env?.get?.(env)?.trim() || void 0;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/client.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/client.mjs
 var _Langsmith_instances;
 var _a;
 var _Langsmith_encoder;
@@ -7378,6 +7422,12 @@ var Langsmith = class {
 			configurable: true,
 			writable: true,
 			value: new Traces(this)
+		});
+		Object.defineProperty(this, "evaluators", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: new Evaluators(this)
 		});
 		Object.defineProperty(this, "onlineEvaluators", {
 			enumerable: true,
@@ -7905,6 +7955,7 @@ Langsmith.Datasets = Datasets;
 Langsmith.Runs = Runs;
 Langsmith.Threads = Threads;
 Langsmith.Traces = Traces;
+Langsmith.Evaluators = Evaluators;
 Langsmith.OnlineEvaluators = OnlineEvaluators;
 Langsmith.Public = Public;
 Langsmith.AnnotationQueues = AnnotationQueues;
@@ -7913,7 +7964,7 @@ Langsmith.Info = Info;
 Langsmith.Issues = Issues;
 Langsmith.Sandboxes = Sandboxes;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/env.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/env.mjs
 let globalEnv;
 const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
 const isWebWorker = () => typeof globalThis === "object" && globalThis.constructor && globalThis.constructor.name === "DedicatedWorkerGlobalScope";
@@ -8081,7 +8132,7 @@ function resolveTracingMode(configValue) {
 	return "langsmith";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/address.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/address.mjs
 /**
 * Addresses that name where runs are sent instead of a project.
 *
@@ -8177,22 +8228,22 @@ function envNames() {
 	return ENV_NAMES;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/regex.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/regex.mjs
 var regex_default$1 = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/validate.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/validate.mjs
 function validate$1(uuid) {
 	return typeof uuid === "string" && regex_default$1.test(uuid);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/parse.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/parse.mjs
 function parse$1(uuid) {
 	if (!validate$1(uuid)) throw TypeError("Invalid UUID");
 	let v;
 	return Uint8Array.of((v = parseInt(uuid.slice(0, 8), 16)) >>> 24, v >>> 16 & 255, v >>> 8 & 255, v & 255, (v = parseInt(uuid.slice(9, 13), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(14, 18), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(19, 23), 16)) >>> 8, v & 255, (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255, v / 4294967296 & 255, v >>> 24 & 255, v >>> 16 & 255, v >>> 8 & 255, v & 255);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/stringify.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/stringify.mjs
 /**
 * Convert array of 16 byte values to UUID string format of the form:
 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -8203,13 +8254,13 @@ function unsafeStringify$1(arr, offset = 0) {
 	return (byteToHex$1[arr[offset + 0]] + byteToHex$1[arr[offset + 1]] + byteToHex$1[arr[offset + 2]] + byteToHex$1[arr[offset + 3]] + "-" + byteToHex$1[arr[offset + 4]] + byteToHex$1[arr[offset + 5]] + "-" + byteToHex$1[arr[offset + 6]] + byteToHex$1[arr[offset + 7]] + "-" + byteToHex$1[arr[offset + 8]] + byteToHex$1[arr[offset + 9]] + "-" + byteToHex$1[arr[offset + 10]] + byteToHex$1[arr[offset + 11]] + byteToHex$1[arr[offset + 12]] + byteToHex$1[arr[offset + 13]] + byteToHex$1[arr[offset + 14]] + byteToHex$1[arr[offset + 15]]).toLowerCase();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/rng.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/rng.mjs
 const rnds8 = /* @__PURE__ */ new Uint8Array(16);
 function rng() {
 	return crypto.getRandomValues(rnds8);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v4.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/v4.mjs
 function v4(options, buf, offset) {
 	if (!buf && !options && crypto.randomUUID) return crypto.randomUUID();
 	return _v4(options, buf, offset);
@@ -8229,7 +8280,7 @@ function _v4(options, buf, offset) {
 	return unsafeStringify$1(rnds);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/sha1.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/sha1.mjs
 function f(s, x, y, z) {
 	switch (s) {
 		case 0: return x & y ^ ~x & z;
@@ -8297,7 +8348,7 @@ function sha1$1(bytes) {
 	return Uint8Array.of(H[0] >> 24, H[0] >> 16, H[0] >> 8, H[0], H[1] >> 24, H[1] >> 16, H[1] >> 8, H[1], H[2] >> 24, H[2] >> 16, H[2] >> 8, H[2], H[3] >> 24, H[3] >> 16, H[3] >> 8, H[3], H[4] >> 24, H[4] >> 16, H[4] >> 8, H[4]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v35.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/v35.mjs
 function stringToBytes$1(str) {
 	str = unescape(encodeURIComponent(str));
 	const bytes = new Uint8Array(str.length);
@@ -8326,14 +8377,14 @@ function v35$1(version, hash, value, namespace, buf, offset) {
 	return unsafeStringify$1(bytes);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v5.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/v5.mjs
 function v5$1(value, namespace, buf, offset) {
 	return v35$1(80, sha1$1, value, namespace, buf, offset);
 }
 v5$1.DNS = DNS$1;
 v5$1.URL = URL$2;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/uuid/src/v7.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/uuid/src/v7.mjs
 const _state = {};
 function v7(options, buf, offset) {
 	let bytes;
@@ -8385,14 +8436,14 @@ function v7Bytes(rnds, msecs, seq, buf, offset = 0) {
 	return buf;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/api_url.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/api_url.mjs
 function getOpenAPIBaseUrl(apiUrl) {
 	const url = apiUrl.replace(/\/$/, "");
 	for (const suffix of ["/api/v1", "/api"]) if (url.endsWith(suffix)) return url.slice(0, -suffix.length);
 	return url;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/experimental/otel/constants.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/experimental/otel/constants.mjs
 const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
 const GEN_AI_SYSTEM = "gen_ai.system";
 const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
@@ -8431,7 +8482,7 @@ const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
 const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
 const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/otel.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/singletons/otel.mjs
 var MockTracer = class {
 	constructor() {
 		Object.defineProperty(this, "hasWarned", {
@@ -8532,7 +8583,7 @@ function getDefaultOTLPTracerComponents() {
 	return OTELProviderSingleton.getDefaultOTLPTracerComponents();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/experimental/otel/translator.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/experimental/otel/translator.mjs
 const WELL_KNOWN_OPERATION_NAMES = {
 	llm: "chat",
 	tool: "execute_tool",
@@ -8759,7 +8810,7 @@ var LangSmithToOTELTranslator = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/is-network-error/index.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/is-network-error/index.mjs
 const objectToString = Object.prototype.toString;
 const isError = (value) => objectToString.call(value) === "[object Error]";
 const errorMessages = /* @__PURE__ */ new Set([
@@ -8781,7 +8832,7 @@ function isNetworkError(error) {
 	return errorMessages.has(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/p-retry/index.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/p-retry/index.mjs
 function validateRetries(retries) {
 	if (typeof retries === "number") {
 		if (retries < 0) throw new TypeError("Expected `retries` to be a non-negative number.");
@@ -9259,7 +9310,7 @@ var require_priority_queue = /* @__PURE__ */ __commonJSMin(((exports) => {
 	exports.default = PriorityQueue;
 }));
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/p-queue.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/p-queue.mjs
 var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const EventEmitter = require_eventemitter3();
@@ -9509,7 +9560,7 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 })))(), 1);
 const PQueue = "default" in import_dist.default ? import_dist.default.default : import_dist.default;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/async_caller.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/async_caller.mjs
 const STATUS_RETRYABLE = [
 	408,
 	425,
@@ -9616,7 +9667,7 @@ var AsyncCaller = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/messages.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/messages.mjs
 function isLangChainMessage(message) {
 	return typeof message?._getType === "function";
 }
@@ -9629,7 +9680,7 @@ function convertLangChainMessageToExample(message) {
 	return converted;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/warn.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/warn.mjs
 const warnedMessages = {};
 function warnOnce$1(message, options) {
 	const key = options?.code ?? message;
@@ -9644,7 +9695,7 @@ function warnOnce$1(message, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/xxhash/xxhash.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/xxhash/xxhash.mjs
 const n = (n) => BigInt(n);
 const PRIME32_1 = n("0x9E3779B1");
 const PRIME32_2 = n("0x85EBCA77");
@@ -9913,7 +9964,7 @@ function xxh128ToBytes(hash128) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/_uuid.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/_uuid.mjs
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
 	if (!UUID_REGEX.test(str)) {
@@ -10019,7 +10070,111 @@ function nonCryptographicUuid7Deterministic(originalId, key) {
 	return bytesToUuid(b);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/sampling.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/compressed_runs.mjs
+const encoder$2 = new TextEncoder();
+/**
+* A multipart body gzipped as parts are written, so a batch waiting to upload
+* holds compressed bytes, not run objects.
+*/
+var CompressedRunBuffer = class {
+	constructor() {
+		Object.defineProperty(this, "boundary", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: "----LangSmithFormBoundary" + Math.random().toString(36).slice(2)
+		});
+		/** Uncompressed bytes written, for batch size limits. */
+		Object.defineProperty(this, "uncompressedSize", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: 0
+		});
+		/** Number of operations written. */
+		Object.defineProperty(this, "count", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: 0
+		});
+		Object.defineProperty(this, "context", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: []
+		});
+		/** Called once this batch is sent. */
+		Object.defineProperty(this, "onSent", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: []
+		});
+		Object.defineProperty(this, "writer", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "chunks", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: []
+		});
+		Object.defineProperty(this, "readDone", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		const stream = new CompressionStream("gzip");
+		this.writer = stream.writable.getWriter();
+		const reader = stream.readable.getReader();
+		this.readDone = (async () => {
+			for (;;) {
+				const { done, value } = await reader.read();
+				if (done) return;
+				this.chunks.push(value);
+			}
+		})();
+	}
+	static isSupported() {
+		return typeof CompressionStream !== "undefined";
+	}
+	/** Resolves once gzip has taken the bytes, so the caller can drop them. */
+	async writeParts(parts, context, onSent) {
+		this.count += 1;
+		this.context.push(context);
+		this.onSent.push(onSent);
+		for (const part of parts) {
+			await this._write(encoder$2.encode(`--${this.boundary}\r\nContent-Disposition: form-data; name="${part.name}"\r\nContent-Type: ${part.contentType}\r\n\r\n`));
+			await this._write(part.data);
+			await this._write(encoder$2.encode("\r\n"));
+		}
+	}
+	/** Close the multipart body and return the gzipped bytes. */
+	async close() {
+		await this._write(encoder$2.encode(`--${this.boundary}--\r\n`));
+		await this.writer.close();
+		await this.readDone;
+		const body = new Uint8Array(this.chunks.reduce((sum, c) => sum + c.byteLength, 0));
+		let offset = 0;
+		for (const chunk of this.chunks) {
+			body.set(chunk, offset);
+			offset += chunk.byteLength;
+		}
+		this.chunks = [];
+		return body;
+	}
+	async _write(chunk) {
+		this.uncompressedSize += chunk.byteLength;
+		await this.writer.write(chunk);
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/sampling.mjs
 /**
 * Deterministic trace sampling, kept consistent across LangSmith SDKs.
 */
@@ -10039,7 +10194,7 @@ const isSampledById = (identifier, samplingRate) => {
 	return Number(bucket) / Number(SAMPLING_HASH_MODULUS) < samplingRate;
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/addressing.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/addressing.mjs
 function rejectConflicting(project, address) {
 	if (project && address) throw new Error(`A run is sent to a project (${JSON.stringify(project)}) or to an address, not both.`);
 }
@@ -10094,7 +10249,7 @@ function applyToPayload(run, { update = false } = {}) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/v2_migration.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/v2_migration.mjs
 const QueryBackend = {
 	CLICKHOUSE_ONLY: "clickhouse_only",
 	SMITHDB_ONLY: "smithdb_only",
@@ -10110,7 +10265,7 @@ function getQueryBackend(instanceFlags) {
 	return QueryBackend.CLICKHOUSE_ONLY;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/error.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/error.mjs
 /**
 * Get the error message for an invalid prompt identifier.
 * Used consistently across the codebase when parsing prompt identifiers fails.
@@ -10242,7 +10397,7 @@ function isConflictingEndpointsError(err) {
 	return typeof err === "object" && err !== null && err.code === ERR_CONFLICTING_ENDPOINTS;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/prompts.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/prompts.mjs
 /**
 * Parse a hub repo identifier (owner/name:hash, name, etc.).
 *
@@ -10270,24 +10425,39 @@ function parseHubIdentifier(identifier) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/fs.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/fs.mjs
 /**
 * File system abstraction (Node.js version).
 *
 * This file is swapped with fs.browser.ts for browser builds
 * via the package.json browser field.
 */
+function resolveConfigPath(filePath) {
+	const expanded = filePath === "~" || filePath.startsWith("~/") || filePath.startsWith("~\\") ? nodePath.join(homedir(), filePath.slice(1)) : filePath;
+	const absolute = nodePath.resolve(expanded);
+	return nodeFs.existsSync(absolute) ? nodeFs.realpathSync(absolute) : absolute;
+}
+function homeDirectory$1() {
+	return homedir();
+}
 const path = nodePath;
 async function mkdir$1(dir) {
 	await nodeFsPromises.mkdir(dir, { recursive: true });
 }
 async function writeFileAtomic(filePath, content) {
-	const tempPath = `${filePath}.tmp`;
-	await nodeFsPromises.writeFile(tempPath, content, {
-		encoding: "utf8",
-		mode: 384
-	});
-	await nodeFsPromises.rename(tempPath, filePath);
+	const tempPath = `${filePath}.${randomUUID()}.tmp`;
+	const file = await nodeFsPromises.open(tempPath, "wx", 384);
+	try {
+		try {
+			await file.writeFile(content, "utf8");
+			await file.sync();
+		} finally {
+			await file.close();
+		}
+		await nodeFsPromises.rename(tempPath, filePath);
+	} finally {
+		await nodeFsPromises.rm(tempPath, { force: true });
+	}
 }
 async function readdir$1(dir) {
 	return nodeFsPromises.readdir(dir);
@@ -10326,11 +10496,13 @@ function statMtimeMs(filePath) {
 async function rmRecursive(filePath) {
 	await nodeFsPromises.rm(filePath, {
 		recursive: true,
-		force: true
+		force: true,
+		maxRetries: 5,
+		retryDelay: 10
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/prompt_cache/index.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/prompt_cache/index.mjs
 /**
 * Prompt caching module for LangSmith SDK.
 *
@@ -10612,7 +10784,7 @@ var PromptCache = class {
 */
 const promptCacheSingleton = new PromptCache();
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/fetch.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/singletons/fetch.mjs
 const DEFAULT_FETCH_IMPLEMENTATION = (...args) => fetch(...args);
 const LANGSMITH_FETCH_IMPLEMENTATION_KEY = Symbol.for("ls:fetch_implementation");
 const _shouldStreamForGlobalFetchImplementation = () => {
@@ -10634,9 +10806,10 @@ const _getFetchImplementation = (debug) => {
 	};
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/profile-lock.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/profile-lock.mjs
 const LOCK_POLL_INTERVAL_MS = 10;
-const LOCK_STALE_AFTER_MS = 1e4;
+const OAUTH_REFRESH_LOCK_STALE_AFTER_MS = 15e3;
+const LOCK_STALE_AFTER_MS = OAUTH_REFRESH_LOCK_STALE_AFTER_MS;
 const LOCK_METADATA_FILE = "created_at";
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -10659,39 +10832,36 @@ function lockCreatedAtMs(lockDir) {
 	}
 	return statMtimeMs(lockDir);
 }
-function lockOwner(lockDir) {
-	const lines = lockMetadataLines(lockDir);
-	if (lines && lines.length >= 2 && lines[1].trim()) return lines[1].trim();
-}
 async function removeStaleLock(lockDir) {
 	const createdAt = lockCreatedAtMs(lockDir);
 	if (createdAt === void 0 || Date.now() - createdAt <= LOCK_STALE_AFTER_MS) return false;
 	await rmRecursive(lockDir);
 	return true;
 }
+function lockOwner(lockDir) {
+	const lines = lockMetadataLines(lockDir);
+	if (lines && lines.length >= 2 && lines[1].trim()) return lines[1].trim();
+}
 /**
-* Acquire an exclusive cross-process lock for refreshing OAuth tokens.
-*
-* Uses an atomic-`mkdir` directory lock at `<configPath>.oauth.lock.lock` with a
-* stale-break heuristic and owner-checked release, mirroring langsmith-go's
-* non-POSIX path. `deadline` is a `Date.now()`-based timestamp; acquisition
-* rejects once it passes. Callers treat any rejection as "skip refresh, use the
-* current token".
+* Acquire the cross-process lock for refreshing OAuth tokens, shared with the
+* Python, Go and Java SDKs: an atomic-`mkdir` directory at
+* `<resolved config>.oauth.lock.lock` with owner-checked release. A lock older
+* than LOCK_STALE_AFTER_MS is taken over. `deadline` is a `Date.now()`-based
+* timestamp; acquisition rejects once it passes.
 */
 async function acquireOAuthRefreshLock(configPath, deadline) {
-	const lockDir = `${configPath}.oauth.lock.lock`;
+	const lockDir = `${resolveConfigPath(configPath)}.oauth.lock.lock`;
+	const waitUntil = performance.now() + Math.max(0, deadline - Date.now());
 	const parent = path.dirname(lockDir);
 	if (parent) await mkdir$1(parent);
 	const owner = globalThis.crypto.randomUUID();
 	for (;;) {
+		if (performance.now() >= waitUntil) throw new Error("timed out acquiring OAuth refresh lock");
 		try {
 			await mkdirExclusive(lockDir);
 		} catch (err) {
 			if (!isEEXIST(err)) throw err;
-			if (!await removeStaleLock(lockDir)) {
-				if (Date.now() >= deadline) throw new Error("timed out acquiring OAuth refresh lock");
-				await sleep(Math.min(LOCK_POLL_INTERVAL_MS, Math.max(0, deadline - Date.now())));
-			}
+			if (!await removeStaleLock(lockDir)) await sleep(Math.min(LOCK_POLL_INTERVAL_MS, Math.max(0, waitUntil - performance.now())));
 			continue;
 		}
 		try {
@@ -10716,11 +10886,12 @@ function isBrowserLikeRuntime() {
 	return env === "browser" || env === "webworker";
 }
 function getProfileConfigPath(selected) {
-	const explicitPath = selected || getEnvironmentVariable("LANGSMITH_CONFIG_FILE");
-	if (explicitPath) return explicitPath;
-	const home = getEnvironmentVariable("HOME") ?? getEnvironmentVariable("USERPROFILE");
-	if (!home) return;
-	return path.join(home, ".langsmith", "config.json");
+	const configuredPath = selected || getEnvironmentVariable("LANGSMITH_CONFIG_FILE") || path.join(homeDirectory$1(), ".langsmith", "config.json");
+	try {
+		return resolveConfigPath(configuredPath);
+	} catch {
+		return;
+	}
 }
 function resolveProfileName(config, selected) {
 	const chosen = selected || getEnvironmentVariable("LANGSMITH_PROFILE");
@@ -10761,6 +10932,12 @@ function shouldRefreshProfileToken(profile) {
 	const expiresAt = Date.parse(oauth.expires_at);
 	if (Number.isNaN(expiresAt)) return false;
 	return expiresAt <= Date.now() + TOKEN_REFRESH_LEEWAY_MS;
+}
+/** Whether the cached access token can still authenticate a request. */
+function accessTokenUsable(profile) {
+	if (!trimConfigValue(profile.oauth?.access_token)) return false;
+	const expiresAt = profile.oauth?.expires_at ? Date.parse(profile.oauth.expires_at) : NaN;
+	return Number.isNaN(expiresAt) || expiresAt > Date.now();
 }
 function normalizeConfigUrl(apiUrl) {
 	let normalized = apiUrl;
@@ -10828,13 +11005,15 @@ function oauthMetadataUrls(base) {
 	}
 	return inserted === appended ? [inserted] : [inserted, appended];
 }
-async function fetchOAuthMetadata(url, base, fetchImplementation) {
+async function fetchOAuthMetadata(url, base, fetchImplementation, deadline) {
+	const timeoutMs = Math.min(OAUTH_DISCOVERY_TIMEOUT_MS, deadline - Date.now());
+	if (timeoutMs <= 0) return;
 	let response;
 	try {
 		response = await fetchImplementation(url, {
 			method: "GET",
 			headers: { Accept: "application/json" },
-			signal: AbortSignal.timeout(OAUTH_DISCOVERY_TIMEOUT_MS)
+			signal: AbortSignal.timeout(timeoutMs)
 		});
 	} catch {
 		return;
@@ -10854,9 +11033,9 @@ async function fetchOAuthMetadata(url, base, fetchImplementation) {
 * Falls back to `<mount>/oauth/token`, keeping a trailing `/api` because
 * self-hosted mounts the authorization server under it.
 */
-async function resolveTokenEndpoint(apiUrl, fetchImplementation) {
+async function resolveTokenEndpoint(apiUrl, fetchImplementation, deadline = Number.POSITIVE_INFINITY) {
 	for (const base of oauthDiscoveryCandidates(apiUrl)) for (const url of oauthMetadataUrls(base)) {
-		const doc = await fetchOAuthMetadata(url, base, fetchImplementation);
+		const doc = await fetchOAuthMetadata(url, base, fetchImplementation, deadline);
 		if (doc) return doc.token_endpoint;
 	}
 	return `${normalizeConfigUrl(apiUrl)}/oauth/token`;
@@ -10896,15 +11075,29 @@ function loadProfileClientConfig(selection = {}) {
 	const apiKey = trimConfigValue(profile.api_key);
 	const oauthAccessToken = trimConfigValue(profile.oauth?.access_token);
 	const oauthRefreshToken = trimConfigValue(profile.oauth?.refresh_token);
+	const apiKeyRef = trimConfigValue(profile.api_key_env) || trimConfigValue(profile.api_key_cmd);
 	return {
 		apiUrl: profile.api_url,
 		apiKey,
 		workspaceId: profile.workspace_id,
 		oauthAccessToken,
 		oauthRefreshToken,
-		profileAuth: apiKey || oauthAccessToken || oauthRefreshToken ? new ProfileAuth(state) : void 0
+		profileAuth: apiKey || oauthAccessToken || oauthRefreshToken || apiKeyRef ? new ProfileAuth(state) : void 0
 	};
 }
+var ProfileApiKeyError = class extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "ProfileApiKeyError";
+	}
+};
+var ProfileRefreshLockError = class extends Error {
+	constructor(message, options) {
+		super(message);
+		this.name = "ProfileRefreshLockError";
+		if (options && "cause" in options) this.cause = options.cause;
+	}
+};
 var ProfileAuth = class {
 	constructor(state) {
 		Object.defineProperty(this, "state", {
@@ -10927,8 +11120,19 @@ var ProfileAuth = class {
 		});
 		this.rememberProfileAuthHeader(this.currentAuthHeader());
 	}
+	/**
+	* The auth header to snapshot into default headers. A profile API key that
+	* cannot be resolved yields none here; `getAuthHeader` reports it when a
+	* request needs it.
+	*/
 	currentAuthHeader() {
-		const header = currentAuthHeaderFromProfile(this.state.profile);
+		let header;
+		try {
+			header = currentAuthHeaderFromProfile(this.state);
+		} catch (error) {
+			if (!(error instanceof ProfileApiKeyError)) throw error;
+			header = void 0;
+		}
 		this.rememberProfileAuthHeader(header);
 		return header;
 	}
@@ -10939,7 +11143,7 @@ var ProfileAuth = class {
 			});
 			await waitForAbortSignal(this.refreshPromise, signal);
 		}
-		const header = authHeaderFromProfile(this.state.profile);
+		const header = authHeaderFromProfile(this.state);
 		this.rememberProfileAuthHeader(header);
 		return header;
 	}
@@ -10960,20 +11164,28 @@ var ProfileAuth = class {
 	}
 	async refreshOAuthToken(fetchImplementation) {
 		var _a;
-		const refreshToken = this.state.profile.oauth?.refresh_token;
-		if (!refreshToken) return;
-		const refreshApiUrl = trimConfigValue(this.state.profile.api_url) ?? "https://api.smith.langchain.com";
+		if (!this.state.profile.oauth?.refresh_token) return;
 		const deadline = Date.now() + TOKEN_REFRESH_TIMEOUT_MS;
 		let lock;
 		try {
-			lock = await acquireOAuthRefreshLock(this.state.configPath, deadline);
-			if (this.reloadProfile() && !shouldRefreshProfileToken(this.state.profile)) return;
+			try {
+				lock = await acquireOAuthRefreshLock(this.state.configPath, deadline);
+			} catch (error) {
+				if (!accessTokenUsable(this.state.profile)) throw new ProfileRefreshLockError(`Could not refresh the expired OAuth token for LangSmith profile "${this.state.profileName}": failed to acquire the refresh lock next to ${this.state.configPath} (${error instanceof Error ? error.message : String(error)}). Another process may be refreshing it, or the config directory may not be writable; OAuth profiles need a writable config. Use an API key for read-only configs. A lock left by a crashed process is released automatically after ${OAUTH_REFRESH_LOCK_STALE_AFTER_MS / 1e3} seconds.`, { cause: error });
+				return;
+			}
+			const fresh = this.reloadProfile();
+			const freshRefreshToken = fresh?.oauth?.refresh_token;
+			if (!fresh || !freshRefreshToken || !shouldRefreshProfileToken(fresh)) return;
+			const refreshApiUrl = trimConfigValue(fresh.api_url) ?? "https://api.smith.langchain.com";
 			const body = new URLSearchParams({
 				grant_type: "refresh_token",
 				client_id: OAUTH_CLIENT_ID,
-				refresh_token: this.state.profile.oauth?.refresh_token ?? refreshToken
+				refresh_token: freshRefreshToken
 			});
-			const response = await fetchImplementation(await resolveTokenEndpoint(refreshApiUrl, fetchImplementation), {
+			const tokenEndpoint = await resolveTokenEndpoint(refreshApiUrl, fetchImplementation, deadline);
+			if (Date.now() >= deadline) return;
+			const response = await fetchImplementation(tokenEndpoint, {
 				method: "POST",
 				headers: { "Content-Type": "application/x-www-form-urlencoded" },
 				body: body.toString(),
@@ -10986,7 +11198,8 @@ var ProfileAuth = class {
 			(_a = this.state.config).profiles ?? (_a.profiles = {});
 			this.state.config.profiles[this.state.profileName] = this.state.profile;
 			await writeFileAtomic(this.state.configPath, `${JSON.stringify(this.state.config, null, 2)}\n`);
-		} catch {
+		} catch (error) {
+			if (error instanceof ProfileRefreshLockError) throw error;
 			return;
 		} finally {
 			await lock?.release();
@@ -10996,29 +11209,42 @@ var ProfileAuth = class {
 		this.managedAuthorizationValue = header?.name === "Authorization" ? header.value : void 0;
 	}
 };
-function currentAuthHeaderFromProfile(profile) {
+function currentAuthHeaderFromProfile(state) {
+	const { profile } = state;
 	const oauthAccessToken = trimConfigValue(profile.oauth?.access_token);
 	if (oauthAccessToken) return {
 		name: "Authorization",
 		value: `Bearer ${oauthAccessToken}`
 	};
 	if (trimConfigValue(profile.oauth?.refresh_token)) return;
-	return authHeaderFromProfile(profile);
+	return authHeaderFromProfile(state);
 }
-function authHeaderFromProfile(profile) {
+function authHeaderFromProfile(state) {
+	const { profile } = state;
 	const oauthAccessToken = trimConfigValue(profile.oauth?.access_token);
 	if (oauthAccessToken) return {
 		name: "Authorization",
 		value: `Bearer ${oauthAccessToken}`
 	};
-	const apiKey = trimConfigValue(profile.api_key);
+	const apiKey = profileApiKey(state.profileName, profile);
 	if (apiKey) return {
 		name: "x-api-key",
 		value: apiKey
 	};
 }
+function profileApiKey(profileName, profile) {
+	const apiKey = trimConfigValue(profile.api_key);
+	if (apiKey) return apiKey;
+	const apiKeyEnv = trimConfigValue(profile.api_key_env);
+	if (apiKeyEnv) {
+		const key = getEnvironmentVariable(apiKeyEnv)?.trim();
+		if (key) return key;
+		throw new ProfileApiKeyError(`LangSmith profile "${profileName}" reads its API key from $${apiKeyEnv}, which is not set`);
+	}
+	if (trimConfigValue(profile.api_key_cmd)) throw new ProfileApiKeyError(`LangSmith profile "${profileName}" gets its API key from a command (api_key_cmd), which the JS SDK does not support yet. Set api_key_env in the profile, or set LANGSMITH_API_KEY.`);
+}
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/fast-safe-stringify/index.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/fast-safe-stringify/index.mjs
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -11268,7 +11494,7 @@ function replaceGetterValues(replacer) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/worker_threads.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/worker_threads.mjs
 /**
 * worker_threads abstraction (Node.js version).
 *
@@ -11280,7 +11506,7 @@ function replaceGetterValues(replacer) {
 */
 const Worker$1 = Worker;
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/serialize_worker.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/serialize_worker.mjs
 /**
 * Off-thread serialization using Node worker_threads.
 *
@@ -11604,7 +11830,7 @@ function hasLargeString(value, threshold = LARGE_STRING_THRESHOLD, nodeBudget = 
 	return false;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/client.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/client.mjs
 function assertPullPublicPromptAllowed(promptIdentifier, dangerouslyPullPublicPrompt) {
 	const [owner] = parseHubIdentifier(promptIdentifier);
 	if (owner !== "-" && !dangerouslyPullPublicPrompt) throw new Error("Pulling a public prompt by owner/name is disabled by default because prompts may contain untrusted serialized LangChain objects. If you trust this prompt, set `dangerouslyPullPublicPrompt: true` to acknowledge the risk.");
@@ -11700,6 +11926,8 @@ function _checkBackendVersion(backendVersion, minVersion) {
 	}
 	if (maj < rMaj || maj === rMaj && min < rMin || maj === rMaj && min === rMin && pat < rPat) console.warn(`[LANGSMITH]: Backend version ${JSON.stringify(backendVersion)} is older than the minimum version required by this SDK (${JSON.stringify(minVersion)}). Some features may not work as expected. See https://docs.langchain.com/langsmith/smithdb-sdk-migration`);
 }
+/** Default maximum memory (1GB) for queue size limits. */
+const DEFAULT_MAX_SIZE_BYTES = 1073741824;
 const SERVER_INFO_REQUEST_TIMEOUT_MS = 1e4;
 /** Maximum number of operations to batch in a single request. */
 const DEFAULT_BATCH_SIZE_LIMIT = 100;
@@ -11786,7 +12014,7 @@ var AutoBatchQueue = class {
 			itemPromiseResolve = resolve;
 		});
 		const size = estimateSerializedSize(item.item).size;
-		if (this.sizeBytes + size > this.maxSizeBytes && this.items.length > 0) {
+		if (this.sizeBytes + size > this.maxSizeBytes && this.sizeBytes > 0) {
 			console.warn(`AutoBatchQueue size limit (${this.maxSizeBytes} bytes) exceeded. Dropping run with id: ${item.item.id}. Current queue size: ${this.sizeBytes} bytes, attempted addition: ${size} bytes.`);
 			itemPromiseResolve();
 			return itemPromise;
@@ -11837,6 +12065,10 @@ var AutoBatchQueue = class {
 var Client = class Client {
 	get tracingMode() {
 		return this._tracingMode;
+	}
+	_applyReplicaWorkspace(headers, options) {
+		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		else if (options?.apiUrl !== void 0 && options.apiKey !== void 0 && options.apiKey !== this.apiKey && new URL(options.apiUrl).host !== new URL(this.apiUrl).host) delete headers["x-tenant-id"];
 	}
 	get _fetch() {
 		const fetchImplementation = this.fetchImplementation || _getFetchImplementation(this.debug);
@@ -12177,6 +12409,34 @@ var Client = class Client {
 			writable: true,
 			value: /* @__PURE__ */ new Set()
 		});
+		/**
+		* Open gzip buffers, one per destination, that queued run operations are
+		* written into when the server accepts gzip (see CompressedRunBuffer).
+		*/
+		Object.defineProperty(this, "_compressedBuffers", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: /* @__PURE__ */ new Map()
+		});
+		Object.defineProperty(this, "_compressedWriteChain", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: Promise.resolve()
+		});
+		Object.defineProperty(this, "_compressedFlushTimeout", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
+		Object.defineProperty(this, "_maxIngestMemoryBytes", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: DEFAULT_MAX_SIZE_BYTES
+		});
 		Object.defineProperty(this, "langSmithToOTELTranslator", {
 			enumerable: true,
 			configurable: true,
@@ -12291,6 +12551,7 @@ var Client = class Client {
 			if (Number.isFinite(n) && n > 0) this.failedTracesMaxBytes = n * 1024 * 1024;
 		}
 		const maxMemory = config.maxIngestMemoryBytes ?? 1073741824;
+		this._maxIngestMemoryBytes = maxMemory;
 		this.batchIngestCaller = new AsyncCaller({
 			maxRetries: 4,
 			maxConcurrency: this.traceBatchConcurrency,
@@ -12713,7 +12974,7 @@ var Client = class Client {
 			const batchesByDestination = batch.reduce((acc, item) => {
 				const apiUrl = item.apiUrl ?? this.apiUrl;
 				const apiKey = item.apiKey ?? this.apiKey;
-				const workspaceId = item.workspaceId ?? this.workspaceId;
+				const workspaceId = item.workspaceId;
 				const batchKey = item.apiKey === this.apiKey && item.apiUrl === this.apiUrl && item.workspaceId === this.workspaceId ? "default" : `${apiUrl}|${apiKey}|${workspaceId ?? ""}`;
 				if (!acc[batchKey]) acc[batchKey] = [];
 				acc[batchKey].push(item);
@@ -12875,6 +13136,10 @@ var Client = class Client {
 		if (this.manualFlushMode) return itemPromise;
 		const sizeLimitBytes = await this._getBatchSizeLimitBytes();
 		const sizeLimit = await this._getBatchSizeLimit();
+		if (this._shouldCompressOnQueue()) {
+			this._moveQueueToCompressed();
+			return itemPromise;
+		}
 		if (this.autoBatchQueue.sizeBytes > sizeLimitBytes || this.autoBatchQueue.items.length > sizeLimit) this._trackDrain(this.drainAutoBatchQueue({
 			batchSizeLimitBytes: sizeLimitBytes,
 			batchSizeLimit: sizeLimit
@@ -12942,16 +13207,154 @@ var Client = class Client {
 		if (!this.settings) this.settings = this._get("/settings");
 		return await this.settings;
 	}
+	/** OTel and JSON batch need run objects, so they keep the queue. */
+	_shouldCompressOnQueue() {
+		const serverInfo = this._serverInfo;
+		return serverInfo !== void 0 && this.langSmithToOTELTranslator === void 0 && !this._runCompressionDisabled && !this._multipartDisabled && CompressedRunBuffer.isSupported() && (serverInfo.batch_ingest_config?.use_multipart_endpoint ?? true) && serverInfo.instance_flags?.gzip_body_enabled === true;
+	}
+	/** Move queued runs into the gzip buffers, oldest first. */
+	_moveQueueToCompressed() {
+		const queued = this.autoBatchQueue.items.splice(0);
+		for (const queuedItem of queued) {
+			const { itemPromiseResolve, size } = queuedItem;
+			this._enqueueCompressed(size, {
+				action: queuedItem.action,
+				item: queuedItem.payload,
+				otelContext: queuedItem.otelContext,
+				apiKey: queuedItem.apiKey,
+				apiUrl: queuedItem.apiUrl,
+				workspaceId: queuedItem.workspaceId
+			}).then(itemPromiseResolve);
+		}
+	}
+	async _serializeQueuedOperation(item) {
+		if (item.action === "feedback") {
+			const feedback = item.item;
+			return {
+				parts: [await this._serializeFeedbackPart(feedback)],
+				context: `trace=${feedback.trace_id},id=${feedback.id}`
+			};
+		}
+		const prepared = item.action === "create" ? await this.prepareRunCreateOrUpdateInputs(item.item) : await this.prepareRunCreateOrUpdateInputs(item.item, { update: true });
+		const attachments = prepared.attachments;
+		delete prepared.attachments;
+		return {
+			parts: await this._serializeRunParts(item.action === "create" ? "post" : "patch", prepared, attachments),
+			context: `trace=${prepared.trace_id},id=${prepared.id}`
+		};
+	}
+	/** Gzip an operation into its destination's buffer. Resolves once sent. */
+	_enqueueCompressed(queuedSize, item) {
+		let onSent;
+		const sent = new Promise((resolve) => {
+			onSent = resolve;
+		});
+		const isDefault = item.apiKey === this.apiKey && item.apiUrl === this.apiUrl && item.workspaceId === this.workspaceId;
+		const key = isDefault ? "default" : `${item.apiUrl ?? this.apiUrl}|${item.apiKey ?? this.apiKey}|${item.workspaceId ?? this.workspaceId ?? ""}`;
+		const write = async () => {
+			let serialized;
+			try {
+				serialized = await this._serializeQueuedOperation(item);
+			} finally {
+				this.autoBatchQueue.sizeBytes -= queuedSize;
+			}
+			const { parts, context } = serialized;
+			const sizeLimitBytes = await this._getBatchSizeLimitBytes();
+			const sizeLimit = await this._getBatchSizeLimit();
+			const size = parts.reduce((sum, p) => sum + p.data.byteLength, 0);
+			let entry = this._compressedBuffers.get(key);
+			if (entry !== void 0 && entry.buffer.count > 0 && entry.buffer.uncompressedSize + size > this._maxIngestMemoryBytes) {
+				this._compressedBuffers.delete(key);
+				this._trackDrain(this._sendCompressedBuffer(entry));
+				entry = void 0;
+			}
+			if (entry === void 0) {
+				entry = {
+					buffer: new CompressedRunBuffer(),
+					apiKey: isDefault ? void 0 : item.apiKey ?? this.apiKey,
+					apiUrl: isDefault ? void 0 : item.apiUrl ?? this.apiUrl,
+					workspaceId: isDefault ? void 0 : item.workspaceId ?? this.workspaceId
+				};
+				this._compressedBuffers.set(key, entry);
+			}
+			await entry.buffer.writeParts(parts, context, onSent);
+			if (entry.buffer.uncompressedSize >= sizeLimitBytes || entry.buffer.count >= sizeLimit) {
+				this._compressedBuffers.delete(key);
+				this._trackDrain(this._sendCompressedBuffer(entry));
+			}
+		};
+		this._compressedWriteChain = this._compressedWriteChain.then(write).catch((e) => {
+			console.error("Error queueing run for tracing:", e);
+			onSent();
+		});
+		if (!this.manualFlushMode && this._compressedFlushTimeout === void 0) this._compressedFlushTimeout = setTimeout(() => {
+			this._compressedFlushTimeout = void 0;
+			this._trackDrain(this._flushCompressedBuffers());
+		}, this.autoBatchAggregationDelayMs);
+		return sent;
+	}
+	/** Close and send a buffer already taken out of _compressedBuffers. */
+	async _sendCompressedBuffer(entry) {
+		const { buffer } = entry;
+		try {
+			const body = await buffer.close();
+			await this._sendCompressedMultipart(body, buffer, entry);
+		} catch (e) {
+			console.error("Error exporting batch:", e);
+		} finally {
+			for (const onSent of buffer.onSent) onSent();
+		}
+	}
+	async _flushCompressedBuffers() {
+		const taken = this._compressedWriteChain.then(() => {
+			const entries = [...this._compressedBuffers.values()];
+			this._compressedBuffers.clear();
+			return entries;
+		});
+		this._compressedWriteChain = taken.then(() => void 0);
+		const entries = await taken;
+		await Promise.all(entries.map((entry) => this._sendCompressedBuffer(entry)));
+	}
+	async _sendCompressedMultipart(body, buffer, options) {
+		const context = buffer.context.join("; ");
+		const headers = {
+			...this._mergedHeaders,
+			"Content-Type": `multipart/form-data; boundary=${buffer.boundary}`,
+			"Content-Encoding": "gzip"
+		};
+		if (options.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
+		if (options.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		try {
+			await this.batchIngestCaller.callWithOptions({ sizeBytes: body.byteLength }, async () => {
+				const response = await this._fetch(`${options.apiUrl ?? this.apiUrl}/runs/multipart`, {
+					method: "POST",
+					headers,
+					body,
+					signal: AbortSignal.timeout(this.timeout_ms),
+					...this.fetchOptions
+				});
+				await raiseForStatus(response, `Failed to send multipart request`, true);
+				return response;
+			});
+		} catch (e) {
+			if (isLangSmithNotFoundError(e)) this._multipartDisabled = true;
+			console.warn(`${e.message.trim()}\n\nContext: ${context}`);
+			if (this.failedTracesDir) await Client._writeTraceToFallbackDir(this.failedTracesDir, body.buffer, {
+				"Content-Type": `multipart/form-data; boundary=${buffer.boundary}`,
+				"Content-Encoding": "gzip"
+			}, "runs/multipart", this.failedTracesMaxBytes);
+		}
+	}
 	/**
 	* Flushes current queued traces.
 	*/
 	async flush() {
 		const sizeLimitBytes = await this._getBatchSizeLimitBytes();
 		const sizeLimit = await this._getBatchSizeLimit();
-		await this.drainAutoBatchQueue({
+		await Promise.all([this.drainAutoBatchQueue({
 			batchSizeLimitBytes: sizeLimitBytes,
 			batchSizeLimit: sizeLimit
-		});
+		}), this._flushCompressedBuffers()]);
 	}
 	_cloneCurrentOTELContext() {
 		const otel_trace = getOTELTrace();
@@ -12998,7 +13401,7 @@ var Client = class Client {
 		}
 		const mergedRunCreateParam = await this._mergeRuntimeEnvAndMaskMetadata(runCreate);
 		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
-		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		this._applyReplicaWorkspace(headers, options);
 		const body = serialize(mergedRunCreateParam, `Creating run with id: ${mergedRunCreateParam.id}`);
 		await this.caller.call(async () => {
 			const res = await this._fetch(`${options?.apiUrl ?? this.apiUrl}/runs`, {
@@ -13061,7 +13464,7 @@ var Client = class Client {
 			Accept: "application/json"
 		};
 		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
-		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		this._applyReplicaWorkspace(headers, options);
 		await this.batchIngestCaller.callWithOptions({ sizeBytes: options?.sizeBytes }, async () => {
 			const res = await this._fetch(`${options?.apiUrl ?? this.apiUrl}/runs/batch`, {
 				method: "POST",
@@ -13089,7 +13492,15 @@ var Client = class Client {
 			preparedCreateParams.push(preparedCreate);
 		}
 		let preparedUpdateParams = [];
-		for (const update of runUpdates ?? []) preparedUpdateParams.push(await this.prepareRunCreateOrUpdateInputs(update, { update: true }));
+		for (const update of runUpdates ?? []) {
+			const preparedUpdate = await this.prepareRunCreateOrUpdateInputs(update, { update: true });
+			if (preparedUpdate.id !== void 0 && preparedUpdate.attachments !== void 0) allAttachments[preparedUpdate.id] = {
+				...allAttachments[preparedUpdate.id],
+				...preparedUpdate.attachments
+			};
+			delete preparedUpdate.attachments;
+			preparedUpdateParams.push(preparedUpdate);
+		}
 		if (preparedCreateParams.find((runCreate) => {
 			return runCreate.trace_id === void 0 || runCreate.dotted_order === void 0;
 		}) !== void 0) throw new Error(`Multipart ingest requires "trace_id" and "dotted_order" to be set when creating a run`);
@@ -13110,63 +13521,77 @@ var Client = class Client {
 		if (preparedCreateParams.length === 0 && preparedUpdateParams.length === 0 && !feedbacks?.length) return;
 		const accumulatedContext = [];
 		const accumulatedParts = [];
+		const toMultipartPart = (part) => ({
+			name: part.name,
+			payload: new Blob([part.data], { type: part.contentType })
+		});
 		for (const [method, payloads] of [["post", preparedCreateParams], ["patch", preparedUpdateParams]]) for (const originalPayload of payloads) {
-			const { inputs, outputs, events, extra, error, serialized, attachments, ...payload } = originalPayload;
-			const fields = {
-				inputs,
-				outputs,
-				events,
-				extra,
-				error,
-				serialized
-			};
-			const stringifiedPayload = await this._serializeBody(payload, `Serializing for multipart ingestion of run with id: ${payload.id}`);
-			accumulatedParts.push({
-				name: `${method}.${payload.id}`,
-				payload: new Blob([stringifiedPayload], { type: `application/json; length=${stringifiedPayload.length}` })
-			});
-			for (const [key, value] of Object.entries(fields)) {
-				if (value === void 0) continue;
-				const stringifiedValue = await this._serializeBody(value, `Serializing ${key} for multipart ingestion of run with id: ${payload.id}`);
-				accumulatedParts.push({
-					name: `${method}.${payload.id}.${key}`,
-					payload: new Blob([stringifiedValue], { type: `application/json; length=${stringifiedValue.length}` })
-				});
-			}
-			if (payload.id !== void 0) {
-				const attachments = allAttachments[payload.id];
-				if (attachments) {
-					delete allAttachments[payload.id];
-					for (const [name, attachment] of Object.entries(attachments)) {
-						let contentType;
-						let content;
-						if (Array.isArray(attachment)) [contentType, content] = attachment;
-						else {
-							contentType = attachment.mimeType;
-							content = attachment.data;
-						}
-						if (name.includes(".")) {
-							console.warn(`Skipping attachment '${name}' for run ${payload.id}: Invalid attachment name. Attachment names must not contain periods ('.'). Please rename the attachment and try again.`);
-							continue;
-						}
-						accumulatedParts.push({
-							name: `attachment.${payload.id}.${name}`,
-							payload: new Blob([content], { type: `${contentType}; length=${content.byteLength}` })
-						});
-					}
-				}
-			}
-			accumulatedContext.push(`trace=${payload.trace_id},id=${payload.id}`);
+			const attachments = originalPayload.id !== void 0 ? allAttachments[originalPayload.id] : void 0;
+			if (originalPayload.id !== void 0) delete allAttachments[originalPayload.id];
+			const parts = await this._serializeRunParts(method, originalPayload, attachments);
+			accumulatedParts.push(...parts.map(toMultipartPart));
+			accumulatedContext.push(`trace=${originalPayload.trace_id},id=${originalPayload.id}`);
 		}
 		for (const feedback of feedbacks ?? []) {
-			const stringifiedFeedback = await this._serializeBody(feedback, `Serializing for multipart ingestion of feedback with id: ${feedback.id}`);
-			accumulatedParts.push({
-				name: `feedback.${feedback.id}`,
-				payload: new Blob([stringifiedFeedback], { type: `application/json; length=${stringifiedFeedback.length}` })
-			});
+			accumulatedParts.push(toMultipartPart(await this._serializeFeedbackPart(feedback)));
 			accumulatedContext.push(`trace=${feedback.trace_id},id=${feedback.id}`);
 		}
 		await this._sendMultipartRequest(accumulatedParts, accumulatedContext.join("; "), options);
+	}
+	/** Serialize one run operation into its multipart parts. */
+	async _serializeRunParts(method, originalPayload, attachments) {
+		const parts = [];
+		const { inputs, outputs, events, extra, error, serialized, attachments: _attachments, ...payload } = originalPayload;
+		const fields = {
+			inputs,
+			outputs,
+			events,
+			extra,
+			error,
+			serialized
+		};
+		const stringifiedPayload = await this._serializeBody(payload, `Serializing for multipart ingestion of run with id: ${payload.id}`);
+		parts.push({
+			name: `${method}.${payload.id}`,
+			contentType: `application/json; length=${stringifiedPayload.length}`,
+			data: stringifiedPayload
+		});
+		for (const [key, value] of Object.entries(fields)) {
+			if (value === void 0) continue;
+			const stringifiedValue = await this._serializeBody(value, `Serializing ${key} for multipart ingestion of run with id: ${payload.id}`);
+			parts.push({
+				name: `${method}.${payload.id}.${key}`,
+				contentType: `application/json; length=${stringifiedValue.length}`,
+				data: stringifiedValue
+			});
+		}
+		for (const [name, attachment] of Object.entries(attachments ?? {})) {
+			let contentType;
+			let content;
+			if (Array.isArray(attachment)) [contentType, content] = attachment;
+			else {
+				contentType = attachment.mimeType;
+				content = attachment.data;
+			}
+			if (name.includes(".")) {
+				console.warn(`Skipping attachment '${name}' for run ${payload.id}: Invalid attachment name. Attachment names must not contain periods ('.'). Please rename the attachment and try again.`);
+				continue;
+			}
+			parts.push({
+				name: `attachment.${payload.id}.${name}`,
+				contentType: `${contentType}; length=${content.byteLength}`,
+				data: content instanceof Uint8Array ? content : new Uint8Array(content)
+			});
+		}
+		return parts;
+	}
+	async _serializeFeedbackPart(feedback) {
+		const stringifiedFeedback = await this._serializeBody(feedback, `Serializing for multipart ingestion of feedback with id: ${feedback.id}`);
+		return {
+			name: `feedback.${feedback.id}`,
+			contentType: `application/json; length=${stringifiedFeedback.length}`,
+			data: stringifiedFeedback
+		};
 	}
 	async _createNodeFetchBody(parts, boundary) {
 		const chunks = [];
@@ -13215,7 +13640,7 @@ var Client = class Client {
 					"Content-Type": `multipart/form-data; boundary=${boundary}`
 				};
 				if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
-				if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+				this._applyReplicaWorkspace(headers, options);
 				let transformedBody = body;
 				if (options?.useGzip && typeof body === "object" && "pipeThrough" in body) {
 					transformedBody = body.pipeThrough(new CompressionStream("gzip"));
@@ -13297,7 +13722,7 @@ var Client = class Client {
 			"Content-Type": "application/json"
 		};
 		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
-		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		this._applyReplicaWorkspace(headers, options);
 		const wireRun = { ...run };
 		applyToPayload(wireRun, { update: true });
 		const body = serialize(wireRun.extra ? mergeRuntimeEnvIntoRun(wireRun, this.cachedLSEnvVarsForMetadata, this.omitTracedRuntimeInfo, this.tracingSampleRate) : wireRun, `Serializing payload to update run with id: ${runId}`);
@@ -14641,7 +15066,7 @@ var Client = class Client {
 			"Content-Type": "application/json"
 		};
 		if (options?.apiKey !== void 0) headers["x-api-key"] = options.apiKey;
-		if (options?.workspaceId !== void 0) headers["x-tenant-id"] = options.workspaceId;
+		this._applyReplicaWorkspace(headers, options);
 		const body = JSON.stringify(feedback);
 		await this.caller.call(async () => {
 			const res = await this._fetch(`${options?.apiUrl ?? this.apiUrl}/feedback`, {
@@ -15693,16 +16118,16 @@ var Client = class Client {
 		if (!await this.promptExists(promptIdentifier)) throw new Error("Prompt does not exist, you must create it first.");
 		const [owner, promptName, _] = parseHubIdentifier(promptIdentifier);
 		if (!await this._currentTenantIsOwner(owner)) throw await this._ownerConflictError("delete a prompt", owner);
-		return (await this.caller.call(async () => {
+		await this.caller.call(async () => {
 			const res = await this._fetch(`${this.apiUrl}/repos/${owner}/${promptName}`, {
 				method: "DELETE",
 				headers: this._mergedHeaders,
 				signal: AbortSignal.timeout(this.timeout_ms),
 				...this.fetchOptions
 			});
-			await raiseForStatus(res, "delete prompt");
+			await raiseForStatus(res, "delete prompt", true);
 			return res;
-		})).json();
+		});
 	}
 	/**
 	* Generate a cache key for a prompt.
@@ -16138,6 +16563,12 @@ var Client = class Client {
 		*/
 		await new Promise((resolve) => setTimeout(resolve, 1));
 		while (this._pendingDrains.size > 0) await Promise.all([...this._pendingDrains]);
+		for (let pass = 0; pass < 2; pass++) {
+			clearTimeout(this._compressedFlushTimeout);
+			this._compressedFlushTimeout = void 0;
+			await this._flushCompressedBuffers();
+			while (this._pendingDrains.size > 0) await Promise.all([...this._pendingDrains]);
+		}
 		await Promise.all([...this.autoBatchQueue.items.map(({ itemPromise }) => itemPromise), this.batchIngestCaller.queue.onIdle()]);
 		if (this.langSmithToOTELTranslator !== void 0) await getDefaultOTLPTracerComponents()?.DEFAULT_LANGSMITH_SPAN_PROCESSOR?.forceFlush();
 	}
@@ -16179,17 +16610,17 @@ function getExampleReferenceOutputs(example) {
 	return example.reference_outputs ?? example.outputs;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/env.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/env.mjs
 const isEnvTracingEnabled = (tracingEnabled) => {
 	if (tracingEnabled !== void 0) return tracingEnabled;
 	return !!["TRACING_V2", "TRACING"].find((envVar) => getLangSmithEnvironmentVariable(envVar) === "true");
 };
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/constants.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/singletons/constants.mjs
 const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 const _REPLICA_TRACE_ROOTS_KEY = Symbol.for("langsmith:replica_trace_roots");
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/utils/context_vars.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/utils/context_vars.mjs
 /**
 * Get a context variable from a run tree instance
 */
@@ -16205,7 +16636,7 @@ function setContextVar(runTree, key, value) {
 	runTree[_LC_CONTEXT_VARIABLES_KEY] = contextVars;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/run_trees.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/run_trees.mjs
 const UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 function getReplicaKey(replica) {
 	return v5$1(Object.keys(replica).sort().map((key) => `${key}:${replica[key] ?? ""}`).join("|"), UUID_NAMESPACE_DNS);
@@ -16513,6 +16944,13 @@ var RunTree = class RunTree {
 			writable: true,
 			value: void 0
 		});
+		/** Attachment names already sent by postRun, so patchRun does not resend them. */
+		Object.defineProperty(this, "_postedAttachmentNames", {
+			enumerable: true,
+			configurable: true,
+			writable: true,
+			value: void 0
+		});
 		/**
 		* @internal
 		*/
@@ -16702,7 +17140,7 @@ var RunTree = class RunTree {
 			trace_id: run.trace_id,
 			dotted_order: run.dotted_order,
 			tags: run.tags,
-			attachments: run.attachments,
+			attachments: run.attachments ? { ...run.attachments } : void 0,
 			events: run.events
 		};
 	}
@@ -16826,6 +17264,7 @@ var RunTree = class RunTree {
 		if (this._awaitInputsOnPost) this.inputs = await this.inputs;
 		try {
 			const runtimeEnv = getRuntimeEnvironment();
+			const postedAttachmentNames = new Set(Object.keys(this.attachments ?? {}));
 			if (this.replicas && this.replicas.length > 0) for (const replica of this.replicas) {
 				const { primary, apiKey, apiUrl, workspaceId, reroot, client: replicaClient } = replica;
 				const [projectName, address] = this._replicaAddressing(replica);
@@ -16851,6 +17290,7 @@ var RunTree = class RunTree {
 				const runCreate = this._convertToCreate(this, runtimeEnv, excludeChildRuns);
 				await this.client.createRun(runCreate);
 			}
+			this._postedAttachmentNames = postedAttachmentNames;
 			if (!excludeChildRuns) {
 				warnOnce$1("Posting with excludeChildRuns=false is deprecated and will be removed in a future version.");
 				for (const childRun of this.child_runs) await childRun.postRun(false);
@@ -16859,6 +17299,12 @@ var RunTree = class RunTree {
 		} catch (error) {
 			console.error(`Error in postRun for run ${this.id}:`, error);
 		}
+	}
+	/** Attachments added since postRun, or undefined when there are none. */
+	_attachmentsToPatch() {
+		const posted = this._postedAttachmentNames;
+		const pending = Object.entries(this.attachments ?? {}).filter(([name]) => !posted?.has(name));
+		return pending.length > 0 ? Object.fromEntries(pending) : void 0;
 	}
 	/**
 	* Patch the run tree to the API.
@@ -16874,6 +17320,7 @@ var RunTree = class RunTree {
 	*/
 	async patchRun(options) {
 		const excludeInputs = options?.excludeInputs ?? getExcludeInputsOnPatch();
+		const attachments = this._attachmentsToPatch();
 		if (this.replicas && this.replicas.length > 0) for (const replica of this.replicas) {
 			const { primary, apiKey, apiUrl, workspaceId, updates, reroot, client: replicaClient } = replica;
 			const [projectName, address] = this._replicaAddressing(replica);
@@ -16906,7 +17353,7 @@ var RunTree = class RunTree {
 				events: runData.events,
 				tags: runData.tags,
 				extra: runData.extra,
-				attachments: this.attachments,
+				attachments,
 				...updates
 			};
 			if (!excludeInputs) updatePayload.inputs = runData.inputs;
@@ -16931,7 +17378,7 @@ var RunTree = class RunTree {
 				dotted_order: this.dotted_order,
 				trace_id: this.trace_id,
 				tags: this.tags,
-				attachments: this.attachments,
+				attachments,
 				session_name: this.project_name,
 				address: this.address
 			};
@@ -17101,6 +17548,10 @@ function _getWriteReplicasFromEnv() {
 					console.warn(`Invalid project_name type in LANGSMITH_RUNS_ENDPOINTS: expected string, got ${typeof item.project_name}`);
 					continue;
 				}
+				if (item.workspace_id !== void 0 && item.workspace_id !== null && typeof item.workspace_id !== "string") {
+					console.warn(`Invalid workspace_id type in LANGSMITH_RUNS_ENDPOINTS: expected string, got ${typeof item.workspace_id}; ignoring it`);
+					item.workspace_id = void 0;
+				}
 				if (item.primary !== void 0 && typeof item.primary !== "boolean") {
 					console.warn(`Invalid primary type in LANGSMITH_RUNS_ENDPOINTS: expected boolean, got ${typeof item.primary}`);
 					continue;
@@ -17109,6 +17560,7 @@ function _getWriteReplicasFromEnv() {
 					apiUrl: item.api_url.replace(/\/$/, ""),
 					apiKey: item.api_key,
 					projectName: item.project_name ?? void 0,
+					workspaceId: item.workspace_id?.trim() || void 0,
 					primary: item.primary ?? void 0
 				});
 			}
@@ -17157,7 +17609,7 @@ function _checkEndpointEnvUnset(parsed) {
 	if (Object.keys(parsed).length > 0 && getLangSmithEnvironmentVariable("ENDPOINT")) throw new ConflictingEndpointsError();
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/uuid.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/uuid.mjs
 /**
 * Compute the run ID used for a secondary tracing replica.
 *
@@ -17173,7 +17625,7 @@ function computeRunIdForSecondaryReplica(runId, projectName) {
 	return nonCryptographicUuid7Deterministic(normalizedRunId, projectName);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/singletons/traceable.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/singletons/traceable.mjs
 var MockAsyncLocalStorage = class {
 	getStore() {}
 	run(_, callback) {
@@ -17192,7 +17644,7 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -17209,7 +17661,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -17327,7 +17779,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -17403,7 +17855,7 @@ const UPLOAD_LOGIN_FIELD_NAMES = {
 	workspaceId: "login workspace ID"
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 const rejectedAuthorizations = /* @__PURE__ */ new WeakMap();
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, login, anonymizer, redactedFields } = options;
@@ -17446,7 +17898,7 @@ function takeRejectedAccessToken(client) {
 	return authorization?.replace(UPLOAD_BEARER_PATTERN, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/auth/credential.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/auth/credential.js
 function resolveUploadCredential(options = {}) {
 	const env = options.env ?? process.env;
 	const workspaceId = sdkSetting(options.workspaceId);
@@ -17515,7 +17967,7 @@ function loginReplicaRefusal(replicas, apiUrl) {
 	return configured.some((replica) => sdkSetting(replica.apiKey) !== void 0 || replica.apiUrl === void 0 || sameServer(replica.apiUrl, apiUrl)) ? void 0 : refusedLoginReplicas(configured, apiUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -17635,7 +18087,7 @@ function fingerprint(value) {
 	return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_6b49e3b8f94e9167d0f5fe6480c8a131/node_modules/langsmith/lib/anonymizer/index.mjs
+//#region ../../node_modules/.pnpm/langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+exporter-trace-otlp-proto@0.21_c105094aa99ab8cbe263b9ace3bf3de6/node_modules/langsmith/lib/anonymizer/index.mjs
 function extractStringNodes(data, options) {
 	const parsedOptions = {
 		...options,
@@ -17871,7 +18323,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -17892,7 +18344,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -17921,7 +18373,7 @@ function usesLogin(login, client) {
 	return loginUrl === void 0 || typeof clientUrl === "string" && sameServer(clientUrl, loginUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
 function createUploadClientCache() {
 	const clientsByMode = /* @__PURE__ */ new Map();
 	return { forSubmission(destination, submission) {
@@ -17940,7 +18392,7 @@ function createUploadClientCache() {
 	} };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
 var UploadError = class extends Error {
 	retryable;
 	status;
@@ -17958,7 +18410,7 @@ function isAlreadyReceived(cause) {
 	return failureStatus(cause) === 409 && describe(cause).includes("already received");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
 function applyRuntimeMetadata(payload, privacyMode) {
 	if (privacyMode !== "full") return;
 	const added = buildCodingAgentRuntimeMetadata({
@@ -17981,7 +18433,7 @@ function applyRuntimeMetadata(payload, privacyMode) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function contextForDestination(context, destination) {
 	if (destination.sourceProjectName === void 0) return context;
 	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
@@ -18021,7 +18473,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
 function applyReplicaPatchUpdates(payload, destination, privacyMode) {
 	if (privacyMode !== "full" || destination.updates === void 0) return;
 	const mutablePayload = payload;
@@ -18046,7 +18498,7 @@ function mergeReplicaExtra(baseValue, updateValue) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
 async function withDeadline(work) {
 	let timer;
 	const expired = new Promise((_resolve, reject) => {
@@ -18059,7 +18511,7 @@ async function withDeadline(work) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
 function samplingRate(environment) {
 	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
 		const value = environment[name]?.trim();
@@ -18077,7 +18529,7 @@ function traceIdOf(run) {
 	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
 function startTimeFromDottedOrder(dottedOrder) {
 	if (typeof dottedOrder !== "string") return void 0;
 	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
@@ -18092,7 +18544,7 @@ function startTimeText(supplied, dottedOrder) {
 	return startTimeFromDottedOrder(dottedOrder);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -18316,11 +18768,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -18353,7 +18805,7 @@ async function readSavedCaptureWake(error, options) {
 	} : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -18392,7 +18844,7 @@ const LIFECYCLE_IDENTITY_FIELD_LABELS = [
 	["dotted_order", "Dotted order"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
 async function captureReadiness(scopes, destinations, readOutcome) {
 	const pending = /* @__PURE__ */ new Set();
 	const dropped = /* @__PURE__ */ new Set();
@@ -18415,7 +18867,7 @@ async function captureReadiness(scopes, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -18516,7 +18968,7 @@ function field$1(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -18576,7 +19028,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
@@ -18825,7 +19277,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
 function projectCapture(record, integration) {
 	const submission = projectSubmission({
 		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
@@ -18919,14 +19371,14 @@ function closureRank(state) {
 	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
 const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
 const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
 function recordRun(events) {
 	const latest = events.at(-1);
 	const run = latest.payload.run;
@@ -18970,7 +19422,7 @@ function mergeMetadataObject(previous, current) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
 function uniqueScopes(scopes) {
 	const unique = /* @__PURE__ */ new Map();
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
@@ -19061,7 +19513,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
 function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
 	const revision = createHash("sha256").update(JSON.stringify({
 		turnId,
@@ -19074,7 +19526,7 @@ function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, 
 	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
 function hasCausalRunError(events) {
 	let hasError = false;
 	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
@@ -19097,7 +19549,7 @@ function retainedEndTime(events) {
 	return endTime;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	const named = withBothGitMetadataNames(metadata ?? {});
@@ -19129,7 +19581,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
 function unsettled(settlementReport) {
 	return {
 		report: settlementReport,
@@ -19355,7 +19807,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}, requiredRunIds, currentByRunId, generated, options);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -19422,7 +19874,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -19453,7 +19905,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
 async function removeSettledTurns(options) {
 	const known = new Set(options.knownScopes.map(turnEventKey));
 	const removable = /* @__PURE__ */ new Map();
@@ -19512,7 +19964,7 @@ function field(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const context = createBridgeContext(options);
 	return Object.freeze({
@@ -19857,7 +20309,7 @@ function restoreSubmission(record, integration) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
@@ -19974,13 +20426,13 @@ const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
 const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
 const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
 function assertKnownKeys(record, required, optional, message) {
 	const keys = Object.keys(record);
 	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
 function readEventId(output, seen) {
 	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
 	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
@@ -20214,7 +20666,7 @@ function validateTurnEvidence(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
 function snapshotJob(job) {
 	return Object.freeze({
 		...job,
@@ -20391,7 +20843,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
 async function processJob(candidate, context) {
 	const { job, scope } = candidate;
 	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
@@ -20494,7 +20946,7 @@ async function recordTerminal(store, scope, accountFingerprint, outcome, reason)
 	return result.status === "recorded";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -20649,7 +21101,7 @@ async function summarizePending(context) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	if (waitingOnBackoff(result)) return "deferred";
@@ -20675,7 +21127,7 @@ const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is requir
 const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
 const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
 	return Object.freeze({
@@ -20707,7 +21159,7 @@ function snapshotWriterOptions(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
 var MissingSettlementCaptureError = class extends Error {
 	constructor() {
 		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
@@ -20715,7 +21167,7 @@ var MissingSettlementCaptureError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	try {
 		return (await refreshSettlementProgress(await settleCapturedTurns({
@@ -20756,7 +21208,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 function validateRecoveryRequest(request) {
 	const now = request.now ?? Date.now();
 	if (!Number.isSafeInteger(now) || !Number.isFinite(new Date(now).getTime())) throw new RangeError(TRACING_ENGINE_RECOVERY_TIME_MUST_BE_VALID_TIMESTAMP_MESSAGE);
@@ -20908,7 +21360,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 function retryableFailure(error) {
 	return {
 		status: "failed",
@@ -20964,7 +21416,7 @@ async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
 async function drainThroughBackoff(drain) {
 	let waitedMs = 0;
 	let result = await drain();
@@ -20981,7 +21433,7 @@ async function drainThroughBackoff(drain) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
@@ -21101,12 +21553,12 @@ async function drainSession(context) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
 function resolveUploadDestinationFingerprint(options) {
 	return resolveUploadDestinationIdentities(options).accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/session.js
 function openPluginSession(options) {
 	const { storageRoot, integration, sessionId, writer } = options;
 	const callbacks = (id) => ({
@@ -21146,19 +21598,19 @@ function fingerprintOf(writer) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
 function builtAsBinary() {
 	return typeof LS_COMPILED_BINARY !== "undefined";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
 const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
 const SYSTEM_CERTIFICATE_STORE = "system";
 const CERTIFICATE_FILE_ENCODING = "utf8";
 const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
 const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
 function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
 	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
 	if (existing === file) return { environment };
@@ -21194,7 +21646,7 @@ function readIfPresent(file) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
 function launchDetachedWorker(args, options = {}) {
 	const root = options.storageRoot;
 	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
@@ -21244,7 +21696,7 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
 const shownInProcess = /* @__PURE__ */ new Set();
 async function shouldShowNotice(options) {
 	if (options.cooldown === "off") return false;
@@ -21260,7 +21712,7 @@ ${options.kind}`;
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/paths.js
 function nearestExistingDirectory(path) {
 	let current = path;
 	for (;;) {
@@ -21273,7 +21725,7 @@ function nearestExistingDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/git/constants.js
 const GIT_LOCATION_ENV_KEYS = [
 	"GIT_DIR",
 	"GIT_WORK_TREE",
@@ -21323,7 +21775,7 @@ const GH_LOGIN_TIMEOUT_MS = 5e3;
 const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
 const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
 function findExecutable(name, env, platform) {
 	const windows = platform === WINDOWS_PLATFORM;
 	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
@@ -21338,7 +21790,7 @@ function findExecutable(name, env, platform) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/repository.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/git/repository.js
 function parseRepoName(remoteUrl) {
 	const value = remoteUrl.trim();
 	try {
@@ -21482,7 +21934,7 @@ function installedCommand(name) {
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/github-login.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/git/github-login.js
 function createGitHubLoginFallback(options) {
 	const now = options.now ?? Date.now;
 	const retryAfterMs = options.retryAfterMs ?? 864e5;
@@ -21520,7 +21972,7 @@ function createGitHubLoginFallback(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/git/paths.js
 function gitMarkerAt(directory) {
 	const marker = join(directory, GIT_DIRECTORY_NAME);
 	try {
@@ -21550,7 +22002,7 @@ function rootFromGitMarker(directory) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/git/attribution.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/git/attribution.js
 function createRepositoryAttributor(options) {
 	const rootByDirectory = /* @__PURE__ */ new Map();
 	const attributionByRoot = /* @__PURE__ */ new Map();
@@ -21645,7 +22097,7 @@ function withoutRepositoryKeys(base, pinned) {
 	return stripped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -21684,12 +22136,12 @@ const LINUX_ACCOUNT_LIST_FILE = "/etc/passwd";
 const LINUX_ACCOUNT_LOOKUPS = ["/usr/bin/getent", "/bin/getent"];
 const UTF8_BOM = /^\uFEFF/;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/parse.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/parse.js
 function invalid(raw) {
 	return {
 		status: "invalid",
@@ -21803,7 +22255,7 @@ function parseCommonConfig(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
 let cachedBunHome;
 function accountHomeDirectory() {
 	if (process.versions.bun === void 0) return nodeAccountHome();
@@ -21863,7 +22315,7 @@ function homeField(entry, field) {
 	return home !== void 0 && isAbsolute(home) ? home : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
 const warned = /* @__PURE__ */ new Set();
 function warnOnce(lines) {
 	for (const line of lines) {
@@ -21873,7 +22325,7 @@ function warnOnce(lines) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
 function onlyOwnerCanChange(stats, ownerUid) {
 	return !stats.isSymbolicLink() && stats.uid === ownerUid && (stats.mode & 18) === 0;
 }
@@ -21932,7 +22384,7 @@ function lockPluginFields(managed, fields) {
 	return Object.fromEntries(present(fields.lockable).map((name) => [name, raw[name]]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
 function lockedValues(common) {
 	const lock = { ...common };
 	for (const field of COMMON_USER_ONLY_FIELDS) delete lock[field];
@@ -21975,7 +22427,7 @@ function overrideDiagnostics(sources, lock) {
 	return [MANAGED_CONFIG_OVERRIDE_WARNING.replace("{overrides}", list)];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 /** Resolve the first supplied value from sources ordered highest priority first. */
 function resolveField(sources, field) {
 	return sources.find((source) => source[field] !== void 0)?.[field];
@@ -22055,7 +22507,7 @@ function toSdkReplicas(replicas) {
 	}));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/settings/config-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/settings/config-files.js
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
 	let fd;
@@ -22225,7 +22677,7 @@ const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload an
 const DROPPED_LOGIN_WORK_WARNING_PREFIX = "LangSmith could not accept a Codex trace upload and dropped it. Run `";
 const DROPPED_LOGIN_WORK_WARNING_SUFFIX = "` to sign in again; details are in the Codex LangSmith log.";
 /** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.4.1";
+const LS_INTEGRATION_VERSION = "0.4.2";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
@@ -24226,10 +24678,10 @@ async function queueCodexTurn(session, config, request, mode) {
 	await markTurnUploaded(transcriptPath, turnId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget(options) {
 	for (const field of [
 		"executableName",
@@ -24251,7 +24703,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.4_@opentelemetry+api@1.9.1_@opentelemetry+_9883b941b0e3cc5c32367644c5907139/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@0.5.1_langsmith@0.11.6_@opentelemetry+api@1.9.1_@opentelemetry+_d680ea30e342df953de11aafaaca92c3/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget(options);
 	return {
@@ -24472,7 +24924,7 @@ if (args.length === 0) runHook().catch((error) => {
 });
 else await dispatchHookCommand(args, {
 	usage: USAGE,
-	version: "0.4.1",
+	version: "0.4.2",
 	hooks: {},
 	worker: {
 		command: ENGINE_WORKER_FLAG,
