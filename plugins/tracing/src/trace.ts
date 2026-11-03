@@ -41,6 +41,7 @@ import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
+import { toolCodeInput } from "./utils/codeInput.js";
 import { isRecord } from "./utils/isRecord.js";
 import { isReviewResult, withoutCodexMarkup } from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
@@ -662,6 +663,7 @@ async function postToolRuns(
     const runName = nativeToolName ?? "openai.codex.tool";
 
     const skillNames = skillNamesFromToolCall(nativeToolName, msgToolCall.args);
+    const codeInput = toolCodeInput(nativeToolName, msgToolCall.args);
 
     const toolMetadata: CodingAgentMetadataOptions = {
       ...metadataContext,
@@ -674,7 +676,10 @@ async function postToolRuns(
         ls_provider: sessionMeta?.model_provider ?? undefined,
         ls_invocation_params: task.context,
       },
-      base: toolMetadataBase(context, msgToolCall.args),
+      base: {
+        ...toolMetadataBase(context, msgToolCall.args),
+        ...(codeInput ? { ls_code_input_language: codeInput.language } : {}),
+      },
     };
     const sequentialId = options.nextRunId();
     const toolRun = createRunTree(
@@ -684,7 +689,7 @@ async function postToolRuns(
         run_type: "tool",
         start_time: min,
         end_time: max,
-        inputs: { input: msgToolCall.args },
+        inputs: { input: msgToolCall.args, ...(codeInput ? { code: codeInput.code } : {}) },
         outputs: { ...toolCall.outputs, messages: [toolMessage.message] },
         error: toolCall.error,
         extra: {
