@@ -23695,6 +23695,9 @@ function convertContent(c) {
 		value: c
 	};
 }
+function withoutSystem(messages) {
+	return messages.filter(({ message }) => message.role !== "system");
+}
 function convertMessage(message) {
 	return {
 		role: (() => {
@@ -23847,21 +23850,6 @@ function getUsageMetadata(counts) {
 			cache_creation: counts.reasoning_output_tokens
 		}
 	};
-}
-function getSystemMessage(session, task) {
-	if (session?.base_instructions == null || task?.turnId == null) return [];
-	return [{
-		message: {
-			role: "system",
-			content: [{
-				type: "text",
-				text: session.base_instructions
-			}]
-		},
-		timestamp: task.turnId.timestamp,
-		tokenCount: void 0,
-		subagentThreads: []
-	}];
 }
 async function resolveTurnMode(task, sessionMeta, privacyTurnId, request) {
 	const nativeMode = sessionMeta?.session_id ? await rolloutTurnMode(request.rolloutFile, sessionMeta.session_id, privacyTurnId) : MODE_METADATA;
@@ -24020,7 +24008,7 @@ async function postModelRun(context, fullMessages, output) {
 		run_type: "llm",
 		start_time: outputStartTime,
 		end_time: outputEndTime,
-		inputs: { messages: inputMessages.map((i) => i.message) },
+		inputs: { messages: withoutSystem(inputMessages).map((i) => i.message) },
 		outputs: { messages: aiMessage.map((i) => i.message) },
 		extra: { metadata: buildChildRunMetadata(llmMetadata) }
 	}, mode, parent);
@@ -24117,7 +24105,7 @@ async function postToolRuns(context, aiMessage, toolMessages) {
 	}
 }
 async function postModelAndToolRuns(context, messages) {
-	const fullMessages = mergeMessages([...getSystemMessage(context.sessionMeta, context.task), ...messages]);
+	const fullMessages = mergeMessages(messages);
 	for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
 		const { aiMessage, toolMessages, subagentThreads } = await postModelRun(context, fullMessages, output);
 		await postToolRuns(context, aiMessage, toolMessages);
@@ -24150,7 +24138,7 @@ async function postTurn(task, sessionMeta, privacyTurnId, request) {
 		...draft,
 		childMetadataBase: childBase(draft.metadataBase, draft),
 		unattributedChildBase: childBase(unattributed.metadataBase, draft),
-		parent: await createParentRun(draft, user, agent),
+		parent: await createParentRun(draft, user, withoutSystem(agent)),
 		postedSubagentThreads: /* @__PURE__ */ new Set()
 	};
 	if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
@@ -24208,7 +24196,6 @@ function readSessionMeta(payload) {
 	return {
 		session_id: payload.id,
 		model_provider: payload.model_provider ?? void 0,
-		base_instructions: payload.base_instructions?.text,
 		cli_version: payload.cli_version,
 		cwd: payload.cwd,
 		is_subagent: isSubagent,

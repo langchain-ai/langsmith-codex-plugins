@@ -139,6 +139,10 @@ function convertContent(c: Record<string, unknown>): StandardMessage["content"][
   return { type: "non_standard", value: c };
 }
 
+function withoutSystem(messages: MergedMessage<StandardMessage>[]) {
+  return messages.filter(({ message }) => message.role !== "system");
+}
+
 function convertMessage(message: ResponseItemOf<"message">): StandardMessage {
   const role = (() => {
     if (message.role === "developer") return "system";
@@ -309,27 +313,6 @@ function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknow
       cache_creation: counts.reasoning_output_tokens,
     },
   };
-}
-
-function getSystemMessage(
-  session: Session | undefined,
-  task: Task | undefined,
-): AggregateMessage<StandardMessage>[] {
-  if (session?.base_instructions == null || task?.turnId == null) {
-    return [];
-  }
-
-  return [
-    {
-      message: {
-        role: "system",
-        content: [{ type: "text", text: session.base_instructions }],
-      },
-      timestamp: task.turnId.timestamp,
-      tokenCount: undefined,
-      subagentThreads: [],
-    },
-  ];
 }
 
 async function resolveTurnMode(
@@ -568,7 +551,7 @@ async function postModelRun(
       run_type: "llm",
       start_time: outputStartTime,
       end_time: outputEndTime,
-      inputs: { messages: inputMessages.map((i) => i.message) },
+      inputs: { messages: withoutSystem(inputMessages).map((i) => i.message) },
       outputs: { messages: aiMessage.map((i) => i.message) },
       extra: {
         metadata: buildChildRunMetadata(llmMetadata),
@@ -704,10 +687,7 @@ async function postModelAndToolRuns(
   context: TurnRunContext,
   messages: AggregateMessage<StandardMessage>[],
 ) {
-  const fullMessages = mergeMessages([
-    ...getSystemMessage(context.sessionMeta, context.task),
-    ...messages,
-  ]);
+  const fullMessages = mergeMessages(messages);
 
   for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
     const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
@@ -773,7 +753,7 @@ async function postTurn(
     ...draft,
     childMetadataBase: childBase(draft.metadataBase, draft),
     unattributedChildBase: childBase(unattributed.metadataBase, draft),
-    parent: await createParentRun(draft, user, agent),
+    parent: await createParentRun(draft, user, withoutSystem(agent)),
     postedSubagentThreads: new Set<string>(),
   };
 
@@ -871,7 +851,6 @@ function readSessionMeta(payload: SessionMetaPayload): Session {
   return {
     session_id: payload.id,
     model_provider: payload.model_provider ?? undefined,
-    base_instructions: payload.base_instructions?.text,
     cli_version: payload.cli_version,
     cwd: payload.cwd,
     is_subagent: isSubagent,
