@@ -1,5 +1,7 @@
 // Frozen literals for the Codex integration (see validator.json).
 import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
+import type { PromptCommand } from "@langchain/plugins-base/plugin";
+import type { PromptCommandName } from "./models/hook-input.js";
 
 /** Identifies this plugin as the trace source. */
 export const LS_INTEGRATION = "openai-codex";
@@ -55,9 +57,25 @@ export const POLICY_THREAD_KEYS: readonly string[] = ["preference", "turns", "in
 export const POLICY_TOP_LEVEL_KEYS: readonly string[] = ["version", "threads"];
 export const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
 export const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
-export const MUTE_COMMAND = "langsmith-tracing:mute";
-export const UNMUTE_COMMAND = "langsmith-tracing:unmute";
-export const LOCKED_MUTE_REPLY = "Thread tracing stays muted because your admin locked muting.";
+export const PROMPT_COMMANDS = [
+  { name: "mute", text: "langsmith-tracing:mute", takesArguments: false },
+  { name: "unmute", text: "langsmith-tracing:unmute", takesArguments: false },
+  { name: "setup", text: "langsmith-tracing:setup", takesArguments: true },
+] as const satisfies readonly PromptCommand<string>[];
+export const TRACING_COMMANDS = ["mute", "unmute"] as const satisfies readonly PromptCommandName[];
+export const LOCKED_MUTE_REPLY =
+  "An admin has enabled muting for all sessions, so this thread cannot be unmuted.";
+export const MUTED_REPLY_STATE = "muted (metadata-only)";
+export const UNMUTED_REPLY_STATE = "unmuted (full content)";
+export const PREFERENCE_REPLY =
+  "Thread tracing {state}. Preference saved for the next turn; the current turn is unchanged.";
+export const PREFERENCE_REPLY_STATE = "{state}";
+export const MASTER_DISABLED_REPLY =
+  "Tracing is disabled. Changes will not take effect until it's configured with langsmith-tracing:setup.";
+export const PREFERENCE_REPLY_WARNING = "Warning:";
+export const EVIDENCE_FAILURE_PREFIX = "Could not save tracing preference/turn evidence:";
+export const EVIDENCE_REPAIR_HINT = "Repair the privacy file or permissions and retry.";
+export const SENTENCE_END = ".";
 
 export const SUBAGENT_SCOPE_RESET = {
   approval_policy: undefined,

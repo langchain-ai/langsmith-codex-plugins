@@ -1,3 +1,4 @@
+import type { UploadCredential } from "@langchain/plugins-base/auth";
 import type { PluginSessionOptions } from "@langchain/plugins-base/plugin";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
 import type { ReconstructionOutput } from "@langchain/plugins-base/tracing/reconstruction";
@@ -54,3 +55,7 @@ export interface ParentDestination {
   agentId?: string;
   projectName?: string;
 }
+
+export type UploadAuth =
+  | Exclude<UploadCredential, { kind: "none" }>
+  | { kind: "none"; apiKey: string; apiUrl: string };

@@ -13,7 +13,8 @@ vi.mock("@langchain/plugins-base/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@langchain/plugins-base/auth")>()),
   readLoginNotice: (...args: unknown[]) => {
     launch.profile = args[3] as string | undefined;
-    return launch.notice;
+    const rejected = args[2] as { apiUrl: string } | undefined;
+    return launch.notice?.replace("{apiUrl}", rejected?.apiUrl ?? "");
   },
 }));
 
@@ -71,4 +72,30 @@ it("asks for the sign-in notice of the configured CLI profile", async () => {
   await fs.writeFile(path.join(home, ".langsmith-plugins.json"), '{"profile":"work"}');
   await submit("one");
   expect(launch.profile).toBe("work");
+});
+
+it("refuses a setup prompt with the sign-in problem for the URL setup just saved", async () => {
+  await fs.mkdir(path.join(home, ".codex"));
+  await fs.writeFile(
+    path.join(home, ".codex", "langsmith.json"),
+    '{"api_url":"http://127.0.0.1:8"}',
+  );
+  launch.notice = "key rejected by {apiUrl}";
+
+  const result = await submit("one", "langsmith-tracing:setup proj http://127.0.0.1:9");
+
+  expect(result?.decision).toBe("block");
+  expect(result?.reason).toContain("key rejected by http://127.0.0.1:9");
+  expect(result?.reason).not.toContain("http://127.0.0.1:8");
+});
+
+it("still refuses a command and an ordinary prompt when the preference file is broken", async () => {
+  await fs.mkdir(path.join(home, ".codex"));
+  await fs.writeFile(path.join(home, ".codex", "langsmith_state_privacy.json"), "{not json");
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+  expect((await submit("one", "langsmith-tracing:mute"))?.reason).toMatch(
+    /^Could not save tracing preference.*\n\nkey rejected$/su,
+  );
+  expect(await submit("two")).toEqual({ decision: "block", reason: "key rejected" });
 });
