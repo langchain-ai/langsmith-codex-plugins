@@ -1,4 +1,4 @@
-import { TOOL_OUTPUT_ENVELOPE_KEYS } from "../constants.js";
+import { BACKSLASH_ESCAPE, STRING_ESCAPES, TOOL_OUTPUT_ENVELOPE_KEYS } from "../constants.js";
 import { isRecord } from "./isRecord.js";
 
 export function customToolInput(args: unknown): unknown {
@@ -30,4 +30,13 @@ export function toolOutputText(value: unknown): string {
       : `${record.output.trimEnd()}\n\nExit code: ${String(exitCode)}`;
   }
   return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+export function stringLiterals(program: string, pattern: RegExp): string[] {
+  return [...program.matchAll(pattern)].map(([, double, single, backtick]) =>
+    (double ?? single ?? backtick).replace(
+      BACKSLASH_ESCAPE,
+      (_, char: string) => STRING_ESCAPES[char] ?? char,
+    ),
+  );
 }

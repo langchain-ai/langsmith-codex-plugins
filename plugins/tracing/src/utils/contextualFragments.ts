@@ -5,6 +5,7 @@ import {
   QUESTION_REPLY_PATTERN,
   REALTIME_DELEGATION_PATTERN,
   REVIEW_RESULT_PATTERN,
+  SKILL_FRAGMENT_NAME,
   USER_SHELL_COMMAND_PATTERN,
   XML_ENTITIES,
   XML_ENTITY_PATTERN,
@@ -64,4 +65,11 @@ export function withoutCodexMarkup(item: ResponseItem): ResponseItem | undefined
   if (item.type !== "message" || item.role !== "user") return item;
   const content = item.content.filter((part) => !isContextualFragment(part)).map(unwrapPart);
   return content.length > 0 || item.content.length === 0 ? { ...item, content } : undefined;
+}
+
+export function typedSkillNames(item: ResponseItem): string[] {
+  if (item.type !== "message" || item.role !== "user") return [];
+  return item.content.flatMap((part) =>
+    typeof part.text === "string" ? (SKILL_FRAGMENT_NAME.exec(part.text.trim())?.[1] ?? []) : [],
+  );
 }

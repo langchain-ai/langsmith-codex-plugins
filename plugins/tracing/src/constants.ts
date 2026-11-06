@@ -71,7 +71,7 @@ export const SKILL_SCOPE_RESET = {
 
 export const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
 export const TOOL_PATH_INPUT_KEYS = ["file_path", "path", "workdir", "cwd"] as const;
-export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/m;
+export const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
 export const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
 export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
   "start_time",
@@ -159,6 +159,8 @@ export const TOOLS_WITH_END_EVENTS = new Set([...SHELL_TOOL_NAMES, "apply_patch"
 
 // A shell word: no whitespace, no quotes.
 export const SHELL_WORD = /[^\s"']+/g;
+export const SKILLS_FOLDERS = new Set(["skills", "migrated-command-skills"]);
+export const NON_SKILL_SUBFOLDERS = new Set(["references", "scripts", "assets", "templates"]);
 export const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // Anchored, so a read verb inside a path argument is not mistaken for the command.
@@ -174,6 +176,14 @@ export const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
 // The `cmd:` string of one exec_command call, in double, single or backtick quotes.
 export const COMMAND_LITERAL =
   /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+
+export const WORKDIR_LITERAL =
+  /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+
+export const SHELL_WRAPPER =
+  /^\s*(?:\S*\/)?(?:ba|z)?sh\s+-\w*c\s+(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)')\s*$/;
+export const SKILL_FRAGMENT_NAME = /^<skill>\s*<name>([^<\s]+)<\/name>/i;
+export const NONZERO_EXIT_SUFFIX = /\n\nExit code: -?[1-9]\d*\s*$/;
 
 // The literal is source text, so `\n` between two commands arrives as two characters.
 export const BACKSLASH_ESCAPE = /\\([\s\S])/g;
