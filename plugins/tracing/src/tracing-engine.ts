@@ -49,6 +49,7 @@ import type {
   LiveToolRequest,
   LiveToolRuns,
   ParentDestination,
+  UploadAuth,
 } from "./models/tracing-engine.js";
 import type { TracingMode } from "./models/tracing-policy.js";
 import { convertToRunTree } from "./trace.js";
@@ -310,26 +311,38 @@ export function uploadCredential(config: Config): UploadCredential {
   });
 }
 
-function writerOptions(
-  config: Config,
-  storageRoot: string,
-): LangSmithUploadWriterOptions | undefined {
+export function loginRefusal(config: Config, credential: UploadCredential): string | undefined {
+  return credential.kind === "login"
+    ? loginReplicaRefusal(toSdkReplicas(config.replicas), credential.apiUrl)
+    : undefined;
+}
+
+export function uploadAuth(config: Config): UploadAuth | undefined {
   if (config.managedConfigProblem !== undefined) return undefined;
   if (config.api_key !== undefined && sdkSetting(config.api_key) === undefined) return undefined;
   const credential = uploadCredential(config);
   const keyedReplica = config.replicas?.some((replica) => sdkSetting(replica.api_key));
   if (credential.kind === "none" && !keyedReplica) return undefined;
-  const refusal =
-    credential.kind === "login"
-      ? loginReplicaRefusal(toSdkReplicas(config.replicas), credential.apiUrl)
-      : undefined;
+  const refusal = loginRefusal(config, credential);
   if (refusal !== undefined) return undefined;
-  const { kind, ...auth } =
-    credential.kind === "none"
-      ? { kind: credential.kind, apiKey: "", apiUrl: config.api_url ?? DEFAULT_LANGSMITH_API_URL }
-      : credential.kind === "api-key"
-        ? { ...credential, apiKey: config.api_key ?? credential.apiKey }
-        : credential;
+  if (credential.kind === "none")
+    return {
+      kind: credential.kind,
+      apiKey: "",
+      apiUrl: config.api_url ?? DEFAULT_LANGSMITH_API_URL,
+    };
+  if (credential.kind === "api-key")
+    return { ...credential, apiKey: config.api_key ?? credential.apiKey };
+  return credential;
+}
+
+function writerOptions(
+  config: Config,
+  storageRoot: string,
+): LangSmithUploadWriterOptions | undefined {
+  const resolved = uploadAuth(config);
+  if (resolved === undefined) return undefined;
+  const { kind, ...auth } = resolved;
   const parent =
     config.locked.includes("project") || config.locked.includes("agent_id")
       ? {}
