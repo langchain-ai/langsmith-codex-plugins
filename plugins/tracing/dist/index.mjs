@@ -22911,7 +22911,7 @@ const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload an
 const DROPPED_LOGIN_WORK_WARNING_PREFIX = "LangSmith could not accept a Codex trace upload and dropped it. Run `";
 const DROPPED_LOGIN_WORK_WARNING_SUFFIX = "` to sign in again; details are in the Codex LangSmith log.";
 /** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.4.2";
+const LS_INTEGRATION_VERSION = "0.4.3";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
 const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
@@ -25297,7 +25297,7 @@ if (args.length === 0) runHook().catch((error) => {
 });
 else await dispatchHookCommand(args, {
 	usage: USAGE,
-	version: "0.4.2",
+	version: "0.4.3",
 	hooks: {},
 	worker: {
 		command: ENGINE_WORKER_FLAG,
