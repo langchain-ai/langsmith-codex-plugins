@@ -42,7 +42,11 @@ import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
 import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
-import { isReviewResult, withoutCodexMarkup } from "./utils/contextualFragments.js";
+import {
+  isReviewResult,
+  typedSkillNames,
+  withoutCodexMarkup,
+} from "./utils/contextualFragments.js";
 import { omitKey } from "./utils/omitKey.js";
 import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
@@ -60,6 +64,7 @@ import {
   MODE_FULL,
   MODE_METADATA,
   MODE_OFF,
+  NONZERO_EXIT_SUFFIX,
   OPEN_TURN_END,
   SKILL_SCOPE_RESET,
   SUBAGENT_SCOPE_RESET,
@@ -586,7 +591,7 @@ async function postSkillRuns(
   context: TurnRunContext,
   skillNames: string[],
   window: TimeWindow,
-  toolCall: Task["toolCalls"][string],
+  success: boolean,
 ) {
   const { metadataContext, childMetadataBase, mode, parent } = context;
   const { min, max } = window;
@@ -610,7 +615,7 @@ async function postSkillRuns(
         // Wrapped like every other tool run, so one JSON path fits every harness.
         inputs: { input: { skill: skillName } },
         // The rollout never shows the skill's own result, only the read's.
-        outputs: { output: { commandName: skillName, success: toolCall.error == null } },
+        outputs: { output: { commandName: skillName, success } },
         extra: {
           metadata: buildChildRunMetadata(skillMetadata, SKILL_SCOPE_RESET),
         },
@@ -696,7 +701,10 @@ async function postToolRuns(
     );
     await options.captureRun(toolRun, mode, toolMetadata);
 
-    await postSkillRuns(context, skillNames, { min, max }, toolCall);
+    const text = toolMessage.message.content.find((c) => c.type === "text")?.text;
+    const succeeded =
+      toolCall.error == null && !(typeof text === "string" && NONZERO_EXIT_SUFFIX.test(text));
+    await postSkillRuns(context, skillNames, { min, max }, succeeded);
   }
 }
 
@@ -708,6 +716,21 @@ async function postModelAndToolRuns(
     ...getSystemMessage(context.sessionMeta, context.task),
     ...messages,
   ]);
+
+  const readSkills = new Set(
+    fullMessages.flatMap(({ message }) =>
+      message.role === "ai"
+        ? message.content
+            .filter((c) => c.type === "tool_call")
+            .flatMap((c) =>
+              skillNamesFromToolCall(typeof c.name === "string" ? c.name : undefined, c.args),
+            )
+        : [],
+    ),
+  );
+  const typed = context.task.typedSkills.filter((name) => !readSkills.has(name));
+  const start = context.parentStartTime;
+  await postSkillRuns(context, typed, { min: start, max: start }, true);
 
   for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
     const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
@@ -841,6 +864,7 @@ function createTask(): Task {
     error: undefined,
     isErrorInterrupt: false,
     isReviewResult: false,
+    typedSkills: [],
     subagentThreads: [],
     toolCalls: {},
   };
@@ -885,6 +909,9 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
   walk.task ??= createTask();
   const task = walk.task;
   if (isReviewResult(item)) task.isReviewResult = true;
+  for (const name of typedSkillNames(item)) {
+    if (!task.typedSkills.includes(name)) task.typedSkills.push(name);
+  }
   const payload = withoutCodexMarkup(item);
   if (payload == null) return;
   const message = {
