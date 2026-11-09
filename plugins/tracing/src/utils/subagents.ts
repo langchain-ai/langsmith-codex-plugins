@@ -17,6 +17,15 @@ export function extractSpawnedAgentId(output: unknown): string | undefined {
   return undefined;
 }
 
+export function extractSpawnedAgentPath(output: unknown): string | undefined {
+  try {
+    const obj: unknown = typeof output === "string" ? JSON.parse(output) : output;
+    return isRecord(obj) && typeof obj.task_name === "string" ? obj.task_name : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function extractSubagentActivities(payload: Record<string, unknown>) {
   const activities: { threadId: string; callId?: string }[] = [];
 
