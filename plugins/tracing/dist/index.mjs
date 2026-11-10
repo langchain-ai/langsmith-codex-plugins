@@ -23511,12 +23511,19 @@ function toolOriginFromArgs(toolArgs, cwd) {
 async function* loadSession(name) {
 	const input = createReadStream(name, ROLLOUT_ENCODING);
 	try {
-		let rest = "";
+		let pending = [];
 		for await (const chunk of input) {
-			const lines = (rest + chunk).split("\n");
-			rest = lines.pop() ?? "";
-			for (const line of lines) if (line) yield JSON.parse(line);
+			let start = 0;
+			let end;
+			while ((end = chunk.indexOf("\n", start)) !== -1) {
+				const line = pending.join("") + chunk.slice(start, end);
+				pending = [];
+				if (line) yield JSON.parse(line);
+				start = end + 1;
+			}
+			pending.push(chunk.slice(start));
 		}
+		const rest = pending.join("");
 		if (rest) yield JSON.parse(rest);
 	} finally {
 		input.destroy();

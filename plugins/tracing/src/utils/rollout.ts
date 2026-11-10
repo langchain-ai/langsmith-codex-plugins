@@ -8,12 +8,19 @@ import { homeDirectory } from "./home.js";
 export async function* loadSession(name: string): AsyncGenerator<LineSchema> {
   const input = createReadStream(name, ROLLOUT_ENCODING);
   try {
-    let rest = "";
+    let pending: string[] = [];
     for await (const chunk of input) {
-      const lines = (rest + chunk).split("\n");
-      rest = lines.pop() ?? "";
-      for (const line of lines) if (line) yield JSON.parse(line) as LineSchema;
+      let start = 0;
+      let end: number;
+      while ((end = chunk.indexOf("\n", start)) !== -1) {
+        const line = pending.join("") + chunk.slice(start, end);
+        pending = [];
+        if (line) yield JSON.parse(line) as LineSchema;
+        start = end + 1;
+      }
+      pending.push(chunk.slice(start));
     }
+    const rest = pending.join("");
     if (rest) yield JSON.parse(rest) as LineSchema;
   } finally {
     input.destroy();
