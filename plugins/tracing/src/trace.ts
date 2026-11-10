@@ -52,7 +52,11 @@ import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
 import { toolOriginFromArgs } from "./tool-path.js";
 import { loadSession, findRolloutFileByThreadId } from "./utils/rollout.js";
-import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
+import {
+  extractSpawnedAgentId,
+  extractSpawnedAgentPath,
+  extractSubagentActivities,
+} from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
   CHILD_SCOPE_RESET,
@@ -245,11 +249,16 @@ function convertReasoning(message: ResponseItemOf<"reasoning">): StandardMessage
 
 function convertAgentMessage(
   message: ResponseItemOf<"agent_message">,
+  spawnedAgents: Map<string, string>,
 ): StandardMessage | undefined {
   const content = message.content
     .filter((part) => part.type !== "encrypted_content")
     .map(convertContent);
-  return content.length > 0 ? { role: "user", content } : undefined;
+  const spawnCallId = spawnedAgents.get(message.author);
+  if (content.length === 0) return undefined;
+  return spawnCallId != null
+    ? { role: "tool", content, tool_call_id: spawnCallId }
+    : { role: "user", content };
 }
 
 function convertHostedToolCall(
@@ -266,7 +275,10 @@ function convertHostedToolCall(
   return { role: "ai", content: [{ type: "tool_call", name: message.type, id, args }] };
 }
 
-function convertItem(message: ResponseItem): StandardMessage | undefined {
+function convertItem(
+  message: ResponseItem,
+  spawnedAgents: Map<string, string>,
+): StandardMessage | undefined {
   if (message.type === "message") return convertMessage(message);
   if (message.type === "function_call") return convertFunctionCall(message);
   if (message.type === "function_call_output") return convertToolOutput(message);
@@ -275,7 +287,7 @@ function convertItem(message: ResponseItem): StandardMessage | undefined {
   if (message.type === "tool_search_call") return convertToolSearchCall(message);
   if (message.type === "tool_search_output") return convertToolSearchOutput(message);
   if (message.type === "reasoning") return convertReasoning(message);
-  if (message.type === "agent_message") return convertAgentMessage(message);
+  if (message.type === "agent_message") return convertAgentMessage(message, spawnedAgents);
   if (
     message.type === "local_shell_call" ||
     message.type === "web_search_call" ||
@@ -287,8 +299,17 @@ function convertItem(message: ResponseItem): StandardMessage | undefined {
 }
 
 function convertToStandardMessages(messages: AggregateMessage<ResponseItem>[]) {
+  const spawnCallIds = new Set<string>();
+  const spawnedAgents = new Map<string, string>();
   return messages.flatMap(({ message, ...rest }): AggregateMessage<StandardMessage>[] => {
-    const converted = convertItem(message);
+    if (message.type === "function_call" && message.name === "spawn_agent") {
+      spawnCallIds.add(message.call_id);
+    }
+    if (message.type === "function_call_output" && spawnCallIds.has(message.call_id)) {
+      const childPath = extractSpawnedAgentPath(message.output);
+      if (childPath != null) spawnedAgents.set(childPath, message.call_id);
+    }
+    const converted = convertItem(message, spawnedAgents);
     return converted == null ? [] : [{ message: converted, ...rest }];
   });
 }
@@ -634,6 +655,7 @@ async function postToolRuns(
 ) {
   const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
   const options = context.request.options;
+  const postedToolCallIds = new Set<string>();
   for (const toolMessage of toolMessages) {
     if (toolMessage.message.role !== "tool") continue;
     const toolCallId =
@@ -646,7 +668,8 @@ async function postToolRuns(
       ?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
 
     // Ignore tool calls that don't have a tool call id
-    if (toolCallId == null || msgToolCall == null) continue;
+    if (toolCallId == null || msgToolCall == null || postedToolCallIds.has(toolCallId)) continue;
+    postedToolCallIds.add(toolCallId);
 
     const toolCall = task.toolCalls?.[toolCallId] ?? {
       error: undefined,

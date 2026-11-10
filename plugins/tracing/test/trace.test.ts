@@ -1565,6 +1565,47 @@ it("shows Codex's hosted tools and agent messages as conversation", async () => 
   ]);
 });
 
+it("shows a subagent's reply as the result of the call that spawned it", async () => {
+  const spawn = (callId: string) => ({
+    type: "function_call",
+    call_id: callId,
+    name: "spawn_agent",
+    arguments: "{}",
+  });
+  const spawned = (callId: string, path: string) => ({
+    type: "function_call_output",
+    call_id: callId,
+    output: JSON.stringify({ task_name: path }),
+  });
+  const agentMessage = (author: string, recipient: string, text: string) => ({
+    type: "agent_message",
+    author,
+    recipient,
+    content: [{ type: "input_text", text }],
+  });
+  const runs = await traceScaffoldedTurn([
+    spawn("s1"),
+    spawn("s2"),
+    spawned("s1", "/root/worker"),
+    spawned("s2", "/root/helper"),
+    agentMessage("/root/worker", "/root", "3 files"),
+    agentMessage("/root", "/root/worker", "Count again"),
+    { type: "function_call", call_id: "r1", name: "report", arguments: "{}" },
+    spawned("r1", "/root/other"),
+    agentMessage("/root/other", "/root", "Not mine"),
+  ]);
+  const turn = runs.find((run) => run.name === "openai.codex");
+
+  expect(turn?.outputs?.messages.slice(3, 5)).toEqual([
+    { role: "tool", content: [{ type: "text", text: "3 files" }], tool_call_id: "s1" },
+    { role: "user", content: [{ type: "text", text: "Count again" }] },
+  ]);
+  expect(turn?.outputs?.messages.slice(7, 8)).toEqual([
+    { role: "user", content: [{ type: "text", text: "Not mine" }] },
+  ]);
+  expect(runs.filter((run) => run.name === "spawn_agent")).toHaveLength(2);
+});
+
 const BARE_FILE = "/home/codex-user/.codex/sessions/2026/10/27/rollout-bare.jsonl";
 const BARE_TURN = "019900bb-tttt-0112";
 const SHELL_COMMAND =

@@ -23563,6 +23563,14 @@ function extractSpawnedAgentId(output) {
 		if (typeof id === "string") return id;
 	}
 }
+function extractSpawnedAgentPath(output) {
+	try {
+		const obj = typeof output === "string" ? JSON.parse(output) : output;
+		return isRecord(obj) && typeof obj.task_name === "string" ? obj.task_name : void 0;
+	} catch {
+		return;
+	}
+}
 function extractSubagentActivities(payload) {
 	const activities = [];
 	if (payload.type === "sub_agent_activity" && payload.kind === "started") {
@@ -23829,12 +23837,18 @@ function convertReasoning(message) {
 		}]
 	};
 }
-function convertAgentMessage(message) {
+function convertAgentMessage(message, spawnedAgents) {
 	const content = message.content.filter((part) => part.type !== "encrypted_content").map(convertContent);
-	return content.length > 0 ? {
+	const spawnCallId = spawnedAgents.get(message.author);
+	if (content.length === 0) return void 0;
+	return spawnCallId != null ? {
+		role: "tool",
+		content,
+		tool_call_id: spawnCallId
+	} : {
 		role: "user",
 		content
-	} : void 0;
+	};
 }
 function convertHostedToolCall(message) {
 	const id = message.type === "local_shell_call" ? message.call_id : message.id;
@@ -23849,7 +23863,7 @@ function convertHostedToolCall(message) {
 		}]
 	};
 }
-function convertItem(message) {
+function convertItem(message, spawnedAgents) {
 	if (message.type === "message") return convertMessage(message);
 	if (message.type === "function_call") return convertFunctionCall(message);
 	if (message.type === "function_call_output") return convertToolOutput(message);
@@ -23858,12 +23872,19 @@ function convertItem(message) {
 	if (message.type === "tool_search_call") return convertToolSearchCall(message);
 	if (message.type === "tool_search_output") return convertToolSearchOutput(message);
 	if (message.type === "reasoning") return convertReasoning(message);
-	if (message.type === "agent_message") return convertAgentMessage(message);
+	if (message.type === "agent_message") return convertAgentMessage(message, spawnedAgents);
 	if (message.type === "local_shell_call" || message.type === "web_search_call" || message.type === "image_generation_call") return convertHostedToolCall(message);
 }
 function convertToStandardMessages(messages) {
+	const spawnCallIds = /* @__PURE__ */ new Set();
+	const spawnedAgents = /* @__PURE__ */ new Map();
 	return messages.flatMap(({ message, ...rest }) => {
-		const converted = convertItem(message);
+		if (message.type === "function_call" && message.name === "spawn_agent") spawnCallIds.add(message.call_id);
+		if (message.type === "function_call_output" && spawnCallIds.has(message.call_id)) {
+			const childPath = extractSpawnedAgentPath(message.output);
+			if (childPath != null) spawnedAgents.set(childPath, message.call_id);
+		}
+		const converted = convertItem(message, spawnedAgents);
 		return converted == null ? [] : [{
 			message: converted,
 			...rest
@@ -24099,11 +24120,13 @@ async function postSkillRuns(context, skillNames, window, success) {
 async function postToolRuns(context, aiMessage, toolMessages) {
 	const { task, sessionMeta, metadataContext, childMetadataBase, mode, parent } = context;
 	const options = context.request.options;
+	const postedToolCallIds = /* @__PURE__ */ new Set();
 	for (const toolMessage of toolMessages) {
 		if (toolMessage.message.role !== "tool") continue;
 		const toolCallId = typeof toolMessage.message.tool_call_id === "string" ? toolMessage.message.tool_call_id : void 0;
 		const msgToolCall = aiMessage.at(0)?.message.content.find((c) => c.type === "tool_call" && c.id === toolCallId);
-		if (toolCallId == null || msgToolCall == null) continue;
+		if (toolCallId == null || msgToolCall == null || postedToolCallIds.has(toolCallId)) continue;
+		postedToolCallIds.add(toolCallId);
 		const toolCall = task.toolCalls?.[toolCallId] ?? {
 			error: void 0,
 			timings: [],
