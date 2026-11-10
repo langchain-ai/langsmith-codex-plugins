@@ -1,18 +1,32 @@
+import { createReadStream } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { CODEX_CONFIG_DIRECTORY } from "../constants.js";
+import { CODEX_CONFIG_DIRECTORY, ROLLOUT_ENCODING } from "../constants.js";
 import type { DirectoryEntry, LineSchema } from "../models/rollout.js";
 import { homeDirectory } from "./home.js";
 
-export async function loadSession(name: string) {
-  const data = await fs.readFile(name, "utf-8");
+export async function* loadSession(name: string): AsyncGenerator<LineSchema> {
+  const input = createReadStream(name, ROLLOUT_ENCODING);
+  try {
+    let rest = "";
+    for await (const chunk of input) {
+      const lines = (rest + chunk).split("\n");
+      rest = lines.pop() ?? "";
+      for (const line of lines) if (line) yield JSON.parse(line) as LineSchema;
+    }
+    if (rest) yield JSON.parse(rest) as LineSchema;
+  } finally {
+    input.destroy();
+  }
+}
 
-  const result = data
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as LineSchema);
-
-  return result;
+export async function* markLast<T>(items: AsyncIterable<T>): AsyncGenerator<[T, boolean]> {
+  let held: [T] | undefined;
+  for await (const item of items) {
+    if (held) yield [held[0], false];
+    held = [item];
+  }
+  if (held) yield [held[0], true];
 }
 
 // Anchor at the real sessions root (nearest `sessions` ancestor, or

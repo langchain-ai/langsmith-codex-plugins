@@ -1,7 +1,7 @@
 import * as nodeFsPromises from "node:fs/promises";
 import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodeFs from "node:fs";
-import { accessSync, closeSync, constants, copyFileSync, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { accessSync, closeSync, constants, copyFileSync, createReadStream, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
@@ -22883,6 +22883,7 @@ const CAPTURE_SAVED_STATUSES = ["published", "duplicate"];
 const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for upload:";
 const TOOL_RUN_ID_SEGMENT = ":tool:";
 const TOOL_OUTPUT_WAIT_MS = 3e3;
+const ROLLOUT_ENCODING = "utf-8";
 const OPEN_TURN_END = "langsmith_open_turn_end";
 const TOOL_ITEM_TYPES = [
 	"CommandExecution",
@@ -22913,7 +22914,7 @@ const DROPPED_LOGIN_WORK_WARNING_SUFFIX = "` to sign in again; details are in th
 /** Plugin version, or undefined outside a bundled build. */
 const LS_INTEGRATION_VERSION = "0.4.3";
 const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
-const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
+const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set(["exec_command", "apply_patch"]);
 const SHELL_WORD = /[^\s"']+/g;
 const SKILLS_FOLDERS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
 const NON_SKILL_SUBFOLDERS = /* @__PURE__ */ new Set([
@@ -23404,15 +23405,6 @@ async function inheritThreadMode(file, sessionId, mode) {
 	return inherited;
 }
 //#endregion
-//#region src/utils/enumerate.ts
-function* enumerate(arr) {
-	for (let i = 0; i < arr.length; i++) yield [
-		i,
-		arr[i],
-		arr
-	];
-}
-//#endregion
 //#region src/utils/contextualFragments.ts
 function isContextualFragment(part) {
 	if (part.type !== "input_text" || typeof part.text !== "string") return false;
@@ -23516,8 +23508,27 @@ function toolOriginFromArgs(toolArgs, cwd) {
 }
 //#endregion
 //#region src/utils/rollout.ts
-async function loadSession(name) {
-	return (await nodeFsPromises.readFile(name, "utf-8")).split("\n").filter(Boolean).map((line) => JSON.parse(line));
+async function* loadSession(name) {
+	const input = createReadStream(name, ROLLOUT_ENCODING);
+	try {
+		let rest = "";
+		for await (const chunk of input) {
+			const lines = (rest + chunk).split("\n");
+			rest = lines.pop() ?? "";
+			for (const line of lines) if (line) yield JSON.parse(line);
+		}
+		if (rest) yield JSON.parse(rest);
+	} finally {
+		input.destroy();
+	}
+}
+async function* markLast(items) {
+	let held;
+	for await (const item of items) {
+		if (held) yield [held[0], false];
+		held = [item];
+	}
+	if (held) yield [held[0], true];
 }
 function resolveSessionsRoot(parentFileName) {
 	let dir = nodePath.dirname(nodePath.resolve(parentFileName));
@@ -23608,7 +23619,7 @@ async function launchedTurns(parentFile, sessionId) {
 	let nativeTurn;
 	const calls = /* @__PURE__ */ new Map();
 	const launches = /* @__PURE__ */ new Set();
-	for (const event of await loadSession(parentFile)) {
+	for await (const event of loadSession(parentFile)) {
 		if (event.type === "event_msg") {
 			if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
 			const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -23638,7 +23649,11 @@ async function parentLaunchMode(file, sessionId, parentId, visited) {
 async function rolloutTurnMode(file, sessionId, turnId, visited = /* @__PURE__ */ new Set()) {
 	if (visited.has(sessionId)) return MODE_METADATA;
 	visited.add(sessionId);
-	const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+	let meta;
+	for await (const event of loadSession(file)) if (event.type === "session_meta") {
+		meta = event;
+		break;
+	}
 	if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return MODE_METADATA;
 	const parentId = parentThreadId(meta);
 	if (!isChildSession(meta, parentId)) return savedTurnMode(defaultPrivacyPath(), sessionId, turnId);
@@ -24017,10 +24032,11 @@ async function postSubagentThread(context, subagentThread) {
 	context.postedSubagentThreads.add(subagentThread);
 	const subagentFile = await findRolloutFileByThreadId(context.request.rolloutFile, subagentThread);
 	if (subagentFile == null) return;
-	const events = await loadSession(subagentFile);
+	let lastEvent;
+	for await (const event of loadSession(subagentFile)) if (event.type === "event_msg" && event.payload.turn_id != null) lastEvent = event;
 	await convertToRunTree({
 		transcript_path: subagentFile,
-		turn_id: findLast(events, (event) => event.type === "event_msg" && event.payload.turn_id != null)?.payload.turn_id ?? null
+		turn_id: lastEvent?.payload.turn_id ?? null
 	}, {
 		...context.request.options,
 		parentRunTree: context.parent,
@@ -24388,8 +24404,20 @@ function recordEventMessage(walk, payload, eventTime) {
 		recordTurnError(walk.task, payload);
 	}
 }
-function endsTurn(walk, payload, position, input) {
-	return payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || walk.task != null && position.index === position.length - 1 && input.turn_id != null;
+function endsTurn(walk, payload, isLast, input) {
+	return payload.type === "task_complete" || payload.type === "turn_complete" || payload.type === "turn_aborted" || walk.task != null && isLast && input.turn_id != null;
+}
+async function* rolloutEvents(input) {
+	let last;
+	for await (const event of loadSession(input.transcript_path)) {
+		last = event;
+		yield event;
+	}
+	if (input.includeOpenTurn && last !== void 0 && last.type !== "event_msg") yield {
+		timestamp: last.timestamp,
+		type: "event_msg",
+		payload: { type: OPEN_TURN_END }
+	};
 }
 async function walkCompletedTurns(input, onTurn) {
 	const walk = {
@@ -24399,17 +24427,7 @@ async function walkCompletedTurns(input, onTurn) {
 		spawnAgentMessages: /* @__PURE__ */ new Map(),
 		sessionTokenTotal: void 0
 	};
-	const events = await loadSession(input.transcript_path);
-	const last = events.at(-1);
-	if (input.includeOpenTurn && last !== void 0 && last.type !== "event_msg") {
-		const end = {
-			timestamp: last.timestamp,
-			type: "event_msg",
-			payload: { type: OPEN_TURN_END }
-		};
-		events.push(end);
-	}
-	for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
+	for await (const [{ type, payload, timestamp }, isLast] of markLast(rolloutEvents(input))) {
 		if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 		if (type === "response_item") recordResponseItem(walk, payload, timestamp);
 		if (type === "turn_context") {
@@ -24419,10 +24437,7 @@ async function walkCompletedTurns(input, onTurn) {
 		if (type === "event_msg") {
 			const eventTime = Date.parse(timestamp);
 			recordEventMessage(walk, payload, eventTime);
-			if (endsTurn(walk, payload, {
-				index,
-				length: arr.length
-			}, input)) {
+			if (endsTurn(walk, payload, isLast, input)) {
 				walk.task ??= createTask();
 				const task = walk.task;
 				const privacyTurnId = task.turnId?.id;
@@ -25078,7 +25093,8 @@ async function waitForToolRuns(config, request, mode) {
 	}
 }
 async function hasToolEndEvent(transcriptPath, callId) {
-	return (await loadSession(transcriptPath)).some(({ type, payload }) => type === "event_msg" && (payload.call_id === callId && payload.type.endsWith("_end") || payload.type === "item_completed" && isRecord(payload.item) && payload.item.id === callId));
+	for await (const { type, payload } of loadSession(transcriptPath)) if (type === "event_msg" && (payload.call_id === callId && payload.type.endsWith("_end") || payload.type === "item_completed" && isRecord(payload.item) && payload.item.id === callId)) return true;
+	return false;
 }
 //#endregion
 //#region src/login-notice.ts

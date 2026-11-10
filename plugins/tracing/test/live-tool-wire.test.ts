@@ -156,6 +156,14 @@ it("holds Stop back while a tool hook is still saving, so the hook never saves a
   expect(await fs.readFile(live.marker, "utf8")).toContain(turn);
 });
 
+it("uploads a finished exec tool before Stop without waiting for an end event it never writes", async () => {
+  const live = await workspace("live", await read("09/14/rollout-skills.jsonl"));
+  await live.tool("call_read_skills");
+  await live.settle();
+
+  expect(wire.sent("post").find(({ name }) => name === "exec")).toBeDefined();
+});
+
 it("uploads a finished exec_command before Stop on a current Codex transcript", async () => {
   const rows = await read("10/16/rollout-codex-0162.jsonl");
   const live = await workspace("live", rows);

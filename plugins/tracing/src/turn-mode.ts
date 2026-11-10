@@ -1,5 +1,5 @@
 import { MODE_METADATA } from "./constants.js";
-import type { SessionMetaLine, SubagentSource } from "./models/rollout.js";
+import type { LineSchema, SessionMetaLine, SubagentSource } from "./models/rollout.js";
 import type { TurnMode } from "./models/tracing-policy.js";
 import { defaultPrivacyPath, inheritThreadMode, savedTurnMode } from "./tracing-policy.js";
 import { findRolloutFileByThreadId, loadSession } from "./utils/rollout.js";
@@ -25,7 +25,7 @@ async function launchedTurns(parentFile: string, sessionId: string): Promise<Set
   let nativeTurn: string | undefined;
   const calls = new Map<string, string>();
   const launches = new Set<string>();
-  for (const event of await loadSession(parentFile)) {
+  for await (const event of loadSession(parentFile)) {
     if (event.type === "event_msg") {
       if (event.payload.type === "task_started") nativeTurn = event.payload.turn_id;
       const ids = extractSubagentActivities(event.payload).map((activity) => activity.threadId);
@@ -79,7 +79,13 @@ export async function rolloutTurnMode(
 ): Promise<TurnMode> {
   if (visited.has(sessionId)) return MODE_METADATA;
   visited.add(sessionId);
-  const meta = (await loadSession(file)).find((event) => event.type === "session_meta");
+  let meta: LineSchema | undefined;
+  for await (const event of loadSession(file)) {
+    if (event.type === "session_meta") {
+      meta = event;
+      break;
+    }
+  }
   if (meta?.type !== "session_meta" || meta.payload.id !== sessionId) return MODE_METADATA;
   const parentId = parentThreadId(meta);
   if (!isChildSession(meta, parentId)) {

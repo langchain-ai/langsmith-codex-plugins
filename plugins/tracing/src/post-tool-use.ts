@@ -63,12 +63,15 @@ async function waitForToolRuns(
 }
 
 async function hasToolEndEvent(transcriptPath: string, callId: string): Promise<boolean> {
-  return (await loadSession(transcriptPath)).some(
-    ({ type, payload }) =>
+  for await (const { type, payload } of loadSession(transcriptPath)) {
+    if (
       type === "event_msg" &&
       ((payload.call_id === callId && payload.type.endsWith(TOOL_END_EVENT_SUFFIX)) ||
         (payload.type === ITEM_COMPLETED_EVENT &&
           isRecord(payload.item) &&
-          payload.item.id === callId)),
-  );
+          payload.item.id === callId))
+    )
+      return true;
+  }
+  return false;
 }

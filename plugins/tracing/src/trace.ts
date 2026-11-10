@@ -2,6 +2,7 @@ import type {
   AggregateMessage,
   EventMsgLine,
   EventMsgPayload,
+  LineSchema,
   MergedMessage,
   ResponseItem,
   ResponseItemOf,
@@ -23,7 +24,6 @@ import type {
   MetadataContext,
   TurnDraft,
   TurnMetadata,
-  TurnPosition,
   TurnRequest,
   TurnRunContext,
 } from "./models/trace-conversion.js";
@@ -40,7 +40,6 @@ import { skillNamesFromToolCall } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
 import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
-import { enumerate } from "./utils/enumerate.js";
 import { isRecord } from "./utils/isRecord.js";
 import {
   isReviewResult,
@@ -51,7 +50,7 @@ import { omitKey } from "./utils/omitKey.js";
 import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
 import { toolOriginFromArgs } from "./tool-path.js";
-import { loadSession, findRolloutFileByThreadId } from "./utils/rollout.js";
+import { loadSession, findRolloutFileByThreadId, markLast } from "./utils/rollout.js";
 import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
@@ -512,11 +511,11 @@ async function postSubagentThread(context: TurnRunContext, subagentThread: strin
   const subagentFile = await findRolloutFileByThreadId(context.request.rolloutFile, subagentThread);
   if (subagentFile == null) return;
 
-  const events = await loadSession(subagentFile);
-  const lastEvent = findLast(
-    events,
-    (event) => event.type === "event_msg" && event.payload.turn_id != null,
-  ) as { payload: { turn_id: string } } | undefined;
+  let lastEvent: { payload: { turn_id: string } } | undefined;
+  for await (const event of loadSession(subagentFile)) {
+    if (event.type === "event_msg" && event.payload.turn_id != null)
+      lastEvent = event as { payload: { turn_id: string } };
+  }
 
   await convertToRunTree(
     { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
@@ -1097,15 +1096,31 @@ function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTi
 function endsTurn(
   walk: RolloutWalk,
   payload: EventMsgPayload,
-  position: TurnPosition,
+  isLast: boolean,
   input: TraceInput,
 ): boolean {
   return (
     payload.type === "task_complete" ||
     payload.type === "turn_complete" ||
     payload.type === "turn_aborted" ||
-    (walk.task != null && position.index === position.length - 1 && input.turn_id != null)
+    (walk.task != null && isLast && input.turn_id != null)
   );
+}
+
+async function* rolloutEvents(input: TraceInput): AsyncGenerator<LineSchema> {
+  let last: LineSchema | undefined;
+  for await (const event of loadSession(input.transcript_path)) {
+    last = event;
+    yield event;
+  }
+  if (input.includeOpenTurn && last !== undefined && last.type !== "event_msg") {
+    const end: EventMsgLine = {
+      timestamp: last.timestamp,
+      type: "event_msg",
+      payload: { type: OPEN_TURN_END },
+    };
+    yield end;
+  }
 }
 
 async function walkCompletedTurns(
@@ -1123,17 +1138,7 @@ async function walkCompletedTurns(
     sessionTokenTotal: undefined,
   };
 
-  const events = await loadSession(input.transcript_path);
-  const last = events.at(-1);
-  if (input.includeOpenTurn && last !== undefined && last.type !== "event_msg") {
-    const end: EventMsgLine = {
-      timestamp: last.timestamp,
-      type: "event_msg",
-      payload: { type: OPEN_TURN_END },
-    };
-    events.push(end);
-  }
-  for (const [index, { type, payload, timestamp }, arr] of enumerate(events)) {
+  for await (const [{ type, payload, timestamp }, isLast] of markLast(rolloutEvents(input))) {
     if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 
     if (type === "response_item") recordResponseItem(walk, payload, timestamp);
@@ -1148,7 +1153,7 @@ async function walkCompletedTurns(
 
       recordEventMessage(walk, payload, eventTime);
 
-      if (endsTurn(walk, payload, { index, length: arr.length }, input)) {
+      if (endsTurn(walk, payload, isLast, input)) {
         walk.task ??= createTask();
         const task = walk.task;
         // Delivery may fall back to the Stop ID, but privacy must never assign
