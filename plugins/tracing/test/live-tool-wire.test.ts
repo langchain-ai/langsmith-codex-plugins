@@ -34,6 +34,7 @@ it("uploads every run once and ends with the Stop-only trace when one tool hook 
   const calls = [...new Set(lines.map((line) => JSON.parse(line).payload.call_id).filter(Boolean))];
   for (const callId of calls) if (callId !== late && callId !== never) await live.tool(callId);
   await live.write();
+  await live.settle();
   const beforeStop = wire.sent("post").map(({ id }) => id);
   await live.stop();
   await live.settle();
