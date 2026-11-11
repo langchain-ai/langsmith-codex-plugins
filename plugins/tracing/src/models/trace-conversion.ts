@@ -89,11 +89,6 @@ export interface RolloutWalk {
   sessionTokenTotal: TokenCount | undefined;
 }
 
-export interface TurnPosition {
-  index: number;
-  length: number;
-}
-
 export interface TimeWindow {
   min: number;
   max: number;
