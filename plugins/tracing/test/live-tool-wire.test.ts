@@ -34,6 +34,7 @@ it("uploads every run once and ends with the Stop-only trace when one tool hook 
   const calls = [...new Set(lines.map((line) => JSON.parse(line).payload.call_id).filter(Boolean))];
   for (const callId of calls) if (callId !== late && callId !== never) await live.tool(callId);
   await live.write();
+  await live.settle();
   const beforeStop = wire.sent("post").map(({ id }) => id);
   await live.stop();
   await live.settle();
@@ -154,6 +155,14 @@ it("holds Stop back while a tool hook is still saving, so the hook never saves a
 
   expect(marked).toBe("");
   expect(await fs.readFile(live.marker, "utf8")).toContain(turn);
+});
+
+it("uploads a finished exec tool before Stop without waiting for an end event it never writes", async () => {
+  const live = await workspace("live", await read("09/14/rollout-skills.jsonl"));
+  await live.tool("call_read_skills");
+  await live.settle();
+
+  expect(wire.sent("post").find(({ name }) => name === "exec")).toBeDefined();
 });
 
 it("uploads a finished exec_command before Stop on a current Codex transcript", async () => {

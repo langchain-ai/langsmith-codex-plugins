@@ -123,6 +123,7 @@ export const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for u
 export const TOOL_RUN_ID_SEGMENT = ":tool:";
 export const TOOL_OUTPUT_WAIT_MS = 3_000;
 export const TOOL_OUTPUT_POLL_MS = 100;
+export const ROLLOUT_ENCODING = "utf-8";
 export const TOOL_END_EVENT_SUFFIX = "_end";
 export const OPEN_TURN_END = "langsmith_open_turn_end";
 export const ITEM_COMPLETED_EVENT = "item_completed";
@@ -173,7 +174,7 @@ export const LS_INTEGRATION_VERSION: string | undefined =
 
 // Codex 0.153+ calls the shell tool `exec`; older versions call it `exec_command`.
 export const SHELL_TOOL_NAMES = new Set(["exec", "exec_command"]);
-export const TOOLS_WITH_END_EVENTS = new Set([...SHELL_TOOL_NAMES, "apply_patch"]);
+export const TOOLS_WITH_END_EVENTS = new Set(["exec_command", "apply_patch"]);
 
 // A shell word: no whitespace, no quotes.
 export const SHELL_WORD = /[^\s"']+/g;
