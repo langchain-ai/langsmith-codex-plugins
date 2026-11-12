@@ -303,6 +303,29 @@ it("fails the job when the transcript has no completed target turn", async () =>
   await expect(open().reconstruct(queued)).rejects.toThrow("no completed target turn");
 });
 
+it("keeps the child receipt manifest on the root rather than repeating it on every span", async () => {
+  const { job: queued } = await job();
+  const rows = await read("04/23/rollout-editing.jsonl");
+  const [sessionId, turnId] = ids(rows);
+  await writeFile(path.join(home, "rollout.jsonl"), rows.join("\n"));
+  const options = open(base, sessionId);
+
+  const { outputs } = await options.reconstruct({ ...queued, sessionId, turnId });
+
+  const [root, ...children] = outputs;
+  expect(children.length).toBeGreaterThan(10);
+  expect(root.turnEvidence.childRunIds.toSorted()).toEqual(
+    children.map(({ submission }: any) => submission.run.id).toSorted(),
+  );
+  for (const child of children) {
+    expect(child.turnEvidence).toEqual({
+      rootRunId: root.submission.run.id,
+      childRunIds: [child.submission.run.id],
+      closureState: "authoritative",
+    });
+  }
+});
+
 it("names the turn's saved root when saving a tool, so the engine needs no scan to find it", async () => {
   const rows = await read("04/23/rollout-editing.jsonl");
   const [session_id, turn_id] = ids(rows);

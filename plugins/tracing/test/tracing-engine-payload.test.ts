@@ -60,6 +60,37 @@ it("keeps the run outputs in the upload", () => {
   expect(postSubmission(done, "full", metadata).run.outputs).toEqual({ messages: ["done"] });
 });
 
+it("serializes only the requested run without visiting descendants or detaching them permanently", () => {
+  const parent = run();
+  const child = parent.createChild({ name: "tool", run_type: "tool", inputs: {} });
+  const children = parent.child_runs;
+  Object.defineProperty(child, "inputs", {
+    get: () => {
+      throw new Error("descendant serialization must not run");
+    },
+  });
+
+  const submission = postSubmission(parent, "full", metadata);
+
+  expect(submission.run.inputs).toEqual({ prompt: "hello" });
+  expect(submission.run).not.toHaveProperty("child_runs");
+  expect(parent.child_runs).toBe(children);
+  expect(parent.child_runs).toEqual([child]);
+});
+
+it("restores descendants if serializing the requested run throws", () => {
+  const parent = run();
+  parent.createChild({ name: "tool", run_type: "tool", inputs: {} });
+  const children = parent.child_runs;
+  const serialize = vi.spyOn(parent, "toJSON").mockImplementation(() => {
+    throw new Error("cannot serialize");
+  });
+
+  expect(() => postSubmission(parent, "full", metadata)).toThrow("cannot serialize");
+  expect(parent.child_runs).toBe(children);
+  serialize.mockRestore();
+});
+
 it("closes a failed turn root with an error status and both its error and end time", () => {
   const failed = run();
   failed.error = "turn aborted";

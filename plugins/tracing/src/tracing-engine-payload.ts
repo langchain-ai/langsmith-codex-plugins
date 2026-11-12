@@ -36,7 +36,17 @@ export function postSubmission(
   metadataOptions: CodingAgentMetadataOptions,
   status: CodexRunStatus = runStatus(run),
 ): PreparedRunPostSubmission {
-  const payload = toPlainObject(run.toJSON());
+  // Each descendant has its own submission. Avoid recursively serializing the
+  // whole subtree only to discard child_runs during normalization. Keep toJSON
+  // so SDK timestamp/parent handling and metadata-mode privacy still apply.
+  const children = run.child_runs;
+  let payload: NormalizedRunSnapshot;
+  try {
+    run.child_runs = [];
+    payload = toPlainObject(normalizedSnapshot(run.toJSON()));
+  } finally {
+    run.child_runs = children;
+  }
   const provenance = prepareCodingAgentMetadataProvenance(
     toPlainObject<CodingAgentMetadataOptions>(metadataOptions),
     LS_INTEGRATION,
@@ -52,7 +62,7 @@ export function postSubmission(
     privacyMode,
     metadata: provenance.value,
     privacyContext: { status },
-    run: normalizedSnapshot(payload),
+    run: payload,
   };
 }
 
@@ -112,7 +122,7 @@ export function createRunClient(config: Config, credential: UploadCredential): C
   });
 }
 
-function normalizedSnapshot(payload: Record<string, unknown>): NormalizedRunSnapshot {
+function normalizedSnapshot(payload: ReturnType<RunTree["toJSON"]>): NormalizedRunSnapshot {
   if (
     typeof payload.id !== "string" ||
     typeof payload.name !== "string" ||

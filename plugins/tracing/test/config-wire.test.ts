@@ -377,10 +377,11 @@ it("keeps the traced runs under the Codex state folder when the upload fails", a
 
   const runEvents = await savedRunEvents();
   expect(runEvents.map(({ eventId }) => eventId)).toEqual(expect.arrayContaining(expected));
-  for (const { turnEvidence } of runEvents) {
+  for (const { runId, turnEvidence } of runEvents) {
     expect(turnEvidence.rootRunId).toBe(ids(0));
     expect(turnEvidence.childRunIds).not.toContain(ids(0));
-    expect(turnEvidence.childRunIds).toContain(ids(1));
+    if (runId === ids(0)) expect(turnEvidence.childRunIds).toContain(ids(1));
+    else expect(turnEvidence.childRunIds).toEqual([runId]);
   }
 }, 60_000);
 
