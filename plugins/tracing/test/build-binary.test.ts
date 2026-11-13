@@ -7,10 +7,10 @@ const lockfile = readFileSync(new URL("pnpm-lock.yaml", repoRoot), "utf8");
 
 it("builds with the same release of the shared pipeline the repository installs", () => {
   const [, commit, label] =
-    /uses: langchain-ai\/plugins-base\/\S+@([0-9a-f]{40}) # (\S+)/.exec(workflow) ?? [];
+    /uses: langchain-ai\/langsmith-plugins-base\/\S+@([0-9a-f]{40}) # (\S+)/.exec(workflow) ?? [];
   const installed = JSON.parse(readFileSync(new URL("package.json", repoRoot), "utf8"))
     .devDependencies["@langchain/plugins-base"];
-  const pinned = installed === `github:langchain-ai/plugins-base#${commit}`;
+  const pinned = installed === `github:langchain-ai/langsmith-plugins-base#${commit}`;
 
   expect(label).toBe(pinned ? commit?.slice(0, 7) : `v${installed}`);
   expect(lockfile).toContain(pinned ? `tar.gz/${commit}` : `'@langchain/plugins-base@${installed}`);
