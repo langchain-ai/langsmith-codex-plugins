@@ -71,7 +71,7 @@ validation unless you performed it.
 ## Carried macOS builds
 
 The build and the signing both come from
-[langsmith-plugin-binary](https://github.com/langchain-ai/langsmith-plugin-binary) driven by
+[langsmith-plugins-base](https://github.com/langchain-ai/langsmith-plugins-base) driven by
 `binary.config.json`, so go to that repository for how either of them works. Building needs
 [Bun](https://bun.com). The Build Binary workflow pins that package by commit SHA while
 `devDependencies` pins it by tag, so move both in one change or `build-binary.test.ts` fails.
