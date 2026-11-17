@@ -132,6 +132,18 @@ it("closes a turn the rollout never ended on Stop, and its late lines change not
   expect(second?.metadata.turnNumber).toBe(2);
 });
 
+it("reports a turn open until Stop closes it, and its late lines keep it closed", () => {
+  const { builder, read, note } = fakeBuilder();
+  const [meta, ...rows] = rolloutText(session, ["t1"]).split("\n");
+  note("UserPromptSubmit", "t1");
+  read(meta, ...rows.slice(0, 3));
+  expect(builder.turnOpen()).toBe(true);
+  note("Stop", "t1");
+  expect(builder.turnOpen()).toBe(false);
+  read(...rows.slice(3).filter(Boolean));
+  expect(builder.turnOpen()).toBe(false);
+});
+
 it("posts a finished tool and its open root early, then patches the root once the turn ends", () => {
   const { posts, patches, read, note } = fakeBuilder();
   const end = editing.findIndex((row) => row.includes('"exec_command_end"') && row.includes(VLR));

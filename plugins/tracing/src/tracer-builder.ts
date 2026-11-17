@@ -205,6 +205,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
   return {
     lineId: () => undefined,
     transcripts: () => (state.transcriptPath === undefined ? [] : [state.transcriptPath]),
+    turnOpen: () => walk.task !== undefined || state.heldTurn !== undefined,
     readLine: (path, line: TranscriptLine) => {
       state.transcriptPath ??= path;
       if (path !== state.transcriptPath) return;
