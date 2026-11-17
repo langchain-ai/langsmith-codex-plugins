@@ -1,6 +1,7 @@
 import type { Client, RunTree, RunTreeConfig } from "langsmith";
 import type { RepositoryAttributor } from "@langchain/plugins-base/git";
 import type { CodingAgentMetadataOptions } from "@langchain/plugins-base/metadata";
+import type { ParentHeaders } from "./config.js";
 import type { Session, Task, TokenCount } from "./rollout.js";
 import type { TracingMode, TurnMode } from "./tracing-policy.js";
 
@@ -11,7 +12,7 @@ export interface TraceConversionOptions {
     run: RunTree,
     mode: TracingMode,
     metadata: CodingAgentMetadataOptions,
-  ) => Promise<void>;
+  ) => void | Promise<void>;
   nextRunId: () => string;
   toolRunId?: ToolRunIdGenerator;
   parentRunTree?: RunTree;
@@ -99,4 +100,30 @@ export interface CompletedTurn {
   sessionMeta: Session | undefined;
   privacyTurnId: string | undefined;
   completedTurnId: string | undefined;
+}
+
+export interface NoteDetails {
+  turnId?: string;
+  toolUseId?: string;
+  metadata?: Record<string, unknown>;
+  parentHeaders?: ParentHeaders;
+}
+
+export type SavedWalk = Omit<RolloutWalk, "spawnAgentMessages">;
+
+export interface BuilderState {
+  version: number;
+  walk?: SavedWalk;
+  transcriptPath?: string;
+  lastLineTime?: number;
+  noteSeen: boolean;
+  heldTurn?: CompletedTurn;
+  currentTurnId?: string;
+  turnModes: Record<string, TurnMode>;
+  lastPostedTurn?: string;
+  liveRoots: string[];
+  liveTools: string[];
+  waitingTools: string[];
+  metadata?: Record<string, unknown>;
+  parentHeaders?: ParentHeaders;
 }

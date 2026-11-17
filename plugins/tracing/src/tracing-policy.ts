@@ -64,6 +64,15 @@ export function savedTurnMode(file: string, sessionId: string, turnId?: string):
   }
 }
 
+export function inheritedTurnMode(file: string, sessionId: string): TurnMode | undefined {
+  try {
+    return threadPolicy(readPolicyFile(adoptLegacyPreferences(file), POLICY_FILE), sessionId)
+      ?.inherited;
+  } catch {
+    return MODE_METADATA;
+  }
+}
+
 export function muteLocked(config: Config): boolean {
   return config.defaultMuted && config.locked.includes("defaultMuted");
 }

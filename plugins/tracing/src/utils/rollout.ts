@@ -1,15 +1,18 @@
-import { createReadStream } from "node:fs";
-import * as fs from "node:fs/promises";
+import { closeSync, openSync, readdirSync, readSync } from "node:fs";
+import { StringDecoder } from "node:string_decoder";
 import * as path from "node:path";
-import { CODEX_CONFIG_DIRECTORY, ROLLOUT_ENCODING } from "../constants.js";
+import { CODEX_CONFIG_DIRECTORY, ROLLOUT_CHUNK_BYTES, ROLLOUT_ENCODING } from "../constants.js";
 import type { DirectoryEntry, LineSchema } from "../models/rollout.js";
 import { homeDirectory } from "./home.js";
 
-export async function* loadSession(name: string): AsyncGenerator<LineSchema> {
-  const input = createReadStream(name, ROLLOUT_ENCODING);
+export function* readSession(name: string): Generator<LineSchema> {
+  const file = openSync(name, "r");
+  const decoder = new StringDecoder(ROLLOUT_ENCODING);
+  const buffer = Buffer.alloc(ROLLOUT_CHUNK_BYTES);
   try {
     let pending: string[] = [];
-    for await (const chunk of input) {
+    for (let size = readSync(file, buffer); size > 0; size = readSync(file, buffer)) {
+      const chunk = decoder.write(buffer.subarray(0, size));
       let start = 0;
       let end: number;
       while ((end = chunk.indexOf("\n", start)) !== -1) {
@@ -20,16 +23,20 @@ export async function* loadSession(name: string): AsyncGenerator<LineSchema> {
       }
       pending.push(chunk.slice(start));
     }
-    const rest = pending.join("");
+    const rest = pending.join("") + decoder.end();
     if (rest) yield JSON.parse(rest) as LineSchema;
   } finally {
-    input.destroy();
+    closeSync(file);
   }
 }
 
-export async function* markLast<T>(items: AsyncIterable<T>): AsyncGenerator<[T, boolean]> {
+export async function* loadSession(name: string): AsyncGenerator<LineSchema> {
+  yield* readSession(name);
+}
+
+export function* markLast<T>(items: Iterable<T>): Generator<[T, boolean]> {
   let held: [T] | undefined;
-  for await (const item of items) {
+  for (const item of items) {
     if (held) yield [held[0], false];
     held = [item];
   }
@@ -50,17 +57,17 @@ function resolveSessionsRoot(parentFileName: string): string {
 }
 
 // Recursively find the rollout file whose name ends with the subagent's thread id.
-export async function findRolloutFileByThreadId(
+export function findRolloutFileByThreadId(
   parentFileName: string,
   threadId: string,
-): Promise<string | undefined> {
+): string | undefined {
   const suffix = `-${threadId}.jsonl`;
   const root = resolveSessionsRoot(parentFileName);
 
-  async function walk(dir: string): Promise<string | undefined> {
+  function walk(dir: string): string | undefined {
     let entries: DirectoryEntry[];
     try {
-      entries = await fs.readdir(dir, { withFileTypes: true });
+      entries = readdirSync(dir, { withFileTypes: true });
     } catch {
       return undefined;
     }
@@ -68,7 +75,7 @@ export async function findRolloutFileByThreadId(
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        const found = await walk(full);
+        const found = walk(full);
         if (found) return found;
       } else if (entry.isFile() && entry.name.endsWith(suffix)) {
         return full;
@@ -78,4 +85,8 @@ export async function findRolloutFileByThreadId(
   }
 
   return walk(root);
+}
+
+export function isoTime(time: number | string): string {
+  return new Date(time).toISOString();
 }
