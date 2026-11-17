@@ -35,7 +35,12 @@ import {
   readRolloutLine,
 } from "./trace.js";
 import { runIdGenerator, toolRunIdGenerator } from "./tracing-engine-payload.js";
-import { defaultPrivacyPath, inheritThreadMode, savedTurnMode } from "./tracing-policy.js";
+import {
+  defaultPrivacyPath,
+  inheritedTurnMode,
+  inheritThreadMode,
+  savedTurnMode,
+} from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 import { isRecord } from "./utils/isRecord.js";
 import { isoTime } from "./utils/rollout.js";
@@ -119,16 +124,20 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
     ),
   });
 
+  function nativeTurnMode(privacyTurnId: string | undefined) {
+    const thread = walk.sessionMeta;
+    if (thread?.session_id === undefined) return MODE_METADATA;
+    if (thread.is_subagent)
+      return inheritedTurnMode(defaultPrivacyPath(), thread.session_id) ?? MODE_METADATA;
+    return savedTurnMode(defaultPrivacyPath(), thread.session_id, privacyTurnId);
+  }
+
   function privacyMode(turnId: string) {
     return state.turnModes[turnId] ?? tracingMode;
   }
 
   function turnMode({ privacyTurnId }: CompletedTurn, turnId: string) {
-    const threadId = walk.sessionMeta?.session_id;
-    const nativeMode = threadId
-      ? savedTurnMode(defaultPrivacyPath(), threadId, privacyTurnId)
-      : MODE_METADATA;
-    return combinedTurnMode(nativeMode, privacyMode(turnId));
+    return combinedTurnMode(nativeTurnMode(privacyTurnId), privacyMode(turnId));
   }
 
   function convertTurn(turn: CompletedTurn, turnId: string, includeOpenTurn: boolean) {
@@ -202,9 +211,15 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
       const rollout = line as LineSchema;
       state.lastLineTime = Date.parse(rollout.timestamp);
       if (readRolloutLine(walk, rollout, false)) {
+        const stoppedTurnTail = state.stopClosedTurn && walk.task?.turnId === undefined;
+        state.stopClosedTurn = false;
+        if (stoppedTurnTail) {
+          walk.task = undefined;
+          return;
+        }
         const turn = finishTurn(walk, state.lastLineTime, state.currentTurnId);
         if (state.noteSeen) completeTurn(turn);
-        else state.heldTurn = turn;
+        else state.heldTurn = { turn, end: state.lastLineTime };
         return;
       }
       const callId = mentionedCallId(rollout);
@@ -222,7 +237,13 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
       state.noteSeen = true;
       const held = state.heldTurn;
       state.heldTurn = undefined;
-      if (held !== undefined && held.completedTurnId === details.turnId) completeTurn(held);
+      const unmarked = held !== undefined && held.turn.completedTurnId === undefined;
+      if (unmarked && note.event === STOP_EVENT && details.turnId) {
+        held.turn.completedTurnId = details.turnId;
+        held.turn.task.turnId = { id: details.turnId, timestamp: held.end };
+      }
+      if (held !== undefined && held.turn.completedTurnId === details.turnId)
+        completeTurn(held.turn);
       if (note.event === POST_TOOL_USE_EVENT && details.toolUseId !== undefined) {
         state.waitingTools.push(details.toolUseId);
         postFinishedTools();
@@ -235,6 +256,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
         state.lastLineTime !== undefined
       ) {
         completeTurn(finishTurn(walk, state.lastLineTime, details.turnId));
+        state.stopClosedTurn = true;
       }
     },
     state: () => {

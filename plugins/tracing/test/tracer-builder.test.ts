@@ -96,17 +96,40 @@ it("skips turns that ended before the first note but keeps the turn that note na
   );
 });
 
-it("closes a turn the rollout never ended on Stop, and its late end line adds nothing", () => {
+it("names a turn with no start marker after the Stop that arrives once it ended", () => {
   const { posts, read, note } = fakeBuilder();
-  const [meta, ...rows] = rolloutText(session, ["t1"]).split("\n");
+  const rows = rolloutText(session, ["t1"]).split("\n");
+  const unmarked = rows.filter((row) => !row.includes('"task_started"'));
+  const resumed = fakeBuilder();
+  resumed.read(...unmarked);
+  resumed.note("UserPromptSubmit", "t2");
+  read(...unmarked);
+  note("Stop", "t1");
+
+  expect(resumed.posts).toEqual([]);
+
+  expect(posts[0]).toMatchObject({
+    id: runIdGenerator(session, "t1")(),
+    metadata: { turnId: "t1" },
+    start_time: "2026-04-23T00:00:01.000Z",
+  });
+});
+
+it("closes a turn the rollout never ended on Stop, and its late lines change nothing", () => {
+  const { posts, read, note } = fakeBuilder();
+  const [meta, ...rows] = rolloutText(session, ["t1", "t2"]).split("\n");
   note("UserPromptSubmit", "t1");
-  read(meta, ...rows.slice(0, -2));
+  read(meta, ...rows.slice(0, 3));
   note("Stop", "t1");
   const posted = posts.length;
-  read(...rows.slice(-2));
-
+  read(...rows.slice(3, 5));
   expect(posted).toBeGreaterThan(0);
   expect(posts.length).toBe(posted);
+
+  note("UserPromptSubmit", "t2");
+  read(...rows.slice(5));
+  const second = posts.find(({ id }) => id === runIdGenerator(session, "t2")());
+  expect(second?.metadata.turnNumber).toBe(2);
 });
 
 it("posts a finished tool and its open root early, then patches the root once the turn ends", () => {
@@ -157,6 +180,9 @@ it("uploads full content only when both the note and the thread's saved mode all
   const full = fakeBuilder();
   full.note("UserPromptSubmit", turn, "full");
   full.read(...editing);
+  const off = fakeBuilder();
+  off.note("UserPromptSubmit", turn, "off");
+  off.read(...editing);
   const imported = fakeBuilder(editing, ROLLOUT, undefined, "metadata");
   imported.note("UserPromptSubmit");
   imported.read(...editing);
@@ -166,12 +192,29 @@ it("uploads full content only when both the note and the thread's saved mode all
 
   const modes = (posts: RunPost[]) => [...new Set(posts.map(({ tracingMode }) => tracingMode))];
   expect(full.posts.length).toBeGreaterThan(10);
+  expect(off.posts).toEqual([]);
   expect(modes(imported.posts)).toEqual(["metadata"]);
   expect([modes(unrecorded.posts), modes(full.posts), modes(muted.posts)]).toEqual([
     ["metadata"],
     ["full"],
     ["metadata"],
   ]);
+});
+
+it("keeps a subagent's own turns metadata-only until its parent's launch mode is saved", async () => {
+  const child = await read("04/23/rollout-subagents-019dbc03-79de-7d53-8196-3167d9a32762.jsonl");
+  const [childId, childTurn] = ids(child);
+  await submitPreference(defaultPrivacyPath(), {
+    sessionId: childId,
+    turnId: childTurn,
+    enabled: true,
+  });
+  const { posts, read: readChild, note } = fakeBuilder(child, join(SESSIONS, "child.jsonl"));
+  note("UserPromptSubmit", childTurn, "full");
+  readChild(...child);
+
+  expect(posts.length).toBeGreaterThan(0);
+  expect(posts.every(({ tracingMode }) => tracingMode === "metadata")).toBe(true);
 });
 
 it("leaves the next turn open when the previous turn's Stop arrives after it started", () => {

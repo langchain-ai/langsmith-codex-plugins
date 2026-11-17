@@ -338,7 +338,7 @@ function getSystemMessage(
 }
 
 export function combinedTurnMode(nativeMode: TurnMode, privacyMode?: TurnMode): TurnMode {
-  return nativeMode === MODE_OFF
+  return nativeMode === MODE_OFF || privacyMode === MODE_OFF
     ? MODE_OFF
     : privacyMode === MODE_METADATA || nativeMode === MODE_METADATA
       ? MODE_METADATA
