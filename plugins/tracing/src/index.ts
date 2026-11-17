@@ -1,14 +1,15 @@
-import { access } from "node:fs/promises";
-import { constants as fsConstants } from "node:fs";
 import { dispatchHookCommand } from "@langchain/plugins-base/plugin";
-import { createCodexTracingSession, runCodexEngineWorker } from "./tracing-engine.js";
-import { queueCodexTurns } from "./turn-queue.js";
-import { getConfig } from "./config.js";
-import { ENGINE_WORKER_FLAG, LS_INTEGRATION_VERSION } from "./constants.js";
+import {
+  ENGINE_WORKER_FLAG,
+  PLUGIN_VERSION,
+  POST_TOOL_USE_EVENT,
+  STOP_EVENT,
+  USER_PROMPT_SUBMIT_EVENT,
+} from "./constants.js";
 import { binary } from "./binary.js";
 import { tracingFailed, usage } from "./messages.js";
 import type { CodexHookInput } from "./models/hook-input.js";
-import { handlePostToolUse } from "./post-tool-use.js";
+import { runTracerWorker, sendTracerNote } from "./tracer-hooks.js";
 import { handlePromptSubmit } from "./user-prompt-submit.js";
 import { homeDirectory } from "./utils/home.js";
 import { showPendingWarning } from "./warnings.js";
@@ -16,32 +17,19 @@ import { readStdin } from "./utils/stdin.js";
 
 async function runHook() {
   const content = await readStdin<CodexHookInput>();
-  if (content.hook_event_name === "PostToolUse") {
-    await handlePostToolUse(content);
+  if (content.hook_event_name === POST_TOOL_USE_EVENT) {
+    await sendTracerNote(content);
     return;
   }
   await showPendingWarning(homeDirectory());
 
-  if (content.hook_event_name === "UserPromptSubmit") {
+  if (content.hook_event_name === USER_PROMPT_SUBMIT_EVENT) {
     const result = await handlePromptSubmit(content);
     if (result) console.log(JSON.stringify(result));
+    await sendTracerNote(content);
     return;
   }
-  if (content.hook_event_name !== "Stop") return;
-  const config = await getConfig({ home: homeDirectory(), cwd: content.cwd, env: process.env });
-
-  // Skip entirely if tracing is disabled
-  if (!config.enabled) return;
-
-  if (!content.session_id || !content.turn_id || !content.transcript_path) return;
-  await access(content.transcript_path, fsConstants.R_OK);
-  const session = createCodexTracingSession(config, content.session_id, content.cwd);
-  if (!session) return;
-  await queueCodexTurns(session, config, {
-    transcriptPath: content.transcript_path,
-    turnId: content.turn_id,
-    cwd: content.cwd,
-  });
+  if (content.hook_event_name === STOP_EVENT) await sendTracerNote(content);
 }
 
 const USAGE = usage(binary.target.executableName);
@@ -54,16 +42,11 @@ if (args.length === 0) {
 } else {
   await dispatchHookCommand(args, {
     usage: USAGE,
-    version: LS_INTEGRATION_VERSION ?? "development",
+    version: PLUGIN_VERSION,
     hooks: {},
     worker: {
       command: ENGINE_WORKER_FLAG,
-      run: ([sessionId, cwd]) => {
-        if (!sessionId || !cwd) {
-          throw new Error("shared trace worker needs a session ID and working directory");
-        }
-        return runCodexEngineWorker(sessionId, cwd);
-      },
+      run: () => runTracerWorker(),
     },
     onHookError: (_name, error) => {
       console.error(tracingFailed(error));

@@ -1219,12 +1219,3 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
   }
   await Promise.all(captures);
 }
-
-export function listCompletedTurnIds(input: TraceInput): string[] {
-  const turnIds: string[] = [];
-  for (const { completedTurnId } of completedTurns(input)) {
-    if (completedTurnId != null && !turnIds.includes(completedTurnId))
-      turnIds.push(completedTurnId);
-  }
-  return turnIds;
-}

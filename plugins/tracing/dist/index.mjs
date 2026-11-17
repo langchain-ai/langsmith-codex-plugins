@@ -1,8 +1,8 @@
-import * as nodeFsPromises from "node:fs/promises";
-import { access, chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
-import * as nodeFs from "node:fs";
-import { accessSync, closeSync, constants, copyFileSync, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
+import * as nodeFs from "node:fs";
+import { accessSync, appendFileSync, closeSync, constants, copyFileSync, existsSync, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, unlinkSync, watch, writeFileSync, writeSync } from "node:fs";
+import * as nodeFsPromises from "node:fs/promises";
+import { chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
 import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
 import { performance as performance$1 } from "node:perf_hooks";
@@ -449,7 +449,7 @@ function processIsAlive(pid) {
 		return;
 	}
 }
-async function removeFile(filePath) {
+async function removeFile$1(filePath) {
 	try {
 		await unlink(filePath);
 		return true;
@@ -560,7 +560,7 @@ async function releaseLegacyDirectoryGate(gate) {
 		throw error;
 	}
 	if (!stat.isDirectory() || stat.dev !== gate.dev || stat.ino !== gate.ino || stat.birthtimeMs !== gate.birthtimeMs) throw new Error(FILE_LOCK_COMPATIBLE_GATE_CHANGED_MESSAGE);
-	await removeFile(join(gate.path, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+	await removeFile$1(join(gate.path, FILE_LOCK_COMPATIBLE_OWNER_FILE));
 	await rmdir(gate.path);
 }
 async function recordLegacyGateOwner(gatePath) {
@@ -615,10 +615,10 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 			throw error;
 		}
 		if (!isDirectory) {
-			await removeFile(stalePath);
+			await removeFile$1(stalePath);
 			return true;
 		}
-		await removeFile(join(stalePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
+		await removeFile$1(join(stalePath, FILE_LOCK_COMPATIBLE_OWNER_FILE));
 		await removeDirectoryBestEffort(stalePath, FILE_LOCK_STALE_GATE_CLEANUP_WARNING);
 		return true;
 	} finally {
@@ -651,7 +651,7 @@ async function publishClaim(filePath, claim, create, deadline) {
 			}
 		}
 	} finally {
-		await removeFile(temporaryPath);
+		await removeFile$1(temporaryPath);
 	}
 }
 async function createClaim(claimDirectory) {
@@ -682,7 +682,7 @@ async function scanClaims(claimDirectory, ownPath) {
 		if (reference === void 0) return false;
 		const modified = await modifiedAt(path);
 		if (modified === void 0 || reference - modified < 3e3) return false;
-		return removeFile(path);
+		return removeFile$1(path);
 	};
 	for (const entry of entries) {
 		if (!entry.name.endsWith(".json")) continue;
@@ -714,7 +714,7 @@ async function scanClaims(claimDirectory, ownPath) {
 		}
 		const alive = processIsAlive(claim.pid);
 		if (alive === false) {
-			if (!await removeFile(path)) return {
+			if (!await removeFile$1(path)) return {
 				claims,
 				blocked: true
 			};
@@ -755,7 +755,7 @@ function makeHandle(claimDirectory, claim) {
 		},
 		release() {
 			stopHeartbeat(claim.id);
-			releasePromise ??= removeFile(claimPath(claimDirectory, claim.id)).then((removed) => {
+			releasePromise ??= removeFile$1(claimPath(claimDirectory, claim.id)).then((removed) => {
 				if (!removed) throw new Error(FILE_LOCK_RELEASE_MESSAGE);
 			});
 			return releasePromise;
@@ -1242,17 +1242,6 @@ function createStateStore(options) {
 		read,
 		update
 	};
-}
-function pruneStateEntries(state, maxAgeMs, now = Date.now()) {
-	const cutoff = now - maxAgeMs;
-	const pruned = {};
-	for (const [id, entry] of Object.entries(state)) if ((entry.updated ? new Date(entry.updated).getTime() : 0) >= cutoff) Object.defineProperty(pruned, id, {
-		value: entry,
-		writable: true,
-		enumerable: true,
-		configurable: true
-	});
-	return pruned;
 }
 function readStateFile(path, onUnparseable) {
 	let raw;
@@ -2214,6 +2203,10 @@ function failure(code, error) {
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
+}
+function sortedKeys(_key, value) {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
+	return Object.fromEntries(Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right)));
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
@@ -10558,7 +10551,7 @@ function writeFileSync$1(filePath, content) {
 function renameSync$1(oldPath, newPath) {
 	nodeFs.renameSync(oldPath, newPath);
 }
-function unlinkSync(filePath) {
+function unlinkSync$1(filePath) {
 	nodeFs.unlinkSync(filePath);
 }
 function readFileSync$1(filePath) {
@@ -10781,7 +10774,7 @@ var PromptCache = class {
 			writeFileSync$1(tempPath, JSON.stringify({ entries }, null, 2));
 			renameSync$1(tempPath, filePath);
 		} catch (e) {
-			if (existsSync$1(tempPath)) unlinkSync(tempPath);
+			if (existsSync$1(tempPath)) unlinkSync$1(tempPath);
 			throw e;
 		}
 	}
@@ -10919,7 +10912,7 @@ async function removeStaleLock(lockDir) {
 	await rmRecursive(lockDir);
 	return true;
 }
-function lockOwner(lockDir) {
+function lockOwner$1(lockDir) {
 	const lines = lockMetadataLines(lockDir);
 	if (lines && lines.length >= 2 && lines[1].trim()) return lines[1].trim();
 }
@@ -10954,7 +10947,7 @@ async function acquireOAuthRefreshLock(configPath, deadline) {
 		break;
 	}
 	return { async release() {
-		if (lockOwner(lockDir) === owner) await rmRecursive(lockDir);
+		if (lockOwner$1(lockDir) === owner) await rmRecursive(lockDir);
 	} };
 }
 const OAUTH_CLIENT_ID = "langsmith-cli";
@@ -19120,7 +19113,7 @@ function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
 	const suppliedPrivacyContext = ownDataField(source, "privacyContext");
-	const status = run.error !== void 0 ? "error" : suppliedPrivacyContext.present ? privacyStatus(suppliedPrivacyContext.value).status : statusForPost(run);
+	const status = run.error !== void 0 ? "error" : suppliedPrivacyContext.present ? privacyStatus$1(suppliedPrivacyContext.value).status : statusForPost(run);
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, status);
 	if (metadata.status === "deferred") return metadata;
 	return {
@@ -19143,7 +19136,7 @@ function projectPatchSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunContext(requireOwnDataField(source, "run")), priorIdentity, true);
 	const patch = normalizedPatch(requireOwnDataField(source, "patch"));
-	const privacyContext = privacyStatus(requireOwnDataField(source, "privacyContext"));
+	const privacyContext = privacyStatus$1(requireOwnDataField(source, "privacyContext"));
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(source, "metadata"), integration, privacyMode, privacyContext.status);
 	if (metadata.status === "deferred") return metadata;
 	return {
@@ -19350,7 +19343,7 @@ function normalizedPatch(value) {
 		values
 	};
 }
-function privacyStatus(value) {
+function privacyStatus$1(value) {
 	const status = requireOwnDataField(requirePlainRecord(value, "Patch privacy context"), "status");
 	if (status !== "running" && status !== "completed" && status !== "error") throw new TypeError(LIFECYCLE_INVALID_PATCH_PRIVACY_STATUS_MESSAGE);
 	return { status };
@@ -21836,389 +21829,1521 @@ ${options.kind}`;
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/paths.js
-function nearestExistingDirectory(path) {
-	let current = path;
-	for (;;) {
-		const parent = dirname(current);
-		if (parent === current) return void 0;
-		try {
-			if (statSync(current).isDirectory()) return current;
-		} catch {}
-		current = parent;
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/constants.js
-const GIT_LOCATION_ENV_KEYS = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_COMMON_DIR",
-	"GIT_INDEX_FILE",
-	"GIT_CEILING_DIRECTORIES"
-];
-const NOT_A_REPOSITORY = /not a git repository \(or any of the parent directories\)/i;
-const REMOTE_PATH_EDGE_SLASHES = /^\/+|\/+$/g;
-const REMOTE_PATH_TRAILING_SLASHES = /\/+$/;
-const REMOTE_GIT_SUFFIX = /\.git$/;
-const REMOTE_LINE_WHITESPACE = /\s+/;
-const SCP_REMOTE_PATTERN = /^(?:[^@]+@)?([^:]+):\/?(.+)$/;
-const GIT_DIRECTORY_NAME = ".git";
-const GIT_FILE_POINTER = /^gitdir:\s*(.+?)\s*$/m;
-const GIT_MARKERS = {
-	REPOSITORY_ROOT: "repository root",
-	ONLY_GIT_CAN_SAY: "only git can say",
-	NOTHING_HERE: "nothing here"
+//#region src/constants.ts
+/** Identifies this plugin as the trace source. */
+const LS_INTEGRATION = "openai-codex";
+const CODEX_CONFIG_DIRECTORY = ".codex";
+const PRIVACY_FILE_NAME = "langsmith_state_privacy.json";
+const LEGACY_PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
+const CHILD_SCOPE_RESET = {
+	approval_policy: void 0,
+	ls_is_error_interrupt: void 0,
+	ls_subagent_id: void 0,
+	ls_subagent_type: void 0
 };
-const GIT_PROVIDERS = {
-	"github.com": "github",
-	"gitlab.com": "gitlab",
-	"bitbucket.org": "bitbucket",
-	"dev.azure.com": "devAzure"
+const MODE_FULL = "full";
+const MODE_METADATA = "metadata";
+const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
+const ENV_PREFIXES = [PLUGIN_ENV_PREFIX, "LANGSMITH_"];
+const ENV_SUFFIXES = {
+	apiKey: "API_KEY",
+	apiUrl: "ENDPOINT",
+	project: "PROJECT",
+	metadata: "METADATA",
+	replicas: "RUNS_ENDPOINTS",
+	redact: "REDACT",
+	redactExtraRules: "REDACT_EXTRA",
+	strictAuth: "STRICT_AUTH",
+	parentHeaders: "PARENT_HEADERS",
+	noticeCooldown: "NOTICE_COOLDOWN"
 };
-const SELF_HOSTED_PROVIDER_HINTS = [
-	"github",
-	"gitlab",
-	"bitbucket"
+const PARENT_PROJECT_PROBE = "codex-parent-without-project";
+const PARENT_TRACE_HEADER = "langsmith-trace";
+const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"];
+const AGENT_ID_ENV_KEY = "LANGSMITH_AGENT_ID";
+const DEFAULT_MUTED_ENV_KEYS = ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"];
+const ENV_TRUE_VALUES = [
+	"1",
+	"true",
+	"yes",
+	"on"
 ];
-const PROVIDER_HOSTS = {
-	github: "github.com",
-	gitlab: "gitlab.com",
-	bitbucket: "bitbucket.org",
-	devAzure: "dev.azure.com"
+const ENV_FALSE_VALUES = [
+	"0",
+	"false",
+	"no",
+	"off"
+];
+const POLICY_THREAD_KEYS = [
+	"preference",
+	"turns",
+	"inherited"
+];
+const POLICY_TOP_LEVEL_KEYS = ["version", "threads"];
+const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
+const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
+const PROMPT_COMMANDS = [
+	{
+		name: "mute",
+		text: "langsmith-tracing:mute",
+		takesArguments: false
+	},
+	{
+		name: "unmute",
+		text: "langsmith-tracing:unmute",
+		takesArguments: false
+	},
+	{
+		name: "setup",
+		text: "langsmith-tracing:setup",
+		takesArguments: true
+	}
+];
+const TRACING_COMMANDS = ["mute", "unmute"];
+const LOCKED_MUTE_REPLY = "An admin has enabled muting for all sessions, so this thread cannot be unmuted.";
+const MUTED_REPLY_STATE = "muted (metadata-only)";
+const UNMUTED_REPLY_STATE = "unmuted (full content)";
+const PREFERENCE_REPLY = "Thread tracing {state}. Preference saved for the next turn; the current turn is unchanged.";
+const PREFERENCE_REPLY_STATE = "{state}";
+const MASTER_DISABLED_REPLY = "Tracing is disabled. Changes will not take effect until it's configured with langsmith-tracing:setup.";
+const PREFERENCE_REPLY_WARNING = "Warning:";
+const EVIDENCE_FAILURE_PREFIX = "Could not save tracing preference/turn evidence:";
+const EVIDENCE_REPAIR_HINT = "Repair the privacy file or permissions and retry.";
+const SUBAGENT_SCOPE_RESET = {
+	approval_policy: void 0,
+	ls_is_error_interrupt: void 0
 };
-const GIT_COMMAND_TIMEOUT_MS = 5e3;
-const GIT_COMMAND_MISSING = "is not installed in an absolute PATH folder";
-const GH_LOGIN_ARGUMENTS = [
-	"api",
-	"user",
-	"--jq",
-	".login"
+const SKILL_SCOPE_RESET = {
+	...CHILD_SCOPE_RESET,
+	usage_metadata: void 0
+};
+const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
+const TOOL_PATH_INPUT_KEYS = [
+	"file_path",
+	"path",
+	"workdir",
+	"cwd"
 ];
-const GH_LOGIN_TIMEOUT_MS = 5e3;
-const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
-const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
+const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
+const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
+const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
+	"start_time",
+	"end_time",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order",
+	"tags",
+	"error",
+	"serialized",
+	"events",
+	"reference_example_id"
+];
+const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
+const ENGINE_WORKER_FLAG = "--engine-worker";
+const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
+const TRACE_RUN_EVENT_PREFIX = "codex-run:";
+const LIVE_RUN_EVENT_PREFIX = "codex-live-run:";
+const TRACE_RUN_PATCH_EVENT_PREFIX = "codex-run-patch:";
+const RUN_PATCH_FIELDS = [
+	"outputs",
+	"end_time",
+	"error"
+];
+const RUN_CONTEXT_FIELDS = [
+	"start_time",
+	"parent_run_id",
+	"trace_id",
+	"dotted_order"
+];
+const TOOL_RUN_ID_SEGMENT = ":tool:";
+const ROLLOUT_ENCODING = "utf-8";
+const ROLLOUT_CHUNK_BYTES = 65536;
+const OPEN_TURN_END = "langsmith_open_turn_end";
+const TOOL_ITEM_TYPES = [
+	"CommandExecution",
+	"DynamicToolCall",
+	"FileChange",
+	"McpToolCall"
+];
+const FAILED_TOOL_STATUSES = ["failed", "declined"];
+const PATCH_OPERATION = "patch";
+const RUN_COMPLETED = "completed";
+const RUN_ERROR = "error";
+const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
+const JOB_STATE_FILE_NAME = "langsmith_state.json";
+const CODEX_SESSIONS_DIRECTORY = "sessions";
+const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
+const STATE_FILE_MAX_AGE_MS = 216e5;
+const WARNING_FILE_NAME = "langsmith_warning.txt";
+const NOTICE_KIND_MANAGED = "managed";
+const NOTICE_KIND_CREDENTIAL = "credential";
+const NOTICE_KIND_REPLICA = "replica";
+const PARENT_HEADERS_FIELD = "parent_headers";
+const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
+const DROPPED_LOGIN_WORK_WARNING_PREFIX = "LangSmith could not accept a Codex trace upload and dropped it. Run `";
+const DROPPED_LOGIN_WORK_WARNING_SUFFIX = "` to sign in again; details are in the Codex LangSmith log.";
+/** Plugin version, or undefined outside a bundled build. */
+const LS_INTEGRATION_VERSION = "0.4.4";
+const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
+const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set(["exec_command", "apply_patch"]);
+const SHELL_WORD = /[^\s"']+/g;
+const SKILLS_FOLDERS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
+const NON_SKILL_SUBFOLDERS = /* @__PURE__ */ new Set([
+	"references",
+	"scripts",
+	"assets",
+	"templates"
+]);
+const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
+const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
+const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
+const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const WORKDIR_LITERAL = /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
+const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:ba|z)?sh\s+-\w*c\s+(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)')\s*$/;
+const SKILL_FRAGMENT_NAME = /^<skill>\s*<name>([^<\s]+)<\/name>/i;
+const NONZERO_EXIT_SUFFIX = /\n\nExit code: -?[1-9]\d*\s*$/;
+const BACKSLASH_ESCAPE = /\\([\s\S])/g;
+const STRING_ESCAPES = {
+	n: "\n",
+	t: "	",
+	r: "\r"
+};
+const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
+const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
+const CONTEXTUAL_USER_FRAGMENTS = [
+	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
+	/^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
+	/^<\/?image(?:\s[^>]*)?>$/i
+];
+const TOOL_OUTPUT_ENVELOPE_KEYS = [
+	"output",
+	"metadata",
+	"exit_code",
+	"wall_time_seconds",
+	"chunk_id",
+	"original_token_count",
+	"session_id"
+];
+const DATA_URL_PATTERN = /^data:([^;,]+);base64,([\s\S]*)$/;
+const REVIEW_RESULT_PATTERN = /^<user_action>[\s\S]*?<action>([\s\S]*?)<\/action>[\s\S]*<\/user_action>$/i;
+const USER_SHELL_COMMAND_PATTERN = /^<user_shell_command>\s*<command>\n([\s\S]*?)\n<\/command>\s*<result>\n([\s\S]*)\n<\/result>\s*<\/user_shell_command>$/i;
+const REALTIME_DELEGATION_PATTERN = /^<realtime_delegation>[\s\S]*?<input>([\s\S]*?)<\/input>[\s\S]*<\/realtime_delegation>$/i;
+const QUESTION_REPLY_PATTERN = /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
+const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;
+const XML_ENTITY_PATTERN = /&(?:lt|gt|quot|apos|amp);/g;
+const XML_ENTITIES = {
+	"&lt;": "<",
+	"&gt;": ">",
+	"&quot;": "\"",
+	"&apos;": "'",
+	"&amp;": "&"
+};
+const PLUGIN_VERSION = LS_INTEGRATION_VERSION;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
-function findExecutable(name, env, platform) {
-	const windows = platform === WINDOWS_PLATFORM;
-	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
-	const folders = (DESKTOP_PATH_VARIABLES.map((variable) => env[variable]).find((value) => value !== void 0) ?? "").split(windows ? ";" : ":");
-	const absolute = windows ? win32.isAbsolute : posix.isAbsolute;
-	for (const folder of folders.filter((entry) => entry !== "" && absolute(entry))) for (const extension of extensions) {
-		const candidate = join(folder, `${name}${extension}`);
-		try {
-			accessSync(candidate, constants.X_OK);
-			if (statSync(candidate).isFile()) return candidate;
-		} catch {}
-	}
-}
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/constants.js
+const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/repository.js
-function parseRepoName(remoteUrl) {
-	const value = remoteUrl.trim();
-	try {
-		const url = new URL(value);
-		const name = url.pathname.replace(REMOTE_PATH_EDGE_SLASHES, "").replace(REMOTE_GIT_SUFFIX, "");
-		const repository = repositoryOnHost(url.hostname, name);
-		if (repository) return repository;
-	} catch {}
-	const scpMatch = value.match(SCP_REMOTE_PATTERN);
-	if (scpMatch) {
-		const host = scpMatch[1];
-		const path = scpMatch[2];
-		if (host && path) return repositoryOnHost(host, path.replace(REMOTE_PATH_TRAILING_SLASHES, "").replace(REMOTE_GIT_SUFFIX, ""));
-	}
-}
-function repositoryOnHost(hostname, name) {
-	const host = hostname.toLowerCase();
-	if (!name) return void 0;
-	const provider = GIT_PROVIDERS[host];
-	if (provider) return {
-		provider,
-		name
-	};
-	if (!host.includes(".")) return void 0;
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/target.js
+function resolveTarget$1(options) {
+	for (const field of [
+		"executableName",
+		"repository",
+		"userAgent"
+	]) if (typeof options[field] !== "string" || options[field].trim() === "") throw new Error(`the binary target needs a ${field}`);
 	return {
-		provider: SELF_HOSTED_PROVIDER_HINTS.find((hint) => host.includes(hint)) ?? host,
-		name,
-		host
+		executableName: options.executableName,
+		repository: options.repository,
+		userAgent: options.userAgent,
+		releasesApiOverrideEnvVar: options.releasesApiOverrideEnvVar,
+		publishedTargets: options.publishedTargets ?? DEFAULT_PUBLISHED_TARGETS
 	};
 }
-function gitOutput(args, cwd) {
-	const env = {
-		...process.env,
-		LC_ALL: "C",
-		LANG: "C"
+function isPublishedTarget(target, platform, arch) {
+	return target.publishedTargets[platform]?.includes(arch) ?? false;
+}
+function releaseAssetName(target, platform, arch, version) {
+	return `${target.executableName}-${platform}-${arch}-${version}`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/binary.js
+function defineBinaryTarget(options) {
+	const target = resolveTarget$1(options);
+	return {
+		target,
+		supportsHost: (platform$1 = platform(), arch$1 = arch()) => isPublishedTarget(target, platform$1, arch$1),
+		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version)
 	};
-	for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
-	return execFileSync(installedCommand("git"), args, {
-		cwd,
-		env,
-		encoding: "utf-8",
-		timeout: GIT_COMMAND_TIMEOUT_MS,
-		stdio: [
-			"ignore",
-			"pipe",
-			"pipe"
-		]
+}
+//#endregion
+//#region src/binary.ts
+const binary = defineBinaryTarget({
+	executableName: "langsmith-codex-tracing",
+	repository: "langchain-ai/langsmith-codex-plugins",
+	userAgent: "langsmith-codex",
+	releasesApiOverrideEnvVar: "LANGSMITH_CODEX_RELEASE_API"
+});
+//#endregion
+//#region src/messages.ts
+function tracingFailed(error) {
+	return `LangSmith tracing failed for this turn: ${error}`;
+}
+function usage(executableName) {
+	return `Usage:
+  ${executableName} --version
+
+Options:
+  --help, -h     Show this help and exit
+  --version, -v  Print the version this build carries and exit`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/constants.js
+const PLUGINS_BASE_FOLDER = "langsmith_plugins_base";
+const LOCK_FILE = "tracer.lock";
+const SNAPSHOT_FILE = "snapshot.json";
+const NOTES_FILE = "notes.jsonl";
+const LOG_FILE = "tracer.log";
+const READ_CHUNK_BYTES = 1048576;
+const BOOKMARK_CHECK_BYTES = 1048576;
+const SNAPSHOT_TEMP_SUFFIX = ".tmp";
+const LEGACY_IMPORT_WINDOW_MS = 864e5;
+const LEGACY_ENGINE_FOLDER = "langsmith_engine";
+const LEGACY_STATE_FILE = "langsmith_state.json";
+const LEGACY_QUEUE_WAIT_MS = 3e4;
+const LEGACY_DROPPED_WARNING = "dropped {uploads} queued uploads from {sessions} old sessions: {missing} missing from the old state, {writerless} with tracing off, no known destination or no old rebuild code, {otherAccount} recorded under another account";
+const IGNORED_RUNS = {
+	post: () => void 0,
+	patch: () => void 0
+};
+const ROTATED_NOTES_SUFFIX = ".rotated.";
+const ROTATED_NOTES_NAME = /\.rotated\.(\d+)-(\d+)$/u;
+const UPLOAD_QUEUE_POLICY = {
+	retryBaseMs: 500,
+	retryMaxMs: 1e4
+};
+const UPLOAD_QUEUE_PATCH_FIELDS = [
+	"inputs",
+	"outputs",
+	"end_time",
+	"error"
+];
+const UPLOAD_QUEUE_RETRY_LOG = "Upload of {count} runs to {destination} failed, retrying in {delayMs} ms: {reason}";
+const UPLOAD_QUEUE_DROPPED_LOG = "DROPPED run {runId} of session {sessionId} on {destination}, since LangSmith rejected it for good: {reason}{hint}";
+const UPLOAD_QUEUE_WRITER_FAILED_LOG = "DROPPED every run for an upload setting that could not be used: {reason}";
+const LOCK_TEMPORARY_SUFFIX = ".claim.";
+const LOCK_TAKEOVER_SUFFIX = ".takeover";
+const UNREAD_NOTES = {
+	base: 0,
+	offset: 0
+};
+const HOOK_WARNING_PREFIX = "langsmith tracer: ";
+const HANDOFF_WAIT_MS = 3e4;
+const WORKER_STARTED_LOG = "worker started";
+const WORKER_STOPPED_LOG = "worker stopped";
+const WORKER_RESUMED_LOG = "worker resumed for late notes";
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/paths.js
+function tracerPaths(agentStateFolder) {
+	const folder = join(agentStateFolder, PLUGINS_BASE_FOLDER);
+	return {
+		folder,
+		lock: join(folder, LOCK_FILE),
+		snapshot: join(folder, SNAPSHOT_FILE),
+		notes: join(folder, NOTES_FILE),
+		log: join(folder, LOG_FILE)
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/lines.js
+function scanLines(file, from, to, visit) {
+	let carried = Buffer.alloc(0);
+	let carriedStart = from;
+	let position = from;
+	while (position < to) {
+		const chunk = Buffer.alloc(Math.min(READ_CHUNK_BYTES, to - position));
+		const count = readSync(file, chunk, 0, chunk.length, position);
+		if (count === 0) break;
+		position += count;
+		const data = Buffer.concat([carried, chunk.subarray(0, count)]);
+		let lineStart = 0;
+		let newline = data.indexOf(10);
+		while (newline !== -1) {
+			const end = carriedStart + newline + 1;
+			if (visit(data.subarray(lineStart, newline), end)) return end;
+			lineStart = newline + 1;
+			newline = data.indexOf(10, lineStart);
+		}
+		carried = Buffer.from(data.subarray(lineStart));
+		carriedStart += lineStart;
+	}
+	return carriedStart;
+}
+function parseLine(text) {
+	try {
+		return JSON.parse(text.toString());
+	} catch {
+		return;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/bookmark.js
+function recoverBookmark(file, size, bookmark, lineId, notices) {
+	if (bookmark.offset === 0) return;
+	const id = bookmark.lastLineId;
+	if (id === void 0) {
+		if (bookmark.offset <= size) return;
+		bookmark.offset = 0;
+		notices.push(`${bookmark.path} shrank and has no line ID to resume from, reading from the start`);
+		return;
+	}
+	if (bookmark.offset <= size && lastIdEndingAt(file, bookmark.offset, lineId) === id) return;
+	const end = findLineEnd(file, size, id, lineId);
+	if (end === void 0) {
+		bookmark.offset = 0;
+		notices.push(`line ${id} is gone from ${bookmark.path}, reading from the start`);
+		return;
+	}
+	bookmark.offset = end;
+	notices.push(`${bookmark.path} changed, resuming after line ${id} at byte ${end}`);
+}
+function lastIdEndingAt(file, offset, lineId) {
+	const start = Math.max(0, offset - BOOKMARK_CHECK_BYTES);
+	const window = Buffer.alloc(offset - start);
+	readSync(file, window, 0, window.length, start);
+	const text = window.toString("utf8");
+	if (!text.endsWith("\n")) return void 0;
+	const pieces = text.slice(0, -1).split("\n");
+	for (const piece of pieces.toReversed()) {
+		const line = parseLine(piece);
+		const id = line === void 0 ? void 0 : lineId(line);
+		if (id !== void 0) return id;
+	}
+}
+function findLineEnd(file, size, id, lineId) {
+	let found;
+	scanLines(file, 0, size, (text, end) => {
+		if (!text.includes(id)) return false;
+		const line = parseLine(text);
+		if (line === void 0 || lineId(line) !== id) return false;
+		found = end;
+		return true;
 	});
-}
-function getRepoName(cwd) {
-	try {
-		const lines = gitOutput(["remote", "-v"], cwd).trim().split("\n").filter(Boolean);
-		const remotes = [];
-		for (const line of lines) {
-			const parts = line.split(REMOTE_LINE_WHITESPACE);
-			const name = parts[0];
-			const url = parts[1];
-			if (name && url && line.includes("(fetch)")) remotes.push({
-				name,
-				url
-			});
-		}
-		const origin = remotes.find((remote) => remote.name === "origin");
-		if (origin) {
-			const name = parseRepoName(origin.url);
-			if (name) return name;
-		}
-		for (const remote of remotes) {
-			const name = parseRepoName(remote.url);
-			if (name) return name;
-		}
-	} catch {}
-}
-function getRepoUrl(provider, name) {
-	const host = PROVIDER_HOSTS[provider];
-	return host ? `https://${host}/${name}` : void 0;
-}
-function getRepoRoot(cwd) {
-	try {
-		const root = gitOutput(["rev-parse", "--show-toplevel"], cwd).trim();
-		return root ? resolve(root) : void 0;
-	} catch (error) {
-		const stderr = String(error?.stderr ?? "");
-		return NOT_A_REPOSITORY.test(stderr) ? null : void 0;
-	}
-}
-function getGitUserName(cwd, options) {
-	try {
-		const name = gitOutput(["config", "user.name"], cwd).trim();
-		if (name) return name;
-	} catch {}
-	return options?.githubLogin?.();
-}
-function getGitInfo(cwd) {
-	const result = {};
-	try {
-		const branch = gitOutput([
-			"rev-parse",
-			"--abbrev-ref",
-			"HEAD"
-		], cwd).trim();
-		if (branch && branch !== "HEAD") result.branch = branch;
-	} catch {}
-	try {
-		const commit = gitOutput(["rev-parse", "HEAD"], cwd).trim();
-		if (commit) result.commit = commit;
-	} catch {}
-	return result;
-}
-function getRepositoryMetadata(cwd) {
-	const metadata = {};
-	const repoName = getRepoName(cwd);
-	if (repoName) {
-		metadata[GIT_METADATA_KEYS.repository] = repoName.name;
-		metadata[GIT_METADATA_KEYS.provider] = repoName.provider;
-		const url = repoName.host ? `https://${repoName.host}/${repoName.name}` : getRepoUrl(repoName.provider, repoName.name);
-		if (url) metadata[GIT_METADATA_KEYS.repositoryUrl] = url;
-	}
-	const gitInfo = getGitInfo(cwd);
-	if (gitInfo.branch) metadata[GIT_METADATA_KEYS.branch] = gitInfo.branch;
-	if (gitInfo.commit) metadata[GIT_METADATA_KEYS.commit] = gitInfo.commit;
-	return withBothGitMetadataNames(metadata);
-}
-function githubLoginLookup() {
-	return execFileSync(installedCommand("gh"), GH_LOGIN_ARGUMENTS, {
-		encoding: "utf-8",
-		timeout: GH_LOGIN_TIMEOUT_MS,
-		stdio: [
-			"ignore",
-			"pipe",
-			"ignore"
-		]
-	}).trim();
-}
-function isGitHubLogin(printed) {
-	return printed !== "null" && GH_LOGIN_PATTERN.test(printed);
-}
-function installedCommand(name) {
-	const found = findExecutable(name, process.env, process.platform);
-	if (found === void 0) throw new Error(`${name} ${GIT_COMMAND_MISSING}`);
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/github-login.js
-function createGitHubLoginFallback(options) {
-	const now = options.now ?? Date.now;
-	const retryAfterMs = options.retryAfterMs ?? 864e5;
-	let alreadyTried = false;
-	let login;
-	function failedRecently() {
-		try {
-			const marker = JSON.parse(readFileSync(options.markerPath, "utf-8"));
-			const failed = new Date(marker.failed).getTime();
-			const since = now() - failed;
-			return since >= 0 && since < retryAfterMs;
-		} catch {
-			return false;
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/reader.js
+const checkedInodes = /* @__PURE__ */ new WeakMap();
+function readNewLines(bookmark, lineId) {
+	const lines = [];
+	const notices = [];
+	if (!existsSync(bookmark.path)) return {
+		lines,
+		notices,
+		reachedEnd: true
+	};
+	const file = openSync(bookmark.path, "r");
+	try {
+		const { size: bigSize, ino } = fstatSync(file, { bigint: true });
+		const size = Number(bigSize);
+		if (size < bookmark.offset || ino === 0n || checkedInodes.get(bookmark) !== ino) {
+			recoverBookmark(file, size, bookmark, lineId, notices);
+			checkedInodes.set(bookmark, ino);
 		}
+		const start = bookmark.offset;
+		let reachedEnd = true;
+		bookmark.offset = scanLines(file, start, size, (text, end) => {
+			const line = parseLine(text);
+			if (line !== void 0) {
+				lines.push({
+					line,
+					end
+				});
+				const id = lineId(line);
+				if (id !== void 0) bookmark.lastLineId = id;
+			} else if (text.toString("utf8").trim() !== "") notices.push(`skipped an unreadable line ending at byte ${end} of ${bookmark.path}`);
+			reachedEnd = end - start < READ_CHUNK_BYTES;
+			return !reachedEnd;
+		});
+		return {
+			lines,
+			notices,
+			reachedEnd
+		};
+	} finally {
+		closeSync(file);
 	}
-	function recordFailure() {
-		try {
-			mkdirSync(dirname(options.markerPath), { recursive: true });
-			const partial = `${options.markerPath}.${process.pid}`;
-			const marker = { failed: new Date(now()).toISOString() };
-			writeFileSync(partial, JSON.stringify(marker));
-			renameSync(partial, options.markerPath);
-		} catch {}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/snapshot/snapshot.js
+function loadSnapshot(path) {
+	const empty = {
+		version: 1,
+		sessions: {}
+	};
+	if (!existsSync(path)) return { snapshot: empty };
+	try {
+		const parsed = JSON.parse(readFileSync(path, "utf8"));
+		if (parsed.version !== 1 || typeof parsed.sessions !== "object") return {
+			snapshot: empty,
+			problem: `ignored ${path} since its version is unknown`
+		};
+		return { snapshot: parsed };
+	} catch (error) {
+		return {
+			snapshot: empty,
+			problem: `ignored unreadable ${path}: ${String(error)}`
+		};
 	}
-	return () => {
-		if (alreadyTried) return login;
-		alreadyTried = true;
-		if (failedRecently()) return void 0;
-		try {
-			const printed = githubLoginLookup();
-			if (isGitHubLogin(printed)) login = printed;
-		} catch {}
-		if (login === void 0) recordFailure();
-		return login;
+}
+function writeSnapshot(path, snapshot) {
+	publishByRename(path, JSON.stringify(snapshot), SNAPSHOT_TEMP_SUFFIX, 384);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/snapshot/legacy.js
+function transcriptEnd(path, lineId) {
+	const bookmark = {
+		path,
+		offset: 0
+	};
+	for (;;) if (readNewLines(bookmark, lineId).reachedEnd) return bookmark;
+}
+function openTurnStart(path, lineId, turn) {
+	if (turn.fromStart) return {
+		path,
+		offset: 0
+	};
+	if (turn.afterLineId === void 0) return transcriptEnd(path, lineId);
+	const bookmark = {
+		path,
+		offset: 0
+	};
+	for (;;) {
+		const { lines, reachedEnd } = readNewLines(bookmark, lineId);
+		const after = lines.find(({ line }) => lineId(line) === turn.afterLineId);
+		if (after !== void 0) return {
+			path,
+			offset: after.end,
+			lastLineId: turn.afterLineId
+		};
+		if (reachedEnd) return void 0;
+	}
+}
+function importSessions(options, sessions, paths) {
+	const saved = loadSnapshot(paths.snapshot).snapshot;
+	const cutoff = Date.now() - LEGACY_IMPORT_WINDOW_MS;
+	for (const { sessionId, transcriptPath, updatedAt, tracingMode, writer, openTurn } of sessions) {
+		if (updatedAt < cutoff || writer === void 0) continue;
+		const { lineId } = options.createBuilder({
+			sessionId,
+			savedState: void 0,
+			sink: IGNORED_RUNS
+		});
+		const resume = openTurn && openTurnStart(transcriptPath, lineId, openTurn);
+		saved.sessions[sessionId] = {
+			sessionId,
+			integration: options.integration,
+			writer,
+			bookmarks: { [transcriptPath]: resume ?? transcriptEnd(transcriptPath, lineId) },
+			pendingNotes: [],
+			builderState: resume === void 0 ? void 0 : openTurn?.builderState,
+			tracingMode,
+			ended: false
+		};
+	}
+	mkdirSync(paths.folder, {
+		recursive: true,
+		mode: 448
+	});
+	writeSnapshot(paths.snapshot, saved);
+}
+async function handOverOpenTurn(storageRoot, integration, sessionId, rootRunId) {
+	for (const directory of [CAPTURE_TURNS_DIRECTORY, CAPTURE_JOBS_DIRECTORY]) {
+		const store = createCaptureStore(storageRoot, directory);
+		for (const { record } of await store.enumerateTurn(integration, sessionId, rootRunId)) if (record.runId !== rootRunId || record.eventKind !== "run-post") await store.remove(scopeOf(record));
+	}
+}
+async function sendOldSession(storageRoot, integration, { sessionId, writer, recover, openTurn }, dropped) {
+	if (openTurn !== void 0) await handOverOpenTurn(storageRoot, integration, sessionId, openTurn.rootRunId);
+	await recover();
+	const bridge = createLifecycleBridge({
+		storageRoot,
+		integration,
+		sessionId,
+		writer
+	});
+	const result = await bridge.drain();
+	const account = bridge.accountFingerprint;
+	const jobs = await createCaptureStore(storageRoot, CAPTURE_JOBS_DIRECTORY).enumerate(integration, sessionId);
+	const ownJobs = jobs.filter(({ record }) => record.destinationFingerprint === account);
+	if (result.status !== "drained" || result.pending > 0 || ownJobs.length > 0) return false;
+	const otherAccount = result.accountMismatch + jobs.length;
+	dropped.otherAccount += Number(otherAccount > 0);
+	dropped.uploads += otherAccount;
+	return true;
+}
+async function sendOldQueue(storageRoot, integration, sessions, log) {
+	if (!existsSync(storageRoot)) return true;
+	let sent = true;
+	const dropped = {
+		missing: 0,
+		writerless: 0,
+		otherAccount: 0,
+		uploads: 0
+	};
+	const queued = /* @__PURE__ */ new Map();
+	for (const directory of [CAPTURE_TURNS_DIRECTORY, CAPTURE_JOBS_DIRECTORY]) {
+		const store = createCaptureStore(storageRoot, directory);
+		for (const { sessionId, captures } of await store.enumerateSessions(integration)) queued.set(sessionId, (queued.get(sessionId) ?? 0) + captures.length);
+	}
+	for (const [sessionId, uploads] of queued) {
+		const session = sessions.find((listed) => listed.sessionId === sessionId);
+		const { writer, recover, openTurn } = session ?? {};
+		if (writer === void 0 || recover === void 0) {
+			dropped[session === void 0 ? "missing" : "writerless"] += 1;
+			dropped.uploads += uploads;
+			continue;
+		}
+		sent = await sendOldSession(storageRoot, integration, {
+			sessionId,
+			writer,
+			recover,
+			openTurn
+		}, dropped).catch((error) => {
+			log(`could not send old session ${sessionId}: ${describe(error)}`);
+			return false;
+		}) && sent;
+	}
+	const sessionCount = dropped.missing + dropped.writerless + dropped.otherAccount;
+	if (sessionCount > 0) log(fillTemplate(LEGACY_DROPPED_WARNING, {
+		...dropped,
+		sessions: sessionCount
+	}));
+	return sent;
+}
+function lockHolders(folder) {
+	try {
+		return readdirSync(folder, {
+			recursive: true,
+			withFileTypes: true
+		}).filter((entry) => entry.isFile() && entry.parentPath.endsWith(".claims")).map(({ parentPath, name }) => readFileSync(join(parentPath, name), "utf8")).map((claim) => JSON.parse(claim).pid);
+	} catch {
+		return existsSync(folder) ? void 0 : [];
+	}
+}
+async function oldWorkersStopped(folders) {
+	const holders = /* @__PURE__ */ new Set();
+	for (;;) {
+		const scans = folders.map((folder) => lockHolders(folder));
+		for (const pid of scans.flat()) if (pid !== void 0) holders.add(pid);
+		for (const pid of holders) if (pid === process.pid || processIsAlive(pid) !== true) holders.delete(pid);
+		if (holders.size === 0 && !scans.includes(void 0)) return true;
+		await setTimeout$1(10);
+	}
+}
+function upgradeLegacyState(options, log) {
+	if (!isAbsolute(options.agentStateFolder)) throw new Error(`refusing to import legacy state from relative folder "${options.agentStateFolder}"`);
+	const legacyEngine = join(options.agentStateFolder, LEGACY_ENGINE_FOLDER);
+	const legacyState = join(options.agentStateFolder, LEGACY_STATE_FILE);
+	if (!existsSync(legacyEngine) && !existsSync(legacyState)) return Promise.resolve();
+	const paths = tracerPaths(options.agentStateFolder);
+	const sessions = existsSync(legacyState) ? options.readLegacySessions(legacyState) : [];
+	if (!existsSync(paths.snapshot)) importSessions(options, sessions, paths);
+	const integration = options.integration;
+	const stateClaims = `${legacyState}${FILE_LOCK_DIRECTORY_SUFFIX}`;
+	const sending = sendOldQueue(legacyEngine, integration, sessions, log).then((sent) => sent && oldWorkersStopped([legacyEngine, stateClaims])).catch(() => false);
+	const timeout = setTimeout$1(LEGACY_QUEUE_WAIT_MS, false, { ref: false });
+	return Promise.race([sending, timeout]).then((sent) => {
+		if (!sent) return;
+		rmSync(legacyEngine, {
+			recursive: true,
+			force: true
+		});
+		rmSync(legacyState, { force: true });
+		rmSync(stateClaims, {
+			recursive: true,
+			force: true
+		});
+	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/submissions.js
+function mergeRun(base, update) {
+	if (update === void 0) return base;
+	const merged = { ...base };
+	for (const [field, value] of Object.entries(update)) if (value !== void 0) merged[field] = value;
+	return merged;
+}
+function postSubmission$1(run) {
+	const privacyMode = run.tracingMode === "metadata" ? "metadata" : "full";
+	return {
+		operation: "post",
+		integration: run.metadata.integration,
+		privacyMode,
+		metadata: run.metadata,
+		...privacyMode === "metadata" ? { privacyContext: { status: privacyStatus(run) } } : {},
+		run: {
+			id: run.id,
+			name: run.name,
+			run_type: run.run_type,
+			start_time: run.start_time,
+			trace_id: run.trace_id,
+			dotted_order: run.dotted_order,
+			inputs: run.inputs ?? {},
+			...run.parent_run_id === void 0 ? {} : { parent_run_id: run.parent_run_id },
+			...run.end_time === void 0 ? {} : { end_time: run.end_time },
+			...run.outputs === void 0 ? {} : { outputs: run.outputs },
+			...run.error === void 0 ? {} : { error: run.error }
+		}
 	};
 }
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/paths.js
-function gitMarkerAt(directory) {
-	const marker = join(directory, GIT_DIRECTORY_NAME);
-	try {
-		if (statSync(marker).isDirectory()) return GIT_MARKERS.REPOSITORY_ROOT;
-	} catch {
-		return GIT_MARKERS.NOTHING_HERE;
-	}
-	return pointsAtGitDirectory(directory, marker) ? GIT_MARKERS.REPOSITORY_ROOT : GIT_MARKERS.ONLY_GIT_CAN_SAY;
-}
-function pointsAtGitDirectory(directory, marker) {
-	try {
-		const pointer = readFileSync(marker, "utf-8").match(GIT_FILE_POINTER)?.[1];
-		return pointer !== void 0 && statSync(resolve(directory, pointer)).isDirectory();
-	} catch {
-		return false;
-	}
-}
-function rootFromGitMarker(directory) {
-	let current = resolve(directory);
-	for (;;) {
-		const marker = gitMarkerAt(current);
-		if (marker === GIT_MARKERS.REPOSITORY_ROOT) return current;
-		if (marker === GIT_MARKERS.ONLY_GIT_CAN_SAY) return void 0;
-		const parent = dirname(current);
-		if (parent === current) return null;
-		current = parent;
-	}
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/attribution.js
-function createRepositoryAttributor(options) {
-	const rootByDirectory = /* @__PURE__ */ new Map();
-	const attributionByRoot = /* @__PURE__ */ new Map();
-	const identifierByRoot = /* @__PURE__ */ new Map();
-	const githubLogin = createGitHubLoginFallback({ markerPath: options.githubLoginMarkerPath });
-	function rootForPath(path) {
-		const directory = nearestExistingDirectory(path);
-		if (!directory) return void 0;
-		if (rootByDirectory.has(directory)) return rootByDirectory.get(directory);
-		const walked = rootFromGitMarker(directory);
-		const root = walked === void 0 ? getRepoRoot(directory) : walked;
-		rootByDirectory.set(directory, root);
-		return root;
-	}
-	function isSessionsOwnRepository(sessionCwd, root) {
-		return sessionCwd ? rootForPath(sessionCwd) === root : false;
-	}
-	function identifierForRoot(root) {
-		const cached = identifierByRoot.get(root);
-		if (cached) return cached;
-		const userName = getGitUserName(root, { githubLogin });
-		const identifier = userName ? { ls_attribution_identifier: userName } : {};
-		identifierByRoot.set(root, identifier);
-		return identifier;
-	}
-	function attributionForRoot(root) {
-		const cached = attributionByRoot.get(root);
-		if (cached) return cached;
-		const attribution = {
-			...identifierForRoot(root),
-			...getRepositoryMetadata(root)
-		};
-		attributionByRoot.set(root, attribution);
-		return attribution;
-	}
-	function scopedToPath(base, origin, pinned) {
-		if (origin.namedAPath && !origin.path) return base;
-		const path = origin.path ?? origin.cwd;
-		if (!path || !isAbsolute(path)) return base;
-		const root = rootForPath(path);
-		if (root === void 0) return base;
-		if (root === null) return withoutRepositoryKeys(base, pinned);
-		if (isSessionsOwnRepository(origin.cwd, root)) return {
-			...base,
-			...withoutPinnedKeys(identifierForRoot(root), pinned)
-		};
-		return {
-			...withoutRepositoryKeys(base, pinned),
-			...withoutPinnedKeys(attributionForRoot(root), pinned)
-		};
-	}
-	function withSessionRepository(base, sessionCwd) {
-		const sessionRoot = sessionCwd ? rootForPath(sessionCwd) : void 0;
-		if (typeof sessionRoot !== "string") return base;
-		return {
-			...attributionForRoot(sessionRoot),
-			...base
-		};
-	}
-	function toolMetadata(base, origin) {
-		const pinned = new Set(REPOSITORY_METADATA_KEYS.filter((key) => base?.[key] !== void 0));
-		return scopedToPath(withSessionRepository(base, origin.cwd), origin, pinned);
-	}
-	function turnMetadata(base, cwd, toolOrigins) {
-		const sessionCwd = cwd ? { cwd } : {};
-		if (typeof (cwd ? rootForPath(cwd) : void 0) === "string") return toolMetadata(base, {
-			...sessionCwd,
-			namedAPath: false
-		});
-		for (const { path, namedAPath } of toolOrigins) {
-			if (!path) continue;
-			if (typeof rootForPath(path) === "string") return toolMetadata(base, {
-				path,
-				namedAPath,
-				...sessionCwd
-			});
-		}
-		return base;
+function patchSubmission(patch) {
+	const fields = [];
+	const values = {};
+	for (const field of UPLOAD_QUEUE_PATCH_FIELDS) {
+		if (patch[field] === void 0) continue;
+		fields.push(field);
+		values[field] = patch[field];
 	}
 	return {
-		toolMetadata,
-		turnMetadata
+		operation: "patch",
+		integration: patch.metadata.integration,
+		privacyMode: patch.tracingMode === "metadata" ? "metadata" : "full",
+		metadata: patch.metadata,
+		privacyContext: { status: privacyStatus(patch) },
+		run: {
+			id: patch.id,
+			name: patch.name,
+			run_type: patch.run_type,
+			trace_id: patch.trace_id,
+			dotted_order: patch.dotted_order,
+			...patch.parent_run_id === void 0 ? {} : { parent_run_id: patch.parent_run_id },
+			...patch.start_time === void 0 ? {} : { start_time: patch.start_time }
+		},
+		patch: {
+			fields,
+			values
+		}
 	};
 }
-function withoutPinnedKeys(attribution, pinned) {
-	if (pinned.size === 0) return { ...attribution };
-	return Object.fromEntries(Object.entries(attribution).filter(([key]) => !pinned.has(key)));
+function privacyStatus(run) {
+	if (run.error !== void 0) return "error";
+	return run.end_time === void 0 ? "running" : "completed";
 }
-function withoutRepositoryKeys(base, pinned) {
-	const stripped = { ...base };
-	for (const key of REPOSITORY_METADATA_KEYS) if (!pinned.has(key)) delete stripped[key];
-	return stripped;
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/queued-runs.js
+function runKey(lane, runId) {
+	return JSON.stringify([lane.key, runId]);
+}
+function parentKey(run) {
+	const parentId = run.post?.parent_run_id;
+	if (parentId === void 0) return void 0;
+	return runKey(run.lane, parentId);
+}
+function requeue(run) {
+	const sent = run.sending;
+	run.sending = void 0;
+	if (sent?.post !== void 0) {
+		run.post = mergeRun(sent.post, run.patch);
+		run.patch = void 0;
+	} else if (sent?.patch !== void 0 && run.post === void 0) run.patch = run.patch === void 0 ? sent.patch : mergeRun(sent.patch, run.patch);
+	run.lane.ready.add(run);
+}
+function startSending(run) {
+	const { post: unsentPost, patch: unsentPatch } = run;
+	run.sending = unsentPost === void 0 ? { patch: unsentPatch } : { post: unsentPost };
+	run.post = void 0;
+	run.patch = void 0;
+	return { submission: unsentPost === void 0 ? patchSubmission(unsentPatch) : postSubmission$1(unsentPost) };
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/upload-queue.js
+function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
+	const lanesByWriter = /* @__PURE__ */ new Map();
+	const lanes = [];
+	const runs = /* @__PURE__ */ new Map();
+	const waitingOnParent = /* @__PURE__ */ new Map();
+	const pendingBySession = /* @__PURE__ */ new Map();
+	let inFlight = 0;
+	let queuedBytes = 0;
+	let nextLane = 0;
+	let retryTimer;
+	function lanesFor(options) {
+		const key = JSON.stringify(options, sortedKeys);
+		const known = lanesByWriter.get(key);
+		if (known !== void 0) return known;
+		let created = [];
+		try {
+			const writer = createLangSmithUploadWriter(options);
+			created = writer.destinations.map(({ id }, index) => ({
+				key: `${lanes.length + index}`,
+				writer,
+				destinationId: id,
+				ready: /* @__PURE__ */ new Set(),
+				failures: 0,
+				retryAt: 0
+			}));
+		} catch (error) {
+			log(fillTemplate(UPLOAD_QUEUE_WRITER_FAILED_LOG, { reason: describe(error) }));
+		}
+		lanesByWriter.set(key, created);
+		lanes.push(...created);
+		return created;
+	}
+	function track(sessionId, lane, runId) {
+		const key = runKey(lane, runId);
+		const known = runs.get(key);
+		if (known !== void 0) return known;
+		const run = {
+			key,
+			runId,
+			sessionId,
+			lane,
+			sendAlone: false,
+			bytes: 0
+		};
+		runs.set(key, run);
+		pendingBySession.set(sessionId, (pendingBySession.get(sessionId) ?? 0) + 1);
+		return run;
+	}
+	function hold(run) {
+		const held = [
+			run.post,
+			run.patch,
+			run.sending?.post,
+			run.sending?.patch
+		];
+		const bytes = Buffer.byteLength(JSON.stringify(held));
+		queuedBytes += bytes - run.bytes;
+		run.bytes = bytes;
+	}
+	function forget(run) {
+		runs.delete(run.key);
+		queuedBytes -= run.bytes;
+		const left = (pendingBySession.get(run.sessionId) ?? 1) - 1;
+		if (left === 0) pendingBySession.delete(run.sessionId);
+		else pendingBySession.set(run.sessionId, left);
+	}
+	function parentUnacknowledged(key) {
+		const parent = runs.get(key);
+		return parent?.post !== void 0 || parent?.sending?.post !== void 0;
+	}
+	function releaseChildren(run) {
+		for (const child of waitingOnParent.get(run.key) ?? []) child.lane.ready.add(child);
+		waitingOnParent.delete(run.key);
+	}
+	function takeBatch(lane) {
+		const batch = [];
+		const inBatch = /* @__PURE__ */ new Set();
+		let bytes = 0;
+		for (const run of lane.ready) {
+			const parent = parentKey(run);
+			if (parent !== void 0 && !inBatch.has(parent) && parentUnacknowledged(parent)) {
+				lane.ready.delete(run);
+				const siblings = waitingOnParent.get(parent);
+				if (siblings === void 0) waitingOnParent.set(parent, [run]);
+				else siblings.push(run);
+				continue;
+			}
+			if (run.sendAlone && batch.length > 0) continue;
+			if (batch.length > 0 && bytes + run.bytes > lane.writer.batchLimits.maxBytes) break;
+			lane.ready.delete(run);
+			batch.push(run);
+			bytes += run.bytes;
+			inBatch.add(run.key);
+			if (run.sendAlone || batch.length >= lane.writer.batchLimits.maxRuns) break;
+		}
+		return batch;
+	}
+	function acknowledge(run) {
+		const postedNow = run.sending?.post !== void 0;
+		run.sending = void 0;
+		hold(run);
+		if (run.post !== void 0 || run.patch !== void 0) run.lane.ready.add(run);
+		else forget(run);
+		if (postedNow) releaseChildren(run);
+	}
+	function drop(run, error) {
+		const { reason, status } = rejection(error);
+		log(fillTemplate(UPLOAD_QUEUE_DROPPED_LOG, {
+			runId: run.runId,
+			sessionId: run.sessionId,
+			destination: run.lane.destinationId,
+			reason,
+			hint: authHint(status)
+		}));
+		run.sending = void 0;
+		forget(run);
+		releaseChildren(run);
+	}
+	function backOff(lane, count, error) {
+		lane.failures += 1;
+		const delayMs = Math.min(policy.retryMaxMs, policy.retryBaseMs * 2 ** (lane.failures - 1));
+		lane.retryAt = Date.now() + delayMs;
+		log(fillTemplate(UPLOAD_QUEUE_RETRY_LOG, {
+			count,
+			destination: lane.destinationId,
+			delayMs,
+			reason: failureReason(error)
+		}));
+	}
+	async function send(lane, batch) {
+		const error = await Promise.resolve().then(() => lane.writer.sendBatch(batch.map(startSending), lane.destinationId)).then(() => void 0, (failure) => failure ?? /* @__PURE__ */ new Error());
+		inFlight -= 1;
+		if (error === void 0) {
+			lane.failures = 0;
+			for (const run of batch) acknowledge(run);
+		} else if (isRetryable(error) && !(error instanceof TypeError)) {
+			backOff(lane, batch.length, error);
+			for (const run of batch) requeue(run);
+		} else if (batch.length > 1) for (const run of batch) {
+			run.sendAlone = true;
+			requeue(run);
+		}
+		else for (const run of batch) drop(run, error);
+		flush();
+	}
+	function laneToServe(now) {
+		for (let step = 0; step < lanes.length; step += 1) {
+			const lane = lanes[(nextLane + step) % lanes.length];
+			if (lane.ready.size > 0 && lane.retryAt <= now) {
+				nextLane = (nextLane + step + 1) % lanes.length;
+				return lane;
+			}
+		}
+	}
+	function scheduleRetry(now) {
+		clearTimeout(retryTimer);
+		retryTimer = void 0;
+		let earliest = Infinity;
+		for (const lane of lanes) if (lane.ready.size > 0 && lane.retryAt > now) earliest = Math.min(earliest, lane.retryAt);
+		if (earliest === Infinity) return;
+		retryTimer = setTimeout(flush, earliest - now);
+		retryTimer.unref();
+	}
+	function flush() {
+		const now = Date.now();
+		while (inFlight < 4) {
+			const lane = laneToServe(now);
+			if (lane === void 0) break;
+			const batch = takeBatch(lane);
+			if (batch.length === 0) continue;
+			inFlight += 1;
+			send(lane, batch);
+		}
+		scheduleRetry(now);
+	}
+	function post(sessionId, options, run) {
+		if (run.tracingMode === "off") return;
+		for (const lane of lanesFor(options)) {
+			const queued = track(sessionId, lane, run.id);
+			if (queued.post !== void 0 || queued.sending?.post !== void 0) continue;
+			queued.post = mergeRun(mergeRun(run, queued.sending?.patch), queued.patch);
+			queued.patch = void 0;
+			hold(queued);
+			if (queued.sending === void 0) lane.ready.add(queued);
+		}
+	}
+	function patch(sessionId, options, update) {
+		if (update.tracingMode === "off") return;
+		for (const lane of lanesFor(options)) {
+			const queued = track(sessionId, lane, update.id);
+			if (queued.post !== void 0) {
+				queued.post = mergeRun(queued.post, update);
+				hold(queued);
+				continue;
+			}
+			queued.patch = queued.patch === void 0 ? update : mergeRun(queued.patch, update);
+			hold(queued);
+			if (queued.sending === void 0) lane.ready.add(queued);
+		}
+	}
+	return {
+		post,
+		patch,
+		pendingFor: (sessionId) => pendingBySession.get(sessionId) ?? 0,
+		idle: () => runs.size === 0,
+		full: () => queuedBytes >= 41943040 || runs.size >= 5e3,
+		flush
+	};
+}
+function failureReason(error) {
+	const cause = error instanceof Error && error.cause !== void 0 ? error.cause : error;
+	const status = failureStatus(cause);
+	return status === void 0 ? describe(cause) : `${describe(cause)} (HTTP ${status})`;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/remove.js
+function removeFile(path) {
+	try {
+		unlinkSync(path);
+	} catch (error) {
+		ifMissing(void 0)(error);
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/lock.js
+function createLock(lock, version) {
+	const temporary = `${lock}${LOCK_TEMPORARY_SUFFIX}${process.pid}`;
+	const holder = {
+		pid: process.pid,
+		version
+	};
+	writeFileSync(temporary, JSON.stringify(holder));
+	try {
+		linkSync(temporary, lock);
+		return true;
+	} catch (error) {
+		if (errorCode(error) === "EEXIST") return false;
+		throw error;
+	} finally {
+		removeFile(temporary);
+	}
+}
+function lockOwner(lock) {
+	try {
+		return readFileSync(lock, "utf8");
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return void 0;
+		throw error;
+	}
+}
+function parseHolder(owner) {
+	try {
+		const { pid, version } = JSON.parse(owner);
+		if (typeof pid !== "number" || !Number.isSafeInteger(pid) || pid <= 0) return void 0;
+		return {
+			pid,
+			version: typeof version === "string" ? version : ""
+		};
+	} catch {
+		return;
+	}
+}
+function ownerIsAlive(owner) {
+	const holder = parseHolder(owner);
+	return holder !== void 0 && processIsAlive(holder.pid) !== false;
+}
+function claimTakeover(takeover, version) {
+	if (createLock(takeover, version)) return true;
+	const claimed = statSync(takeover, { throwIfNoEntry: false });
+	if (claimed === void 0 || Date.now() - claimed.mtimeMs < 1e3) return false;
+	removeFile(takeover);
+	return createLock(takeover, version);
+}
+function takeOverDeadLock(lock, deadOwner, version) {
+	const takeover = `${lock}${LOCK_TAKEOVER_SUFFIX}`;
+	if (!claimTakeover(takeover, version)) return false;
+	try {
+		if (lockOwner(lock) === deadOwner) removeFile(lock);
+		return createLock(lock, version);
+	} finally {
+		removeFile(takeover);
+	}
+}
+function takeLock(lock, version) {
+	for (let attempt = 0; attempt < 3; attempt++) {
+		if (createLock(lock, version)) return true;
+		const owner = lockOwner(lock);
+		if (owner === void 0) continue;
+		if (ownerIsAlive(owner)) return false;
+		return takeOverDeadLock(lock, owner, version);
+	}
+	return false;
+}
+function liveLockHolder(lock) {
+	const owner = lockOwner(lock);
+	return owner !== void 0 && ownerIsAlive(owner) ? parseHolder(owner) : void 0;
+}
+const isNewerVersion = (candidate, current) => candidate.localeCompare(current, void 0, { numeric: true }) > 0;
+async function takeLockFromOlder(lock, version) {
+	const deadline = Date.now() + HANDOFF_WAIT_MS;
+	while (!takeLock(lock, version)) {
+		const holder = liveLockHolder(lock);
+		if (holder !== void 0 && !isNewerVersion(version, holder.version)) return false;
+		if (Date.now() >= deadline) return false;
+		await setTimeout$1(500);
+	}
+	return true;
+}
+function releaseLock(lock) {
+	const owner = lockOwner(lock);
+	if (owner !== void 0 && parseHolder(owner)?.pid === process.pid) removeFile(lock);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/notes/notes.js
+var NotesFollower = class {
+	notes;
+	receive;
+	base = 0;
+	offset = 0;
+	rotated = [];
+	settled = [];
+	constructor(notes, receive) {
+		this.notes = notes;
+		this.receive = receive;
+	}
+	readFrom(path, offset) {
+		let file;
+		try {
+			file = openSync(path, "r");
+		} catch (error) {
+			if (errorCode(error) === "ENOENT") return {
+				offset,
+				size: 0
+			};
+			throw error;
+		}
+		try {
+			const size = fstatSync(file).size;
+			const buffer = Buffer.alloc(Math.max(0, size - offset));
+			readSync(file, buffer, 0, buffer.length, offset);
+			const complete = buffer.lastIndexOf(10) + 1;
+			const text = buffer.subarray(0, complete).toString("utf8");
+			for (const line of text.split("\n").filter(Boolean)) this.receive(line);
+			return {
+				offset: offset + complete,
+				size
+			};
+		} finally {
+			closeSync(file);
+		}
+	}
+	leftovers() {
+		const folder = dirname(this.notes);
+		const prefix = `${basename(this.notes)}${ROTATED_NOTES_SUFFIX}`;
+		return readdirSync(folder).filter((name) => name.startsWith(prefix)).flatMap((name) => {
+			const match = ROTATED_NOTES_NAME.exec(name);
+			if (match === null) return [];
+			return [{
+				path: join(folder, name),
+				base: Number(match[1]),
+				nextBase: Number(match[2])
+			}];
+		}).toSorted((left, right) => left.base - right.base);
+	}
+	resume(bookmark) {
+		const position = bookmark.base + bookmark.offset;
+		this.base = bookmark.base;
+		for (const leftover of this.leftovers()) {
+			this.readFrom(leftover.path, Math.max(0, Math.min(position, leftover.nextBase) - leftover.base));
+			this.settled.push(leftover.path);
+			this.base = Math.max(this.base, leftover.nextBase);
+		}
+		this.offset = Math.max(0, position - this.base);
+	}
+	take() {
+		this.settle();
+		const read = this.readFrom(this.notes, this.offset);
+		if (read.size < this.offset) {
+			this.base += this.offset;
+			this.offset = 0;
+			return;
+		}
+		this.offset = read.offset;
+		if (this.offset >= 10485760 && read.size === this.offset) this.rotate();
+	}
+	rotate() {
+		const nextBase = this.base + this.offset;
+		const path = `${this.notes}${ROTATED_NOTES_SUFFIX}${this.base}-${nextBase}`;
+		renameSync(this.notes, path);
+		this.rotated.push({
+			path,
+			offset: this.offset,
+			rotatedAt: Date.now()
+		});
+		this.base = nextBase;
+		this.offset = 0;
+	}
+	settle() {
+		for (let next = this.rotated[0]; next !== void 0 && Date.now() - next.rotatedAt >= 500; next = this.rotated[0]) {
+			this.readFrom(next.path, next.offset);
+			this.settled.push(next.path);
+			this.rotated.shift();
+		}
+	}
+	removeSettled() {
+		for (const path of this.settled.splice(0)) removeFile(path);
+	}
+	bookmark() {
+		return {
+			base: this.base,
+			offset: this.offset
+		};
+	}
+	rotating() {
+		return this.rotated.length > 0;
+	}
+	unread() {
+		const size = statSync(this.notes, { throwIfNoEntry: false })?.size ?? 0;
+		return this.rotating() || size > this.offset;
+	}
+};
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/session.js
+const fileSize = (path) => statSync(path, { throwIfNoEntry: false })?.size ?? 0;
+function sessionTranscripts(session) {
+	return [.../* @__PURE__ */ new Set([...Object.keys(session.bookmarks), ...session.builder.transcripts()])];
+}
+function addKnownTranscripts(session, sizes) {
+	for (const path of sessionTranscripts(session)) sizes[path] ??= fileSize(path);
+}
+function positionNote(session, note) {
+	const transcriptSizes = { ...note.transcriptSizes };
+	addKnownTranscripts(session, transcriptSizes);
+	return {
+		...note,
+		transcriptSizes
+	};
+}
+function noteReached(session, note) {
+	return Object.entries(note.transcriptSizes).every(([path, size]) => (session.bookmarks[path]?.offset ?? 0) >= size);
+}
+function deliverReadyNotes(session, log) {
+	let delivered = false;
+	for (let note = session.pendingNotes[0]; note !== void 0; note = session.pendingNotes[0]) {
+		addKnownTranscripts(session, note.transcriptSizes);
+		if (!noteReached(session, note)) break;
+		session.pendingNotes.shift();
+		delivered = true;
+		if (note.event === "SessionEnd") session.ended = true;
+		session.writer = note.writer;
+		try {
+			session.builder.receiveNote(note);
+		} catch (error) {
+			log(`could not apply ${note.event} for ${session.sessionId}: ${describe(error)}`);
+		}
+	}
+	return delivered;
+}
+function readLimit(session, path) {
+	return session.pendingNotes[0]?.transcriptSizes[path] ?? Infinity;
+}
+function reachNoteAt(session, path, offset) {
+	const sizes = session.pendingNotes[0]?.transcriptSizes;
+	const size = sizes?.[path];
+	if (sizes !== void 0 && size !== void 0 && size > offset) sizes[path] = offset;
+}
+function deliverLine(session, bookmark, read, log) {
+	try {
+		session.builder.readLine(bookmark.path, read.line);
+	} catch (error) {
+		log(`could not trace a line in ${bookmark.path}: ${describe(error)}`);
+	}
+	bookmark.offset = read.end;
+	const id = session.builder.lineId(read.line);
+	if (id !== void 0) bookmark.lastLineId = id;
+}
+function moveBookmark(bookmark, to) {
+	bookmark.offset = to.offset;
+	if (to.lastLineId === void 0) delete bookmark.lastLineId;
+	else bookmark.lastLineId = to.lastLineId;
+}
+function readTranscript(session, path, readNewLines, log) {
+	const bookmark = session.bookmarks[path] ??= {
+		path,
+		offset: 0
+	};
+	const readFrom = { ...bookmark };
+	const lines = readNewLines(bookmark, session.builder.lineId, log);
+	const readTo = { ...bookmark };
+	moveBookmark(bookmark, readFrom);
+	let advanced = false;
+	for (const read of lines) {
+		if (read.end > readLimit(session, path)) {
+			reachNoteAt(session, path, bookmark.offset);
+			deliverReadyNotes(session, log);
+			if (read.end > readLimit(session, path)) return advanced;
+		}
+		deliverLine(session, bookmark, read, log);
+		advanced = true;
+	}
+	if (readTo.offset > bookmark.offset) moveBookmark(bookmark, readTo);
+	return advanced;
+}
+function settleUnreachableNote(session) {
+	const sizes = session.pendingNotes[0]?.transcriptSizes ?? {};
+	let settled = false;
+	for (const [path, size] of Object.entries(sizes)) {
+		const offset = session.bookmarks[path]?.offset ?? 0;
+		if (offset >= size || fileSize(path) >= size) continue;
+		sizes[path] = offset;
+		settled = true;
+	}
+	return settled;
+}
+function readPass(session, readNewLines, log, paused, takeNotes) {
+	let progressed = false;
+	for (;;) {
+		if (paused()) return progressed;
+		takeNotes();
+		let advanced = deliverReadyNotes(session, log);
+		for (const path of sessionTranscripts(session)) advanced = readTranscript(session, path, readNewLines, log) || advanced;
+		if (!advanced) advanced = settleUnreachableNote(session);
+		if (!advanced) return progressed;
+		progressed = true;
+	}
+}
+function snapshotOf({ builder, ...saved }) {
+	return {
+		...saved,
+		builderState: builder.state()
+	};
+}
+const isIdle = (session) => session.pendingNotes.length === 0 && !session.builder.turnOpen();
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/worker.js
+var TracerWorker = class {
+	options;
+	sessions = /* @__PURE__ */ new Map();
+	scheduled = /* @__PURE__ */ new Set();
+	waitingForUploads = /* @__PURE__ */ new Set();
+	queue;
+	notes;
+	saved = {
+		version: 1,
+		sessions: {}
+	};
+	unsaved = false;
+	lastActivity = Date.now();
+	stopRequested = false;
+	ticker;
+	watcher;
+	stop = () => void 0;
+	stopped = new Promise((resolve) => this.stop = resolve);
+	constructor(options) {
+		this.options = options;
+		this.queue = options.createQueue(this.log);
+		this.notes = new NotesFollower(options.paths.notes, (line) => this.receiveLine(line));
+	}
+	log = (line) => {
+		try {
+			appendFileSync(this.options.paths.log, `${(/* @__PURE__ */ new Date()).toISOString()} ${line}\n`);
+		} catch {}
+	};
+	attempt(failure, action) {
+		try {
+			action();
+		} catch (error) {
+			this.log(`${failure}: ${describe(error)}`);
+		}
+	}
+	start() {
+		this.log(`${WORKER_STARTED_LOG} ${process.pid}`);
+		this.attempt("could not upgrade older state", () => this.options.upgradeState(this.log));
+		this.attempt("could not load the snapshot", () => {
+			this.saved = this.options.snapshots.load() ?? this.saved;
+		});
+		for (const snapshot of Object.values(this.saved.sessions)) {
+			this.sessions.set(snapshot.sessionId, this.createSession(snapshot));
+			this.scheduleRead(snapshot.sessionId);
+		}
+		this.notes.resume(this.saved.notes ?? UNREAD_NOTES);
+		this.takeNotes();
+		const notesName = basename(this.options.paths.notes);
+		this.watcher = watch(this.options.paths.folder, (_event, name) => {
+			if (name === null || name === notesName) this.takeNotes();
+		});
+		this.watcher.on("error", (error) => this.log(`stopped watching notes: ${describe(error)}`));
+		this.ticker = setInterval(() => this.tick(), 500);
+	}
+	createSession({ builderState, ...saved }) {
+		const session = {
+			...saved,
+			builder: this.options.createBuilder({
+				sessionId: saved.sessionId,
+				savedState: builderState,
+				tracingMode: saved.tracingMode,
+				sink: {
+					post: (run) => this.queue.post(session.sessionId, session.writer, run),
+					patch: (patch) => this.queue.patch(session.sessionId, session.writer, patch)
+				}
+			})
+		};
+		return session;
+	}
+	receive(note) {
+		this.lastActivity = Date.now();
+		const session = this.sessions.get(note.sessionId) ?? this.createSession({
+			sessionId: note.sessionId,
+			integration: note.integration,
+			writer: note.writer,
+			bookmarks: {},
+			pendingNotes: [],
+			builderState: void 0,
+			ended: false
+		});
+		this.sessions.set(session.sessionId, session);
+		session.integration = note.integration;
+		session.ended = false;
+		if (note.transcriptPath !== void 0) session.bookmarks[note.transcriptPath] ??= {
+			path: note.transcriptPath,
+			offset: 0
+		};
+		session.pendingNotes.push(positionNote(session, note));
+		this.scheduleRead(session.sessionId);
+	}
+	receiveLine(text) {
+		this.unsaved = true;
+		try {
+			const note = JSON.parse(text);
+			if ("stopWorker" in note) {
+				this.log(`stopping for a newer worker ${note.version}`);
+				this.stopRequested = true;
+				return;
+			}
+			if (typeof note.sessionId !== "string") throw new Error("the note has no session id");
+			this.receive(note);
+		} catch (error) {
+			this.log(`skipped a bad hook note: ${describe(error)}`);
+		}
+	}
+	scheduleRead(sessionId) {
+		if (this.scheduled.has(sessionId)) return;
+		this.scheduled.add(sessionId);
+		setTimeout(() => {
+			this.scheduled.delete(sessionId);
+			this.read(sessionId);
+		}, 20);
+	}
+	read(sessionId) {
+		const session = this.sessions.get(sessionId);
+		if (session === void 0) return;
+		this.attempt(`read failed for ${sessionId}`, () => {
+			const paused = () => this.queue.full();
+			if (readPass(session, this.options.readNewLines, this.log, paused, () => this.takeNotes())) {
+				this.lastActivity = Date.now();
+				this.unsaved = true;
+			}
+			if (this.queue.full()) this.waitingForUploads.add(sessionId);
+			this.queue.flush();
+		});
+	}
+	takeNotes() {
+		this.attempt("could not take the notes", () => this.notes.take());
+	}
+	saveSnapshot() {
+		if (!this.unsaved || this.notes.rotating()) return;
+		const sessions = [...this.sessions.values()];
+		if (sessions.some((session) => this.queue.pendingFor(session.sessionId) > 0)) return;
+		for (const session of sessions) if (session.ended && session.pendingNotes.length === 0) this.sessions.delete(session.sessionId);
+		this.saved = {
+			version: 1,
+			sessions: Object.fromEntries([...this.sessions.values()].map((s) => [s.sessionId, snapshotOf(s)])),
+			notes: this.notes.bookmark()
+		};
+		this.unsaved = false;
+		this.attempt("could not save the snapshot", () => {
+			this.options.snapshots.save(this.saved);
+			this.notes.removeSettled();
+		});
+	}
+	shouldExit() {
+		if (this.scheduled.size > 0 || this.waitingForUploads.size > 0 || this.notes.rotating() || !this.queue.idle()) return false;
+		const quiet = Date.now() - this.lastActivity;
+		return this.stopRequested || quiet >= 6e5 || quiet >= 3e3 && !this.notes.unread() && [...this.sessions.values()].every(isIdle);
+	}
+	resumeReadsAfterUploads() {
+		if (this.queue.full()) return;
+		for (const sessionId of this.waitingForUploads) this.scheduleRead(sessionId);
+		this.waitingForUploads.clear();
+	}
+	tick() {
+		this.takeNotes();
+		this.queue.flush();
+		this.resumeReadsAfterUploads();
+		this.saveSnapshot();
+		if (this.shouldExit()) this.exit();
+		else for (const sessionId of this.sessions.keys()) this.scheduleRead(sessionId);
+	}
+	exit() {
+		const { lock } = this.options.paths;
+		this.unsaved = true;
+		this.saveSnapshot();
+		releaseLock(lock);
+		if (!this.stopRequested && this.notes.unread() && takeLock(lock, this.options.version)) {
+			this.log(`${WORKER_RESUMED_LOG} ${process.pid}`);
+			return;
+		}
+		clearInterval(this.ticker);
+		this.watcher?.close();
+		this.log(`${WORKER_STOPPED_LOG} ${process.pid}`);
+		this.stop();
+	}
+};
+async function runWorker(options) {
+	mkdirSync(options.paths.folder, {
+		recursive: true,
+		mode: 448
+	});
+	if (!await takeLockFromOlder(options.paths.lock, options.version)) return;
+	const worker = new TracerWorker(options);
+	const stopped = worker.stopped;
+	try {
+		worker.start();
+	} catch (error) {
+		worker.log(`worker failed to start: ${describe(error)}`);
+		releaseLock(options.paths.lock);
+		return;
+	}
+	await stopped;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/start.js
+function startTracerWorker(options) {
+	const paths = tracerPaths(options.agentStateFolder);
+	let upgrading = Promise.resolve();
+	return runWorker({
+		paths,
+		version: options.version,
+		createBuilder: options.createBuilder,
+		createQueue: (log) => createUploadQueue(log),
+		readNewLines: (bookmark, lineId, log) => {
+			const read = readNewLines(bookmark, lineId);
+			for (const notice of read.notices) log(notice);
+			return read.lines;
+		},
+		snapshots: {
+			load: () => loadSnapshot(paths.snapshot).snapshot,
+			save: (snapshot) => writeSnapshot(paths.snapshot, snapshot)
+		},
+		upgradeState: (log) => {
+			upgrading = upgradeLegacyState(options, log);
+		}
+	}).then(() => upgrading);
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/hook.js
+function positioned(note) {
+	const path = note.transcriptPath;
+	const size = path === void 0 ? void 0 : statSync(path, { throwIfNoEntry: false })?.size;
+	const transcriptSizes = path !== void 0 && size !== void 0 ? { [path]: size } : {};
+	return {
+		...note,
+		transcriptSizes
+	};
+}
+function sendHookNote(note, options) {
+	const { paths, version, startWorker } = options;
+	try {
+		mkdirSync(paths.folder, {
+			recursive: true,
+			mode: 448
+		});
+		appendFileSync(paths.notes, `${JSON.stringify(positioned(note))}\n`, { mode: 384 });
+		const holder = liveLockHolder(paths.lock);
+		if (holder === void 0) startWorker();
+		else if (isNewerVersion(version, holder.version)) {
+			const request = {
+				stopWorker: true,
+				version
+			};
+			appendFileSync(paths.notes, `${JSON.stringify(request)}\n`, { mode: 384 });
+			startWorker();
+		}
+	} catch (error) {
+		process.stderr.write(`${HOOK_WARNING_PREFIX}${describe(error)}\n`);
+	}
 }
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/constants.js
@@ -22732,7 +23857,7 @@ function readExisting(path) {
 		closeSync(fd);
 	}
 }
-function resolveTarget$1(path) {
+function resolveTarget(path) {
 	try {
 		return realpathSync(path);
 	} catch (error) {
@@ -22773,7 +23898,7 @@ function writeSetupConfig(home, harnessDirectory, request) {
 	let target;
 	let existing;
 	try {
-		target = resolveTarget$1(path);
+		target = resolveTarget(path);
 		existing = readExisting(target);
 	} catch (error) {
 		throw settingsWriteError(path, error);
@@ -22823,225 +23948,6 @@ async function applySetup(argumentText, target) {
 		...await target.readState()
 	});
 }
-//#endregion
-//#region src/constants.ts
-/** Identifies this plugin as the trace source. */
-const LS_INTEGRATION = "openai-codex";
-const CODEX_CONFIG_DIRECTORY = ".codex";
-const PRIVACY_FILE_NAME = "langsmith_state_privacy.json";
-const LEGACY_PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
-const SIDECAR_SUFFIX = ".langsmith";
-const CHILD_SCOPE_RESET = {
-	approval_policy: void 0,
-	ls_is_error_interrupt: void 0,
-	ls_subagent_id: void 0,
-	ls_subagent_type: void 0
-};
-const MODE_FULL = "full";
-const MODE_METADATA = "metadata";
-const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
-const ENV_PREFIXES = [PLUGIN_ENV_PREFIX, "LANGSMITH_"];
-const ENV_SUFFIXES = {
-	apiKey: "API_KEY",
-	apiUrl: "ENDPOINT",
-	project: "PROJECT",
-	metadata: "METADATA",
-	replicas: "RUNS_ENDPOINTS",
-	redact: "REDACT",
-	redactExtraRules: "REDACT_EXTRA",
-	strictAuth: "STRICT_AUTH",
-	parentHeaders: "PARENT_HEADERS",
-	noticeCooldown: "NOTICE_COOLDOWN"
-};
-const PARENT_PROJECT_PROBE = "codex-parent-without-project";
-const PARENT_TRACE_HEADER = "langsmith-trace";
-const ENABLED_ENV_KEYS = ["TRACE_TO_LANGSMITH"];
-const AGENT_ID_ENV_KEY = "LANGSMITH_AGENT_ID";
-const DEFAULT_MUTED_ENV_KEYS = ["LANGSMITH_CODEX_DEFAULT_MUTED", "LANGSMITH_DEFAULT_MUTED"];
-const ENV_TRUE_VALUES = [
-	"1",
-	"true",
-	"yes",
-	"on"
-];
-const ENV_FALSE_VALUES = [
-	"0",
-	"false",
-	"no",
-	"off"
-];
-const POLICY_THREAD_KEYS = [
-	"preference",
-	"turns",
-	"inherited"
-];
-const POLICY_TOP_LEVEL_KEYS = ["version", "threads"];
-const POLICY_INVALID_MESSAGE = "Invalid tracing preference format";
-const PREFERENCE_WARNING_PREFIX = "Tracing preference warning:";
-const PROMPT_COMMANDS = [
-	{
-		name: "mute",
-		text: "langsmith-tracing:mute",
-		takesArguments: false
-	},
-	{
-		name: "unmute",
-		text: "langsmith-tracing:unmute",
-		takesArguments: false
-	},
-	{
-		name: "setup",
-		text: "langsmith-tracing:setup",
-		takesArguments: true
-	}
-];
-const TRACING_COMMANDS = ["mute", "unmute"];
-const LOCKED_MUTE_REPLY = "An admin has enabled muting for all sessions, so this thread cannot be unmuted.";
-const MUTED_REPLY_STATE = "muted (metadata-only)";
-const UNMUTED_REPLY_STATE = "unmuted (full content)";
-const PREFERENCE_REPLY = "Thread tracing {state}. Preference saved for the next turn; the current turn is unchanged.";
-const PREFERENCE_REPLY_STATE = "{state}";
-const MASTER_DISABLED_REPLY = "Tracing is disabled. Changes will not take effect until it's configured with langsmith-tracing:setup.";
-const PREFERENCE_REPLY_WARNING = "Warning:";
-const EVIDENCE_FAILURE_PREFIX = "Could not save tracing preference/turn evidence:";
-const EVIDENCE_REPAIR_HINT = "Repair the privacy file or permissions and retry.";
-const SUBAGENT_SCOPE_RESET = {
-	approval_policy: void 0,
-	ls_is_error_interrupt: void 0
-};
-const SKILL_SCOPE_RESET = {
-	...CHILD_SCOPE_RESET,
-	usage_metadata: void 0
-};
-const RESETTABLE_METADATA_KEYS = Object.keys(SKILL_SCOPE_RESET);
-const TOOL_PATH_INPUT_KEYS = [
-	"file_path",
-	"path",
-	"workdir",
-	"cwd"
-];
-const PATCH_FILE_PATTERN = /^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm;
-const GITHUB_LOGIN_MARKER_FILE_NAME = "langsmith_gh_login.json";
-const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
-	"start_time",
-	"end_time",
-	"parent_run_id",
-	"trace_id",
-	"dotted_order",
-	"tags",
-	"error",
-	"serialized",
-	"events",
-	"reference_example_id"
-];
-const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
-const ENGINE_WORKER_FLAG = "--engine-worker";
-const TRACE_RUN_ID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-const TRACE_RUN_ID_PREFIX = "langsmith-codex:";
-const TRACE_RUN_EVENT_PREFIX = "codex-run:";
-const LIVE_RUN_EVENT_PREFIX = "codex-live-run:";
-const TRACE_RUN_PATCH_EVENT_PREFIX = "codex-run-patch:";
-const RUN_PATCH_FIELDS = [
-	"outputs",
-	"end_time",
-	"error"
-];
-const RUN_CONTEXT_FIELDS = [
-	"start_time",
-	"parent_run_id",
-	"trace_id",
-	"dotted_order"
-];
-const CAPTURE_SAVED_STATUSES = ["published", "duplicate"];
-const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for upload:";
-const TOOL_RUN_ID_SEGMENT = ":tool:";
-const TOOL_OUTPUT_WAIT_MS = 3e3;
-const ROLLOUT_ENCODING = "utf-8";
-const ROLLOUT_CHUNK_BYTES = 65536;
-const OPEN_TURN_END = "langsmith_open_turn_end";
-const TOOL_ITEM_TYPES = [
-	"CommandExecution",
-	"DynamicToolCall",
-	"FileChange",
-	"McpToolCall"
-];
-const FAILED_TOOL_STATUSES = ["failed", "declined"];
-const OPEN_CLOSURE = "open";
-const PATCH_OPERATION = "patch";
-const RUN_RUNNING = "running";
-const RUN_COMPLETED = "completed";
-const RUN_ERROR = "error";
-const RECONSTRUCTION_EVENT_PREFIX = "codex-reconstruction:";
-const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
-const CONTEXT_LOCATOR_PREFIX = "codex-context:";
-const JOB_STATE_FILE_NAME = "langsmith_state.json";
-const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
-const STATE_FILE_MAX_AGE_MS = 216e5;
-const WARNING_FILE_NAME = "langsmith_warning.txt";
-const NOTICE_KIND_MANAGED = "managed";
-const NOTICE_KIND_CREDENTIAL = "credential";
-const NOTICE_KIND_REPLICA = "replica";
-const PARENT_HEADERS_FIELD = "parent_headers";
-const DROPPED_WORK_WARNING = "LangSmith could not accept a Codex trace upload and dropped it. Check your LangSmith API key and endpoint; details are in the Codex LangSmith log.";
-const DROPPED_LOGIN_WORK_WARNING_PREFIX = "LangSmith could not accept a Codex trace upload and dropped it. Run `";
-const DROPPED_LOGIN_WORK_WARNING_SUFFIX = "` to sign in again; details are in the Codex LangSmith log.";
-/** Plugin version, or undefined outside a bundled build. */
-const LS_INTEGRATION_VERSION = "0.4.4";
-const SHELL_TOOL_NAMES = /* @__PURE__ */ new Set(["exec", "exec_command"]);
-const TOOLS_WITH_END_EVENTS = /* @__PURE__ */ new Set(["exec_command", "apply_patch"]);
-const SHELL_WORD = /[^\s"']+/g;
-const SKILLS_FOLDERS = /* @__PURE__ */ new Set(["skills", "migrated-command-skills"]);
-const NON_SKILL_SUBFOLDERS = /* @__PURE__ */ new Set([
-	"references",
-	"scripts",
-	"assets",
-	"templates"
-]);
-const SKILL_DIR_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const READ_COMMAND = /^\s*(?:\S*\/)?(?:cat|bat|sed|rg|grep|egrep|fgrep|head|tail|less|more|nl|awk|strings|xxd|od|hexdump)\s/;
-const WRITES_TO_FILE = /(?<![-=<>!0-9])>>?\s*\S|\bsed\b[^\n]*\s-i\b/;
-const QUOTED_RUN = /"[^"]*"|'[^']*'/g;
-const COMMAND_LITERAL = /\bcmd["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const WORKDIR_LITERAL = /\bworkdir["']?\s*:\s*(?:"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|`((?:[^`\\]|\\[\s\S])*)`)/g;
-const SHELL_WRAPPER = /^\s*(?:\S*\/)?(?:ba|z)?sh\s+-\w*c\s+(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)')\s*$/;
-const SKILL_FRAGMENT_NAME = /^<skill>\s*<name>([^<\s]+)<\/name>/i;
-const NONZERO_EXIT_SUFFIX = /\n\nExit code: -?[1-9]\d*\s*$/;
-const BACKSLASH_ESCAPE = /\\([\s\S])/g;
-const STRING_ESCAPES = {
-	n: "\n",
-	t: "	",
-	r: "\r"
-};
-const SHELL_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;|&\n"'])+/g;
-const STRICT_NOTICE_KINDS = [LOGIN_NOTICE_KIND, NOTICE_KIND_CREDENTIAL];
-const CONTEXTUAL_USER_FRAGMENTS = [
-	/^<(environment_context|skill|turn_aborted|subagent_notification|agent_message_board_notification|recommended_plugins|goal_context|codex_internal_context|external_[^\s>]+)[\s>][\s\S]*<\/\1>$/i,
-	/^# AGENTS\.md instructions[\s\S]*<\/INSTRUCTIONS>$/i,
-	/^<\/?image(?:\s[^>]*)?>$/i
-];
-const TOOL_OUTPUT_ENVELOPE_KEYS = [
-	"output",
-	"metadata",
-	"exit_code",
-	"wall_time_seconds",
-	"chunk_id",
-	"original_token_count",
-	"session_id"
-];
-const DATA_URL_PATTERN = /^data:([^;,]+);base64,([\s\S]*)$/;
-const REVIEW_RESULT_PATTERN = /^<user_action>[\s\S]*?<action>([\s\S]*?)<\/action>[\s\S]*<\/user_action>$/i;
-const USER_SHELL_COMMAND_PATTERN = /^<user_shell_command>\s*<command>\n([\s\S]*?)\n<\/command>\s*<result>\n([\s\S]*)\n<\/result>\s*<\/user_shell_command>$/i;
-const REALTIME_DELEGATION_PATTERN = /^<realtime_delegation>[\s\S]*?<input>([\s\S]*?)<\/input>[\s\S]*<\/realtime_delegation>$/i;
-const QUESTION_REPLY_PATTERN = /^<send_user_message_question_reply>([\s\S]*)<\/send_user_message_question_reply>$/i;
-const HOOK_PROMPT_PATTERN = /^<hook_prompt\s[^>]*>([\s\S]*)<\/hook_prompt>$/i;
-const XML_ENTITY_PATTERN = /&(?:lt|gt|quot|apos|amp);/g;
-const XML_ENTITIES = {
-	"&lt;": "<",
-	"&gt;": ">",
-	"&quot;": "\"",
-	"&apos;": "'",
-	"&amp;": "&"
-};
 //#endregion
 //#region src/utils/console/silence-warnings.ts
 function silenceWarnings(run) {
@@ -23172,20 +24078,6 @@ function transcriptPathFromRef(sourceRef) {
 	if (!nodePath.isAbsolute(value) || transcriptSourceRef(value) !== sourceRef) throw new Error("Codex transcript locator is invalid");
 	return value;
 }
-function reconstructionDigest(sessionId, turnId, sourceRef, mode) {
-	return createHash("sha256").update(JSON.stringify([
-		sessionId,
-		turnId,
-		sourceRef,
-		mode
-	])).digest("hex");
-}
-function reconstructionEventId(sessionId, turnId, sourceRef, mode) {
-	return `${RECONSTRUCTION_EVENT_PREFIX}${reconstructionDigest(sessionId, turnId, sourceRef, mode)}`;
-}
-function contextSourceRef(sessionId, turnId, sourceRef, mode) {
-	return `${CONTEXT_LOCATOR_PREFIX}${reconstructionDigest(sessionId, turnId, sourceRef, mode)}`;
-}
 function contextDigestFromRef(contextRef) {
 	const digest = contextRef.startsWith("codex-context:") ? contextRef.slice(14) : "";
 	if (!CONTEXT_DIGEST_PATTERN.test(digest)) throw new Error("Codex reconstruction context locator is invalid");
@@ -23196,26 +24088,8 @@ function contextDigestFromRef(contextRef) {
 function jobStore(home) {
 	return createStateStore({ path: nodePath.join(home, CODEX_CONFIG_DIRECTORY, JOB_STATE_FILE_NAME) });
 }
-async function saveJobContext(home, sessionId, contextRef, context) {
-	const job = contextDigestFromRef(contextRef);
-	await mkdir(nodePath.join(home, CODEX_CONFIG_DIRECTORY), {
-		recursive: true,
-		mode: 448
-	});
-	await jobStore(home).update((state) => {
-		const fresh = pruneStateEntries(state, STATE_FILE_MAX_AGE_MS);
-		const queued = Object.hasOwn(fresh, sessionId) ? fresh[sessionId].queued_jobs : {};
-		return {
-			...fresh,
-			[sessionId]: {
-				updated: (/* @__PURE__ */ new Date()).toISOString(),
-				queued_jobs: {
-					...queued,
-					[job]: context
-				}
-			}
-		};
-	});
+function readJobState(home) {
+	return jobStore(home).read();
 }
 function readJobContext(home, sessionId, contextRef) {
 	const state = jobStore(home).read();
@@ -23237,6 +24111,391 @@ async function removeJobContext(home, sessionId, contextRef) {
 			}
 		};
 	});
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/paths.js
+function nearestExistingDirectory(path) {
+	let current = path;
+	for (;;) {
+		const parent = dirname(current);
+		if (parent === current) return void 0;
+		try {
+			if (statSync(current).isDirectory()) return current;
+		} catch {}
+		current = parent;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/constants.js
+const GIT_LOCATION_ENV_KEYS = [
+	"GIT_DIR",
+	"GIT_WORK_TREE",
+	"GIT_COMMON_DIR",
+	"GIT_INDEX_FILE",
+	"GIT_CEILING_DIRECTORIES"
+];
+const NOT_A_REPOSITORY = /not a git repository \(or any of the parent directories\)/i;
+const REMOTE_PATH_EDGE_SLASHES = /^\/+|\/+$/g;
+const REMOTE_PATH_TRAILING_SLASHES = /\/+$/;
+const REMOTE_GIT_SUFFIX = /\.git$/;
+const REMOTE_LINE_WHITESPACE = /\s+/;
+const SCP_REMOTE_PATTERN = /^(?:[^@]+@)?([^:]+):\/?(.+)$/;
+const GIT_DIRECTORY_NAME = ".git";
+const GIT_FILE_POINTER = /^gitdir:\s*(.+?)\s*$/m;
+const GIT_MARKERS = {
+	REPOSITORY_ROOT: "repository root",
+	ONLY_GIT_CAN_SAY: "only git can say",
+	NOTHING_HERE: "nothing here"
+};
+const GIT_PROVIDERS = {
+	"github.com": "github",
+	"gitlab.com": "gitlab",
+	"bitbucket.org": "bitbucket",
+	"dev.azure.com": "devAzure"
+};
+const SELF_HOSTED_PROVIDER_HINTS = [
+	"github",
+	"gitlab",
+	"bitbucket"
+];
+const PROVIDER_HOSTS = {
+	github: "github.com",
+	gitlab: "gitlab.com",
+	bitbucket: "bitbucket.org",
+	devAzure: "dev.azure.com"
+};
+const GIT_COMMAND_TIMEOUT_MS = 5e3;
+const GIT_COMMAND_MISSING = "is not installed in an absolute PATH folder";
+const GH_LOGIN_ARGUMENTS = [
+	"api",
+	"user",
+	"--jq",
+	".login"
+];
+const GH_LOGIN_TIMEOUT_MS = 5e3;
+const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
+const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+function findExecutable(name, env, platform) {
+	const windows = platform === WINDOWS_PLATFORM;
+	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
+	const folders = (DESKTOP_PATH_VARIABLES.map((variable) => env[variable]).find((value) => value !== void 0) ?? "").split(windows ? ";" : ":");
+	const absolute = windows ? win32.isAbsolute : posix.isAbsolute;
+	for (const folder of folders.filter((entry) => entry !== "" && absolute(entry))) for (const extension of extensions) {
+		const candidate = join(folder, `${name}${extension}`);
+		try {
+			accessSync(candidate, constants.X_OK);
+			if (statSync(candidate).isFile()) return candidate;
+		} catch {}
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/repository.js
+function parseRepoName(remoteUrl) {
+	const value = remoteUrl.trim();
+	try {
+		const url = new URL(value);
+		const name = url.pathname.replace(REMOTE_PATH_EDGE_SLASHES, "").replace(REMOTE_GIT_SUFFIX, "");
+		const repository = repositoryOnHost(url.hostname, name);
+		if (repository) return repository;
+	} catch {}
+	const scpMatch = value.match(SCP_REMOTE_PATTERN);
+	if (scpMatch) {
+		const host = scpMatch[1];
+		const path = scpMatch[2];
+		if (host && path) return repositoryOnHost(host, path.replace(REMOTE_PATH_TRAILING_SLASHES, "").replace(REMOTE_GIT_SUFFIX, ""));
+	}
+}
+function repositoryOnHost(hostname, name) {
+	const host = hostname.toLowerCase();
+	if (!name) return void 0;
+	const provider = GIT_PROVIDERS[host];
+	if (provider) return {
+		provider,
+		name
+	};
+	if (!host.includes(".")) return void 0;
+	return {
+		provider: SELF_HOSTED_PROVIDER_HINTS.find((hint) => host.includes(hint)) ?? host,
+		name,
+		host
+	};
+}
+function gitOutput(args, cwd) {
+	const env = {
+		...process.env,
+		LC_ALL: "C",
+		LANG: "C"
+	};
+	for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
+	return execFileSync(installedCommand("git"), args, {
+		cwd,
+		env,
+		encoding: "utf-8",
+		timeout: GIT_COMMAND_TIMEOUT_MS,
+		stdio: [
+			"ignore",
+			"pipe",
+			"pipe"
+		]
+	});
+}
+function getRepoName(cwd) {
+	try {
+		const lines = gitOutput(["remote", "-v"], cwd).trim().split("\n").filter(Boolean);
+		const remotes = [];
+		for (const line of lines) {
+			const parts = line.split(REMOTE_LINE_WHITESPACE);
+			const name = parts[0];
+			const url = parts[1];
+			if (name && url && line.includes("(fetch)")) remotes.push({
+				name,
+				url
+			});
+		}
+		const origin = remotes.find((remote) => remote.name === "origin");
+		if (origin) {
+			const name = parseRepoName(origin.url);
+			if (name) return name;
+		}
+		for (const remote of remotes) {
+			const name = parseRepoName(remote.url);
+			if (name) return name;
+		}
+	} catch {}
+}
+function getRepoUrl(provider, name) {
+	const host = PROVIDER_HOSTS[provider];
+	return host ? `https://${host}/${name}` : void 0;
+}
+function getRepoRoot(cwd) {
+	try {
+		const root = gitOutput(["rev-parse", "--show-toplevel"], cwd).trim();
+		return root ? resolve(root) : void 0;
+	} catch (error) {
+		const stderr = String(error?.stderr ?? "");
+		return NOT_A_REPOSITORY.test(stderr) ? null : void 0;
+	}
+}
+function getGitUserName(cwd, options) {
+	try {
+		const name = gitOutput(["config", "user.name"], cwd).trim();
+		if (name) return name;
+	} catch {}
+	return options?.githubLogin?.();
+}
+function getGitInfo(cwd) {
+	const result = {};
+	try {
+		const branch = gitOutput([
+			"rev-parse",
+			"--abbrev-ref",
+			"HEAD"
+		], cwd).trim();
+		if (branch && branch !== "HEAD") result.branch = branch;
+	} catch {}
+	try {
+		const commit = gitOutput(["rev-parse", "HEAD"], cwd).trim();
+		if (commit) result.commit = commit;
+	} catch {}
+	return result;
+}
+function getRepositoryMetadata(cwd) {
+	const metadata = {};
+	const repoName = getRepoName(cwd);
+	if (repoName) {
+		metadata[GIT_METADATA_KEYS.repository] = repoName.name;
+		metadata[GIT_METADATA_KEYS.provider] = repoName.provider;
+		const url = repoName.host ? `https://${repoName.host}/${repoName.name}` : getRepoUrl(repoName.provider, repoName.name);
+		if (url) metadata[GIT_METADATA_KEYS.repositoryUrl] = url;
+	}
+	const gitInfo = getGitInfo(cwd);
+	if (gitInfo.branch) metadata[GIT_METADATA_KEYS.branch] = gitInfo.branch;
+	if (gitInfo.commit) metadata[GIT_METADATA_KEYS.commit] = gitInfo.commit;
+	return withBothGitMetadataNames(metadata);
+}
+function githubLoginLookup() {
+	return execFileSync(installedCommand("gh"), GH_LOGIN_ARGUMENTS, {
+		encoding: "utf-8",
+		timeout: GH_LOGIN_TIMEOUT_MS,
+		stdio: [
+			"ignore",
+			"pipe",
+			"ignore"
+		]
+	}).trim();
+}
+function isGitHubLogin(printed) {
+	return printed !== "null" && GH_LOGIN_PATTERN.test(printed);
+}
+function installedCommand(name) {
+	const found = findExecutable(name, process.env, process.platform);
+	if (found === void 0) throw new Error(`${name} ${GIT_COMMAND_MISSING}`);
+	return found;
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/github-login.js
+function createGitHubLoginFallback(options) {
+	const now = options.now ?? Date.now;
+	const retryAfterMs = options.retryAfterMs ?? 864e5;
+	let alreadyTried = false;
+	let login;
+	function failedRecently() {
+		try {
+			const marker = JSON.parse(readFileSync(options.markerPath, "utf-8"));
+			const failed = new Date(marker.failed).getTime();
+			const since = now() - failed;
+			return since >= 0 && since < retryAfterMs;
+		} catch {
+			return false;
+		}
+	}
+	function recordFailure() {
+		try {
+			mkdirSync(dirname(options.markerPath), { recursive: true });
+			const partial = `${options.markerPath}.${process.pid}`;
+			const marker = { failed: new Date(now()).toISOString() };
+			writeFileSync(partial, JSON.stringify(marker));
+			renameSync(partial, options.markerPath);
+		} catch {}
+	}
+	return () => {
+		if (alreadyTried) return login;
+		alreadyTried = true;
+		if (failedRecently()) return void 0;
+		try {
+			const printed = githubLoginLookup();
+			if (isGitHubLogin(printed)) login = printed;
+		} catch {}
+		if (login === void 0) recordFailure();
+		return login;
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/paths.js
+function gitMarkerAt(directory) {
+	const marker = join(directory, GIT_DIRECTORY_NAME);
+	try {
+		if (statSync(marker).isDirectory()) return GIT_MARKERS.REPOSITORY_ROOT;
+	} catch {
+		return GIT_MARKERS.NOTHING_HERE;
+	}
+	return pointsAtGitDirectory(directory, marker) ? GIT_MARKERS.REPOSITORY_ROOT : GIT_MARKERS.ONLY_GIT_CAN_SAY;
+}
+function pointsAtGitDirectory(directory, marker) {
+	try {
+		const pointer = readFileSync(marker, "utf-8").match(GIT_FILE_POINTER)?.[1];
+		return pointer !== void 0 && statSync(resolve(directory, pointer)).isDirectory();
+	} catch {
+		return false;
+	}
+}
+function rootFromGitMarker(directory) {
+	let current = resolve(directory);
+	for (;;) {
+		const marker = gitMarkerAt(current);
+		if (marker === GIT_MARKERS.REPOSITORY_ROOT) return current;
+		if (marker === GIT_MARKERS.ONLY_GIT_CAN_SAY) return void 0;
+		const parent = dirname(current);
+		if (parent === current) return null;
+		current = parent;
+	}
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/attribution.js
+function createRepositoryAttributor(options) {
+	const rootByDirectory = /* @__PURE__ */ new Map();
+	const attributionByRoot = /* @__PURE__ */ new Map();
+	const identifierByRoot = /* @__PURE__ */ new Map();
+	const githubLogin = createGitHubLoginFallback({ markerPath: options.githubLoginMarkerPath });
+	function rootForPath(path) {
+		const directory = nearestExistingDirectory(path);
+		if (!directory) return void 0;
+		if (rootByDirectory.has(directory)) return rootByDirectory.get(directory);
+		const walked = rootFromGitMarker(directory);
+		const root = walked === void 0 ? getRepoRoot(directory) : walked;
+		rootByDirectory.set(directory, root);
+		return root;
+	}
+	function isSessionsOwnRepository(sessionCwd, root) {
+		return sessionCwd ? rootForPath(sessionCwd) === root : false;
+	}
+	function identifierForRoot(root) {
+		const cached = identifierByRoot.get(root);
+		if (cached) return cached;
+		const userName = getGitUserName(root, { githubLogin });
+		const identifier = userName ? { ls_attribution_identifier: userName } : {};
+		identifierByRoot.set(root, identifier);
+		return identifier;
+	}
+	function attributionForRoot(root) {
+		const cached = attributionByRoot.get(root);
+		if (cached) return cached;
+		const attribution = {
+			...identifierForRoot(root),
+			...getRepositoryMetadata(root)
+		};
+		attributionByRoot.set(root, attribution);
+		return attribution;
+	}
+	function scopedToPath(base, origin, pinned) {
+		if (origin.namedAPath && !origin.path) return base;
+		const path = origin.path ?? origin.cwd;
+		if (!path || !isAbsolute(path)) return base;
+		const root = rootForPath(path);
+		if (root === void 0) return base;
+		if (root === null) return withoutRepositoryKeys(base, pinned);
+		if (isSessionsOwnRepository(origin.cwd, root)) return {
+			...base,
+			...withoutPinnedKeys(identifierForRoot(root), pinned)
+		};
+		return {
+			...withoutRepositoryKeys(base, pinned),
+			...withoutPinnedKeys(attributionForRoot(root), pinned)
+		};
+	}
+	function withSessionRepository(base, sessionCwd) {
+		const sessionRoot = sessionCwd ? rootForPath(sessionCwd) : void 0;
+		if (typeof sessionRoot !== "string") return base;
+		return {
+			...attributionForRoot(sessionRoot),
+			...base
+		};
+	}
+	function toolMetadata(base, origin) {
+		const pinned = new Set(REPOSITORY_METADATA_KEYS.filter((key) => base?.[key] !== void 0));
+		return scopedToPath(withSessionRepository(base, origin.cwd), origin, pinned);
+	}
+	function turnMetadata(base, cwd, toolOrigins) {
+		const sessionCwd = cwd ? { cwd } : {};
+		if (typeof (cwd ? rootForPath(cwd) : void 0) === "string") return toolMetadata(base, {
+			...sessionCwd,
+			namedAPath: false
+		});
+		for (const { path, namedAPath } of toolOrigins) {
+			if (!path) continue;
+			if (typeof rootForPath(path) === "string") return toolMetadata(base, {
+				path,
+				namedAPath,
+				...sessionCwd
+			});
+		}
+		return base;
+	}
+	return {
+		toolMetadata,
+		turnMetadata
+	};
+}
+function withoutPinnedKeys(attribution, pinned) {
+	if (pinned.size === 0) return { ...attribution };
+	return Object.fromEntries(Object.entries(attribution).filter(([key]) => !pinned.has(key)));
+}
+function withoutRepositoryKeys(base, pinned) {
+	const stripped = { ...base };
+	for (const key of REPOSITORY_METADATA_KEYS) if (!pinned.has(key)) delete stripped[key];
+	return stripped;
 }
 //#endregion
 //#region src/utils/findLast.ts
@@ -23653,6 +24912,9 @@ function findRolloutFileByThreadId(parentFileName, threadId) {
 		}
 	}
 	return walk(root);
+}
+function isoTime(time) {
+	return new Date(time).toISOString();
 }
 //#endregion
 //#region src/utils/subagents.ts
@@ -24593,11 +25855,6 @@ async function convertToRunTree(input, options) {
 	}
 	await Promise.all(captures);
 }
-function listCompletedTurnIds(input) {
-	const turnIds = [];
-	for (const { completedTurnId } of completedTurns(input)) if (completedTurnId != null && !turnIds.includes(completedTurnId)) turnIds.push(completedTurnId);
-	return turnIds;
-}
 //#endregion
 //#region ../../node_modules/.pnpm/uuid@14.0.2/node_modules/uuid/dist-node/regex.js
 var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
@@ -24670,7 +25927,8 @@ function toPlainObject(value) {
 }
 //#endregion
 //#region src/tracing-engine-payload.ts
-function postSubmission(run, privacyMode, metadataOptions, status = runStatus(run)) {
+function postSubmission(run, privacyMode, metadataOptions) {
+	const status = runStatus(run);
 	const payload = toPlainObject(run.toJSON());
 	const provenance = prepareCodingAgentMetadataProvenance(toPlainObject(metadataOptions), LS_INTEGRATION, privacyMode, status);
 	if (provenance.status !== "ready") throw new Error("Codex trace metadata has no trusted thread ID");
@@ -24682,11 +25940,6 @@ function postSubmission(run, privacyMode, metadataOptions, status = runStatus(ru
 		privacyContext: { status },
 		run: normalizedSnapshot(payload)
 	};
-}
-function openRootSubmission(run, privacyMode, metadataOptions) {
-	const submission = postSubmission(run, privacyMode, metadataOptions, RUN_RUNNING);
-	for (const field of RUN_PATCH_FIELDS) delete submission.run[field];
-	return submission;
 }
 function closingRootSubmission(submission) {
 	const { id, name, run_type, ...run } = submission.run;
@@ -24753,6 +26006,213 @@ function runStatus(run) {
 	return run.end_time != null || status === "completed" ? "completed" : "running";
 }
 //#endregion
+//#region src/tracer-builder.ts
+function freshState() {
+	return {
+		version: 1,
+		noteSeen: false,
+		turnModes: {},
+		liveRoots: [],
+		liveTools: [],
+		waitingTools: []
+	};
+}
+function restoredState(saved) {
+	const candidate = saved;
+	return candidate?.version === 1 ? candidate : freshState();
+}
+function restoredWalk(saved) {
+	const walk = {
+		...createRolloutWalk(),
+		...saved,
+		spawnAgentMessages: /* @__PURE__ */ new Map()
+	};
+	for (const message of walk.task?.messages ?? []) {
+		const item = message.message;
+		if (item.type === "function_call" && item.name === "spawn_agent") walk.spawnAgentMessages.set(item.call_id, message);
+	}
+	return walk;
+}
+function runPost({ run, mode, metadata }) {
+	const parentRunId = run.parent_run?.id ?? run.parent_run_id;
+	return {
+		id: run.id,
+		name: run.name,
+		run_type: run.run_type,
+		trace_id: run.trace_id,
+		dotted_order: run.dotted_order,
+		...parentRunId === void 0 ? {} : { parent_run_id: parentRunId },
+		start_time: isoTime(run.start_time),
+		...run.end_time === void 0 ? {} : { end_time: isoTime(run.end_time) },
+		inputs: run.inputs,
+		...run.outputs === void 0 ? {} : { outputs: run.outputs },
+		...run.error == null ? {} : { error: run.error },
+		metadata,
+		tracingMode: mode
+	};
+}
+function openRootPost(root) {
+	const { end_time: _end, outputs: _outputs, error: _error, ...open } = runPost(root);
+	return open;
+}
+function closingRootPatch(root) {
+	const { inputs: _inputs, ...patch } = runPost(root);
+	return patch;
+}
+function mentionedCallId({ payload }) {
+	const fields = payload;
+	const callId = fields.call_id ?? (isRecord(fields.item) ? fields.item.id : void 0);
+	return typeof callId === "string" ? callId : void 0;
+}
+const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode }) => {
+	const state = restoredState(savedState);
+	const walk = restoredWalk(state.walk);
+	const attributor = createRepositoryAttributor({ githubLoginMarkerPath: join(homeDirectory(), CODEX_CONFIG_DIRECTORY, GITHUB_LOGIN_MARKER_FILE_NAME) });
+	function nativeTurnMode(privacyTurnId) {
+		const thread = walk.sessionMeta;
+		if (thread?.session_id === void 0) return MODE_METADATA;
+		if (thread.is_subagent) return inheritedTurnMode(defaultPrivacyPath(), thread.session_id) ?? "metadata";
+		return savedTurnMode(defaultPrivacyPath(), thread.session_id, privacyTurnId);
+	}
+	function privacyMode(turnId) {
+		return state.turnModes[turnId] ?? tracingMode;
+	}
+	function turnMode({ privacyTurnId }, turnId) {
+		return combinedTurnMode(nativeTurnMode(privacyTurnId), privacyMode(turnId));
+	}
+	function convertTurn(turn, turnId, includeOpenTurn) {
+		const runs = [];
+		postTurn(turn.task, walk.sessionMeta, turnMode(turn, turnId), {
+			rolloutFile: state.transcriptPath ?? "",
+			includeOpenTurn,
+			options: {
+				captureRun: (run, mode, metadata) => {
+					runs.push({
+						run,
+						mode,
+						metadata
+					});
+				},
+				nextRunId: runIdGenerator(sessionId, turnId),
+				toolRunId: toolRunIdGenerator(sessionId, turnId),
+				metadata: state.metadata,
+				parentRunTree: state.parentHeaders && RunTree.fromHeaders(state.parentHeaders),
+				privacyMode: privacyMode(turnId),
+				attributor
+			}
+		});
+		return runs;
+	}
+	function completeTurn(turn) {
+		const turnId = turn.completedTurnId;
+		if (turnId === void 0 || turnId === state.lastPostedTurn) return;
+		if (state.firstNoteTurnId !== void 0 && turnId !== state.firstNoteTurnId) return;
+		state.firstNoteTurnId = void 0;
+		state.lastPostedTurn = turnId;
+		const mode = turnMode(turn, turnId);
+		for (const child of turn.task.subagentThreads) inheritThreadMode(defaultPrivacyPath(), child, mode).catch(() => void 0);
+		const liveRoot = state.liveRoots.includes(turnId);
+		for (const [index, captured] of convertTurn(turn, turnId, false).entries()) if (index === 0 && liveRoot) sink.patch(closingRootPatch(captured));
+		else if (!state.liveTools.includes(captured.run.id)) sink.post(runPost(captured));
+		delete state.turnModes[turnId];
+		state.liveRoots = state.liveRoots.filter((id) => id !== turnId);
+		state.liveTools = [];
+		state.waitingTools = [];
+	}
+	function postFinishedTools() {
+		if (walk.task === void 0 || state.lastLineTime === void 0) return;
+		const turn = finishTurn({
+			...walk,
+			task: { ...walk.task }
+		}, state.lastLineTime, state.currentTurnId);
+		const turnId = turn.completedTurnId;
+		if (turnId === void 0) return;
+		const [root, ...children] = convertTurn(turn, turnId, true);
+		if (root === void 0 || root.metadata.agentType === "subagent") return;
+		const toolRunId = toolRunIdGenerator(sessionId, turnId);
+		for (const callId of state.waitingTools) {
+			const tool = children.find(({ run }) => run.id === toolRunId(callId));
+			if (tool === void 0) continue;
+			const outputs = turn.task.toolCalls[callId]?.outputs ?? {};
+			if (TOOLS_WITH_END_EVENTS.has(tool.run.name) && Object.keys(outputs).length === 0) continue;
+			if (!state.liveRoots.includes(turnId)) {
+				sink.post(openRootPost(root));
+				state.liveRoots.push(turnId);
+			}
+			sink.post(runPost(tool));
+			state.liveTools.push(tool.run.id);
+			state.waitingTools = state.waitingTools.filter((id) => id !== callId);
+		}
+	}
+	return {
+		lineId: () => void 0,
+		transcripts: () => state.transcriptPath === void 0 ? [] : [state.transcriptPath],
+		turnOpen: () => walk.task !== void 0,
+		readLine: (path, line) => {
+			state.transcriptPath ??= path;
+			if (path !== state.transcriptPath) return;
+			const rollout = line;
+			state.lastLineTime = Date.parse(rollout.timestamp);
+			if (readRolloutLine(walk, rollout, false)) {
+				const stoppedTurnTail = state.stopClosedTurn && walk.task?.turnId === void 0;
+				state.stopClosedTurn = false;
+				if (stoppedTurnTail) {
+					walk.task = void 0;
+					return;
+				}
+				const turn = finishTurn(walk, state.lastLineTime, state.currentTurnId);
+				if (state.noteSeen) completeTurn(turn);
+				else state.heldTurn = {
+					turn,
+					end: state.lastLineTime
+				};
+				return;
+			}
+			const callId = mentionedCallId(rollout);
+			if (callId !== void 0 && state.waitingTools.includes(callId)) postFinishedTools();
+		},
+		receiveNote: (note) => {
+			const details = note.details ?? {};
+			state.transcriptPath ??= note.transcriptPath;
+			state.metadata = details.metadata;
+			state.parentHeaders = details.parentHeaders;
+			if (details.turnId !== void 0) {
+				state.currentTurnId = details.turnId;
+				if (note.tracingMode !== void 0) state.turnModes[details.turnId] = note.tracingMode;
+			}
+			if (!state.noteSeen) state.firstNoteTurnId = details.turnId;
+			else if (details.turnId !== void 0 && details.turnId !== state.firstNoteTurnId) state.firstNoteTurnId = void 0;
+			state.noteSeen = true;
+			const held = state.heldTurn;
+			state.heldTurn = void 0;
+			if (held !== void 0 && held.turn.completedTurnId === void 0 && note.event === "Stop" && details.turnId) {
+				held.turn.completedTurnId = details.turnId;
+				held.turn.task.turnId = {
+					id: details.turnId,
+					timestamp: held.end
+				};
+			}
+			if (held !== void 0 && held.turn.completedTurnId === details.turnId) completeTurn(held.turn);
+			if (note.event === "PostToolUse" && details.toolUseId !== void 0) {
+				state.waitingTools.push(details.toolUseId);
+				postFinishedTools();
+			}
+			const openTurnId = walk.task?.turnId?.id;
+			if (note.event === "Stop" && walk.task !== void 0 && (openTurnId === void 0 || openTurnId === details.turnId) && state.lastLineTime !== void 0) {
+				completeTurn(finishTurn(walk, state.lastLineTime, details.turnId));
+				state.stopClosedTurn = true;
+			}
+		},
+		state: () => {
+			const { spawnAgentMessages: _spawned, ...saved } = walk;
+			return {
+				...state,
+				walk: saved
+			};
+		}
+	};
+};
+//#endregion
 //#region src/warnings.ts
 function warningPath(home) {
 	return nodePath.join(home, CODEX_CONFIG_DIRECTORY, WARNING_FILE_NAME);
@@ -24773,10 +26233,9 @@ async function showPendingWarning(home) {
 //#endregion
 //#region src/tracing-engine.ts
 function engineStorageRoot(home) {
-	return nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+	return tracerPaths(nodePath.join(home, CODEX_CONFIG_DIRECTORY)).folder;
 }
-function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory()) {
-	const storageRoot = engineStorageRoot(home);
+function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory(), storageRoot = engineStorageRoot(home)) {
 	const writer = writerOptions(config, storageRoot);
 	if (!writer) return void 0;
 	const plugin = openPluginSession({
@@ -24800,58 +26259,6 @@ function createCodexTracingSession(config, sessionId, cwd, home = homeDirectory(
 	return plugin;
 }
 let attributor;
-async function buildLiveToolRuns(config, request, mode, home = homeDirectory()) {
-	const runs = [];
-	const toolRunId = toolRunIdGenerator(request.session_id, request.turn_id)(request.tool_use_id);
-	await convertToRunTree({
-		transcript_path: request.transcript_path,
-		turn_id: request.turn_id,
-		includeOpenTurn: true
-	}, conversionOptions(config, request.session_id, request.turn_id, mode, runs, home));
-	const [root] = runs;
-	const tool = runs.find(({ run }) => run.id === toolRunId);
-	if (root === void 0 || tool === void 0 || root.metadata.agentType === "subagent") return;
-	return {
-		root,
-		tool
-	};
-}
-async function saveLiveToolRuns(plugin, turnId, { root, tool }) {
-	const rootEventId = `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`;
-	if (!await savedLiveRun(plugin, turnId, root.run.id)) await saveLiveRun(plugin, {
-		turnId,
-		eventId: rootEventId,
-		submission: openRootSubmission(root.run, root.mode, root.metadata),
-		turnEvidence: {
-			rootRunId: root.run.id,
-			childRunIds: [],
-			closureState: OPEN_CLOSURE
-		}
-	});
-	await saveLiveRun(plugin, {
-		turnId,
-		eventId: `${LIVE_RUN_EVENT_PREFIX}${tool.run.id}`,
-		submission: postSubmission(tool.run, tool.mode, tool.metadata),
-		turnEvidence: {
-			childRunIds: [tool.run.id],
-			closureState: OPEN_CLOSURE
-		},
-		dependencies: [{
-			integration: LS_INTEGRATION,
-			sessionId: plugin.sessionId,
-			turnId,
-			eventId: rootEventId
-		}]
-	});
-}
-async function saveLiveRun(plugin, input) {
-	const result = await plugin.session.capture(input);
-	if (!CAPTURE_SAVED_STATUSES.includes(result.status)) console.error(`${LIVE_RUN_NOT_SAVED_MESSAGE} ${result.status}`);
-}
-async function hasUnclosedLiveRoot(plugin, turnId) {
-	const rootRunId = runIdGenerator(plugin.sessionId, turnId)();
-	return await savedLiveRun(plugin, turnId, rootRunId) !== void 0 && await savedLiveRun(plugin, turnId, rootRunId, "codex-run-patch:") === void 0;
-}
 function savedLiveRun(plugin, turnId, runId, prefix = LIVE_RUN_EVENT_PREFIX) {
 	const { sessionId } = plugin;
 	return plugin.store.read({
@@ -24887,14 +26294,14 @@ function reportRecovery(result) {
 	if (result.status === "completed") return;
 	console.error(`Shared Codex trace recovery did not finish: ${JSON.stringify(result)}`);
 }
-async function runCodexEngineWorker(sessionId, cwd) {
+async function runCodexEngineWorker(sessionId, cwd, storageRoot) {
 	const home = homeDirectory();
 	const config = await getConfig({
 		home,
 		cwd,
 		env: process.env
 	});
-	const session = createCodexTracingSession(config, sessionId, cwd, home);
+	const session = createCodexTracingSession(config, sessionId, cwd, home, storageRoot);
 	if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
 	const result = await session.session.drain();
 	if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
@@ -25032,185 +26439,87 @@ function writerOptions(config, storageRoot) {
 	};
 }
 //#endregion
-//#region src/sidecar.ts
-function withSidecarLock(rolloutFile, action) {
-	return withFileLock(`${rolloutFile}${SIDECAR_SUFFIX}`, action);
-}
-function withSidecarLockOrWithout(rolloutFile, action) {
-	return withSidecarLock(rolloutFile, action).catch((error) => {
-		if (!(error instanceof FileLockTimeoutError)) throw error;
-		return action();
-	});
-}
-async function loadUploadedTurnIds(rolloutFile) {
-	try {
-		const data = await nodeFsPromises.readFile(`${rolloutFile}${SIDECAR_SUFFIX}`, "utf-8");
-		return new Set(data.split("\n").filter(Boolean));
-	} catch (error) {
-		if (error.code === "ENOENT") return /* @__PURE__ */ new Set();
-		throw error;
-	}
-}
-async function markTurnUploaded(rolloutFile, turnId) {
-	try {
-		await nodeFsPromises.appendFile(`${rolloutFile}${SIDECAR_SUFFIX}`, `${turnId}\n`, "utf-8");
-		return true;
-	} catch {
-		return false;
-	}
-}
-//#endregion
-//#region src/turn-queue.ts
-function queueCodexTurns(session, config, request) {
-	return withSidecarLockOrWithout(request.transcriptPath, () => queueUnhandledTurns(session, config, request));
-}
-async function queueUnhandledTurns(session, config, request) {
-	const handled = await loadUploadedTurnIds(request.transcriptPath);
-	const firstStop = handled.size === 0;
-	const completed = await listCompletedTurnIds({
-		transcript_path: request.transcriptPath,
-		turn_id: request.turnId
-	});
-	for (const turnId of completed) {
-		if (handled.has(turnId) && !await hasUnclosedLiveRoot(session, turnId)) continue;
-		const mode = lockedTurnMode(config, session.sessionId, turnId);
-		if (mode === "off" || firstStop && turnId !== request.turnId) {
-			await markTurnUploaded(request.transcriptPath, turnId);
-			continue;
-		}
-		await queueCodexTurn(session, config, {
-			...request,
-			turnId
-		}, mode);
-	}
-}
-async function queueCodexTurn(session, config, request, mode) {
-	const { transcriptPath, turnId } = request;
-	const sourceRef = transcriptSourceRef(transcriptPath);
-	const contextRef = contextSourceRef(session.sessionId, turnId, sourceRef, mode);
-	await saveJobContext(homeDirectory(), session.sessionId, contextRef, {
-		cwd: request.cwd,
-		project: config.project,
-		metadata: config.metadata,
-		parent_headers: config.parent_headers
-	});
-	const input = {
-		turnId,
-		eventId: reconstructionEventId(session.sessionId, turnId, sourceRef, mode),
-		sourceRefs: [sourceRef, contextRef],
-		privacyMode: mode,
-		turnEvidence: {
-			childRunIds: [],
-			closureState: "authoritative"
-		}
-	};
-	try {
-		const result = await session.session.queueReconstruction(input);
-		if (result.status !== "published" && result.status !== "duplicate") throw new Error(`Shared Codex reconstruction queue failed: ${result.status}`);
-	} catch (error) {
-		if (!await session.session.readSavedReconstructionWake(error, input)) throw error;
-		console.error(`Shared Codex reconstruction was saved but its worker wake failed: ${error}`);
-	}
-	await markTurnUploaded(transcriptPath, turnId);
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/constants.js
-const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/target.js
-function resolveTarget(options) {
-	for (const field of [
-		"executableName",
-		"repository",
-		"userAgent"
-	]) if (typeof options[field] !== "string" || options[field].trim() === "") throw new Error(`the binary target needs a ${field}`);
-	return {
-		executableName: options.executableName,
-		repository: options.repository,
-		userAgent: options.userAgent,
-		releasesApiOverrideEnvVar: options.releasesApiOverrideEnvVar,
-		publishedTargets: options.publishedTargets ?? DEFAULT_PUBLISHED_TARGETS
-	};
-}
-function isPublishedTarget(target, platform, arch) {
-	return target.publishedTargets[platform]?.includes(arch) ?? false;
-}
-function releaseAssetName(target, platform, arch, version) {
-	return `${target.executableName}-${platform}-${arch}-${version}`;
-}
-//#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/binary.js
-function defineBinaryTarget(options) {
-	const target = resolveTarget(options);
-	return {
-		target,
-		supportsHost: (platform$1 = platform(), arch$1 = arch()) => isPublishedTarget(target, platform$1, arch$1),
-		assetName: (platform, arch, version) => releaseAssetName(target, platform, arch, version)
-	};
-}
-//#endregion
-//#region src/binary.ts
-const binary = defineBinaryTarget({
-	executableName: "langsmith-codex-tracing",
-	repository: "langchain-ai/langsmith-codex-plugins",
-	userAgent: "langsmith-codex",
-	releasesApiOverrideEnvVar: "LANGSMITH_CODEX_RELEASE_API"
-});
-//#endregion
-//#region src/messages.ts
-function tracingFailed(error) {
-	return `LangSmith tracing failed for this turn: ${error}`;
-}
-function usage(executableName) {
-	return `Usage:
-  ${executableName} --version
-
-Options:
-  --help, -h     Show this help and exit
-  --version, -v  Print the version this build carries and exit`;
-}
-//#endregion
-//#region src/post-tool-use.ts
-async function handlePostToolUse(input) {
-	const { session_id, turn_id, transcript_path, tool_use_id } = input;
-	if (!session_id || !turn_id || !transcript_path || !tool_use_id) return;
+//#region src/tracer-hooks.ts
+async function sendTracerNote(input) {
+	const home = homeDirectory();
 	const config = await getConfig({
-		home: homeDirectory(),
+		home,
 		cwd: input.cwd,
 		env: process.env
 	});
-	if (!config.enabled) return;
-	const mode = lockedTurnMode(config, session_id, turn_id);
-	if (mode === "off") return;
-	const plugin = createCodexTracingSession(config, session_id, input.cwd);
-	if (!plugin) return;
-	const runs = await waitForToolRuns(config, {
-		session_id,
-		turn_id,
-		transcript_path,
-		tool_use_id
-	}, mode);
-	if (!runs) return;
-	await withSidecarLock(transcript_path, async () => {
-		if ((await loadUploadedTurnIds(transcript_path)).has(turn_id)) return;
-		await saveLiveToolRuns(plugin, turn_id, runs);
+	const writer = writerOptions(config, engineStorageRoot(home));
+	if (!config.enabled || !writer || !input.session_id || !input.turn_id) return;
+	const paths = tracerPaths(nodePath.join(home, CODEX_CONFIG_DIRECTORY));
+	let launch;
+	sendHookNote({
+		integration: LS_INTEGRATION,
+		event: input.hook_event_name,
+		sessionId: input.session_id,
+		...input.transcript_path ? { transcriptPath: input.transcript_path } : {},
+		tracingMode: lockedTurnMode(config, input.session_id, input.turn_id),
+		details: {
+			turnId: input.turn_id,
+			toolUseId: input.tool_use_id,
+			metadata: config.metadata,
+			parentHeaders: config.parent_headers
+		},
+		writer
+	}, {
+		paths,
+		version: PLUGIN_VERSION,
+		startWorker: () => {
+			launch = launchDetachedWorker([ENGINE_WORKER_FLAG], { storageRoot: paths.folder });
+		}
 	});
+	await launch;
 }
-async function waitForToolRuns(config, request, mode) {
-	const deadline = Date.now() + TOOL_OUTPUT_WAIT_MS;
-	for (;;) {
-		const runs = await buildLiveToolRuns(config, request, mode).catch((error) => {
-			if (error instanceof SyntaxError) return void 0;
-			throw error;
+function rolloutCwd(transcriptPath) {
+	for (const line of readSession(transcriptPath)) return line.type === "session_meta" ? line.payload.cwd : void 0;
+}
+async function readLegacySessions(home) {
+	const jobs = readJobState(home);
+	const oldStorage = nodePath.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+	const queued = await createCaptureStore(oldStorage).enumerateSessions(LS_INTEGRATION).catch(() => []);
+	const sessionsFolder = nodePath.join(home, CODEX_CONFIG_DIRECTORY, CODEX_SESSIONS_DIRECTORY);
+	const queuedIds = queued.map((s) => s.sessionId);
+	const sessions = [];
+	for (const sessionId of /* @__PURE__ */ new Set([...Object.keys(jobs), ...queuedIds])) {
+		const transcriptPath = findRolloutFileByThreadId(nodePath.join(sessionsFolder, sessionId), sessionId);
+		if (transcriptPath === void 0 && !queuedIds.includes(sessionId)) continue;
+		const job = Object.hasOwn(jobs, sessionId) ? jobs[sessionId] : void 0;
+		const context = Object.values(job?.queued_jobs ?? {}).at(-1);
+		const cwd = context?.cwd ?? (transcriptPath && rolloutCwd(transcriptPath)) ?? home;
+		const writer = writerOptions({
+			...await getConfig({
+				home,
+				cwd,
+				env: process.env
+			}),
+			...context
+		}, engineStorageRoot(home));
+		if (writer === void 0) continue;
+		const updatedAt = transcriptPath === void 0 ? 0 : job ? Date.parse(job.updated) : statSync(transcriptPath).mtimeMs;
+		const recover = () => runCodexEngineWorker(sessionId, cwd, oldStorage);
+		sessions.push({
+			sessionId,
+			transcriptPath: transcriptPath ?? "",
+			updatedAt,
+			writer,
+			recover
 		});
-		if (runs !== void 0 && (!TOOLS_WITH_END_EVENTS.has(runs.tool.run.name) || await hasToolEndEvent(request.transcript_path, request.tool_use_id).catch(() => false))) return runs;
-		if (Date.now() >= deadline) return void 0;
-		await setTimeout$1(100);
 	}
+	return sessions;
 }
-async function hasToolEndEvent(transcriptPath, callId) {
-	for await (const { type, payload } of loadSession(transcriptPath)) if (type === "event_msg" && (payload.call_id === callId && payload.type.endsWith("_end") || payload.type === "item_completed" && isRecord(payload.item) && payload.item.id === callId)) return true;
-	return false;
+async function runTracerWorker() {
+	const home = homeDirectory();
+	const legacySessions = await readLegacySessions(home);
+	await startTracerWorker({
+		agentStateFolder: nodePath.join(home, CODEX_CONFIG_DIRECTORY),
+		integration: LS_INTEGRATION,
+		version: PLUGIN_VERSION,
+		createBuilder: createCodexTranscriptBuilder,
+		readLegacySessions: () => legacySessions
+	});
 }
 //#endregion
 //#region src/login-notice.ts
@@ -25396,31 +26705,17 @@ function readStdin() {
 async function runHook() {
 	const content = await readStdin();
 	if (content.hook_event_name === "PostToolUse") {
-		await handlePostToolUse(content);
+		await sendTracerNote(content);
 		return;
 	}
 	await showPendingWarning(homeDirectory());
 	if (content.hook_event_name === "UserPromptSubmit") {
 		const result = await handlePromptSubmit(content);
 		if (result) console.log(JSON.stringify(result));
+		await sendTracerNote(content);
 		return;
 	}
-	if (content.hook_event_name !== "Stop") return;
-	const config = await getConfig({
-		home: homeDirectory(),
-		cwd: content.cwd,
-		env: process.env
-	});
-	if (!config.enabled) return;
-	if (!content.session_id || !content.turn_id || !content.transcript_path) return;
-	await access(content.transcript_path, constants.R_OK);
-	const session = createCodexTracingSession(config, content.session_id, content.cwd);
-	if (!session) return;
-	await queueCodexTurns(session, config, {
-		transcriptPath: content.transcript_path,
-		turnId: content.turn_id,
-		cwd: content.cwd
-	});
+	if (content.hook_event_name === "Stop") await sendTracerNote(content);
 }
 const USAGE = usage(binary.target.executableName);
 const args = process.argv.slice(2);
@@ -25429,14 +26724,11 @@ if (args.length === 0) runHook().catch((error) => {
 });
 else await dispatchHookCommand(args, {
 	usage: USAGE,
-	version: "0.4.4",
+	version: PLUGIN_VERSION,
 	hooks: {},
 	worker: {
 		command: ENGINE_WORKER_FLAG,
-		run: ([sessionId, cwd]) => {
-			if (!sessionId || !cwd) throw new Error("shared trace worker needs a session ID and working directory");
-			return runCodexEngineWorker(sessionId, cwd);
-		}
+		run: () => runTracerWorker()
 	},
 	onHookError: (_name, error) => {
 		console.error(tracingFailed(error));

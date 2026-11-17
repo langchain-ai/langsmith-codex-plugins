@@ -16,7 +16,6 @@ import {
   PATCH_OPERATION,
   RUN_COMPLETED,
   RUN_ERROR,
-  RUN_RUNNING,
   RUN_CONTEXT_FIELDS,
   RUN_PATCH_FIELDS,
   TOOL_RUN_ID_SEGMENT,
@@ -34,8 +33,8 @@ export function postSubmission(
   run: RunTree,
   privacyMode: TracingMode,
   metadataOptions: CodingAgentMetadataOptions,
-  status: CodexRunStatus = runStatus(run),
 ): PreparedRunPostSubmission {
+  const status = runStatus(run);
   const payload = toPlainObject(run.toJSON());
   const provenance = prepareCodingAgentMetadataProvenance(
     toPlainObject<CodingAgentMetadataOptions>(metadataOptions),
@@ -54,16 +53,6 @@ export function postSubmission(
     privacyContext: { status },
     run: normalizedSnapshot(payload),
   };
-}
-
-export function openRootSubmission(
-  run: RunTree,
-  privacyMode: TracingMode,
-  metadataOptions: CodingAgentMetadataOptions,
-): PreparedRunPostSubmission {
-  const submission = postSubmission(run, privacyMode, metadataOptions, RUN_RUNNING);
-  for (const field of RUN_PATCH_FIELDS) delete submission.run[field];
-  return submission;
 }
 
 export function closingRootSubmission(

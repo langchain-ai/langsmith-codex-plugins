@@ -12,20 +12,9 @@ const locked: Config = {
   project: "codex",
 };
 vi.mock("../src/config.js", () => ({ getConfig: async () => locked }));
-const liveModes: string[] = [];
-vi.mock("../src/tracing-engine.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../src/tracing-engine.js")>()),
-  createCodexTracingSession: () => ({}),
-  buildLiveToolRuns: async (_config: Config, _request: unknown, mode: string) => {
-    liveModes.push(mode);
-    return { root: {}, tool: { run: { name: "web_search" } } };
-  },
-  saveLiveToolRuns: async () => undefined,
-}));
 
 const { defaultPrivacyPath, savedTurnMode } = await import("../src/tracing-policy.js");
 const { handlePromptSubmit } = await import("../src/user-prompt-submit.js");
-const { handlePostToolUse } = await import("../src/post-tool-use.js");
 
 let home: string;
 beforeEach(async () => {
@@ -57,24 +46,6 @@ it("keeps a thread muted while the managed file locks muting, even after an earl
   );
   expect(savedTurnMode(defaultPrivacyPath(), "thread", "after")).toBe("metadata");
   expect(mute?.hookSpecificOutput?.additionalContext).toContain("muted (metadata-only)");
-});
-
-it("traces a helper thread's tool call without content while muting is locked", async () => {
-  await fs.writeFile(
-    defaultPrivacyPath(),
-    JSON.stringify({ version: 1, threads: { helper: { inherited: "full", turns: {} } } }),
-  );
-  await handlePostToolUse({
-    hook_event_name: "PostToolUse",
-    session_id: "helper",
-    turn_id: "turn",
-    transcript_path: path.join(home, "rollout.jsonl"),
-    tool_use_id: "call",
-    cwd: home,
-    prompt: "",
-  });
-
-  expect(liveModes).toEqual(["metadata"]);
 });
 
 it("forgets an unmute refused under a locked mute once the lock is lifted", async () => {

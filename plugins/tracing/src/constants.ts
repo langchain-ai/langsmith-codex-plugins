@@ -9,7 +9,6 @@ export const LS_INTEGRATION = "openai-codex";
 export const CODEX_CONFIG_DIRECTORY = ".codex";
 export const PRIVACY_FILE_NAME = "langsmith_state_privacy.json";
 export const LEGACY_PRIVACY_FILE_NAME = "langsmith-state.privacy.json";
-export const SIDECAR_SUFFIX = ".langsmith";
 
 // Null run-type-scoped keys on llm/tool runs to override langsmith's
 // parent->child metadata inheritance (serialization drops undefined).
@@ -118,11 +117,7 @@ export const RUN_CONTEXT_FIELDS = [
   "trace_id",
   "dotted_order",
 ] as const;
-export const CAPTURE_SAVED_STATUSES: readonly string[] = ["published", "duplicate"];
-export const LIVE_RUN_NOT_SAVED_MESSAGE = "Could not save a Codex tool run for upload:";
 export const TOOL_RUN_ID_SEGMENT = ":tool:";
-export const TOOL_OUTPUT_WAIT_MS = 3_000;
-export const TOOL_OUTPUT_POLL_MS = 100;
 export const ROLLOUT_ENCODING = "utf-8";
 export const ROLLOUT_CHUNK_BYTES = 64 * 1024;
 export const TOOL_END_EVENT_SUFFIX = "_end";
@@ -137,15 +132,15 @@ export const TOOL_ITEM_TYPES: readonly unknown[] = [
 export const FAILED_TOOL_STATUSES: readonly unknown[] = ["failed", "declined"];
 export const TOOL_STATUS_ERROR_PREFIX = "Tool ";
 export const SUBAGENT_AGENT_TYPE = "subagent";
-export const OPEN_CLOSURE = "open";
 export const PATCH_OPERATION = "patch";
-export const RUN_RUNNING = "running";
 export const RUN_COMPLETED = "completed";
 export const RUN_ERROR = "error";
 export const RECONSTRUCTION_EVENT_PREFIX = "codex-reconstruction:";
 export const TRANSCRIPT_LOCATOR_PREFIX = "codex-transcript:";
 export const CONTEXT_LOCATOR_PREFIX = "codex-context:";
 export const JOB_STATE_FILE_NAME = "langsmith_state.json";
+export const CODEX_SESSIONS_DIRECTORY = "sessions";
+export const MISSING_ROLLOUT_UPDATED_AT = 0;
 export const CONTEXT_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
 export const STATE_FILE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const WARNING_FILE_NAME = "langsmith_warning.txt";
@@ -250,3 +245,6 @@ export const TRACER_BUILDER_STATE_VERSION = 1;
 export const SPAWN_AGENT_CALL = "spawn_agent";
 export const POST_TOOL_USE_EVENT = "PostToolUse";
 export const STOP_EVENT = "Stop";
+export const USER_PROMPT_SUBMIT_EVENT = "UserPromptSubmit";
+export const DEVELOPMENT_VERSION = "development";
+export const PLUGIN_VERSION = LS_INTEGRATION_VERSION ?? DEVELOPMENT_VERSION;
