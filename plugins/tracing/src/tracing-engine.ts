@@ -10,6 +10,7 @@ import { createRepositoryAttributor, type RepositoryAttributor } from "@langchai
 import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import type { PluginSession } from "@langchain/plugins-base/plugin";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
+import { tracerPaths } from "@langchain/plugins-base/tracer";
 import type { StoredCapture } from "@langchain/plugins-base/storage/capture";
 import type { LifecycleCaptureInput } from "@langchain/plugins-base/tracing/lifecycle";
 import type {
@@ -28,7 +29,6 @@ import {
   DROPPED_LOGIN_WORK_WARNING_PREFIX,
   DROPPED_LOGIN_WORK_WARNING_SUFFIX,
   DROPPED_WORK_WARNING,
-  ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
   GITHUB_LOGIN_MARKER_FILE_NAME,
   LIVE_RUN_EVENT_PREFIX,
@@ -66,7 +66,7 @@ import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
 
 export function engineStorageRoot(home: string): string {
-  return path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+  return tracerPaths(path.join(home, CODEX_CONFIG_DIRECTORY)).folder;
 }
 
 export function createCodexTracingSession(
@@ -74,8 +74,8 @@ export function createCodexTracingSession(
   sessionId: string,
   cwd: string,
   home = homeDirectory(),
+  storageRoot = engineStorageRoot(home),
 ): PluginSession | undefined {
-  const storageRoot = engineStorageRoot(home);
   const writer = writerOptions(config, storageRoot);
   if (!writer) return undefined;
   const plugin: PluginSession = openPluginSession({
@@ -203,10 +203,14 @@ function reportRecovery(result: CodexRecoveryResult): void {
   console.error(`Shared Codex trace recovery did not finish: ${JSON.stringify(result)}`);
 }
 
-export async function runCodexEngineWorker(sessionId: string, cwd: string): Promise<void> {
+export async function runCodexEngineWorker(
+  sessionId: string,
+  cwd: string,
+  storageRoot?: string,
+): Promise<void> {
   const home = homeDirectory();
   const config = await getConfig({ home, cwd, env: process.env });
-  const session = createCodexTracingSession(config, sessionId, cwd, home);
+  const session = createCodexTracingSession(config, sessionId, cwd, home, storageRoot);
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
   if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
@@ -336,7 +340,7 @@ export function uploadAuth(config: Config): UploadAuth | undefined {
   return credential;
 }
 
-function writerOptions(
+export function writerOptions(
   config: Config,
   storageRoot: string,
 ): LangSmithUploadWriterOptions | undefined {

@@ -63,7 +63,7 @@ it("wakes the worker it is asked to wake, with the folder and the engine storage
   expect(engine.launch).toHaveBeenCalledWith(["--engine-worker", "stranded-2", "/work/repo"], {
     storageRoot: options.storageRoot,
   });
-  expect(options.storageRoot).toBe(path.join(home, ".codex", "langsmith_engine"));
+  expect(options.storageRoot).toBe(path.join(home, ".codex", "langsmith_plugins_base"));
 });
 
 it.each([{ replicas: [] }, { replicas: [{ api_url: "https://replica.example" }] }])(

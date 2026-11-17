@@ -33,6 +33,10 @@ export async function saveJobContext(
   });
 }
 
+export function readJobState(home: string): Record<string, CodexJobState> {
+  return jobStore(home).read();
+}
+
 export function readJobContext(
   home: string,
   sessionId: string,

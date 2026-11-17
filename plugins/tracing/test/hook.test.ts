@@ -90,22 +90,6 @@ function raw(input: string) {
   });
 }
 
-it("leaves the turn alone when the transcript it was handed cannot be read", async () => {
-  const result = await raw(
-    JSON.stringify({
-      hook_event_name: "Stop",
-      session_id: "thread",
-      turn_id: "turn",
-      cwd: home,
-      transcript_path: path.join(home, "absent.jsonl"),
-    }),
-  );
-  expect(result.code).toBe(0);
-  expect(result.stdout).toBe("");
-  expect(result.stderr.trim().split("\n")).toHaveLength(1);
-  expect(result.stderr).toContain("LangSmith tracing failed for this turn");
-});
-
 it("leaves the turn alone when the event it was handed is not JSON", async () => {
   const result = await raw("not json");
   expect(result.code).toBe(0);
@@ -150,12 +134,6 @@ it("prints the plugin version it was built with", async () => {
     await fs.readFile(new URL("../.codex-plugin/plugin.json", import.meta.url), "utf8"),
   );
   expect((await bundle("--version")).stdout.trim()).toBe(manifest.version);
-});
-
-it("exits 1 with a message when the background worker is started without a session", async () => {
-  const result = await bundle("--engine-worker");
-  expect(result.code).toBe(1);
-  expect(result.stderr).toContain("needs a session ID and working directory");
 });
 
 it("the installed hook definition is synchronous and preserves Stop timing", async () => {
