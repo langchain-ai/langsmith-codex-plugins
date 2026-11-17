@@ -25372,9 +25372,12 @@ function modelSpans(fullMessages, includeOpenTurn = false) {
 		if (item.message.role === "ai") acc.push(idx);
 		return acc;
 	}, []).map((start) => {
-		const nonToolIdx = Array.from({ length: start + 1 }).fill(null).concat(fullMessages.slice(start + 1)).findIndex((i) => {
+		const targetList = Array.from({ length: start + 1 }).fill(null).concat(fullMessages.slice(start + 1));
+		const nonToolIdx = targetList.findIndex((i, idx) => {
 			const value = i;
 			if (value == null) return false;
+			const next = targetList[idx + 1];
+			if (value.message.role === "system" && next?.message.role === "tool") return false;
 			return value?.message.role !== "tool";
 		});
 		if (nonToolIdx > start) return {

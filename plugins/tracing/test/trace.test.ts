@@ -1489,6 +1489,24 @@ it("keeps every field of a tool result that is not Codex's shell output", async 
   expect(tool?.outputs?.messages[0].content).toEqual([{ type: "text", text: result }]);
 });
 
+it("keeps a tool whose result follows a hook's developer message", async () => {
+  const hookNote = (text: string) => ({
+    type: "message",
+    role: "developer",
+    content: [{ type: "input_text", text }],
+  });
+  const runs = await traceScaffoldedTurn([
+    { type: "function_call", call_id: "f1", name: "report", arguments: "{}" },
+    hookNote("hook|PreToolUse"),
+    hookNote("hook|PostToolUse"),
+    { type: "function_call_output", call_id: "f1", output: "done" },
+  ]);
+
+  expect(runs.find((run) => run.name === "report")?.outputs?.messages[0].content).toEqual([
+    { type: "text", text: "done" },
+  ]);
+});
+
 it("shows a failed shell command's exit code under its output", async () => {
   const runs = await traceScaffoldedTurn([
     { type: "function_call", call_id: "f1", name: "shell", arguments: "{}" },

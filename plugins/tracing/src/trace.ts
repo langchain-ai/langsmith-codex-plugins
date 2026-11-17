@@ -493,9 +493,11 @@ function modelSpans(
       .fill(null)
       .concat(fullMessages.slice(start + 1));
 
-    const nonToolIdx = targetList.findIndex((i) => {
+    const nonToolIdx = targetList.findIndex((i, idx) => {
       const value = i as { message: StandardMessage } | null;
       if (value == null) return false;
+      const next = targetList[idx + 1] as { message: StandardMessage } | undefined;
+      if (value.message.role === "system" && next?.message.role === "tool") return false;
       return value?.message.role !== "tool";
     });
 
