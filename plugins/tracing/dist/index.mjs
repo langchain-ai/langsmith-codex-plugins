@@ -24010,7 +24010,7 @@ function getSystemMessage(session, task) {
 	}];
 }
 function combinedTurnMode(nativeMode, privacyMode) {
-	return nativeMode === "off" ? "off" : privacyMode === "metadata" || nativeMode === "metadata" ? MODE_METADATA : MODE_FULL;
+	return nativeMode === "off" || privacyMode === "off" ? "off" : privacyMode === "metadata" || nativeMode === "metadata" ? MODE_METADATA : MODE_FULL;
 }
 async function resolveTurnMode(task, sessionMeta, privacyTurnId, request) {
 	const mode = combinedTurnMode(sessionMeta?.session_id ? await rolloutTurnMode(request.rolloutFile, sessionMeta.session_id, privacyTurnId) : MODE_METADATA, request.options.privacyMode);

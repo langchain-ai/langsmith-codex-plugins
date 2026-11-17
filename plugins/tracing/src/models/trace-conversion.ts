@@ -111,14 +111,21 @@ export interface NoteDetails {
 
 export type SavedWalk = Omit<RolloutWalk, "spawnAgentMessages">;
 
+export interface HeldTurn {
+  turn: CompletedTurn;
+  end: number;
+}
+
 export interface BuilderState {
   version: number;
   walk?: SavedWalk;
   transcriptPath?: string;
   lastLineTime?: number;
   noteSeen: boolean;
-  heldTurn?: CompletedTurn;
+  heldTurn?: HeldTurn;
+  stopClosedTurn?: boolean;
   currentTurnId?: string;
+  firstNoteTurnId?: string;
   turnModes: Record<string, TurnMode>;
   lastPostedTurn?: string;
   liveRoots: string[];
