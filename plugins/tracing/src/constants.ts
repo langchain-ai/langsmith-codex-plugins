@@ -124,6 +124,7 @@ export const TOOL_RUN_ID_SEGMENT = ":tool:";
 export const TOOL_OUTPUT_WAIT_MS = 3_000;
 export const TOOL_OUTPUT_POLL_MS = 100;
 export const ROLLOUT_ENCODING = "utf-8";
+export const ROLLOUT_CHUNK_BYTES = 64 * 1024;
 export const TOOL_END_EVENT_SUFFIX = "_end";
 export const OPEN_TURN_END = "langsmith_open_turn_end";
 export const ITEM_COMPLETED_EVENT = "item_completed";
@@ -245,3 +246,7 @@ export const XML_ENTITIES: Record<string, string> = {
   "&apos;": "'",
   "&amp;": "&",
 };
+export const TRACER_BUILDER_STATE_VERSION = 1;
+export const SPAWN_AGENT_CALL = "spawn_agent";
+export const POST_TOOL_USE_EVENT = "PostToolUse";
+export const STOP_EVENT = "Stop";

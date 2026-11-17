@@ -39,7 +39,7 @@ import { findLast } from "./utils/findLast.js";
 import { skillNamesFromToolCall } from "./skills.js";
 import { isPrimitive } from "./utils/isPrimitive.js";
 import { createRunTree } from "./privacy.js";
-import { defaultPrivacyPath, inheritThreadMode } from "./tracing-policy.js";
+import { defaultPrivacyPath, inheritedTurnMode, inheritThreadMode } from "./tracing-policy.js";
 import { isRecord } from "./utils/isRecord.js";
 import {
   isReviewResult,
@@ -50,7 +50,7 @@ import { omitKey } from "./utils/omitKey.js";
 import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
 import { toolOriginFromArgs } from "./tool-path.js";
-import { loadSession, findRolloutFileByThreadId, markLast } from "./utils/rollout.js";
+import { findRolloutFileByThreadId, markLast, readSession } from "./utils/rollout.js";
 import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
@@ -66,6 +66,7 @@ import {
   NONZERO_EXIT_SUFFIX,
   OPEN_TURN_END,
   SKILL_SCOPE_RESET,
+  SPAWN_AGENT_CALL,
   SUBAGENT_SCOPE_RESET,
   TOOL_END_EVENT_SUFFIX,
   TOOL_ITEM_TYPES,
@@ -336,6 +337,14 @@ function getSystemMessage(
   ];
 }
 
+export function combinedTurnMode(nativeMode: TurnMode, privacyMode?: TurnMode): TurnMode {
+  return nativeMode === MODE_OFF
+    ? MODE_OFF
+    : privacyMode === MODE_METADATA || nativeMode === MODE_METADATA
+      ? MODE_METADATA
+      : MODE_FULL;
+}
+
 async function resolveTurnMode(
   task: Task,
   sessionMeta: Session | undefined,
@@ -345,12 +354,7 @@ async function resolveTurnMode(
   const nativeMode = sessionMeta?.session_id
     ? await rolloutTurnMode(request.rolloutFile, sessionMeta.session_id, privacyTurnId)
     : MODE_METADATA;
-  const mode: TurnMode =
-    nativeMode === MODE_OFF
-      ? MODE_OFF
-      : request.options.privacyMode === MODE_METADATA || nativeMode === MODE_METADATA
-        ? MODE_METADATA
-        : MODE_FULL;
+  const mode = combinedTurnMode(nativeMode, request.options.privacyMode);
   // Persist launch inheritance even when master-off evidence skips this turn.
   for (const child of task.subagentThreads) {
     try {
@@ -426,11 +430,11 @@ function parentProviderMetadata(task: Task, sessionMeta: Session | undefined) {
   };
 }
 
-async function createParentRun(
+function createParentRun(
   draft: TurnDraft,
   user: AggregateMessage<StandardMessage> | undefined,
   agent: MergedMessage<StandardMessage>[],
-): Promise<RunTree> {
+): RunTree {
   const { task, sessionMeta, isSubagent, approvalPolicy, metadataContext, metadataBase } = draft;
   const { mode, parentStartTime } = draft;
   const options = draft.request.options;
@@ -471,7 +475,7 @@ async function createParentRun(
   };
   const parent = createRunTree(parentConfig, mode, options.parentRunTree);
 
-  await options.captureRun(parent, mode, parentMetadata);
+  options.captureRun(parent, mode, parentMetadata);
   return parent;
 }
 
@@ -489,9 +493,11 @@ function modelSpans(
       .fill(null)
       .concat(fullMessages.slice(start + 1));
 
-    const nonToolIdx = targetList.findIndex((i) => {
+    const nonToolIdx = targetList.findIndex((i, idx) => {
       const value = i as { message: StandardMessage } | null;
       if (value == null) return false;
+      const next = targetList[idx + 1] as { message: StandardMessage } | undefined;
+      if (value.message.role === "system" && next?.message.role === "tool") return false;
       return value?.message.role !== "tool";
     });
 
@@ -504,26 +510,33 @@ function modelSpans(
   });
 }
 
-async function postSubagentThread(context: TurnRunContext, subagentThread: string) {
+function postSubagentThread(context: TurnRunContext, subagentThread: string) {
   if (context.postedSubagentThreads.has(subagentThread)) return;
   context.postedSubagentThreads.add(subagentThread);
 
-  const subagentFile = await findRolloutFileByThreadId(context.request.rolloutFile, subagentThread);
+  const subagentFile = findRolloutFileByThreadId(context.request.rolloutFile, subagentThread);
   if (subagentFile == null) return;
 
   let lastEvent: { payload: { turn_id: string } } | undefined;
-  for await (const event of loadSession(subagentFile)) {
+  for (const event of readSession(subagentFile)) {
     if (event.type === "event_msg" && event.payload.turn_id != null)
       lastEvent = event as { payload: { turn_id: string } };
   }
 
-  await convertToRunTree(
-    { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null },
-    { ...context.request.options, parentRunTree: context.parent, replayHistory: true },
-  );
+  const input = { transcript_path: subagentFile, turn_id: lastEvent?.payload.turn_id ?? null };
+  const options = { ...context.request.options, parentRunTree: context.parent };
+  const nativeMode = inheritedTurnMode(defaultPrivacyPath(), subagentThread) ?? context.mode;
+  const mode = combinedTurnMode(nativeMode, options.privacyMode);
+  const seenTurnIds = new Set<string>();
+  for (const { task, sessionMeta, completedTurnId } of completedTurns(input)) {
+    if (completedTurnId == null || !seenTurnIds.has(completedTurnId)) {
+      postTurn(task, sessionMeta, mode, { rolloutFile: subagentFile, options });
+    }
+    if (completedTurnId != null) seenTurnIds.add(completedTurnId);
+  }
 }
 
-async function postModelRun(
+function postModelRun(
   context: TurnRunContext,
   fullMessages: MergedMessage<StandardMessage>[],
   output: ModelSpan,
@@ -581,12 +594,12 @@ async function postModelRun(
     mode,
     parent,
   );
-  await options.captureRun(llmChild, mode, llmMetadata);
+  options.captureRun(llmChild, mode, llmMetadata);
 
   return { aiMessage, toolMessages, subagentThreads };
 }
 
-async function postSkillRuns(
+function postSkillRuns(
   context: TurnRunContext,
   skillNames: string[],
   window: TimeWindow,
@@ -622,11 +635,11 @@ async function postSkillRuns(
       mode,
       parent,
     );
-    await options.captureRun(skillRun, mode, skillMetadata);
+    options.captureRun(skillRun, mode, skillMetadata);
   }
 }
 
-async function postToolRuns(
+function postToolRuns(
   context: TurnRunContext,
   aiMessage: MergedMessage<StandardMessage>[],
   toolMessages: MergedMessage<StandardMessage>[],
@@ -698,16 +711,16 @@ async function postToolRuns(
       mode,
       parent,
     );
-    await options.captureRun(toolRun, mode, toolMetadata);
+    options.captureRun(toolRun, mode, toolMetadata);
 
     const text = toolMessage.message.content.find((c) => c.type === "text")?.text;
     const succeeded =
       toolCall.error == null && !(typeof text === "string" && NONZERO_EXIT_SUFFIX.test(text));
-    await postSkillRuns(context, skillNames, { min, max }, succeeded);
+    postSkillRuns(context, skillNames, { min, max }, succeeded);
   }
 }
 
-async function postModelAndToolRuns(
+function postModelAndToolRuns(
   context: TurnRunContext,
   messages: AggregateMessage<StandardMessage>[],
 ) {
@@ -729,29 +742,28 @@ async function postModelAndToolRuns(
   );
   const typed = context.task.typedSkills.filter((name) => !readSkills.has(name));
   const start = context.parentStartTime;
-  await postSkillRuns(context, typed, { min: start, max: start }, true);
+  postSkillRuns(context, typed, { min: start, max: start }, true);
 
   for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
-    const { aiMessage, toolMessages, subagentThreads } = await postModelRun(
+    const { aiMessage, toolMessages, subagentThreads } = postModelRun(
       context,
       fullMessages,
       output,
     );
-    await postToolRuns(context, aiMessage, toolMessages);
+    postToolRuns(context, aiMessage, toolMessages);
 
     for (const subagentThread of subagentThreads ?? []) {
-      await postSubagentThread(context, subagentThread);
+      postSubagentThread(context, subagentThread);
     }
   }
 }
 
-async function postTurn(
+export function postTurn(
   task: Task,
   sessionMeta: Session | undefined,
-  privacyTurnId: string | undefined,
+  mode: TurnMode,
   request: TurnRequest,
 ) {
-  const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request);
   if (mode === MODE_OFF) return;
   const fallbackTime = Date.now();
 
@@ -795,15 +807,15 @@ async function postTurn(
     ...draft,
     childMetadataBase: childBase(draft.metadataBase, draft),
     unattributedChildBase: childBase(unattributed.metadataBase, draft),
-    parent: await createParentRun(draft, user, agent),
+    parent: createParentRun(draft, user, agent),
     postedSubagentThreads: new Set<string>(),
   };
 
-  if (!task.isReviewResult) await postModelAndToolRuns(context, messages);
+  if (!task.isReviewResult) postModelAndToolRuns(context, messages);
 
   // Canonical activity records can arrive without a matching response item.
   for (const subagentThread of task.subagentThreads) {
-    await postSubagentThread(context, subagentThread);
+    postSubagentThread(context, subagentThread);
   }
 }
 
@@ -922,7 +934,7 @@ function recordResponseItem(walk: RolloutWalk, item: ResponseItem, timestamp: st
   task.messages.push(message);
 
   // multi_agent_v1 discovery: attach the child id from spawn_agent's output.
-  if (payload.type === "function_call" && payload.name === "spawn_agent") {
+  if (payload.type === "function_call" && payload.name === SPAWN_AGENT_CALL) {
     walk.spawnAgentMessages.set(payload.call_id, message);
   } else if (
     payload.type === "function_call_output" &&
@@ -1093,23 +1105,18 @@ function recordEventMessage(walk: RolloutWalk, payload: EventMsgPayload, eventTi
   }
 }
 
-function endsTurn(
-  walk: RolloutWalk,
-  payload: EventMsgPayload,
-  isLast: boolean,
-  input: TraceInput,
-): boolean {
+function endsTurn(walk: RolloutWalk, payload: EventMsgPayload, closeOpenTurn: boolean): boolean {
   return (
     payload.type === "task_complete" ||
     payload.type === "turn_complete" ||
     payload.type === "turn_aborted" ||
-    (walk.task != null && isLast && input.turn_id != null)
+    (walk.task != null && closeOpenTurn)
   );
 }
 
-async function* rolloutEvents(input: TraceInput): AsyncGenerator<LineSchema> {
+function* rolloutEvents(input: TraceInput): Generator<LineSchema> {
   let last: LineSchema | undefined;
-  for await (const event of loadSession(input.transcript_path)) {
+  for (const event of readSession(input.transcript_path)) {
     last = event;
     yield event;
   }
@@ -1123,11 +1130,8 @@ async function* rolloutEvents(input: TraceInput): AsyncGenerator<LineSchema> {
   }
 }
 
-async function walkCompletedTurns(
-  input: TraceInput,
-  onTurn: (turn: CompletedTurn) => Promise<void>,
-) {
-  const walk: RolloutWalk = {
+export function createRolloutWalk(): RolloutWalk {
+  return {
     sessionMeta: undefined,
     task: undefined,
     // 1-based native turn index within this thread; incremented per task_started.
@@ -1137,66 +1141,90 @@ async function walkCompletedTurns(
     spawnAgentMessages: new Map<string, { subagentThreads: string[] }>(),
     sessionTokenTotal: undefined,
   };
+}
 
-  for await (const [{ type, payload, timestamp }, isLast] of markLast(rolloutEvents(input))) {
-    if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
+export function readRolloutLine(
+  walk: RolloutWalk,
+  { type, payload, timestamp }: LineSchema,
+  closeOpenTurn: boolean,
+): boolean {
+  if (type === "session_meta") walk.sessionMeta = readSessionMeta(payload);
 
-    if (type === "response_item") recordResponseItem(walk, payload, timestamp);
+  if (type === "response_item") recordResponseItem(walk, payload, timestamp);
 
-    if (type === "turn_context") {
-      walk.task ??= createTask();
-      walk.task.context = payload;
-    }
+  if (type === "turn_context") {
+    walk.task ??= createTask();
+    walk.task.context = payload;
+  }
 
-    if (type === "event_msg") {
-      const eventTime = Date.parse(timestamp);
+  if (type !== "event_msg") return false;
+  recordEventMessage(walk, payload, Date.parse(timestamp));
+  return endsTurn(walk, payload, closeOpenTurn);
+}
 
-      recordEventMessage(walk, payload, eventTime);
+export function finishTurn(
+  walk: RolloutWalk,
+  eventTime: number,
+  fallbackTurnId: string | undefined,
+): CompletedTurn {
+  walk.task ??= createTask();
+  const task = walk.task;
+  // Delivery may fall back to the Stop ID, but privacy must never assign
+  // that current ID to historical content with no native launch evidence.
+  const privacyTurnId = task.turnId?.id;
+  const completedTurnId = task.turnId?.id ?? fallbackTurnId;
+  // Ensure a turn marker for turns completed without a task_started.
+  if (task.turnId == null && completedTurnId != null) {
+    task.turnId = { id: completedTurnId, timestamp: eventTime };
+  }
+  if (task.turnNumber == null) {
+    walk.turnNumber += 1;
+    task.turnNumber = walk.turnNumber;
+  }
+  walk.task = undefined;
+  return { task, sessionMeta: walk.sessionMeta, privacyTurnId, completedTurnId };
+}
 
-      if (endsTurn(walk, payload, isLast, input)) {
-        walk.task ??= createTask();
-        const task = walk.task;
-        // Delivery may fall back to the Stop ID, but privacy must never assign
-        // that current ID to historical content with no native launch evidence.
-        const privacyTurnId = task.turnId?.id;
-        const completedTurnId = task.turnId?.id ?? input.turn_id ?? undefined;
-        // Ensure a turn marker for turns completed without a task_started.
-        if (task.turnId == null && completedTurnId != null) {
-          task.turnId = { id: completedTurnId, timestamp: eventTime };
-        }
-        if (task.turnNumber == null) {
-          walk.turnNumber += 1;
-          task.turnNumber = walk.turnNumber;
-        }
-        await onTurn({ task, sessionMeta: walk.sessionMeta, privacyTurnId, completedTurnId });
-        walk.task = undefined;
-      }
+function* completedTurns(input: TraceInput): Generator<CompletedTurn> {
+  const walk = createRolloutWalk();
+  for (const [line, isLast] of markLast(rolloutEvents(input))) {
+    if (readRolloutLine(walk, line, isLast && input.turn_id != null)) {
+      yield finishTurn(walk, Date.parse(line.timestamp), input.turn_id ?? undefined);
     }
   }
 }
 
 export async function convertToRunTree(input: TraceInput, options: TraceConversionOptions) {
+  const captures: unknown[] = [];
+  const request: TurnRequest = {
+    rolloutFile: input.transcript_path,
+    includeOpenTurn: input.includeOpenTurn,
+    options: {
+      ...options,
+      captureRun: (...run) => {
+        captures.push(options.captureRun(...run));
+      },
+    },
+  };
   const seenTurnIds = new Set<string>();
   const skipBacklog = options.replayHistory !== true;
-  await walkCompletedTurns(input, async ({ task, sessionMeta, privacyTurnId, completedTurnId }) => {
+  for (const { task, sessionMeta, privacyTurnId, completedTurnId } of completedTurns(input)) {
     const alreadySeen = completedTurnId != null && seenTurnIds.has(completedTurnId);
     const isBacklog = skipBacklog && input.turn_id != null && completedTurnId !== input.turn_id;
     if (!alreadySeen && !isBacklog) {
-      await postTurn(task, sessionMeta, privacyTurnId, {
-        rolloutFile: input.transcript_path,
-        includeOpenTurn: input.includeOpenTurn,
-        options,
-      });
+      const mode = await resolveTurnMode(task, sessionMeta, privacyTurnId, request);
+      postTurn(task, sessionMeta, mode, request);
     }
     if (completedTurnId != null) seenTurnIds.add(completedTurnId);
-  });
+  }
+  await Promise.all(captures);
 }
 
-export async function listCompletedTurnIds(input: TraceInput): Promise<string[]> {
+export function listCompletedTurnIds(input: TraceInput): string[] {
   const turnIds: string[] = [];
-  await walkCompletedTurns(input, async ({ completedTurnId }) => {
+  for (const { completedTurnId } of completedTurns(input)) {
     if (completedTurnId != null && !turnIds.includes(completedTurnId))
       turnIds.push(completedTurnId);
-  });
+  }
   return turnIds;
 }
