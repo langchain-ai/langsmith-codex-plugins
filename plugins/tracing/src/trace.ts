@@ -50,7 +50,12 @@ import { omitKey } from "./utils/omitKey.js";
 import { toolOutputText } from "./utils/customToolInput.js";
 import { usageSince } from "./utils/tokenUsage.js";
 import { toolOriginFromArgs } from "./tool-path.js";
-import { findRolloutFileByThreadId, markLast, readSession } from "./utils/rollout.js";
+import {
+  findRolloutFileByThreadId,
+  markLast,
+  readSession,
+  reasoningSummaryText,
+} from "./utils/rollout.js";
 import { extractSpawnedAgentId, extractSubagentActivities } from "./utils/subagents.js";
 import { rolloutTurnMode } from "./turn-mode.js";
 import {
@@ -229,13 +234,13 @@ function convertToolSearchOutput(message: ResponseItemOf<"tool_search_output">):
 function convertReasoning(message: ResponseItemOf<"reasoning">): StandardMessage | undefined {
   // Only include reasoning if it has non-encrypted content
   if (!message.content?.length && !message.summary?.length) return undefined;
-  const { type: _, content: reasoningRaw, ...extras } = message;
+  const { type: _, content: reasoningRaw, encrypted_content: _encrypted, ...extras } = message;
 
-  const reasoning = message.content
+  const reasoning = message.content?.length
     ? typeof message.content === "string"
       ? message.content
       : JSON.stringify(message.content)
-    : undefined;
+    : reasoningSummaryText(message.summary) || undefined;
 
   return {
     role: "ai",
@@ -309,10 +314,8 @@ function getUsageMetadata(counts: TokenCount | undefined): Record<string, unknow
     input_tokens: counts.input_tokens,
     output_tokens: counts.output_tokens,
     total_tokens: counts.total_tokens,
-    input_token_details: {
-      cache_read: counts.cached_input_tokens,
-      cache_creation: counts.reasoning_output_tokens,
-    },
+    input_token_details: { cache_read: counts.cached_input_tokens },
+    output_token_details: { reasoning: counts.reasoning_output_tokens },
   };
 }
 
@@ -479,10 +482,7 @@ function createParentRun(
   return parent;
 }
 
-function modelSpans(
-  fullMessages: MergedMessage<StandardMessage>[],
-  includeOpenTurn = false,
-): ModelSpan[] {
+function modelSpans(fullMessages: MergedMessage<StandardMessage>[]): ModelSpan[] {
   const aiMessageIndicies = fullMessages.reduce<number[]>((acc, item, idx) => {
     if (item.message.role === "ai") acc.push(idx);
     return acc;
@@ -504,9 +504,7 @@ function modelSpans(
     if (nonToolIdx > start) {
       return { start, length: nonToolIdx - start };
     }
-    if (includeOpenTurn && nonToolIdx === -1) return { start, length: fullMessages.length - start };
-
-    return { start, length: 1 };
+    return { start, length: fullMessages.length - start };
   });
 }
 
@@ -744,7 +742,7 @@ function postModelAndToolRuns(
   const start = context.parentStartTime;
   postSkillRuns(context, typed, { min: start, max: start }, true);
 
-  for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
+  for (const output of modelSpans(fullMessages)) {
     const { aiMessage, toolMessages, subagentThreads } = postModelRun(
       context,
       fullMessages,
@@ -1198,7 +1196,6 @@ export async function convertToRunTree(input: TraceInput, options: TraceConversi
   const captures: unknown[] = [];
   const request: TurnRequest = {
     rolloutFile: input.transcript_path,
-    includeOpenTurn: input.includeOpenTurn,
     options: {
       ...options,
       captureRun: (...run) => {

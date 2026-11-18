@@ -140,11 +140,10 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
     return combinedTurnMode(nativeTurnMode(privacyTurnId), privacyMode(turnId));
   }
 
-  function convertTurn(turn: CompletedTurn, turnId: string, includeOpenTurn: boolean) {
+  function convertTurn(turn: CompletedTurn, turnId: string) {
     const runs: CodexReconstructedRun[] = [];
     postTurn(turn.task, walk.sessionMeta, turnMode(turn, turnId), {
       rolloutFile: state.transcriptPath ?? "",
-      includeOpenTurn,
       options: {
         captureRun: (run, mode, metadata) => {
           runs.push({ run, mode, metadata });
@@ -170,7 +169,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
     for (const child of turn.task.subagentThreads)
       void inheritThreadMode(defaultPrivacyPath(), child, mode).catch(() => undefined);
     const liveRoot = state.liveRoots.includes(turnId);
-    for (const [index, captured] of convertTurn(turn, turnId, false).entries()) {
+    for (const [index, captured] of convertTurn(turn, turnId).entries()) {
       if (index === 0 && liveRoot) sink.patch(closingRootPatch(captured));
       else if (!state.liveTools.includes(captured.run.id)) sink.post(runPost(captured));
     }
@@ -186,7 +185,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
     const turn = finishTurn(openWalk, state.lastLineTime, state.currentTurnId);
     const turnId = turn.completedTurnId;
     if (turnId === undefined) return;
-    const [root, ...children] = convertTurn(turn, turnId, true);
+    const [root, ...children] = convertTurn(turn, turnId);
     if (root === undefined || root.metadata.agentType === SUBAGENT_AGENT_TYPE) return;
     const toolRunId = toolRunIdGenerator(sessionId, turnId);
     for (const callId of state.waitingTools) {

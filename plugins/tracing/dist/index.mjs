@@ -24916,6 +24916,9 @@ function findRolloutFileByThreadId(parentFileName, threadId) {
 function isoTime(time) {
 	return new Date(time).toISOString();
 }
+function reasoningSummaryText(summary) {
+	return summary.flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : []).join("\n");
+}
 //#endregion
 //#region src/utils/subagents.ts
 function extractSpawnedAgentId(output) {
@@ -25190,12 +25193,12 @@ function convertToolSearchOutput(message) {
 }
 function convertReasoning(message) {
 	if (!message.content?.length && !message.summary?.length) return void 0;
-	const { type: _, content: reasoningRaw, ...extras } = message;
+	const { type: _, content: reasoningRaw, encrypted_content: _encrypted, ...extras } = message;
 	return {
 		role: "ai",
 		content: [{
 			type: "reasoning",
-			reasoning: message.content ? typeof message.content === "string" ? message.content : JSON.stringify(message.content) : void 0,
+			reasoning: message.content?.length ? typeof message.content === "string" ? message.content : JSON.stringify(message.content) : reasoningSummaryText(message.summary) || void 0,
 			extras
 		}]
 	};
@@ -25250,10 +25253,8 @@ function getUsageMetadata(counts) {
 		input_tokens: counts.input_tokens,
 		output_tokens: counts.output_tokens,
 		total_tokens: counts.total_tokens,
-		input_token_details: {
-			cache_read: counts.cached_input_tokens,
-			cache_creation: counts.reasoning_output_tokens
-		}
+		input_token_details: { cache_read: counts.cached_input_tokens },
+		output_token_details: { reasoning: counts.reasoning_output_tokens }
 	};
 }
 function getSystemMessage(session, task) {
@@ -25361,7 +25362,7 @@ function createParentRun(draft, user, agent) {
 	options.captureRun(parent, mode, parentMetadata);
 	return parent;
 }
-function modelSpans(fullMessages, includeOpenTurn = false) {
+function modelSpans(fullMessages) {
 	return fullMessages.reduce((acc, item, idx) => {
 		if (item.message.role === "ai") acc.push(idx);
 		return acc;
@@ -25378,13 +25379,9 @@ function modelSpans(fullMessages, includeOpenTurn = false) {
 			start,
 			length: nonToolIdx - start
 		};
-		if (includeOpenTurn && nonToolIdx === -1) return {
-			start,
-			length: fullMessages.length - start
-		};
 		return {
 			start,
-			length: 1
+			length: fullMessages.length - start
 		};
 	});
 }
@@ -25550,7 +25547,7 @@ function postModelAndToolRuns(context, messages) {
 		min: start,
 		max: start
 	}, true);
-	for (const output of modelSpans(fullMessages, context.request.includeOpenTurn)) {
+	for (const output of modelSpans(fullMessages)) {
 		const { aiMessage, toolMessages, subagentThreads } = postModelRun(context, fullMessages, output);
 		postToolRuns(context, aiMessage, toolMessages);
 		for (const subagentThread of subagentThreads ?? []) postSubagentThread(context, subagentThread);
@@ -25837,7 +25834,6 @@ async function convertToRunTree(input, options) {
 	const captures = [];
 	const request = {
 		rolloutFile: input.transcript_path,
-		includeOpenTurn: input.includeOpenTurn,
 		options: {
 			...options,
 			captureRun: (...run) => {
@@ -26080,11 +26076,10 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 	function turnMode({ privacyTurnId }, turnId) {
 		return combinedTurnMode(nativeTurnMode(privacyTurnId), privacyMode(turnId));
 	}
-	function convertTurn(turn, turnId, includeOpenTurn) {
+	function convertTurn(turn, turnId) {
 		const runs = [];
 		postTurn(turn.task, walk.sessionMeta, turnMode(turn, turnId), {
 			rolloutFile: state.transcriptPath ?? "",
-			includeOpenTurn,
 			options: {
 				captureRun: (run, mode, metadata) => {
 					runs.push({
@@ -26112,7 +26107,7 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 		const mode = turnMode(turn, turnId);
 		for (const child of turn.task.subagentThreads) inheritThreadMode(defaultPrivacyPath(), child, mode).catch(() => void 0);
 		const liveRoot = state.liveRoots.includes(turnId);
-		for (const [index, captured] of convertTurn(turn, turnId, false).entries()) if (index === 0 && liveRoot) sink.patch(closingRootPatch(captured));
+		for (const [index, captured] of convertTurn(turn, turnId).entries()) if (index === 0 && liveRoot) sink.patch(closingRootPatch(captured));
 		else if (!state.liveTools.includes(captured.run.id)) sink.post(runPost(captured));
 		delete state.turnModes[turnId];
 		state.liveRoots = state.liveRoots.filter((id) => id !== turnId);
@@ -26127,7 +26122,7 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 		}, state.lastLineTime, state.currentTurnId);
 		const turnId = turn.completedTurnId;
 		if (turnId === void 0) return;
-		const [root, ...children] = convertTurn(turn, turnId, true);
+		const [root, ...children] = convertTurn(turn, turnId);
 		if (root === void 0 || root.metadata.agentType === "subagent") return;
 		const toolRunId = toolRunIdGenerator(sessionId, turnId);
 		for (const callId of state.waitingTools) {

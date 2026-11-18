@@ -37,7 +37,6 @@ export interface TraceInput {
 
 export interface TurnRequest {
   rolloutFile: string;
-  includeOpenTurn?: boolean | undefined;
   options: TraceConversionOptions;
 }
 
