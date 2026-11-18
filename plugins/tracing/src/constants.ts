@@ -20,6 +20,9 @@ export const CHILD_SCOPE_RESET = {
   ls_subagent_type: undefined,
 } as const;
 
+/** Explicit run status for a turn the user stopped. */
+export const RUN_STATUS_CANCELLED = "cancelled";
+
 export const MODE_FULL = "full";
 export const MODE_METADATA = "metadata";
 export const MODE_OFF = "off";
@@ -102,6 +105,7 @@ export const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
   "serialized",
   "events",
   "reference_example_id",
+  "status",
 ] as const;
 export const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
 export const ENGINE_WORKER_FLAG = "--engine-worker";

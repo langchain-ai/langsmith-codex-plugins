@@ -37,6 +37,9 @@ export function postSubmission(
   status: CodexRunStatus = runStatus(run),
 ): PreparedRunPostSubmission {
   const payload = toPlainObject(run.toJSON());
+  // Older langsmith versions drop `status` in toJSON; read it off the tree.
+  const explicitStatus = (run as { status?: unknown }).status;
+  if (explicitStatus !== undefined) payload.status ??= explicitStatus;
   const provenance = prepareCodingAgentMetadataProvenance(
     toPlainObject<CodingAgentMetadataOptions>(metadataOptions),
     LS_INTEGRATION,
