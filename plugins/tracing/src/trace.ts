@@ -65,6 +65,7 @@ import {
   MODE_OFF,
   NONZERO_EXIT_SUFFIX,
   OPEN_TURN_END,
+  RUN_STATUS_CANCELLED,
   SKILL_SCOPE_RESET,
   SUBAGENT_SCOPE_RESET,
   TOOL_END_EVENT_SUFFIX,
@@ -470,6 +471,9 @@ async function createParentRun(
     },
   };
   const parent = createRunTree(parentConfig, mode, options.parentRunTree);
+  // A user stop is a deliberate cancel, not a paused run. Set on the tree
+  // directly so it works before and after langsmith's RunTree knows `status`.
+  if (task.isErrorInterrupt) Object.assign(parent, { status: RUN_STATUS_CANCELLED });
 
   await options.captureRun(parent, mode, parentMetadata);
   return parent;

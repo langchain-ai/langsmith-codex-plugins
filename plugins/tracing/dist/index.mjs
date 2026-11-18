@@ -22836,6 +22836,8 @@ const CHILD_SCOPE_RESET = {
 	ls_subagent_id: void 0,
 	ls_subagent_type: void 0
 };
+/** Explicit run status for a turn the user stopped. */
+const RUN_STATUS_CANCELLED = "cancelled";
 const MODE_FULL = "full";
 const MODE_METADATA = "metadata";
 const PLUGIN_ENV_PREFIX = "LANGSMITH_CODEX_";
@@ -22931,7 +22933,8 @@ const NORMALIZED_SNAPSHOT_OPTIONAL_FIELDS = [
 	"error",
 	"serialized",
 	"events",
-	"reference_example_id"
+	"reference_example_id",
+	"status"
 ];
 const ENGINE_STORAGE_DIRECTORY = "langsmith_engine";
 const ENGINE_WORKER_FLAG = "--engine-worker";
@@ -24079,6 +24082,7 @@ async function createParentRun(draft, user, agent) {
 		end_time: parentEndTime,
 		extra: { metadata: Object.assign(buildCodingAgentMetadata(parentMetadata), isSubagent ? SUBAGENT_SCOPE_RESET : {}) }
 	}, mode, options.parentRunTree);
+	if (task.isErrorInterrupt) Object.assign(parent, { status: RUN_STATUS_CANCELLED });
 	await options.captureRun(parent, mode, parentMetadata);
 	return parent;
 }
@@ -24635,6 +24639,8 @@ function toPlainObject(value) {
 //#region src/tracing-engine-payload.ts
 function postSubmission(run, privacyMode, metadataOptions, status = runStatus(run)) {
 	const payload = toPlainObject(run.toJSON());
+	const explicitStatus = run.status;
+	if (explicitStatus !== void 0) payload.status ??= explicitStatus;
 	const provenance = prepareCodingAgentMetadataProvenance(toPlainObject(metadataOptions), LS_INTEGRATION, privacyMode, status);
 	if (provenance.status !== "ready") throw new Error("Codex trace metadata has no trusted thread ID");
 	return {

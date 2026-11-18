@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { convertToRunTree } from "./utils/convert.js";
 import { mockClient } from "./utils/mock_client.js";
 import { getAssumedTreeFromCalls } from "./utils/tree.js";
+import { postSubmission } from "../src/tracing-engine-payload.js";
 
 // Fixture transcripts live in memfs; validator.json is read via the real fs.
 vi.mock("node:fs/promises", async () => {
@@ -307,6 +308,61 @@ async function getRootRunForTerminal(terminal: Record<string, unknown>) {
     (run) => run.run_type === "chain" && run.parent_run_id == null,
   );
 }
+
+async function submittedRunsForTerminal(terminal: Record<string, unknown>) {
+  vol.fromJSON({
+    [path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`)]: parentTranscript(terminal),
+    [path.join(BASE_DIR, `rollout-sub-${SUB_THREAD}.jsonl`)]: subagentTranscript(),
+  });
+  seedFullLaunchEvidence();
+  const runs: ReturnType<typeof postSubmission>[] = [];
+  await convertToRunTree(
+    {
+      transcript_path: path.join(BASE_DIR, `rollout-parent-${PARENT_THREAD}.jsonl`),
+      turn_id: PARENT_TURN,
+    },
+    {
+      captureRun: async (run, mode, metadata) => {
+        runs.push(postSubmission(run, mode, metadata));
+      },
+    },
+  );
+  return runs.map((submission) => submission.run as unknown as Record<string, unknown>);
+}
+
+describe("turn status", () => {
+  it("ends a user-stopped turn as cancelled and only the root", async () => {
+    const runs = await submittedRunsForTerminal({
+      type: "turn_aborted",
+      turn_id: PARENT_TURN,
+      reason: "interrupted",
+    });
+    const roots = runs.filter((run) => run.parent_run_id == null);
+    expect(roots).toHaveLength(1);
+    expect(roots[0]?.status).toBe("cancelled");
+    expect(roots[0]?.error).toBe("Turn interrupted");
+    expect(runs.filter((run) => run.parent_run_id != null && run.status !== undefined)).toEqual([]);
+  });
+
+  it("leaves a real error as an error without a status", async () => {
+    const runs = await submittedRunsForTerminal({
+      type: "task_complete",
+      turn_id: PARENT_TURN,
+      error: { message: "boom" },
+    });
+    expect(runs.some((run) => run.error !== undefined)).toBe(true);
+    expect(runs.filter((run) => run.status !== undefined)).toEqual([]);
+  });
+
+  it("does not cancel other aborts", async () => {
+    const runs = await submittedRunsForTerminal({
+      type: "turn_aborted",
+      turn_id: PARENT_TURN,
+      reason: "replaced",
+    });
+    expect(runs.filter((run) => run.status !== undefined)).toEqual([]);
+  });
+});
 
 describe("turn errors", () => {
   it("marks an interrupted turn as an error", async () => {
