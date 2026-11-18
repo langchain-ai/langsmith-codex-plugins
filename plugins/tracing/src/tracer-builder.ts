@@ -10,15 +10,19 @@ import { join } from "node:path";
 import {
   CODEX_CONFIG_DIRECTORY,
   GITHUB_LOGIN_MARKER_FILE_NAME,
+  HELD_TOOL_OUTPUT_MAX_BYTES,
+  HELD_TURN_MESSAGES_MAX_BYTES,
   MODE_METADATA,
   POST_TOOL_USE_EVENT,
   SPAWN_AGENT_CALL,
   STOP_EVENT,
+  STUBBED_TOOL_OUTPUT_NOTE,
+  STUBBED_TURN_MESSAGE_NOTE,
   SUBAGENT_AGENT_TYPE,
   TOOLS_WITH_END_EVENTS,
   TRACER_BUILDER_STATE_VERSION,
 } from "./constants.js";
-import type { LineSchema } from "./models/rollout.js";
+import type { AggregateMessage, LineSchema, ResponseItem } from "./models/rollout.js";
 import type {
   BuilderState,
   CompletedTurn,
@@ -43,6 +47,7 @@ import {
 } from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 import { isRecord } from "./utils/isRecord.js";
+import { jsonBytes } from "./utils/jsonBytes.js";
 import { isoTime } from "./utils/rollout.js";
 
 function freshState(): BuilderState {
@@ -71,6 +76,25 @@ function restoredWalk(saved: SavedWalk | undefined): RolloutWalk {
       walk.spawnAgentMessages.set(item.call_id, message);
   }
   return walk;
+}
+
+function heldBytes(messages: AggregateMessage<ResponseItem>[]): number {
+  return messages.reduce((total, message) => total + jsonBytes(message), 0);
+}
+
+function stubbedItem(item: ResponseItem, note: string): ResponseItem {
+  if (item.type === "function_call_output" || item.type === "custom_tool_call_output")
+    return { ...item, output: note };
+  if (item.type === "message") return { ...item, content: [{ type: "text", text: note }] };
+  if (item.type === "function_call") return { ...item, arguments: JSON.stringify(note) };
+  if (item.type === "custom_tool_call") return { ...item, input: note };
+  if (item.type === "reasoning")
+    return {
+      type: "reasoning",
+      summary: [{ type: "summary_text", text: note }],
+      encrypted_content: null,
+    };
+  return item;
 }
 
 function runPost({ run, mode, metadata }: CodexReconstructedRun): RunPost {
@@ -179,6 +203,40 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
     state.waitingTools = [];
   }
 
+  function stubHeldMessage(held: AggregateMessage<ResponseItem>, item: ResponseItem) {
+    const before = jsonBytes(held);
+    held.message = item;
+    held.stubbed = true;
+    if (state.heldMessageBytes !== undefined) state.heldMessageBytes += jsonBytes(held) - before;
+  }
+
+  function stubPostedToolOutput(callId: string) {
+    for (const held of walk.task?.messages ?? []) {
+      const item = held.message;
+      const isOutput =
+        item.type === "function_call_output" || item.type === "custom_tool_call_output";
+      if (!isOutput || item.call_id !== callId) continue;
+      const bytes = jsonBytes(item.output);
+      if (bytes > HELD_TOOL_OUTPUT_MAX_BYTES)
+        stubHeldMessage(held, stubbedItem(item, `${bytes} ${STUBBED_TOOL_OUTPUT_NOTE}`));
+    }
+  }
+
+  function capHeldMessages(measured: number) {
+    const task = walk.task;
+    if (task === undefined) return;
+    const counted =
+      measured === 0 ? 0 : (state.heldMessageBytes ?? heldBytes(task.messages.slice(0, measured)));
+    state.heldMessageBytes = counted + heldBytes(task.messages.slice(measured));
+    const afterPrompt = (task.userMessageIndex ?? -1) + 1;
+    for (const held of task.messages.slice(afterPrompt)) {
+      if (state.heldMessageBytes <= HELD_TURN_MESSAGES_MAX_BYTES) return;
+      if (held.stubbed) continue;
+      const note = `${jsonBytes(held.message)} ${STUBBED_TURN_MESSAGE_NOTE}`;
+      stubHeldMessage(held, stubbedItem(held.message, note));
+    }
+  }
+
   function postFinishedTools() {
     if (walk.task === undefined || state.lastLineTime === undefined) return;
     const openWalk = { ...walk, task: { ...walk.task } };
@@ -198,6 +256,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
         state.liveRoots.push(turnId);
       }
       sink.post(runPost(tool));
+      stubPostedToolOutput(callId);
       state.liveTools.push(tool.run.id);
       state.waitingTools = state.waitingTools.filter((id) => id !== callId);
     }
@@ -212,6 +271,8 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
       if (path !== state.transcriptPath) return;
       const rollout = line as LineSchema;
       state.lastLineTime = Date.parse(rollout.timestamp);
+      const openTask = walk.task;
+      const measured = openTask?.messages.length ?? 0;
       if (readRolloutLine(walk, rollout, false)) {
         const stoppedTurnTail = state.stopClosedTurn && walk.task?.turnId === undefined;
         state.stopClosedTurn = false;
@@ -224,6 +285,7 @@ export const createCodexTranscriptBuilder: CreateTranscriptBuilder = ({
         else state.heldTurn = { turn, end: state.lastLineTime };
         return;
       }
+      capHeldMessages(walk.task === openTask ? measured : 0);
       const callId = mentionedCallId(rollout);
       if (callId !== undefined && state.waitingTools.includes(callId)) postFinishedTools();
     },

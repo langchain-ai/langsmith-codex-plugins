@@ -130,6 +130,7 @@ export interface BuilderState {
   liveRoots: string[];
   liveTools: string[];
   waitingTools: string[];
+  heldMessageBytes?: number;
   metadata?: Record<string, unknown>;
   parentHeaders?: ParentHeaders;
 }

@@ -242,6 +242,12 @@ export const XML_ENTITIES: Record<string, string> = {
   "&amp;": "&",
 };
 export const TRACER_BUILDER_STATE_VERSION = 1;
+export const HELD_TOOL_OUTPUT_MAX_BYTES = 8 * 1024;
+export const HELD_TURN_MESSAGES_MAX_BYTES = 4 * 1024 * 1024;
+export const STUBBED_TOOL_OUTPUT_NOTE =
+  "bytes of output left out here, the full output is on the tool's own run";
+export const STUBBED_TURN_MESSAGE_NOTE =
+  "bytes left out here to keep the turn under the tracer's size cap";
 export const SPAWN_AGENT_CALL = "spawn_agent";
 export const POST_TOOL_USE_EVENT = "PostToolUse";
 export const STOP_EVENT = "Stop";

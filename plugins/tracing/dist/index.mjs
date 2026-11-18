@@ -22040,6 +22040,8 @@ const XML_ENTITIES = {
 	"&apos;": "'",
 	"&amp;": "&"
 };
+const STUBBED_TOOL_OUTPUT_NOTE = "bytes of output left out here, the full output is on the tool's own run";
+const STUBBED_TURN_MESSAGE_NOTE = "bytes left out here to keep the turn under the tracer's size cap";
 const PLUGIN_VERSION = LS_INTEGRATION_VERSION;
 //#endregion
 //#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/constants.js
@@ -26002,6 +26004,11 @@ function runStatus(run) {
 	return run.end_time != null || status === "completed" ? "completed" : "running";
 }
 //#endregion
+//#region src/utils/jsonBytes.ts
+function jsonBytes(value) {
+	return Buffer.byteLength(JSON.stringify(value) ?? "");
+}
+//#endregion
 //#region src/tracer-builder.ts
 function freshState() {
 	return {
@@ -26028,6 +26035,39 @@ function restoredWalk(saved) {
 		if (item.type === "function_call" && item.name === "spawn_agent") walk.spawnAgentMessages.set(item.call_id, message);
 	}
 	return walk;
+}
+function heldBytes(messages) {
+	return messages.reduce((total, message) => total + jsonBytes(message), 0);
+}
+function stubbedItem(item, note) {
+	if (item.type === "function_call_output" || item.type === "custom_tool_call_output") return {
+		...item,
+		output: note
+	};
+	if (item.type === "message") return {
+		...item,
+		content: [{
+			type: "text",
+			text: note
+		}]
+	};
+	if (item.type === "function_call") return {
+		...item,
+		arguments: JSON.stringify(note)
+	};
+	if (item.type === "custom_tool_call") return {
+		...item,
+		input: note
+	};
+	if (item.type === "reasoning") return {
+		type: "reasoning",
+		summary: [{
+			type: "summary_text",
+			text: note
+		}],
+		encrypted_content: null
+	};
+	return item;
 }
 function runPost({ run, mode, metadata }) {
 	const parentRunId = run.parent_run?.id ?? run.parent_run_id;
@@ -26114,6 +26154,33 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 		state.liveTools = [];
 		state.waitingTools = [];
 	}
+	function stubHeldMessage(held, item) {
+		const before = jsonBytes(held);
+		held.message = item;
+		held.stubbed = true;
+		if (state.heldMessageBytes !== void 0) state.heldMessageBytes += jsonBytes(held) - before;
+	}
+	function stubPostedToolOutput(callId) {
+		for (const held of walk.task?.messages ?? []) {
+			const item = held.message;
+			if (!(item.type === "function_call_output" || item.type === "custom_tool_call_output") || item.call_id !== callId) continue;
+			const bytes = jsonBytes(item.output);
+			if (bytes > 8192) stubHeldMessage(held, stubbedItem(item, `${bytes} ${STUBBED_TOOL_OUTPUT_NOTE}`));
+		}
+	}
+	function capHeldMessages(measured) {
+		const task = walk.task;
+		if (task === void 0) return;
+		const counted = measured === 0 ? 0 : state.heldMessageBytes ?? heldBytes(task.messages.slice(0, measured));
+		state.heldMessageBytes = counted + heldBytes(task.messages.slice(measured));
+		const afterPrompt = (task.userMessageIndex ?? -1) + 1;
+		for (const held of task.messages.slice(afterPrompt)) {
+			if (state.heldMessageBytes <= 4194304) return;
+			if (held.stubbed) continue;
+			const note = `${jsonBytes(held.message)} ${STUBBED_TURN_MESSAGE_NOTE}`;
+			stubHeldMessage(held, stubbedItem(held.message, note));
+		}
+	}
 	function postFinishedTools() {
 		if (walk.task === void 0 || state.lastLineTime === void 0) return;
 		const turn = finishTurn({
@@ -26135,6 +26202,7 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 				state.liveRoots.push(turnId);
 			}
 			sink.post(runPost(tool));
+			stubPostedToolOutput(callId);
 			state.liveTools.push(tool.run.id);
 			state.waitingTools = state.waitingTools.filter((id) => id !== callId);
 		}
@@ -26148,6 +26216,8 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 			if (path !== state.transcriptPath) return;
 			const rollout = line;
 			state.lastLineTime = Date.parse(rollout.timestamp);
+			const openTask = walk.task;
+			const measured = openTask?.messages.length ?? 0;
 			if (readRolloutLine(walk, rollout, false)) {
 				const stoppedTurnTail = state.stopClosedTurn && walk.task?.turnId === void 0;
 				state.stopClosedTurn = false;
@@ -26163,6 +26233,7 @@ const createCodexTranscriptBuilder = ({ sessionId, savedState, sink, tracingMode
 				};
 				return;
 			}
+			capHeldMessages(walk.task === openTask ? measured : 0);
 			const callId = mentionedCallId(rollout);
 			if (callId !== void 0 && state.waitingTools.includes(callId)) postFinishedTools();
 		},
