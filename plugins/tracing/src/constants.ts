@@ -1,6 +1,7 @@
 // Frozen literals for the Codex integration (see validator.json).
 import { LOGIN_NOTICE_KIND } from "@langchain/plugins-base/auth";
 import type { PromptCommand } from "@langchain/plugins-base/plugin";
+import type { LangSmithUploadWriterOptions } from "@langchain/plugins-base/tracing/upload";
 import type { PromptCommandName } from "./models/hook-input.js";
 
 /** Identifies this plugin as the trace source. */
@@ -254,3 +255,8 @@ export const STOP_EVENT = "Stop";
 export const USER_PROMPT_SUBMIT_EVENT = "UserPromptSubmit";
 export const DEVELOPMENT_VERSION = "development";
 export const PLUGIN_VERSION = LS_INTEGRATION_VERSION ?? DEVELOPMENT_VERSION;
+
+export const NO_UPLOAD_CREDENTIALS: LangSmithUploadWriterOptions = {
+  destinations: [],
+  redact: false,
+};

@@ -46,7 +46,7 @@ if (args.length === 0) {
     hooks: {},
     worker: {
       command: ENGINE_WORKER_FLAG,
-      run: () => runTracerWorker(),
+      run: ([cwd]) => runTracerWorker(cwd ?? process.cwd()),
     },
     onHookError: (_name, error) => {
       console.error(tracingFailed(error));

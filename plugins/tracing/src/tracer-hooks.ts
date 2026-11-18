@@ -12,6 +12,7 @@ import {
   ENGINE_WORKER_FLAG,
   LS_INTEGRATION,
   MISSING_ROLLOUT_UPDATED_AT,
+  NO_UPLOAD_CREDENTIALS,
   PLUGIN_VERSION,
 } from "./constants.js";
 import { readJobState } from "./job-context.js";
@@ -49,7 +50,7 @@ export async function sendTracerNote(input: CodexHookInput): Promise<void> {
       paths,
       version: PLUGIN_VERSION,
       startWorker: () => {
-        launch = launchDetachedWorker([ENGINE_WORKER_FLAG], {
+        launch = launchDetachedWorker([ENGINE_WORKER_FLAG, input.cwd], {
           storageRoot: paths.folder,
         });
       },
@@ -97,13 +98,15 @@ export async function readLegacySessions(home: string): Promise<LegacySession[]>
   return sessions;
 }
 
-export async function runTracerWorker(): Promise<void> {
+export async function runTracerWorker(cwd: string): Promise<void> {
   const home = homeDirectory();
   const legacySessions = await readLegacySessions(home);
+  const config = await getConfig({ home, cwd, env: process.env });
   await startTracerWorker({
     agentStateFolder: path.join(home, CODEX_CONFIG_DIRECTORY),
     integration: LS_INTEGRATION,
     version: PLUGIN_VERSION,
+    credentials: writerOptions(config, engineStorageRoot(home)) ?? NO_UPLOAD_CREDENTIALS,
     createBuilder: createCodexTranscriptBuilder,
     readLegacySessions: () => legacySessions,
   });

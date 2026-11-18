@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import * as nodeFs from "node:fs";
-import { accessSync, appendFileSync, closeSync, constants, copyFileSync, existsSync, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, unlinkSync, watch, writeFileSync, writeSync } from "node:fs";
+import { accessSync, appendFileSync, closeSync, constants, copyFileSync, existsSync, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, unlinkSync, utimesSync, watch, writeFileSync, writeSync } from "node:fs";
 import * as nodeFsPromises from "node:fs/promises";
 import { chmod, link, lstat, mkdir, open, readFile, readdir, rename, rm, rmdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import * as nodePath from "node:path";
@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, posix, relative, resolve, sep, win
 import { performance as performance$1 } from "node:perf_hooks";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
 import * as os from "node:os";
-import { arch, homedir, platform, userInfo } from "node:os";
+import { arch, homedir, platform, uptime, userInfo } from "node:os";
 import { Worker } from "node:worker_threads";
 import { execFileSync, spawn } from "node:child_process";
 import * as tls from "node:tls";
@@ -37,7 +37,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 	enumerable: true
 }) : target, mod));
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/errors.js
 function describe(error) {
 	return error instanceof Error ? error.message : String(error);
 }
@@ -50,7 +50,7 @@ function failureStatus(error) {
 	return typeof status === "number" ? status : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/constants.js
 const POLICY_LOCK_TIMEOUT_MS = 2e3;
 const POLICY_LOCK_TIMEOUT_ERROR = "Timed out waiting for tracing preference lock";
 const POLICY_LOCK_TIMEOUT_MESSAGE = "Retry; if it persists, remove the lock only after confirming no preference writer is running.";
@@ -86,7 +86,7 @@ const COMMAND_REPLY_INSTRUCTION = "The user ran a LangSmith tracing command and 
 const PROMPT_SUBMIT_EVENT = "UserPromptSubmit";
 const COMMAND_ARGUMENT_START = /^\s/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/hook-command.js
 async function dispatchHookCommand(argv, options) {
 	assertHookOptions(options);
 	const [argument, ...rest] = argv;
@@ -114,7 +114,7 @@ function reportHookError(name, error, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/prompt-command.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/prompt-command.js
 function matchPromptCommand(prompt, commands) {
 	for (const { name, text, takesArguments } of commands) {
 		if (prompt === text) return {
@@ -157,7 +157,7 @@ ${notices.blockReason}`
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/constants.js
 const FILE_MISSING_CODE = "ENOENT";
 const WINDOWS_PLATFORM = "win32";
 const FILE_EXISTS_CODE = "EEXIST";
@@ -168,7 +168,7 @@ const DIRECTORY_NOT_EMPTY_CODE = "ENOTEMPTY";
 const INVALID_ARGUMENT_CODE = "EINVAL";
 const TEMPLATE_PLACEHOLDER = /\{(\w+)\}/gu;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/cleanup-constants.js
 const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_MISSING_CODE,
 	DIRECTORY_NOT_EMPTY_CODE,
@@ -178,7 +178,7 @@ const CLEANUP_IGNORED_DIRECTORY_CODES = [
 	FILE_ACCESS_DENIED_CODE
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/cleanup.js
 async function removeFileIfPresent(path) {
 	try {
 		await unlink(path);
@@ -208,7 +208,7 @@ async function removeEmptyAncestors(directory, root) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/constants.js
 const FILE_LOCK_CLAIM_EXTENSION = ".json";
 const FILE_LOCK_DIRECTORY_SUFFIX = ".claims";
 const FILE_LOCK_LEGACY_DIRECTORY_SUFFIX = ".lock";
@@ -251,12 +251,12 @@ const STORAGE_ENGINE_FILE_PATTERNS = [
 ];
 const STORAGE_CLAIM_FILE = new RegExp(`^${STORAGE_UUID}\\.json$`, "u");
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/lock-folders.js
 async function removeEmptyLockFolders(lockPath, root) {
 	await removeEmptyAncestors(`${lockPath}${FILE_LOCK_DIRECTORY_SUFFIX}`, root);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/constants.js
 const CAPTURE_JOBS_DIRECTORY = "jobs";
 const CAPTURE_SESSIONS_DIRECTORY = "sessions";
 const CAPTURE_TURNS_DIRECTORY = "turns";
@@ -295,7 +295,7 @@ const CAPTURE_FILE_EXTENSION = ".json";
 const CAPTURE_LOCK_EXTENSION = ".lock";
 const CAPTURE_STORAGE_DIRECTORY_MESSAGE = "Capture directory must be turns or jobs";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/utils/serialization.js
 function canonicalJson(value) {
 	const result = JSON.stringify(canonicalValue(value, /* @__PURE__ */ new Set()));
 	if (result === void 0) throw new TypeError("Value cannot be serialized as JSON");
@@ -334,7 +334,7 @@ function canonicalValue(value, seen) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/validation/objects.js
 function isPlainRecord(value) {
 	return value !== null && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
@@ -401,7 +401,7 @@ function parseJsonObject(contents, message) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/errors.js
 var FileLockTimeoutError = class extends Error {
 	blockedPath;
 	constructor(blockedPath) {
@@ -421,7 +421,7 @@ var StorageNotWritableError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/file-lock-heartbeat.js
 const heartbeats = /* @__PURE__ */ new Map();
 function startHeartbeat(path, id) {
 	const timer = setInterval(() => {
@@ -439,7 +439,7 @@ function warnUnlessMissing(error) {
 	if (errorCode(error) !== "ENOENT") console.warn(FILE_LOCK_HEARTBEAT_WARNING, describe(error));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/file-lock-support.js
 function processIsAlive(pid) {
 	try {
 		process.kill(pid, 0);
@@ -472,7 +472,7 @@ function waitForNextScan(deadline, blockedPath) {
 	return new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(10, remaining)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/legacy-gate.js
 async function createLegacyGate(gatePath) {
 	await mkdir(gatePath, { mode: 448 });
 	const stat = await lstat(gatePath);
@@ -626,7 +626,7 @@ async function reclaimLegacyGate(gatePath, filePath, tryAcquire) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/file-lock.js
 function parseClaim(value, id) {
 	if (!isPlainRecord(value)) return void 0;
 	if (value.version !== 1 || value.id !== id || typeof value.pid !== "number" || !Number.isSafeInteger(value.pid) || value.pid <= 0 || typeof value.choosing !== "boolean" || typeof value.ticket !== "number" || !Number.isSafeInteger(value.ticket) || value.ticket < 0 || (value.choosing ? value.ticket !== 0 : value.ticket === 0)) return;
@@ -936,7 +936,7 @@ async function withFileLock(filePath, callback, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/policy-file.js
 function readPolicyFile(path, options) {
 	let raw;
 	try {
@@ -1034,11 +1034,11 @@ function findLockTimeout(error) {
 	return error.errors.map(findLockTimeout).find((found) => found !== void 0);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/errors.js
 var CaptureRecordInvalidError = class extends Error {};
 var CaptureRecordVersionError = class extends Error {};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/publish.js
 function publishByRename(path, contents, tempSuffix, mode) {
 	const temp = `${path}.${randomUUID()}${tempSuffix}`;
 	const fd = openSync(temp, "wx", mode);
@@ -1050,7 +1050,7 @@ function publishByRename(path, contents, tempSuffix, mode) {
 	renameSync(temp, path);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/state-constants.js
 const STATE_TEMP_SUFFIX = ".state.tmp";
 const STATE_CORRUPT_SUFFIX = ".corrupt";
 const STATE_FILE_ENCODING = "utf-8";
@@ -1063,7 +1063,7 @@ const PENDING_STATE_FILE_SUFFIX = ".json";
 const PENDING_STATE_TEMP_SUFFIX = ".pending.tmp";
 const STATE_CLAIM_SUFFIX = ".claim";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/state-pending.js
 let sequence = 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 function diffValue(path, before, after, operations) {
@@ -1219,7 +1219,7 @@ function removePending(stateFilePath, files) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/state-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/state-store.js
 function createStateStore(options) {
 	const { path } = options;
 	const warn = options.warn ?? console.warn;
@@ -1288,7 +1288,7 @@ async function withStateFileLock(path, warn, callback, waitMs) {
 	return true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/state-claim.js
 async function claimStateEntry(path, key, windowMs) {
 	mkdirSync(dirname(path), {
 		recursive: true,
@@ -1314,7 +1314,7 @@ async function claimStateEntry(path, key, windowMs) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/paths.js
 function validateIntegration(value) {
 	if (!CAPTURE_INTEGRATION.test(value)) throw new TypeError("Invalid integration namespace");
 }
@@ -1364,7 +1364,7 @@ function recordLockPath(root, scope) {
 	return `${eventPath(root, scope).slice(0, -5)}${CAPTURE_LOCK_EXTENSION}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/utils/atomic-file.js
 async function ensurePrivateDirectory(root, segments) {
 	return retryRemovedDirectory(() => createPrivateDirectory(root, segments));
 }
@@ -1519,7 +1519,7 @@ async function syncDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/private-directory.js
 async function listPrivateDirectory(root, directory) {
 	const storageRoot = resolve(root);
 	const target = resolve(directory);
@@ -1546,7 +1546,7 @@ async function lstatDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/scope.js
 function scopeOf(value) {
 	return {
 		integration: value.integration,
@@ -1564,19 +1564,19 @@ function scopeKey(scope) {
 	]);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/compare.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/compare.js
 function compareText(left, right) {
 	if (left === right) return 0;
 	return left < right ? -1 : 1;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/order.js
 function compareCaptureOrder(left, right) {
 	if (left.capturedAtMs !== right.capturedAtMs) return left.capturedAtMs < right.capturedAtMs ? -1 : 1;
 	return compareText(left.eventId, right.eventId);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/utils/digest.js
 function captureContentDigest(record) {
 	if ("contentDigest" in record && record.contentDigest !== void 0) return record.contentDigest;
 	const content = { ...record };
@@ -1587,7 +1587,7 @@ function captureContentDigest(record) {
 	return createHash("sha256").update(canonicalJson(content)).digest("hex");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/settled.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/settled.js
 function withoutSentContent(record, delivery) {
 	const destinations = Object.keys(record.destinationRoutes ?? {});
 	if (destinations.length === 0 || destinations.some((id) => delivery.outcomes[id] === void 0)) return record;
@@ -1610,7 +1610,7 @@ function withoutSentContent(record, delivery) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/markers.js
 function markerPath(root, scope) {
 	const path = eventPath(root, scope);
 	return join(dirname(path), `${basename(eventPath(root, scope), CAPTURE_FILE_EXTENSION)}${CAPTURE_MARKER_SUFFIX}`);
@@ -1738,7 +1738,7 @@ async function removeOldMarkers(root, directory, modifiedBeforeMs) {
 	return removed;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/capture-store.js
 function createCaptureStore(root, directory = CAPTURE_TURNS_DIRECTORY) {
 	const storageRoot = {
 		root: resolve(root),
@@ -2200,7 +2200,7 @@ function failure(code, error) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/format.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/format.js
 function fillTemplate(template, values) {
 	return template.replace(TEMPLATE_PLACEHOLDER, (_match, key) => String(values[key]));
 }
@@ -2209,12 +2209,12 @@ function sortedKeys(_key, value) {
 	return Object.fromEntries(Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/account.js
 function isWaitingForOtherSetting(record, accountFingerprint) {
 	return record.destinationFingerprint !== accountFingerprint && Object.keys(record.delivery?.outcomes ?? {}).length === 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/expiry.js
 function liveTurnSpans(captures) {
 	const spans = /* @__PURE__ */ new Map();
 	for (const { record, capturedAtMs } of captures) {
@@ -2270,7 +2270,7 @@ async function removeExpiredCaptures(options) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/background-worker/constants.js
 const BACKGROUND_WORKER_LOCK_FILE = "worker";
 const BACKGROUND_WORKER_PENDING_FILE = "wake.pending";
 const BACKGROUND_WORKER_ACTIVE_PREFIX = "wake.active.";
@@ -2310,7 +2310,7 @@ const BACKGROUND_WORKER_FILE_PREFIX = "wake";
 const BACKGROUND_WORKER_SCOPED_FILE = /^wake-[0-9a-f]{64}\.(?:pending|launching|active\.[0-9a-f-]{36}(?:\.attempt\.[1-9]\d*)?\.json)$/u;
 const BACKGROUND_WORKER_SHARED_DIRECTORY = /^(?:turns|jobs|delivery\.claims|reconstruction\.claims|(?:worker|settlement)-[0-9a-f]{64}\.claims)$/u;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/background-worker/paths.js
 function validateWorkerScope(scope) {
 	validateIntegration(scope.integration);
 	validateIdentifier(scope.sessionId, "session ID");
@@ -2343,13 +2343,13 @@ function scopedWorkerFileName(scope, name) {
 	return name.startsWith(prefix) ? `${BACKGROUND_WORKER_FILE_PREFIX}.${name.slice(prefix.length)}` : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/background-worker/utils/scope.js
 async function matchesScope(resolveScope, expected) {
 	const actual = await resolveScope();
 	return actual.integration === expected.integration && actual.sessionId === expected.sessionId && actual.accountFingerprint === expected.accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/background-worker/state.js
 function assertPlainFile(entry, message) {
 	if (!entry.isFile() || entry.isSymbolicLink()) throw new Error(message);
 }
@@ -2437,7 +2437,7 @@ function parseAttempt(contents, markerId, attempt) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/background-worker/worker.js
 function createBackgroundWorker(options) {
 	validateOptions(options);
 	const context = createWorkerContext(options);
@@ -2678,7 +2678,7 @@ async function readLaunch(storageRoot, scope) {
 	return value;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/missing.js
 function ifMissing(fallback) {
 	return (error) => {
 		if (errorCode(error) === "ENOENT") return fallback;
@@ -2686,7 +2686,7 @@ function ifMissing(fallback) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/stale-files.js
 async function removeStaleStorageFiles(root, folders, modifiedBeforeMs) {
 	let removed = 0;
 	for (const folder of folders) removed += await removeStaleChildren(join(root, folder), modifiedBeforeMs);
@@ -2748,13 +2748,13 @@ const DELIVERY_DRAIN_LOCK = "delivery";
 const DELIVERY_DROPPED_DETAIL = "{eventId} for run {runId} on destination {destination} ({reason}){hint}";
 const DELIVERY_DEPENDENTS_DROPPED_WARNING = "Dropped trace work that depended on dropped work on destination {destination}: runs {runs}";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/storage/capture/retry-state.js
 const PROCESS_STARTED_AT_MS = Date.now();
 function isWaitingForRetry(retry, now = Date.now()) {
 	return retry !== void 0 && retry.notBeforeMs > now && !(retry.recordedAtMs !== void 0 && retry.recordedAtMs < PROCESS_STARTED_AT_MS);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/batch.js
 function createBatch() {
 	return {
 		candidates: [],
@@ -2778,7 +2778,7 @@ function joinBatch(batch, candidate) {
 	batch.bytes += payloadBytes(candidate.entry.record);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/retry.js
 function isRetryable(error) {
 	return error?.retryable !== false;
 }
@@ -2801,7 +2801,7 @@ function nextRetry(previous, baseMs) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/outcomes.js
 function emptyDestinationResult() {
 	return {
 		delivered: 0,
@@ -2882,7 +2882,7 @@ async function settleDroppedDependency(drainCache, candidate, destination, resul
 	result.progressed = true;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/deliver.js
 async function trySend(context, destination, candidates) {
 	const { policy, request } = context;
 	const { writer } = request;
@@ -2945,7 +2945,7 @@ async function deliverBatch(context, destination, candidates) {
 	return settleFailed(context, destination, candidates, error);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain-cache.js
 function deliveryKey(scope, destination) {
 	return JSON.stringify([scopeKey(scope), destination]);
 }
@@ -3009,7 +3009,7 @@ async function countPending(drainCache, entries, destinations) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/drain.js
 async function drainLocked(captureStore, integration, sessionId, policy, request, drainCache) {
 	const eligible = (await captureStore.enumerate(integration, sessionId)).filter(({ record }) => record.destinationFingerprint === request.writer.accountFingerprint);
 	for (const { record } of eligible) drainCache.rememberCapture(record);
@@ -3129,7 +3129,7 @@ async function dropPending(drainCache, candidate, reason) {
 	return dropped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/options.js
 function validateDrainRequest(request) {
 	if (request.writer === null || typeof request.writer !== "object") throw new TypeError(DELIVERY_WRITER_REQUIRED_MESSAGE);
 	validateIdentifier(request.writer.accountFingerprint, "account fingerprint");
@@ -3179,7 +3179,7 @@ function resolvePolicy(policy) {
 	return resolved;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/delivery/coordinator.js
 async function drainUnderLock(context, request, drainCache) {
 	const { captureStore, integration, sessionId, storageRoot, policy } = context;
 	const sessionDirectory = await ensurePrivateDirectory(storageRoot, sessionSegments(identifierHash(sessionId)));
@@ -3246,12 +3246,12 @@ function createDeliveryCoordinator(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/sdk/sdk-constants.js
 const SDK_DOUBLE_QUOTED = /^"(.*)"$/;
 const SDK_SINGLE_QUOTED = /^'(.*)'$/;
 const SDK_PROFILE_QUOTES = /^["']|["']$/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/sdk/normalize.js
 function sdkSetting(value) {
 	if (typeof value !== "string") return void 0;
 	const trimmed = value.trim().replace(SDK_DOUBLE_QUOTED, "$1").replace(SDK_SINGLE_QUOTED, "$1");
@@ -3262,7 +3262,7 @@ function sdkProfileValue(value) {
 	return value.trim().replace(SDK_PROFILE_QUOTES, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/auth/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/auth/constants.js
 const LOGIN_CONFIG_FILE_VARIABLE = "LANGSMITH_CONFIG_FILE";
 const LOGIN_HOME_VARIABLES = ["HOME", "USERPROFILE"];
 const LOGIN_API_KEY_VARIABLES = ["LANGSMITH_API_KEY", "LANGCHAIN_API_KEY"];
@@ -3311,7 +3311,7 @@ const LOGIN_WORKSPACE_INVALID_REASON = [
 const LOGIN_WORKSPACE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 const LOGIN_REPLICA_REFUSED_REASON = "LangSmith replicas on {urls} need their own API key, so they're skipped.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/auth/profile.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/auth/profile.js
 function readLoginProfile(env, profile) {
 	const configPath = loginConfigPath(env);
 	return configPath === void 0 ? void 0 : readProfileAt(configPath, profile || env["LANGSMITH_PROFILE"] || void 0);
@@ -3374,7 +3374,7 @@ function credentialHash(value) {
 	return createHash(LOGIN_TOKEN_HASH).update(value).digest("hex").slice(0, 16);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/auth/expiry-constants.js
 const LOGIN_PAUSED_NOTICE = [
 	LOGIN_NOTICE_HEADING,
 	"Your LangSmith login expired so this session isn't being traced.",
@@ -3397,7 +3397,7 @@ const LOGIN_STATE_FILE = "sign-in.json";
 const LOGIN_NOTICE_KIND = "login-expired";
 const LOGIN_KEY_REJECTED_ENTRY = "api-key-rejected.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/auth/expiry.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/auth/expiry.js
 const unrecorded = /* @__PURE__ */ new Set();
 async function recordExpiredLogin(login, sentTokenHash, storageRoot, denied = false) {
 	try {
@@ -3483,7 +3483,7 @@ function loginStore(storageRoot) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/constants.js
 const CODING_AGENT_SCHEMA_VERSION = "coding-agent-v1";
 const CODING_AGENT_PURPOSE = "coding";
 const GIT_METADATA_KEYS = {
@@ -3699,7 +3699,7 @@ const CODING_AGENT_ENVIRONMENT_METADATA_ENDPOINT_SUBSTRINGS = [
 const CODING_AGENT_REVISION_ID_VARIABLE = "LANGCHAIN_REVISION_ID";
 const CODING_AGENT_REVISION_ID_KEY = "revision_id";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/contract.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/contract.js
 function field$2(key, options = {}) {
 	return {
 		key,
@@ -3836,7 +3836,7 @@ const CODING_AGENT_V1_CONTRACT = {
 	integrationPolicies: CODING_AGENT_INTEGRATION_POLICIES
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/git-names.js
 function withBothGitMetadataNames(metadata) {
 	const both = { ...metadata };
 	for (const role of Object.keys(GIT_METADATA_KEYS)) {
@@ -3848,7 +3848,7 @@ function withBothGitMetadataNames(metadata) {
 	return both;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/validation.js
 function metadataFieldTypeIssue(field, value) {
 	if (!(field.type === "string" ? typeof value === "string" && value.length > 0 : field.type === "integer" ? typeof value === "number" && Number.isSafeInteger(value) && value >= 1 : isPlainRecord(value))) return "type";
 }
@@ -3900,7 +3900,7 @@ function normalizeProviderMetadata(value, integration, runType) {
 	return Object.fromEntries(Object.entries(value).filter(([key, entry]) => entry !== void 0 && !issues.has(key)));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/builder.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/builder.js
 function buildCodingAgentMetadata(options) {
 	const policy = CODING_AGENT_INTEGRATION_POLICIES[options.integration];
 	const identity = {
@@ -3958,7 +3958,7 @@ function trustedCodingAgentMetadata(metadata) {
 	return metadata?.[TRUSTED_METADATA];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/runtime.js
 function forwardsEnvironmentVariable(name, value, environmentMetadata) {
 	return typeof value === "string" && environmentMetadata.prefixes.some((prefix) => name.startsWith(prefix)) && !environmentMetadata.excluded.includes(name) && ![...environmentMetadata.sensitiveSubstrings, ...environmentMetadata.endpointSubstrings].some((part) => name.toLowerCase().includes(part));
 }
@@ -3985,7 +3985,7 @@ function buildCodingAgentRuntimeMetadata(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/privacy.js
 function projectCodingAgentMetadata(metadata, integration, status) {
 	const safe = {};
 	for (const [key, value] of Object.entries(metadata ?? {})) {
@@ -4002,7 +4002,7 @@ function metadataForMode(metadata, integration, mode = "full", status) {
 	return projectCodingAgentMetadata(trustedCodingAgentMetadata(metadata) ?? (CODING_AGENT_INTEGRATION_POLICIES[integration].metadataModeUsesDirectMetadata ? metadata : void 0), integration, status);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/metadata/provenance.js
 function prepareCodingAgentMetadataProvenance(value, integration, mode, status = "running") {
 	const source = requirePlainRecord(value, "Run metadata");
 	const declaredIntegration = ownDataField(source, "integration");
@@ -17718,7 +17718,7 @@ var AsyncLocalStorageProvider = class {
 };
 new AsyncLocalStorageProvider();
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/privacy/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/privacy/constants.js
 const MUTED_TRACE_CONTENT = "[LangSmith system notice: content omitted because tracing is muted.]";
 const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"client",
@@ -17735,7 +17735,7 @@ const METADATA_MODE_RUN_CONFIG_FIELDS = [
 	"distributedParentId"
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/privacy/run-tree.js
 function mutedContent(role) {
 	return { messages: [{
 		role,
@@ -17853,7 +17853,7 @@ function survivingCodingAgentPatchFields(projectedRun, fields) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/constants.js
 const UPLOAD_ACCOUNT_FINGERPRINT_PREFIX = "account_";
 const UPLOAD_DESTINATION_ID_PREFIX = "destination_";
 const UPLOAD_CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
@@ -17930,7 +17930,7 @@ const UPLOAD_LOGIN_FIELD_NAMES = {
 	workspaceId: "login workspace ID"
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/client.js
 const rejectedAuthorizations = /* @__PURE__ */ new WeakMap();
 function createUploadClient(options) {
 	const { apiKey, apiUrl, workspaceId, login, anonymizer, redactedFields } = options;
@@ -17974,7 +17974,7 @@ function takeRejectedAccessToken(client) {
 	return authorization?.replace(UPLOAD_BEARER_PATTERN, "") || void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/auth/credential.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/auth/credential.js
 function resolveUploadCredential(options = {}) {
 	const env = options.env ?? process.env;
 	const workspaceId = sdkSetting(options.workspaceId);
@@ -18047,7 +18047,7 @@ function uploadingReplicaCount(replicas, credential) {
 	return (replicas ?? []).filter((replica) => sdkSetting(replica.apiKey) !== void 0 || credential.kind === "login" && refusedLoginReplicas([replica], credential.apiUrl) === void 0).length;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/destination-identity.js
 function resolveUploadDestinationIdentities(options) {
 	if (!Array.isArray(options.destinations) || options.destinations.length === 0) throw new TypeError("At least one upload destination is required");
 	if (options.replicas !== void 0 && !Array.isArray(options.replicas)) throw new TypeError("Upload replicas must be an array");
@@ -18403,7 +18403,7 @@ function createSecretAnonymizer(options) {
 	return createAnonymizer([...DEFAULT_SECRET_RULES, ...options?.extraRules ?? []], { maxDepth: options?.maxDepth ?? 24 });
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/redaction.js
 function createUploadAnonymizer(enabled, extraRules) {
 	if (!enabled) return void 0;
 	const normalizedRules = extraRules?.map(({ pattern, replace }) => ({
@@ -18424,7 +18424,7 @@ function normalizedRedactedFields(value) {
 	return UPLOAD_REDACTED_FIELDS.filter((field) => value.includes(field));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/destinations.js
 function resolveUploadDestinations(options) {
 	const resolved = resolveUploadDestinationIdentities(options);
 	const destinations = resolved.destinations.map((destination) => {
@@ -18453,7 +18453,7 @@ function usesLogin(login, client) {
 	return loginUrl === void 0 || typeof clientUrl === "string" && sameServer(clientUrl, loginUrl);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/client-cache.js
 function createUploadClientCache() {
 	const clientsByMode = /* @__PURE__ */ new Map();
 	return { forSubmission(destination, submission) {
@@ -18472,7 +18472,7 @@ function createUploadClientCache() {
 	} };
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/errors.js
 var UploadError = class extends Error {
 	retryable;
 	status;
@@ -18490,7 +18490,7 @@ function isAlreadyReceived(cause) {
 	return failureStatus(cause) === 409 && describe(cause).includes("already received");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/runtime-metadata.js
 function applyRuntimeMetadata(payload, privacyMode) {
 	if (privacyMode !== "full") return;
 	const added = buildCodingAgentRuntimeMetadata({
@@ -18513,7 +18513,7 @@ function applyRuntimeMetadata(payload, privacyMode) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-identifiers.js
 function contextForDestination(context, destination) {
 	if (destination.sourceProjectName === void 0) return context;
 	return remapReplicaRunContext(context, destination.sourceProjectName, destination.projectName);
@@ -18553,7 +18553,7 @@ function remapReplicaDottedOrder(dottedOrder, projectName) {
 	}).join(".");
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/replica-updates.js
 function applyReplicaPatchUpdates(payload, destination, privacyMode) {
 	if (privacyMode !== "full" || destination.updates === void 0) return;
 	const mutablePayload = payload;
@@ -18578,7 +18578,7 @@ function mergeReplicaExtra(baseValue, updateValue) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/deadline.js
 async function withDeadline(work) {
 	let timer;
 	const expired = new Promise((_resolve, reject) => {
@@ -18591,7 +18591,7 @@ async function withDeadline(work) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/sampling.js
 function samplingRate(environment) {
 	for (const name of UPLOAD_SAMPLING_RATE_VARIABLES) {
 		const value = environment[name]?.trim();
@@ -18609,7 +18609,7 @@ function traceIdOf(run) {
 	return run.trace_id ?? UPLOAD_DOTTED_ORDER_ROOT_ID.exec(run.dotted_order ?? "")?.[1] ?? run.id;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/timestamps.js
 function startTimeFromDottedOrder(dottedOrder) {
 	if (typeof dottedOrder !== "string") return void 0;
 	const own = dottedOrder.slice(dottedOrder.lastIndexOf(".") + 1);
@@ -18624,7 +18624,7 @@ function startTimeText(supplied, dottedOrder) {
 	return startTimeFromDottedOrder(dottedOrder);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/upload.js
 function createLangSmithUploadWriter(options) {
 	const resolved = resolveUploadDestinations(options);
 	const destinations = resolved.destinations.map(({ id }) => Object.freeze({ id }));
@@ -18848,11 +18848,11 @@ function validatePatch(submission) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/capture-wake-constants.js
 const CAPTURE_WAKE_ERROR_NAME = "CaptureWakeError";
 const CAPTURE_WAKE_FAILURE_MESSAGE = "Trace work was saved but its worker could not start";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/capture-wake.js
 var CaptureWakeError = class extends Error {
 	captureResult;
 	constructor(captureResult, cause) {
@@ -18885,7 +18885,7 @@ async function readSavedCaptureWake(error, options) {
 	} : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/constants.js
 const DOTTED_ORDER_SEGMENT_PATTERN = /^(\d{8}T\d{12}Z)([^.]+)$/u;
 const DOTTED_ORDER_STRIP_PATTERN = /[-:.]/gu;
 const LIFECYCLE_POST_EVENT_KIND = "run-post";
@@ -18924,7 +18924,7 @@ const LIFECYCLE_IDENTITY_FIELD_LABELS = [
 	["dotted_order", "Dotted order"]
 ];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/readiness.js
 async function captureReadiness(scopes, destinations, readOutcome) {
 	const pending = /* @__PURE__ */ new Set();
 	const dropped = /* @__PURE__ */ new Set();
@@ -18947,7 +18947,7 @@ async function captureReadiness(scopes, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/closure.js
 function deriveAttributionReadiness(value, integration) {
 	const metadata = prepareCodingAgentMetadataProvenance(requireOwnDataField(requirePlainRecord(value, "Prepared run submission"), "metadata"), integration, "full");
 	if (metadata.status === "deferred") return false;
@@ -19048,7 +19048,7 @@ function field$1(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/identity.js
 function createRunIdentity(input) {
 	const id = requireNonBlankString(input.id, "Run ID");
 	const start_time = requireTimestamp(input.start_time);
@@ -19108,7 +19108,7 @@ function dottedOrderSegment(startTime, runId) {
 	return `${`${new Date(epoch).toISOString().slice(0, -1)}${String(1).padStart(3, "0")}Z`.replace(DOTTED_ORDER_STRIP_PATTERN, "")}${runId}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/projection.js
 function projectPostSubmission(source, common, priorIdentity) {
 	const { integration, privacyMode, redaction } = common;
 	const run = canonicalIdentity(normalizedRunSnapshot(requireOwnDataField(source, "run")), priorIdentity);
@@ -19357,7 +19357,7 @@ function requiredText(source, key, name) {
 	return requireNonBlankString(requireOwnDataField(source, key), name);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/projection.js
 function projectCapture(record, integration) {
 	const submission = projectSubmission({
 		...canonicalJsonObject(record.normalizedPayload, "Stored run payload"),
@@ -19451,14 +19451,14 @@ function closureRank(state) {
 	return state === "authoritative" ? 2 : state === "provisional" ? 1 : 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/constants.js
 const REPOSITORY_NAME_KEY = GIT_METADATA_KEYS.repository;
 const SETTLEMENT_EVENT_ID_PREFIX = "turn-settlement-";
 const SETTLEMENT_DROPPED_RUN_WARNING = "Trace work for run {runId} was dropped, so it is left out; the rest of its turn is still being finished.";
 const SETTLEMENT_ATTRIBUTION_LOST_MESSAGE = "Settlement metadata could not preserve attribution";
 const SETTLEMENT_NEVER_ENDED_WARNING = "Turn {turnId} never ended, so it was finished with the work saved for it; its root run may stay open.";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/recorded-run.js
 function recordRun(events) {
 	const latest = events.at(-1);
 	const run = latest.payload.run;
@@ -19502,7 +19502,7 @@ function mergeMetadataObject(previous, current) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/source-order.js
 function uniqueScopes(scopes) {
 	const unique = /* @__PURE__ */ new Map();
 	for (const scope of scopes) unique.set(JSON.stringify(scope), scope);
@@ -19593,7 +19593,7 @@ function report(turnId, status, reason, runIds = [], destinations = []) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/revision.js
 function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, attribution) {
 	const revision = createHash("sha256").update(JSON.stringify({
 		turnId,
@@ -19606,7 +19606,7 @@ function settlementEventId(turnId, runId, dependencies, rootRunId, childRunIds, 
 	return `${SETTLEMENT_EVENT_ID_PREFIX}${revision}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/run-state.js
 function hasCausalRunError(events) {
 	let hasError = false;
 	for (const { payload } of events) if (payload.operation === "post") hasError = payload.run.error !== void 0 || payload.privacyContext?.status === "error";
@@ -19629,7 +19629,7 @@ function retainedEndTime(events) {
 	return endTime;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/settlement.js
 function attributionOf(metadata) {
 	const carried = {};
 	const named = withBothGitMetadataNames(metadata ?? {});
@@ -19661,7 +19661,7 @@ function metadataAfterFill(run, filled) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/settle-turn.js
 function unsettled(settlementReport) {
 	return {
 		report: settlementReport,
@@ -19887,7 +19887,7 @@ async function settleOneTurn(turnId, events, generated, allByRunId, options) {
 	}, requiredRunIds, currentByRunId, generated, options);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/settlement/pass.js
 async function settleCapturedTurns(options) {
 	if (options.destinations.length === 0) throw new TypeError("At least one settlement destination is required");
 	const sourceRecords = orderSourceCaptures(options.captures.map(({ record }) => record).filter((record) => record.integration === options.integration && record.sessionId === options.sessionId && record.destinationFingerprint === options.destinationFingerprint && (record.eventKind === "run-post" || record.eventKind === "run-patch")));
@@ -19954,7 +19954,7 @@ async function refreshSettlementProgress(work, destinations, readOutcome) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/validation/snapshot.js
 function snapshotData(value) {
 	return copySnapshot(value, /* @__PURE__ */ new WeakMap());
 }
@@ -19985,7 +19985,7 @@ function copySnapshot(value, copies) {
 	return copy;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/turn-removal.js
 async function removeSettledTurns(options) {
 	const known = new Set(options.knownScopes.map(turnEventKey));
 	const removable = /* @__PURE__ */ new Map();
@@ -20044,7 +20044,7 @@ function field(value, key) {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? value[key] : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/lifecycle/bridge.js
 function createLifecycleBridge(options) {
 	const context = createBridgeContext(options);
 	return Object.freeze({
@@ -20399,7 +20399,7 @@ function restoreSubmission(record, integration) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/constants.js
 const RECONSTRUCTION_DRAIN_LOCK = "reconstruction";
 const RECONSTRUCTION_RUN_ID_PREFIX = "reconstruction:";
 const RECONSTRUCTION_MAPPING_EVENT_ID_PREFIX = "reconstruction-map:";
@@ -20516,13 +20516,13 @@ const RECONSTRUCTION_LABEL_SOURCE_REF = "Source ref";
 const RECONSTRUCTION_LABEL_SOURCE_REF_FIELD = "source ref";
 const RECONSTRUCTION_SUBMISSION_INVALID_MESSAGE = "Reconstruction submission is invalid";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/known-keys.js
 function assertKnownKeys(record, required, optional, message) {
 	const keys = Object.keys(record);
 	if (required.some((key) => !keys.includes(key)) || keys.some((key) => !required.includes(key) && !optional.includes(key))) throw new TypeError(message);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-validation.js
 function readEventId(output, seen) {
 	const eventId = requireNonBlankString(requireOwnDataField(output, "eventId"), RECONSTRUCTION_LABEL_EVENT_ID);
 	validateIdentifier(eventId, RECONSTRUCTION_LABEL_EVENT_ID_FIELD);
@@ -20756,7 +20756,7 @@ function validateTurnEvidence(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-records.js
 function snapshotJob(job) {
 	return Object.freeze({
 		...job,
@@ -20933,7 +20933,7 @@ function mappingScope(job) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/job-processing.js
 async function processJob(candidate, context) {
 	const { job, scope } = candidate;
 	const retry = candidate.entry.record.delivery?.retries[job.accountFingerprint];
@@ -21036,7 +21036,7 @@ async function recordTerminal(store, scope, accountFingerprint, outcome, reason)
 	return result.status === "recorded";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/reconstruction/worker.js
 function createReconstructionWorker(options) {
 	const integration = options.integration;
 	const sessionId = requireNonBlankString(options.sessionId, "Session ID");
@@ -21191,7 +21191,7 @@ async function summarizePending(context) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/pass-results.js
 function reconstructionPassResult(result) {
 	if (result.status === "busy") return "retryable-failure";
 	if (waitingOnBackoff(result)) return "deferred";
@@ -21218,7 +21218,7 @@ const TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE = "A storage folder is requir
 const TRACING_ENGINE_RECOVERY_SETTLEMENT_CONFLICT_MESSAGE = "Recovery settlement capture conflicts with the current source state";
 const TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE = "A planned settlement capture is not saved yet";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/options.js
 function snapshotEngineOptions(options) {
 	if (typeof options.storageRoot !== "string" || options.storageRoot.trim() === "") throw new TypeError(TRACING_ENGINE_STORAGE_ROOT_REQUIRED_MESSAGE);
 	return Object.freeze({
@@ -21250,7 +21250,7 @@ function snapshotWriterOptions(options) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/errors.js
 var MissingSettlementCaptureError = class extends Error {
 	constructor() {
 		super(TRACING_ENGINE_MISSING_SETTLEMENT_CAPTURE_MESSAGE);
@@ -21258,7 +21258,7 @@ var MissingSettlementCaptureError = class extends Error {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery-settlement.js
 async function hasUnsettledRecoverySettlement(options) {
 	try {
 		return (await refreshSettlementProgress(await settleCapturedTurns({
@@ -21299,7 +21299,7 @@ async function hasUnsettledRecoverySettlement(options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/recovery.js
 function recoveryLockPath(storageRoot) {
 	return join(storageRoot, TRACING_ENGINE_RECOVERY_LOCK);
 }
@@ -21469,7 +21469,7 @@ async function recoverTracingSessions(runtime, request, scopeGuard) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/background-recovery.js
 function retryableFailure(error) {
 	return {
 		status: "failed",
@@ -21525,7 +21525,7 @@ async function runBackgroundRecovery(runtime, options, scopeGuard) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/retry-wait.js
 async function drainThroughBackoff(drain) {
 	let waitedMs = 0;
 	let result = await drain();
@@ -21542,7 +21542,7 @@ async function drainThroughBackoff(drain) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/engine/engine.js
 function createTracingEngine(options) {
 	const config = snapshotEngineOptions(options);
 	const forSession = (sessionOptions) => createSession(config, snapshotSessionOptions(sessionOptions));
@@ -21670,12 +21670,12 @@ async function drainSession(context) {
 	return result;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracing/upload/identity.js
 function resolveUploadDestinationFingerprint(options) {
 	return resolveUploadDestinationIdentities(options).accountFingerprint;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/session.js
 function openPluginSession(options) {
 	const { storageRoot, integration, sessionId, writer } = options;
 	const callbacks = (id) => ({
@@ -21715,19 +21715,19 @@ function fingerprintOf(writer) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/binary-runtime.js
 function builtAsBinary() {
 	return typeof LS_COMPILED_BINARY !== "undefined";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/tls/tls-constants.js
 const EXTRA_CERTIFICATES_VARIABLE = "NODE_EXTRA_CA_CERTS";
 const SYSTEM_CERTIFICATE_STORE = "system";
 const CERTIFICATE_FILE_ENCODING = "utf8";
 const SYSTEM_CERTIFICATES_WARNING = "Uploads will not trust this computer's certificates:";
 const CERTIFICATE_PATTERN = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/tls/system-certificates.js
 function trustSystemCertificates(file, environment, readSystem = readSystemStore) {
 	const existing = environment["NODE_EXTRA_CA_CERTS"] || void 0;
 	if (existing === file) return { environment };
@@ -21763,7 +21763,7 @@ function readIfPresent(file) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/worker-launch.js
 function launchDetachedWorker(args, options = {}) {
 	const root = options.storageRoot;
 	const log = root === void 0 ? void 0 : openLog(join(root, WORKER_LOG_FILE_NAME));
@@ -21813,7 +21813,7 @@ function logWarning(log, warning) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/plugin/notice-cooldown.js
 const shownInProcess = /* @__PURE__ */ new Set();
 async function shouldShowNotice(options) {
 	if (options.cooldown === "off") return false;
@@ -22043,11 +22043,15 @@ const XML_ENTITIES = {
 const STUBBED_TOOL_OUTPUT_NOTE = "bytes of output left out here, the full output is on the tool's own run";
 const STUBBED_TURN_MESSAGE_NOTE = "bytes left out here to keep the turn under the tracer's size cap";
 const PLUGIN_VERSION = LS_INTEGRATION_VERSION;
+const NO_UPLOAD_CREDENTIALS = {
+	destinations: [],
+	redact: false
+};
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/constants.js
 const DEFAULT_PUBLISHED_TARGETS = { darwin: ["arm64", "x64"] };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/target.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/target.js
 function resolveTarget$1(options) {
 	for (const field of [
 		"executableName",
@@ -22069,7 +22073,7 @@ function releaseAssetName(target, platform, arch, version) {
 	return `${target.executableName}-${platform}-${arch}-${version}`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/binary.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/binary.js
 function defineBinaryTarget(options) {
 	const target = resolveTarget$1(options);
 	return {
@@ -22100,7 +22104,7 @@ Options:
   --version, -v  Print the version this build carries and exit`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/constants.js
 const PLUGINS_BASE_FOLDER = "langsmith_plugins_base";
 const LOCK_FILE = "tracer.lock";
 const SNAPSHOT_FILE = "snapshot.json";
@@ -22132,6 +22136,7 @@ const UPLOAD_QUEUE_PATCH_FIELDS = [
 ];
 const UPLOAD_QUEUE_RETRY_LOG = "Upload of {count} runs to {destination} failed, retrying in {delayMs} ms: {reason}";
 const UPLOAD_QUEUE_DROPPED_LOG = "DROPPED run {runId} of session {sessionId} on {destination}, since LangSmith rejected it for good: {reason}{hint}";
+const UPLOAD_QUEUE_GAVE_UP_LOG = "DROPPED run {runId} of session {sessionId} on {destination}, since it failed again when sent on its own: {reason}";
 const UPLOAD_QUEUE_WRITER_FAILED_LOG = "DROPPED every run for an upload setting that could not be used: {reason}";
 const LOCK_TEMPORARY_SUFFIX = ".claim.";
 const LOCK_TAKEOVER_SUFFIX = ".takeover";
@@ -22145,7 +22150,7 @@ const WORKER_STARTED_LOG = "worker started";
 const WORKER_STOPPED_LOG = "worker stopped";
 const WORKER_RESUMED_LOG = "worker resumed for late notes";
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/paths.js
 function tracerPaths(agentStateFolder) {
 	const folder = join(agentStateFolder, PLUGINS_BASE_FOLDER);
 	return {
@@ -22157,7 +22162,7 @@ function tracerPaths(agentStateFolder) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/lines.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/reader/lines.js
 function scanLines(file, from, to, visit) {
 	let carried = Buffer.alloc(0);
 	let carriedStart = from;
@@ -22189,7 +22194,7 @@ function parseLine(text) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/bookmark.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/reader/bookmark.js
 function recoverBookmark(file, size, bookmark, lineId, notices) {
 	if (bookmark.offset === 0) return;
 	const id = bookmark.lastLineId;
@@ -22209,17 +22214,28 @@ function recoverBookmark(file, size, bookmark, lineId, notices) {
 	bookmark.offset = end;
 	notices.push(`${bookmark.path} changed, resuming after line ${id} at byte ${end}`);
 }
+function idOf(text, lineId) {
+	const line = parseLine(text.toString("utf8"));
+	return line === void 0 ? void 0 : lineId(line);
+}
 function lastIdEndingAt(file, offset, lineId) {
-	const start = Math.max(0, offset - BOOKMARK_CHECK_BYTES);
-	const window = Buffer.alloc(offset - start);
-	readSync(file, window, 0, window.length, start);
-	const text = window.toString("utf8");
-	if (!text.endsWith("\n")) return void 0;
-	const pieces = text.slice(0, -1).split("\n");
-	for (const piece of pieces.toReversed()) {
-		const line = parseLine(piece);
-		const id = line === void 0 ? void 0 : lineId(line);
-		if (id !== void 0) return id;
+	const last = Buffer.alloc(1);
+	if (offset === 0 || readSync(file, last, 0, 1, offset - 1) !== 1 || last[0] !== 10) return void 0;
+	let end = offset - 1;
+	let rest = Buffer.alloc(0);
+	for (;;) {
+		const start = Math.max(0, end - BOOKMARK_CHECK_BYTES);
+		const chunk = Buffer.alloc(end - start);
+		readSync(file, chunk, 0, chunk.length, start);
+		let text = Buffer.concat([chunk, rest]);
+		for (let cut = text.lastIndexOf(10); cut !== -1; cut = text.lastIndexOf(10)) {
+			const id = idOf(text.subarray(cut + 1), lineId);
+			if (id !== void 0) return id;
+			text = text.subarray(0, cut);
+		}
+		if (start === 0) return idOf(text, lineId);
+		rest = text;
+		end = start;
 	}
 }
 function findLineEnd(file, size, id, lineId) {
@@ -22234,7 +22250,7 @@ function findLineEnd(file, size, id, lineId) {
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/reader/reader.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/reader/reader.js
 const checkedInodes = /* @__PURE__ */ new WeakMap();
 function readNewLines(bookmark, lineId) {
 	const lines = [];
@@ -22277,7 +22293,7 @@ function readNewLines(bookmark, lineId) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/snapshot/snapshot.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/snapshot/snapshot.js
 function loadSnapshot(path) {
 	const empty = {
 		version: 1,
@@ -22302,7 +22318,42 @@ function writeSnapshot(path, snapshot) {
 	publishByRename(path, JSON.stringify(snapshot), SNAPSHOT_TEMP_SUFFIX, 384);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/snapshot/legacy.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/worker/credentials.js
+function withoutKey(config) {
+	const copy = { ...config };
+	delete copy.apiKey;
+	return copy;
+}
+function withoutCredentials(writer) {
+	return {
+		...writer,
+		destinations: writer.destinations.map(withoutKey),
+		...writer.replicas ? { replicas: writer.replicas.map(withoutKey) } : {}
+	};
+}
+function destinationWithKey(destination, credentials) {
+	const apiKey = credentials.destinations[0]?.apiKey;
+	return destination.login || !apiKey ? destination : {
+		...destination,
+		apiKey
+	};
+}
+function replicaWithKey(replica, credentials) {
+	const apiKey = credentials.replicas?.find(({ apiUrl }) => apiUrl === replica.apiUrl)?.apiKey;
+	return apiKey ? {
+		...replica,
+		apiKey
+	} : replica;
+}
+function withCredentials(writer, credentials) {
+	return {
+		...writer,
+		destinations: writer.destinations.map((destination) => destinationWithKey(destination, credentials)),
+		...writer.replicas ? { replicas: writer.replicas.map((replica) => replicaWithKey(replica, credentials)) } : {}
+	};
+}
+//#endregion
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/snapshot/legacy.js
 function transcriptEnd(path, lineId) {
 	const bookmark = {
 		path,
@@ -22345,7 +22396,7 @@ function importSessions(options, sessions, paths) {
 		saved.sessions[sessionId] = {
 			sessionId,
 			integration: options.integration,
-			writer,
+			writer: withoutCredentials(writer),
 			bookmarks: { [transcriptPath]: resume ?? transcriptEnd(transcriptPath, lineId) },
 			pendingNotes: [],
 			builderState: resume === void 0 ? void 0 : openTurn?.builderState,
@@ -22384,7 +22435,7 @@ async function sendOldSession(storageRoot, integration, { sessionId, writer, rec
 	dropped.uploads += otherAccount;
 	return true;
 }
-async function sendOldQueue(storageRoot, integration, sessions, log) {
+async function sendOldQueue(storageRoot, integration, sessions, resumed, log) {
 	if (!existsSync(storageRoot)) return true;
 	let sent = true;
 	const dropped = {
@@ -22410,7 +22461,7 @@ async function sendOldQueue(storageRoot, integration, sessions, log) {
 			sessionId,
 			writer,
 			recover,
-			openTurn
+			openTurn: resumed.has(sessionId) ? openTurn : void 0
 		}, dropped).catch((error) => {
 			log(`could not send old session ${sessionId}: ${describe(error)}`);
 			return false;
@@ -22423,23 +22474,35 @@ async function sendOldQueue(storageRoot, integration, sessions, log) {
 	}));
 	return sent;
 }
+function resumedSessions(paths) {
+	const { sessions } = loadSnapshot(paths.snapshot).snapshot;
+	return new Set(Object.values(sessions).filter(({ builderState }) => builderState !== void 0).map(({ sessionId }) => sessionId));
+}
+function claimPid(claim) {
+	try {
+		return JSON.parse(claim).pid;
+	} catch {
+		return;
+	}
+}
 function lockHolders(folder) {
 	try {
 		return readdirSync(folder, {
 			recursive: true,
 			withFileTypes: true
-		}).filter((entry) => entry.isFile() && entry.parentPath.endsWith(".claims")).map(({ parentPath, name }) => readFileSync(join(parentPath, name), "utf8")).map((claim) => JSON.parse(claim).pid);
+		}).filter((entry) => entry.isFile() && entry.parentPath.endsWith(".claims")).map(({ parentPath, name }) => readFileSync(join(parentPath, name), "utf8")).flatMap((claim) => claimPid(claim) ?? []);
 	} catch {
 		return existsSync(folder) ? void 0 : [];
 	}
 }
-async function oldWorkersStopped(folders) {
+async function oldWorkersStopped(folders, deadline) {
 	const holders = /* @__PURE__ */ new Set();
 	for (;;) {
 		const scans = folders.map((folder) => lockHolders(folder));
 		for (const pid of scans.flat()) if (pid !== void 0) holders.add(pid);
 		for (const pid of holders) if (pid === process.pid || processIsAlive(pid) !== true) holders.delete(pid);
 		if (holders.size === 0 && !scans.includes(void 0)) return true;
+		if (Date.now() >= deadline) return false;
 		await setTimeout$1(10);
 	}
 }
@@ -22453,7 +22516,9 @@ function upgradeLegacyState(options, log) {
 	if (!existsSync(paths.snapshot)) importSessions(options, sessions, paths);
 	const integration = options.integration;
 	const stateClaims = `${legacyState}${FILE_LOCK_DIRECTORY_SUFFIX}`;
-	const sending = sendOldQueue(legacyEngine, integration, sessions, log).then((sent) => sent && oldWorkersStopped([legacyEngine, stateClaims])).catch(() => false);
+	const resumed = resumedSessions(paths);
+	const deadline = Date.now() + LEGACY_QUEUE_WAIT_MS;
+	const sending = sendOldQueue(legacyEngine, integration, sessions, resumed, log).then((sent) => sent && oldWorkersStopped([legacyEngine, stateClaims], deadline)).catch(() => false);
 	const timeout = setTimeout$1(LEGACY_QUEUE_WAIT_MS, false, { ref: false });
 	return Promise.race([sending, timeout]).then((sent) => {
 		if (!sent) return;
@@ -22469,7 +22534,7 @@ function upgradeLegacyState(options, log) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/submissions.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/submissions.js
 function mergeRun(base, update) {
 	if (update === void 0) return base;
 	const merged = { ...base };
@@ -22533,7 +22598,7 @@ function privacyStatus(run) {
 	return run.end_time === void 0 ? "running" : "completed";
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/queued-runs.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/queued-runs.js
 function runKey(lane, runId) {
 	return JSON.stringify([lane.key, runId]);
 }
@@ -22545,6 +22610,7 @@ function parentKey(run) {
 function requeue(run) {
 	const sent = run.sending;
 	run.sending = void 0;
+	run.failedUploads += 1;
 	if (sent?.post !== void 0) {
 		run.post = mergeRun(sent.post, run.patch);
 		run.patch = void 0;
@@ -22558,8 +22624,11 @@ function startSending(run) {
 	run.patch = void 0;
 	return { submission: unsentPost === void 0 ? patchSubmission(unsentPatch) : postSubmission$1(unsentPost) };
 }
+function retriedEnough(batch) {
+	return batch.some((run) => run.failedUploads >= 5);
+}
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/upload-queue.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/upload-queue/upload-queue.js
 function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
 	const lanesByWriter = /* @__PURE__ */ new Map();
 	const lanes = [];
@@ -22602,6 +22671,7 @@ function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
 			sessionId,
 			lane,
 			sendAlone: false,
+			failedUploads: 0,
 			bytes: 0
 		};
 		runs.set(key, run);
@@ -22665,15 +22735,8 @@ function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
 		else forget(run);
 		if (postedNow) releaseChildren(run);
 	}
-	function drop(run, error) {
-		const { reason, status } = rejection(error);
-		log(fillTemplate(UPLOAD_QUEUE_DROPPED_LOG, {
-			runId: run.runId,
-			sessionId: run.sessionId,
-			destination: run.lane.destinationId,
-			reason,
-			hint: authHint(status)
-		}));
+	function drop(run, line) {
+		log(line);
 		run.sending = void 0;
 		forget(run);
 		releaseChildren(run);
@@ -22690,19 +22753,21 @@ function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
 		}));
 	}
 	async function send(lane, batch) {
-		const error = await Promise.resolve().then(() => lane.writer.sendBatch(batch.map(startSending), lane.destinationId)).then(() => void 0, (failure) => failure ?? /* @__PURE__ */ new Error());
+		const items = batch.map(startSending);
+		const error = await Promise.resolve().then(() => lane.writer.sendBatch(items, lane.destinationId)).then(() => void 0, (failure) => failure ?? /* @__PURE__ */ new Error());
 		inFlight -= 1;
+		const retryable = isRetryable(error) && !(error instanceof TypeError);
 		if (error === void 0) {
 			lane.failures = 0;
 			for (const run of batch) acknowledge(run);
-		} else if (isRetryable(error) && !(error instanceof TypeError)) {
+		} else if (retryable && !retriedEnough(batch)) {
 			backOff(lane, batch.length, error);
 			for (const run of batch) requeue(run);
 		} else if (batch.length > 1) for (const run of batch) {
 			run.sendAlone = true;
 			requeue(run);
 		}
-		else for (const run of batch) drop(run, error);
+		else for (const run of batch) drop(run, retryable ? gaveUpLine(run, error) : rejectedLine(run, error));
 		flush();
 	}
 	function laneToServe(now) {
@@ -22769,13 +22834,31 @@ function createUploadQueue(log, policy = UPLOAD_QUEUE_POLICY) {
 		flush
 	};
 }
+function rejectedLine(run, error) {
+	const { reason, status } = rejection(error);
+	return fillTemplate(UPLOAD_QUEUE_DROPPED_LOG, {
+		runId: run.runId,
+		sessionId: run.sessionId,
+		destination: run.lane.destinationId,
+		reason,
+		hint: authHint(status)
+	});
+}
+function gaveUpLine(run, error) {
+	return fillTemplate(UPLOAD_QUEUE_GAVE_UP_LOG, {
+		runId: run.runId,
+		sessionId: run.sessionId,
+		destination: run.lane.destinationId,
+		reason: failureReason(error)
+	});
+}
 function failureReason(error) {
 	const cause = error instanceof Error && error.cause !== void 0 ? error.cause : error;
 	const status = failureStatus(cause);
 	return status === void 0 ? describe(cause) : `${describe(cause)} (HTTP ${status})`;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/files/remove.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/files/remove.js
 function removeFile(path) {
 	try {
 		unlinkSync(path);
@@ -22784,7 +22867,7 @@ function removeFile(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/worker/lock.js
 function createLock(lock, version) {
 	const temporary = `${lock}${LOCK_TEMPORARY_SUFFIX}${process.pid}`;
 	const holder = {
@@ -22822,9 +22905,18 @@ function parseHolder(owner) {
 		return;
 	}
 }
-function ownerIsAlive(owner) {
+function refreshedBeforeBoot(lock) {
+	const refreshedAt = statSync(lock, { throwIfNoEntry: false })?.mtimeMs;
+	const bootedAt = Date.now() - uptime() * 1e3;
+	return refreshedAt !== void 0 && refreshedAt < bootedAt - 5e3;
+}
+function ownerIsAlive(lock, owner) {
 	const holder = parseHolder(owner);
-	return holder !== void 0 && processIsAlive(holder.pid) !== false;
+	return holder !== void 0 && !refreshedBeforeBoot(lock) && processIsAlive(holder.pid) !== false;
+}
+function refreshLock(lock) {
+	const now = /* @__PURE__ */ new Date();
+	utimesSync(lock, now, now);
 }
 function claimTakeover(takeover, version) {
 	if (createLock(takeover, version)) return true;
@@ -22848,14 +22940,14 @@ function takeLock(lock, version) {
 		if (createLock(lock, version)) return true;
 		const owner = lockOwner(lock);
 		if (owner === void 0) continue;
-		if (ownerIsAlive(owner)) return false;
+		if (ownerIsAlive(lock, owner)) return false;
 		return takeOverDeadLock(lock, owner, version);
 	}
 	return false;
 }
 function liveLockHolder(lock) {
 	const owner = lockOwner(lock);
-	return owner !== void 0 && ownerIsAlive(owner) ? parseHolder(owner) : void 0;
+	return owner !== void 0 && ownerIsAlive(lock, owner) ? parseHolder(owner) : void 0;
 }
 const isNewerVersion = (candidate, current) => candidate.localeCompare(current, void 0, { numeric: true }) > 0;
 async function takeLockFromOlder(lock, version) {
@@ -22873,7 +22965,7 @@ function releaseLock(lock) {
 	if (owner !== void 0 && parseHolder(owner)?.pid === process.pid) removeFile(lock);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/notes/notes.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/notes/notes.js
 var NotesFollower = class {
 	notes;
 	receive;
@@ -22898,13 +22990,11 @@ var NotesFollower = class {
 		}
 		try {
 			const size = fstatSync(file).size;
-			const buffer = Buffer.alloc(Math.max(0, size - offset));
-			readSync(file, buffer, 0, buffer.length, offset);
-			const complete = buffer.lastIndexOf(10) + 1;
-			const text = buffer.subarray(0, complete).toString("utf8");
-			for (const line of text.split("\n").filter(Boolean)) this.receive(line);
 			return {
-				offset: offset + complete,
+				offset: scanLines(file, offset, size, (line) => {
+					if (line.length > 0) this.receive(line.toString("utf8"));
+					return false;
+				}),
 				size
 			};
 		} finally {
@@ -22982,7 +23072,7 @@ var NotesFollower = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/session.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/worker/session.js
 const fileSize = (path) => statSync(path, { throwIfNoEntry: false })?.size ?? 0;
 function sessionTranscripts(session) {
 	return [.../* @__PURE__ */ new Set([...Object.keys(session.bookmarks), ...session.builder.transcripts()])];
@@ -23093,11 +23183,13 @@ function snapshotOf({ builder, ...saved }) {
 	};
 }
 const isIdle = (session) => session.pendingNotes.length === 0 && !session.builder.turnOpen();
+const canForget = (session) => session.ended && session.pendingNotes.length === 0 || Date.now() - session.lastNoteAt >= 864e5;
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/worker.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/worker/worker.js
 var TracerWorker = class {
 	options;
 	sessions = /* @__PURE__ */ new Map();
+	writersWithKeys = /* @__PURE__ */ new WeakMap();
 	scheduled = /* @__PURE__ */ new Set();
 	waitingForUploads = /* @__PURE__ */ new Set();
 	queue;
@@ -23149,16 +23241,24 @@ var TracerWorker = class {
 		this.watcher.on("error", (error) => this.log(`stopped watching notes: ${describe(error)}`));
 		this.ticker = setInterval(() => this.tick(), 500);
 	}
+	withKeys(writer) {
+		const known = this.writersWithKeys.get(writer);
+		if (known !== void 0) return known;
+		const keyed = withCredentials(writer, this.options.credentials);
+		this.writersWithKeys.set(writer, keyed);
+		return keyed;
+	}
 	createSession({ builderState, ...saved }) {
 		const session = {
 			...saved,
+			lastNoteAt: saved.lastNoteAt ?? Date.now(),
 			builder: this.options.createBuilder({
 				sessionId: saved.sessionId,
 				savedState: builderState,
 				tracingMode: saved.tracingMode,
 				sink: {
-					post: (run) => this.queue.post(session.sessionId, session.writer, run),
-					patch: (patch) => this.queue.patch(session.sessionId, session.writer, patch)
+					post: (run) => this.queue.post(session.sessionId, this.withKeys(session.writer), run),
+					patch: (patch) => this.queue.patch(session.sessionId, this.withKeys(session.writer), patch)
 				}
 			})
 		};
@@ -23166,11 +23266,13 @@ var TracerWorker = class {
 	}
 	receive(note) {
 		this.lastActivity = Date.now();
+		const parked = this.saved.parked?.[note.sessionId];
+		delete this.saved.parked?.[note.sessionId];
 		const session = this.sessions.get(note.sessionId) ?? this.createSession({
 			sessionId: note.sessionId,
 			integration: note.integration,
 			writer: note.writer,
-			bookmarks: {},
+			bookmarks: parked ?? {},
 			pendingNotes: [],
 			builderState: void 0,
 			ended: false
@@ -23178,6 +23280,7 @@ var TracerWorker = class {
 		this.sessions.set(session.sessionId, session);
 		session.integration = note.integration;
 		session.ended = false;
+		session.lastNoteAt = this.lastActivity;
 		if (note.transcriptPath !== void 0) session.bookmarks[note.transcriptPath] ??= {
 			path: note.transcriptPath,
 			offset: 0
@@ -23228,11 +23331,17 @@ var TracerWorker = class {
 		if (!this.unsaved || this.notes.rotating()) return;
 		const sessions = [...this.sessions.values()];
 		if (sessions.some((session) => this.queue.pendingFor(session.sessionId) > 0)) return;
-		for (const session of sessions) if (session.ended && session.pendingNotes.length === 0) this.sessions.delete(session.sessionId);
+		const parked = { ...this.saved.parked };
+		for (const session of sessions) {
+			if (!canForget(session)) continue;
+			if (!session.ended) parked[session.sessionId] = session.bookmarks;
+			this.sessions.delete(session.sessionId);
+		}
 		this.saved = {
 			version: 1,
 			sessions: Object.fromEntries([...this.sessions.values()].map((s) => [s.sessionId, snapshotOf(s)])),
-			notes: this.notes.bookmark()
+			notes: this.notes.bookmark(),
+			parked
 		};
 		this.unsaved = false;
 		this.attempt("could not save the snapshot", () => {
@@ -23251,6 +23360,7 @@ var TracerWorker = class {
 		this.waitingForUploads.clear();
 	}
 	tick() {
+		this.attempt("could not refresh the lock", () => refreshLock(this.options.paths.lock));
 		this.takeNotes();
 		this.queue.flush();
 		this.resumeReadsAfterUploads();
@@ -23291,12 +23401,13 @@ async function runWorker(options) {
 	await stopped;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/start.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/start.js
 function startTracerWorker(options) {
 	const paths = tracerPaths(options.agentStateFolder);
 	let upgrading = Promise.resolve();
 	return runWorker({
 		paths,
+		credentials: options.credentials,
 		version: options.version,
 		createBuilder: options.createBuilder,
 		createQueue: (log) => createUploadQueue(log),
@@ -23315,7 +23426,7 @@ function startTracerWorker(options) {
 	}).then(() => upgrading);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/tracer/worker/hook.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/tracer/worker/hook.js
 function positioned(note) {
 	const path = note.transcriptPath;
 	const size = path === void 0 ? void 0 : statSync(path, { throwIfNoEntry: false })?.size;
@@ -23332,7 +23443,11 @@ function sendHookNote(note, options) {
 			recursive: true,
 			mode: 448
 		});
-		appendFileSync(paths.notes, `${JSON.stringify(positioned(note))}\n`, { mode: 384 });
+		const line = JSON.stringify(positioned({
+			...note,
+			writer: withoutCredentials(note.writer)
+		}));
+		appendFileSync(paths.notes, `${line}\n`, { mode: 384 });
 		const holder = liveLockHolder(paths.lock);
 		if (holder === void 0) startWorker();
 		else if (isNewerVersion(version, holder.version)) {
@@ -23348,7 +23463,7 @@ function sendHookNote(note, options) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/constants.js
 const COMMON_BOOLEAN_SETTINGS = {
 	enabled: {
 		default: false,
@@ -23422,12 +23537,12 @@ const SETUP_SIGN_IN = {
 	"api-key": "Using your LangSmith API key."
 };
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/utils/records.js
 function object(value) {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/parse.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/parse.js
 function invalid(raw) {
 	return {
 		status: "invalid",
@@ -23541,7 +23656,7 @@ function parseCommonConfig(value) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/utils/account-home.js
 let cachedBunHome;
 function accountHomeDirectory() {
 	if (process.versions.bun === void 0) return nodeAccountHome();
@@ -23601,7 +23716,7 @@ function homeField(entry, field) {
 	return home !== void 0 && isAbsolute(home) ? home : void 0;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/utils/warnings.js
 const warned = /* @__PURE__ */ new Set();
 function warnOnce(lines) {
 	for (const line of lines) {
@@ -23611,7 +23726,7 @@ function warnOnce(lines) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/managed-config.js
 function onlyOwnerCanChange(stats, ownerUid) {
 	return !stats.isSymbolicLink() && stats.uid === ownerUid && (stats.mode & 18) === 0;
 }
@@ -23670,7 +23785,7 @@ function lockPluginFields(managed, fields) {
 	return Object.fromEntries(present(fields.lockable).map((name) => [name, raw[name]]));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/managed-lock.js
 function lockedValues(common) {
 	const lock = { ...common };
 	if (lock.profile === "") delete lock.profile;
@@ -23710,7 +23825,7 @@ function overrideDiagnostics(sources, lock) {
 	return [MANAGED_CONFIG_OVERRIDE_WARNING.replace("{overrides}", list)];
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/common-config.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/common-config.js
 /** Resolve the first supplied value from sources ordered highest priority first. */
 function resolveField(sources, field) {
 	return sources.find((source) => source[field] !== void 0)?.[field];
@@ -23787,7 +23902,7 @@ function toSdkReplicas(replicas) {
 	}));
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/config-files.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/config-files.js
 /** Follow readable symlinks, but never read directories/devices/FIFOs. Only true ENOENT is absent. */
 function readCommonConfigFile(path) {
 	let fd;
@@ -23823,7 +23938,7 @@ function readCommonConfigFiles(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/settings/setup.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/settings/setup.js
 function parseSetupArguments(text) {
 	if (SETUP_LINE_BREAK.test(text.trimEnd())) throw new Error(SETUP_MULTIPLE_LINES);
 	if (SETUP_API_KEY_PATTERN.test(text)) throw new Error(SETUP_API_KEY_GIVEN);
@@ -24115,7 +24230,7 @@ async function removeJobContext(home, sessionId, contextRef) {
 	});
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/paths.js
 function nearestExistingDirectory(path) {
 	let current = path;
 	for (;;) {
@@ -24128,7 +24243,7 @@ function nearestExistingDirectory(path) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/constants.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/git/constants.js
 const GIT_LOCATION_ENV_KEYS = [
 	"GIT_DIR",
 	"GIT_WORK_TREE",
@@ -24178,7 +24293,7 @@ const GH_LOGIN_TIMEOUT_MS = 5e3;
 const GH_LOGIN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
 const DESKTOP_PATH_VARIABLES = ["PATH", "Path"];
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/utils/desktop/launch.js
 function findExecutable(name, env, platform) {
 	const windows = platform === WINDOWS_PLATFORM;
 	const extensions = windows ? (env["PATHEXT"] ?? ".EXE;.CMD;.BAT").split(";") : [""];
@@ -24193,7 +24308,7 @@ function findExecutable(name, env, platform) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/repository.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/git/repository.js
 function parseRepoName(remoteUrl) {
 	const value = remoteUrl.trim();
 	try {
@@ -24232,6 +24347,7 @@ function gitOutput(args, cwd) {
 	};
 	for (const key of GIT_LOCATION_ENV_KEYS) delete env[key];
 	return execFileSync(installedCommand("git"), args, {
+		windowsHide: true,
 		cwd,
 		env,
 		encoding: "utf-8",
@@ -24319,6 +24435,7 @@ function getRepositoryMetadata(cwd) {
 }
 function githubLoginLookup() {
 	return execFileSync(installedCommand("gh"), GH_LOGIN_ARGUMENTS, {
+		windowsHide: true,
 		encoding: "utf-8",
 		timeout: GH_LOGIN_TIMEOUT_MS,
 		stdio: [
@@ -24337,7 +24454,7 @@ function installedCommand(name) {
 	return found;
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/github-login.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/git/github-login.js
 function createGitHubLoginFallback(options) {
 	const now = options.now ?? Date.now;
 	const retryAfterMs = options.retryAfterMs ?? 864e5;
@@ -24375,7 +24492,7 @@ function createGitHubLoginFallback(options) {
 	};
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/paths.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/git/paths.js
 function gitMarkerAt(directory) {
 	const marker = join(directory, GIT_DIRECTORY_NAME);
 	try {
@@ -24405,7 +24522,7 @@ function rootFromGitMarker(directory) {
 	}
 }
 //#endregion
-//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_f8b3da016522834df8cb1aed47a0332b/node_modules/@langchain/plugins-base/dist/git/attribution.js
+//#region ../../node_modules/.pnpm/@langchain+plugins-base@https+++codeload.github.com+langchain-ai+langsmith-plugins-base_10f9f06f5bd676e014f3258b2c5dff14/node_modules/@langchain/plugins-base/dist/git/attribution.js
 function createRepositoryAttributor(options) {
 	const rootByDirectory = /* @__PURE__ */ new Map();
 	const attributionByRoot = /* @__PURE__ */ new Map();
@@ -26534,7 +26651,7 @@ async function sendTracerNote(input) {
 		paths,
 		version: PLUGIN_VERSION,
 		startWorker: () => {
-			launch = launchDetachedWorker([ENGINE_WORKER_FLAG], { storageRoot: paths.folder });
+			launch = launchDetachedWorker([ENGINE_WORKER_FLAG, input.cwd], { storageRoot: paths.folder });
 		}
 	});
 	await launch;
@@ -26576,13 +26693,19 @@ async function readLegacySessions(home) {
 	}
 	return sessions;
 }
-async function runTracerWorker() {
+async function runTracerWorker(cwd) {
 	const home = homeDirectory();
 	const legacySessions = await readLegacySessions(home);
+	const config = await getConfig({
+		home,
+		cwd,
+		env: process.env
+	});
 	await startTracerWorker({
 		agentStateFolder: nodePath.join(home, CODEX_CONFIG_DIRECTORY),
 		integration: LS_INTEGRATION,
 		version: PLUGIN_VERSION,
+		credentials: writerOptions(config, engineStorageRoot(home)) ?? NO_UPLOAD_CREDENTIALS,
 		createBuilder: createCodexTranscriptBuilder,
 		readLegacySessions: () => legacySessions
 	});
@@ -26794,7 +26917,7 @@ else await dispatchHookCommand(args, {
 	hooks: {},
 	worker: {
 		command: ENGINE_WORKER_FLAG,
-		run: () => runTracerWorker()
+		run: ([cwd]) => runTracerWorker(cwd ?? process.cwd())
 	},
 	onHookError: (_name, error) => {
 		console.error(tracingFailed(error));
