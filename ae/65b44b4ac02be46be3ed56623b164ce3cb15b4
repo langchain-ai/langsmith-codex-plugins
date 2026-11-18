@@ -1,0 +1,31 @@
+plugins/tracing/src/tracing-engine-payload.ts
+  s_55431215fddda1::t_89431dcb66f390 40-42
+plugins/tracing/src/trace.ts
+  s_55431215fddda1::t_b52c288fb4cbd6 68
+  s_55431215fddda1::t_8d67fc4ea23244 474-476
+plugins/tracing/src/constants.ts
+  s_55431215fddda1::t_9326ce0a3ff5e1 23-25
+  s_55431215fddda1::t_07109c39130d9a 108
+plugins/tracing/test/contract.test.ts
+  s_55431215fddda1::t_0cb2e42b3fe547 330
+  s_55431215fddda1::t_9a1f0e34930e79 9,312-329,331-365
+  s_55431215fddda1::t_e9608059f9485f 366
+plugins/tracing/dist/index.mjs
+  s_55431215fddda1::t_29c1502d3b2ef4 22839-22840,22936-22937,24085,24642-24643
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ae65b44b4ac02be46be3ed56623b164ce3cb15b4",
+  "prompts": {},
+  "sessions": {
+    "s_55431215fddda1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72492ec4-8e0e-4f54-9443-99ac203c1761",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Kiewan Villatel <kiewan@langchain.dev>"
+    }
+  }
+}
