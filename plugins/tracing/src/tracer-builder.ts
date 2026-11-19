@@ -47,7 +47,6 @@ import {
 } from "./tracing-policy.js";
 import { homeDirectory } from "./utils/home.js";
 import { isRecord } from "./utils/isRecord.js";
-import { jsonBytes } from "./utils/jsonBytes.js";
 import { isoTime } from "./utils/rollout.js";
 
 function freshState(): BuilderState {
@@ -76,6 +75,10 @@ function restoredWalk(saved: SavedWalk | undefined): RolloutWalk {
       walk.spawnAgentMessages.set(item.call_id, message);
   }
   return walk;
+}
+
+function jsonBytes(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value) ?? "");
 }
 
 function heldBytes(messages: AggregateMessage<ResponseItem>[]): number {

@@ -26121,11 +26121,6 @@ function runStatus(run) {
 	return run.end_time != null || status === "completed" ? "completed" : "running";
 }
 //#endregion
-//#region src/utils/jsonBytes.ts
-function jsonBytes(value) {
-	return Buffer.byteLength(JSON.stringify(value) ?? "");
-}
-//#endregion
 //#region src/tracer-builder.ts
 function freshState() {
 	return {
@@ -26152,6 +26147,9 @@ function restoredWalk(saved) {
 		if (item.type === "function_call" && item.name === "spawn_agent") walk.spawnAgentMessages.set(item.call_id, message);
 	}
 	return walk;
+}
+function jsonBytes(value) {
+	return Buffer.byteLength(JSON.stringify(value) ?? "");
 }
 function heldBytes(messages) {
 	return messages.reduce((total, message) => total + jsonBytes(message), 0);
