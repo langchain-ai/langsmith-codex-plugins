@@ -1672,6 +1672,41 @@ it.each([
   expect(runs.map((run) => [run.inputs, run.outputs])).toEqual(turn.runs);
 });
 
+it("leaves Codex's instructions and hook output out of the trace", async () => {
+  const items = [
+    said("developer", "input_text", "<permissions instructions>"),
+    said("user", "input_text", "go"),
+    said("developer", "input_text", "Prompt check: no secrets"),
+    said("assistant", "output_text", "done"),
+  ];
+  const lines = [
+    {
+      type: "session_meta",
+      payload: {
+        id: "019900bb-0000-7000-8000-bare",
+        cwd: "/w",
+        cli_version: "0.164.0",
+        base_instructions: { text: "You are a coding agent" },
+      },
+    },
+    { type: "event_msg", payload: { type: "task_started", turn_id: BARE_TURN } },
+    ...items.map((payload) => ({ type: "response_item", payload })),
+    { type: "event_msg", payload: { type: "task_complete", turn_id: BARE_TURN } },
+  ].map((line, i) => JSON.stringify({ timestamp: `2026-10-27T00:00:0${i}.000Z`, ...line }));
+  vol.fromJSON({ [BARE_FILE]: lines.join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: BARE_FILE, turn_id: BARE_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  const uploaded = JSON.stringify(runs.map((run) => [run.inputs, run.outputs]));
+  expect(uploaded).toContain("done");
+  expect(uploaded).not.toMatch(/You are a coding agent|<permissions instructions>|Prompt check/);
+});
+
 it("reports a later turn's own usage, not the session's running total", async () => {
   const usage = (input: number, output: number) => ({
     input_tokens: input,

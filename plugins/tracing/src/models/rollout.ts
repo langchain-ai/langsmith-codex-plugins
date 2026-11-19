@@ -378,7 +378,6 @@ export type LineSchema = LegacyRolloutLine;
 export type Session = {
   session_id: string;
   model_provider: string | undefined;
-  base_instructions: string | undefined;
   cli_version: string;
   cwd?: string;
   // Derived from `session_meta.source` (root vs spawned subagent thread).
