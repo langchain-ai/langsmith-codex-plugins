@@ -10,7 +10,7 @@ vi.mock("@langchain/plugins-base/plugin", async (original) => ({
   openPluginSession: vi.fn(() => ({ session: { drain: async () => "drained" } })),
 }));
 
-import { openPluginSession } from "@langchain/plugins-base/plugin";
+import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
 import { saveJobContext } from "../src/job-context.js";
 import { readLegacySessions, sendTracerNote } from "../src/tracer-hooks.js";
@@ -49,6 +49,31 @@ it("keeps a mute command's own turn at the mode it had before the command", asyn
   expect(command).toMatchObject({ event: "UserPromptSubmit", sessionId: "thread" });
   expect(command.details).toMatchObject({ turnId: "t1" });
   expect([command.tracingMode, next.tracingMode]).toEqual(["full", "metadata"]);
+});
+
+it("tells a running worker a turn is off once tracing is turned off, without starting one", async () => {
+  vi.stubEnv("TRACE_TO_LANGSMITH", "false");
+  const folder = join(home, ".codex", "langsmith_plugins_base");
+  await fs.mkdir(folder, { recursive: true });
+  const input = {
+    session_id: "thread",
+    turn_id: "t1",
+    cwd: home,
+    prompt: "hi",
+    transcript_path: join(home, "rollout.jsonl"),
+    hook_event_name: "UserPromptSubmit" as const,
+  };
+  await sendTracerNote(input);
+  await expect(fs.access(join(folder, "notes.jsonl"))).rejects.toThrow();
+
+  await fs.writeFile(join(folder, "tracer.lock"), JSON.stringify({ pid: process.pid }));
+  await sendTracerNote(input);
+  const notes = String(await fs.readFile(join(folder, "notes.jsonl")))
+    .trim()
+    .split("\n");
+  const hookNotes = notes.map((line) => JSON.parse(line)).filter((note) => note.event);
+  expect(hookNotes.map((note) => note.tracingMode)).toEqual(["off"]);
+  expect(launchDetachedWorker).not.toHaveBeenCalled();
 });
 
 it("hands the engine each old session that still has queued work, with the writer it would have used", async () => {

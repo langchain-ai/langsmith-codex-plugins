@@ -2,7 +2,7 @@ import { launchDetachedWorker } from "@langchain/plugins-base/plugin";
 import { createCaptureStore } from "@langchain/plugins-base/storage/capture";
 import { sendHookNote, startTracerWorker, tracerPaths } from "@langchain/plugins-base/tracer";
 import type { LegacySession } from "@langchain/plugins-base/tracer";
-import { statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import * as path from "node:path";
 import { getConfig } from "./config.js";
 import {
@@ -12,6 +12,7 @@ import {
   ENGINE_WORKER_FLAG,
   LS_INTEGRATION,
   MISSING_ROLLOUT_UPDATED_AT,
+  MODE_OFF,
   NO_UPLOAD_CREDENTIALS,
   PLUGIN_VERSION,
 } from "./constants.js";
@@ -28,8 +29,9 @@ export async function sendTracerNote(input: CodexHookInput): Promise<void> {
   const home = homeDirectory();
   const config = await getConfig({ home, cwd: input.cwd, env: process.env });
   const writer = writerOptions(config, engineStorageRoot(home));
-  if (!config.enabled || !writer || !input.session_id || !input.turn_id) return;
+  if (!writer || !input.session_id || !input.turn_id) return;
   const paths = tracerPaths(path.join(home, CODEX_CONFIG_DIRECTORY));
+  if (!config.enabled && !existsSync(paths.lock)) return;
   let launch: Promise<unknown> | undefined;
   sendHookNote(
     {
@@ -37,7 +39,9 @@ export async function sendTracerNote(input: CodexHookInput): Promise<void> {
       event: input.hook_event_name,
       sessionId: input.session_id,
       ...(input.transcript_path ? { transcriptPath: input.transcript_path } : {}),
-      tracingMode: lockedTurnMode(config, input.session_id, input.turn_id),
+      tracingMode: config.enabled
+        ? lockedTurnMode(config, input.session_id, input.turn_id)
+        : MODE_OFF,
       details: {
         turnId: input.turn_id,
         toolUseId: input.tool_use_id,
@@ -50,6 +54,7 @@ export async function sendTracerNote(input: CodexHookInput): Promise<void> {
       paths,
       version: PLUGIN_VERSION,
       startWorker: () => {
+        if (!config.enabled) return;
         launch = launchDetachedWorker([ENGINE_WORKER_FLAG, input.cwd], {
           storageRoot: paths.folder,
         });

@@ -26629,15 +26629,16 @@ async function sendTracerNote(input) {
 		env: process.env
 	});
 	const writer = writerOptions(config, engineStorageRoot(home));
-	if (!config.enabled || !writer || !input.session_id || !input.turn_id) return;
+	if (!writer || !input.session_id || !input.turn_id) return;
 	const paths = tracerPaths(nodePath.join(home, CODEX_CONFIG_DIRECTORY));
+	if (!config.enabled && !existsSync(paths.lock)) return;
 	let launch;
 	sendHookNote({
 		integration: LS_INTEGRATION,
 		event: input.hook_event_name,
 		sessionId: input.session_id,
 		...input.transcript_path ? { transcriptPath: input.transcript_path } : {},
-		tracingMode: lockedTurnMode(config, input.session_id, input.turn_id),
+		tracingMode: config.enabled ? lockedTurnMode(config, input.session_id, input.turn_id) : "off",
 		details: {
 			turnId: input.turn_id,
 			toolUseId: input.tool_use_id,
@@ -26649,6 +26650,7 @@ async function sendTracerNote(input) {
 		paths,
 		version: PLUGIN_VERSION,
 		startWorker: () => {
+			if (!config.enabled) return;
 			launch = launchDetachedWorker([ENGINE_WORKER_FLAG, input.cwd], { storageRoot: paths.folder });
 		}
 	});
