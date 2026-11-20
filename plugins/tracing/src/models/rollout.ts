@@ -402,6 +402,7 @@ export type AggregateMessage<TMessage> = {
   message: TMessage;
   tokenCount: TokenCount | undefined;
   subagentThreads: string[];
+  stubbed?: boolean;
 };
 
 export type MergedMessage<TMessage> = {

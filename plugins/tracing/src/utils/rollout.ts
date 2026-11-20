@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { CODEX_CONFIG_DIRECTORY, ROLLOUT_CHUNK_BYTES, ROLLOUT_ENCODING } from "../constants.js";
 import type { DirectoryEntry, LineSchema } from "../models/rollout.js";
 import { homeDirectory } from "./home.js";
+import { isRecord } from "./isRecord.js";
 
 export function* readSession(name: string): Generator<LineSchema> {
   const file = openSync(name, "r");
@@ -89,4 +90,10 @@ export function findRolloutFileByThreadId(
 
 export function isoTime(time: number | string): string {
   return new Date(time).toISOString();
+}
+
+export function reasoningSummaryText(summary: unknown[]): string {
+  return summary
+    .flatMap((part) => (isRecord(part) && typeof part.text === "string" ? [part.text] : []))
+    .join("\n");
 }

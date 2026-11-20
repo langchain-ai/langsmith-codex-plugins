@@ -3,6 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HookNote, RunPatch, RunPost, TracingMode } from "@langchain/plugins-base/tracer";
 import { beforeEach, expect, it, vi } from "vitest";
+import {
+  HELD_TURN_MESSAGES_MAX_BYTES,
+  STUBBED_TOOL_OUTPUT_NOTE,
+  STUBBED_TURN_MESSAGE_NOTE,
+} from "../src/constants.js";
+import type { BuilderState } from "../src/models/trace-conversion.js";
 import { convertToRunTree } from "../src/trace.js";
 import { createCodexTranscriptBuilder } from "../src/tracer-builder.js";
 import { runIdGenerator, toolRunIdGenerator } from "../src/tracing-engine-payload.js";
@@ -17,10 +23,45 @@ const editing = await read("04/23/rollout-editing.jsonl");
 const subagents = await read("04/23/rollout-subagents.jsonl");
 const [session, turn] = ids(editing);
 const VLR = "call_VLRlIzWNfD2jSDW47dX5eEMz";
+const BIG_REPLY = "x".repeat(900 * 1024);
+const [bigMeta, ...bigTurn] = rolloutText(session, ["t1"]).split("\n");
+const bigReplies = Array.from({ length: 5 }, () =>
+  JSON.stringify({
+    timestamp: "2026-04-23T00:00:01.000Z",
+    type: "response_item",
+    payload: {
+      type: "message",
+      role: "assistant",
+      content: [{ type: "output_text", text: BIG_REPLY }],
+    },
+  }),
+);
+const bigRows = [bigMeta, ...bigTurn.slice(0, 4), ...bigReplies];
 
 beforeEach(async () => {
   vi.stubEnv("HOME", await fs.mkdtemp(join(tmpdir(), "codex-builder-")));
 });
+
+function heldMessages(state: unknown) {
+  return (state as BuilderState).walk?.task?.messages ?? [];
+}
+
+function expectOldestRepliesStubbed(state: unknown, stubbedReplies: number) {
+  const held = heldMessages(state);
+  const replyBytes = Buffer.byteLength(JSON.stringify(JSON.parse(bigReplies[0]).payload));
+  expect(held.map(({ stubbed }) => stubbed ?? false)).toEqual(
+    held.map((_, index) => index > 0 && index <= stubbedReplies + 1),
+  );
+  expect(held[0].message).toEqual(JSON.parse(bigTurn[2]).payload);
+  expect(held[2].message).toEqual({
+    type: "message",
+    role: "assistant",
+    content: [{ type: "text", text: `${replyBytes} ${STUBBED_TURN_MESSAGE_NOTE}` }],
+  });
+  expect((state as BuilderState).heldMessageBytes).toBeLessThanOrEqual(
+    HELD_TURN_MESSAGES_MAX_BYTES,
+  );
+}
 
 function fakeBuilder(
   rows = editing,
@@ -265,4 +306,92 @@ it("leaves the next turn open when the previous turn's Stop arrives after it sta
 
   const second = posts.filter(({ trace_id }) => trace_id === runIdGenerator(session, "t2")());
   expect(second.map(({ run_type }) => run_type)).toEqual(["chain", "llm"]);
+});
+
+it("uploads a big tool output whole on the tool's run and keeps only a stub of it for the model's inputs", async () => {
+  await submitPreference(defaultPrivacyPath(), { sessionId: session, turnId: turn, enabled: true });
+  const { builder, posts, read, note } = fakeBuilder();
+  const end = editing.findIndex((row) => row.includes('"exec_command_end"') && row.includes(VLR));
+  const outputRow = JSON.parse(editing[end + 1]);
+  const bigOutput = `${outputRow.payload.output}${"y".repeat(9 * 1024)}`;
+  outputRow.payload.output = bigOutput;
+  const unpostedRow = { ...outputRow, payload: { ...outputRow.payload, call_id: "unposted" } };
+  note("UserPromptSubmit", turn, "full");
+  read(...editing.slice(0, end));
+  note("PostToolUse", turn, "full", VLR);
+  read(JSON.stringify(unpostedRow), JSON.stringify(outputRow), editing[end]);
+
+  const tool = posts.find(({ id }) => id === toolRunIdGenerator(session, turn)(VLR));
+  expect(tool?.outputs).toMatchObject({
+    messages: [{ role: "tool", content: [{ type: "text", text: bigOutput }], tool_call_id: VLR }],
+  });
+  const held = heldMessages(builder.state()).map(({ message }) => message);
+  expect(held.slice(-2)).toEqual([
+    unpostedRow.payload,
+    {
+      type: "function_call_output",
+      call_id: VLR,
+      output: `${Buffer.byteLength(JSON.stringify(bigOutput))} ${STUBBED_TOOL_OUTPUT_NOTE}`,
+    },
+  ]);
+});
+
+it("stubs a turn's oldest replies after the prompt once its held messages pass the cap", () => {
+  const { builder, read } = fakeBuilder();
+  read(...bigRows, bigReplies[0]);
+
+  expectOldestRepliesStubbed(builder.state(), 2);
+});
+
+it("caps held messages after restoring a saved state that never counted them", () => {
+  const first = fakeBuilder();
+  first.read(...bigRows.slice(0, -1));
+  const { heldMessageBytes: _counted, ...saved } = JSON.parse(
+    JSON.stringify(first.builder.state()),
+  );
+  const restarted = fakeBuilder(editing, ROLLOUT, saved);
+  restarted.read(...bigRows.slice(-1));
+
+  expectOldestRepliesStubbed(restarted.builder.state(), 1);
+});
+
+it("keeps a stubbed call's tool run and shrinks every kind of item the cap reaches", () => {
+  const { builder, posts, read, note } = fakeBuilder();
+  const call = {
+    type: "function_call",
+    name: "exec",
+    call_id: "big-args",
+    arguments: `"${BIG_REPLY}"`,
+  };
+  const custom = {
+    type: "custom_tool_call",
+    name: "apply_patch",
+    call_id: "big-input",
+    input: BIG_REPLY,
+  };
+  const reasoning = { type: "reasoning", summary: [], encrypted_content: BIG_REPLY };
+  const line = (payload: Record<string, unknown>) =>
+    JSON.stringify({ timestamp: "2026-04-23T00:00:01.000Z", type: "response_item", payload });
+  const output = (call_id: string) => line({ type: "function_call_output", call_id, output: "ok" });
+  const stubNote = (payload: Record<string, unknown>) =>
+    `${Buffer.byteLength(JSON.stringify(payload))} ${STUBBED_TURN_MESSAGE_NOTE}`;
+  note("UserPromptSubmit", "t1");
+  read(bigMeta, ...bigTurn.slice(0, 3), line(call), output("big-args"), line(custom));
+  read(output("big-input"), line(reasoning), ...bigReplies.slice(0, 4));
+  const held = heldMessages(builder.state()).map(({ message }) => message);
+  read(bigTurn[4]);
+
+  expect([held[1], held[3], held[5]]).toEqual([
+    { ...call, arguments: JSON.stringify(stubNote(call)) },
+    { ...custom, input: stubNote(custom) },
+    {
+      type: "reasoning",
+      summary: [{ type: "summary_text", text: stubNote(reasoning) }],
+      encrypted_content: null,
+    },
+  ]);
+  const toolRunId = toolRunIdGenerator(session, "t1");
+  expect(posts.map(({ id }) => id)).toEqual(
+    expect.arrayContaining([toolRunId("big-args"), toolRunId("big-input")]),
+  );
 });

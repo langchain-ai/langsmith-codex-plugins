@@ -37,7 +37,6 @@ export interface TraceInput {
 
 export interface TurnRequest {
   rolloutFile: string;
-  includeOpenTurn?: boolean | undefined;
   options: TraceConversionOptions;
 }
 
@@ -131,6 +130,7 @@ export interface BuilderState {
   liveRoots: string[];
   liveTools: string[];
   waitingTools: string[];
+  heldMessageBytes?: number;
   metadata?: Record<string, unknown>;
   parentHeaders?: ParentHeaders;
 }
