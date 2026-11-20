@@ -138,10 +138,10 @@ Muting only changes what reaches LangSmith and doesn't delete earlier uploads. S
 
 - **No runs at all.** Check that the plugin is enabled, its hooks are trusted with `/hooks` and tracing is on. A `TRACE_TO_LANGSMITH` in your shell overrides your config files.
 - **Tracing is paused.** Your sign-in expired or your key was rejected. Run `langsmith auth login` again or replace the key and tracing resumes from the next prompt.
-- **Tracing is paused after a 403.** Your sign-in or API key might not have access to the agent, project or workspace. Look through `~/.codex/langsmith_engine/worker.log` for the details.
+- **Tracing is paused after a 403.** Your sign-in or API key might not have access to the agent, project or workspace. Look through `~/.codex/langsmith_plugins_base/tracer.log` for the details.
 - **Stopped after an update.** Codex asks you to trust a hook again whenever a release changes it. Run `/hooks` and approve it.
 - **Runs in the wrong project.** Check `project` in your config file and `LANGSMITH_CODEX_PROJECT` in your shell.
-- **Still stuck.** The background uploader logs to `~/.codex/langsmith_engine/worker.log`.
+- **Still stuck.** The background uploader logs to `~/.codex/langsmith_plugins_base/tracer.log`.
 
 ## Privacy
 
