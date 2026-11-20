@@ -195,8 +195,8 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   total_tokens: 72840,
                   input_token_details: expect.objectContaining({
                     cache_read: 57088,
-                    cache_creation: 337,
                   }),
+                  output_token_details: { reasoning: 337 },
                 }),
               }),
             },
@@ -563,8 +563,8 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   total_tokens: 14505,
                   input_token_details: expect.objectContaining({
                     cache_read: 3840,
-                    cache_creation: 121,
                   }),
+                  output_token_details: { reasoning: 121 },
                 }),
               }),
             },
@@ -688,8 +688,8 @@ it.each([{ makeTurnIncomplete: true }, { makeTurnIncomplete: false }])(
                   total_tokens: 85602,
                   input_token_details: expect.objectContaining({
                     cache_read: 70656,
-                    cache_creation: 457,
                   }),
+                  output_token_details: { reasoning: 457 },
                 }),
               }),
             },
@@ -1489,6 +1489,24 @@ it("keeps every field of a tool result that is not Codex's shell output", async 
   expect(tool?.outputs?.messages[0].content).toEqual([{ type: "text", text: result }]);
 });
 
+it("keeps a tool whose result follows a hook's developer message", async () => {
+  const hookNote = (text: string) => ({
+    type: "message",
+    role: "developer",
+    content: [{ type: "input_text", text }],
+  });
+  const runs = await traceScaffoldedTurn([
+    { type: "function_call", call_id: "f1", name: "report", arguments: "{}" },
+    hookNote("hook|PreToolUse"),
+    hookNote("hook|PostToolUse"),
+    { type: "function_call_output", call_id: "f1", output: "done" },
+  ]);
+
+  expect(runs.find((run) => run.name === "report")?.outputs?.messages[0].content).toEqual([
+    { type: "text", text: "done" },
+  ]);
+});
+
 it("shows a failed shell command's exit code under its output", async () => {
   const runs = await traceScaffoldedTurn([
     { type: "function_call", call_id: "f1", name: "shell", arguments: "{}" },
@@ -1670,6 +1688,54 @@ it.each([
   );
 
   expect(runs.map((run) => [run.inputs, run.outputs])).toEqual(turn.runs);
+});
+
+it("keeps a tool that finished just before the turn was interrupted", async () => {
+  const lines = [
+    { type: "session_meta", payload: { id: "019900bb-0000-7000-8000-bare", cwd: "/w" } },
+    { type: "event_msg", payload: { type: "task_started", turn_id: BARE_TURN } },
+    { type: "turn_context", payload: { turn_id: BARE_TURN, cwd: "/w", model: "m" } },
+    { type: "response_item", payload: said("user", "input_text", "Run it") },
+    {
+      type: "response_item",
+      payload: { type: "function_call", call_id: "f1", name: "report", arguments: "{}" },
+    },
+    {
+      type: "response_item",
+      payload: { type: "function_call_output", call_id: "f1", output: "done" },
+    },
+    {
+      type: "event_msg",
+      payload: { type: "turn_aborted", turn_id: BARE_TURN, reason: "interrupted" },
+    },
+  ].map((line, i) => JSON.stringify({ timestamp: `2026-10-27T00:00:0${i}.000Z`, ...line }));
+  vol.fromJSON({ [BARE_FILE]: lines.join("\n") + "\n" });
+  seedFullLaunchEvidence();
+  const runs: RunTree[] = [];
+
+  await convertToRunTree(
+    { transcript_path: BARE_FILE, turn_id: BARE_TURN },
+    { captureRun: async (run) => void runs.push(run) },
+  );
+
+  expect(runs.find((run) => run.name === "report")?.outputs?.messages[0].content).toEqual([
+    { type: "text", text: "done" },
+  ]);
+});
+
+it("shows reasoning from its summary and leaves out the encrypted copy", async () => {
+  const runs = await traceScaffoldedTurn([
+    {
+      type: "reasoning",
+      summary: [{ type: "summary_text", text: "Plan the fix" }],
+      content: [],
+      encrypted_content: "gAAAA",
+    },
+  ]);
+  const models = runs.filter((run) => run.run_type === "llm");
+
+  expect(JSON.stringify(models.map((run) => run.outputs))).toContain('"reasoning":"Plan the fix"');
+  expect(JSON.stringify(runs.map((run) => [run.inputs, run.outputs]))).not.toContain("gAAAA");
 });
 
 it("reports a later turn's own usage, not the session's running total", async () => {

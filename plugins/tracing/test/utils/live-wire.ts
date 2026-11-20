@@ -5,7 +5,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { withFileLock } from "@langchain/plugins-base/storage";
 import { afterEach, beforeEach, expect } from "vitest";
 
 export type Run = Record<string, any>;
@@ -20,7 +19,7 @@ export const read = async (name: string) =>
     .split("\n");
 export const ids = (rows: string[]) =>
   [JSON.parse(rows[0]).payload.id, JSON.parse(rows[1]).payload.turn_id] as [string, string];
-export const outputLine = (callId: string, rows: string[]) =>
+const outputLine = (callId: string, rows: string[]) =>
   rows.findIndex((line) => {
     const { payload } = JSON.parse(line);
     return payload.call_id === callId && String(payload.type).endsWith("call_output");
@@ -41,6 +40,7 @@ export function liveWire() {
     return [200];
   };
   let dir = "";
+  const homes: string[] = [];
   let server: Server;
   let api = "";
   beforeEach(async () => {
@@ -61,6 +61,7 @@ export function liveWire() {
     api = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   });
   afterEach(async () => {
+    for (const home of homes.splice(0)) await stopTracer(home);
     await sleep(300);
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -69,13 +70,13 @@ export function liveWire() {
   async function workspace(name: string, rows: string[]) {
     const [session, turn] = ids(rows);
     const home = join(dir, name, "home");
+    homes.push(home);
     const cwd = join(dir, name, "project");
     await fs.mkdir(join(home, ".codex"), { recursive: true });
     await fs.mkdir(cwd, { recursive: true });
     const settings = { enabled: true, api_url: api, api_key: name, project: "live", replicas: [] };
     await fs.writeFile(join(cwd, "langsmith-plugins.json"), JSON.stringify(settings));
     const transcript = join(cwd, "rollout.jsonl");
-    const marker = `${transcript}.langsmith`;
     const hook = async (event: Record<string, unknown>, args: string[] = []) => {
       const env = Object.fromEntries(
         Object.entries(process.env).filter(
@@ -94,37 +95,19 @@ export function liveWire() {
       const code = await new Promise((resolve) => child.on("close", resolve));
       expect({ code, stderr: args.length ? "" : stderr }).toEqual({ code: 0, stderr: "" });
     };
-    const write = (end = rows.length, tail = "") =>
-      fs.writeFile(transcript, rows.slice(0, end).join("\n") + "\n" + tail);
+    const write = (end = rows.length) =>
+      fs.writeFile(transcript, rows.slice(0, end).join("\n") + "\n");
     const toolHook = (callId: string) =>
       hook({ hook_event_name: "PostToolUse", tool_use_id: callId });
-    const arriving = async (callId: string, first: number, tail = "") => {
-      await write(first, tail);
-      const hooked = toolHook(callId);
-      await sleep(400);
-      await write(Math.max(first, outputLine(callId, rows)) + 1);
-      await hooked;
-    };
     const tool = async (callId: string) => {
       await write(outputLine(callId, rows) + 1);
       await toolHook(callId);
     };
     const stop = () => hook({ hook_event_name: "Stop" });
-    const locked = <T>(action: () => Promise<T>) => withFileLock(marker, action);
-    const settle = async () => {
-      await hook({}, ["--engine-worker", session, cwd]);
-      for (
-        let quiet = 0, count = -1;
-        quiet < 8;
-        quiet = received.length === count ? quiet + 1 : 0
-      ) {
-        count = received.length;
-        await sleep(250);
-      }
-    };
+    const settle = () => settleTracer(home, () => received.length);
     await write(4);
     await hook({ hook_event_name: "UserPromptSubmit", prompt: "work" });
-    return { hook, write, tool, toolHook, arriving, stop, locked, settle, transcript, marker };
+    return { hook, write, tool, toolHook, stop, settle, transcript };
   }
 
   function trace(key: string) {
@@ -145,4 +128,41 @@ export function liveWire() {
       .filter((batch) => key === undefined || batch.key === key)
       .flatMap((batch) => batch[kind] ?? []);
   return { received, workspace, trace, sent, dir: () => dir };
+}
+
+const tracerFile = (home: string, name: string) =>
+  join(home, ".codex", "langsmith_plugins_base", name);
+
+async function notesRead(home: string): Promise<boolean> {
+  const notes = await fs.stat(tracerFile(home, "notes.jsonl")).catch(() => undefined);
+  const snapshot = await fs.readFile(tracerFile(home, "snapshot.json"), "utf8").catch(() => "{}");
+  const { base = 0, offset = 0 } = JSON.parse(snapshot).notes ?? {};
+  return base + offset >= (notes?.size ?? 0);
+}
+
+export async function settleTracer(home: string, uploads: () => number): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  for (let quiet = 0, count = -1; quiet < 4; await sleep(250)) {
+    if (Date.now() > deadline) throw new Error("the tracer worker never settled");
+    const sent = uploads();
+    quiet = (await notesRead(home)) && sent === count ? quiet + 1 : 0;
+    count = sent;
+  }
+}
+
+export async function stopTracer(home: string): Promise<void> {
+  const launched = await fs.stat(tracerFile(home, "notes.jsonl")).then(
+    () => true,
+    () => false,
+  );
+  let pid: unknown;
+  for (const deadline = Date.now() + 5_000; ; await sleep(100)) {
+    const lock = await fs.readFile(tracerFile(home, "tracer.lock"), "utf8").catch(() => "{}");
+    ({ pid } = JSON.parse(lock));
+    if (typeof pid === "number" || !launched || Date.now() > deadline) break;
+  }
+  if (typeof pid !== "number" || pid === process.pid) return;
+  try {
+    process.kill(pid, "SIGKILL");
+  } catch {}
 }

@@ -10,8 +10,8 @@ import { createRepositoryAttributor, type RepositoryAttributor } from "@langchai
 import { launchDetachedWorker, openPluginSession } from "@langchain/plugins-base/plugin";
 import type { PluginSession } from "@langchain/plugins-base/plugin";
 import { toSdkReplicas } from "@langchain/plugins-base/settings";
+import { tracerPaths } from "@langchain/plugins-base/tracer";
 import type { StoredCapture } from "@langchain/plugins-base/storage/capture";
-import type { LifecycleCaptureInput } from "@langchain/plugins-base/tracing/lifecycle";
 import type {
   ReconstructionJob,
   ReconstructionOutput,
@@ -21,21 +21,16 @@ import * as path from "node:path";
 import type { Config } from "./models/config.js";
 import { getConfig } from "./config.js";
 import {
-  CAPTURE_SAVED_STATUSES,
   CODEX_CONFIG_DIRECTORY,
   DEFAULT_LANGSMITH_API_URL,
   DEFAULT_LANGSMITH_PROJECT_NAME,
   DROPPED_LOGIN_WORK_WARNING_PREFIX,
   DROPPED_LOGIN_WORK_WARNING_SUFFIX,
   DROPPED_WORK_WARNING,
-  ENGINE_STORAGE_DIRECTORY,
   ENGINE_WORKER_FLAG,
   GITHUB_LOGIN_MARKER_FILE_NAME,
   LIVE_RUN_EVENT_PREFIX,
-  OPEN_CLOSURE,
   PARENT_PROJECT_PROBE,
-  SUBAGENT_AGENT_TYPE,
-  LIVE_RUN_NOT_SAVED_MESSAGE,
   LS_INTEGRATION,
   TRACE_RUN_EVENT_PREFIX,
   TRACE_RUN_PATCH_EVENT_PREFIX,
@@ -46,8 +41,6 @@ import type {
   CodexReconstructedRun,
   CodexReconstruction,
   CodexRecoveryResult,
-  LiveToolRequest,
-  LiveToolRuns,
   ParentDestination,
   UploadAuth,
 } from "./models/tracing-engine.js";
@@ -57,7 +50,6 @@ import { transcriptPathFromRef } from "./tracing-engine-locator.js";
 import {
   closingRootSubmission,
   createRunClient,
-  openRootSubmission,
   postSubmission,
   runIdGenerator,
   toolRunIdGenerator,
@@ -66,7 +58,7 @@ import { recordWarning } from "./warnings.js";
 import { homeDirectory } from "./utils/home.js";
 
 export function engineStorageRoot(home: string): string {
-  return path.join(home, CODEX_CONFIG_DIRECTORY, ENGINE_STORAGE_DIRECTORY);
+  return tracerPaths(path.join(home, CODEX_CONFIG_DIRECTORY)).folder;
 }
 
 export function createCodexTracingSession(
@@ -74,8 +66,8 @@ export function createCodexTracingSession(
   sessionId: string,
   cwd: string,
   home = homeDirectory(),
+  storageRoot = engineStorageRoot(home),
 ): PluginSession | undefined {
-  const storageRoot = engineStorageRoot(home);
   const writer = writerOptions(config, storageRoot);
   if (!writer) return undefined;
   const plugin: PluginSession = openPluginSession({
@@ -94,66 +86,6 @@ export function createCodexTracingSession(
 }
 
 let attributor: RepositoryAttributor | undefined;
-
-export async function buildLiveToolRuns(
-  config: Config,
-  request: LiveToolRequest,
-  mode: TracingMode,
-  home = homeDirectory(),
-): Promise<LiveToolRuns | undefined> {
-  const runs: CodexReconstructedRun[] = [];
-  const toolRunId = toolRunIdGenerator(request.session_id, request.turn_id)(request.tool_use_id);
-  await convertToRunTree(
-    { transcript_path: request.transcript_path, turn_id: request.turn_id, includeOpenTurn: true },
-    conversionOptions(config, request.session_id, request.turn_id, mode, runs, home),
-  );
-  const [root] = runs;
-  const tool = runs.find(({ run }) => run.id === toolRunId);
-  if (root === undefined || tool === undefined || root.metadata.agentType === SUBAGENT_AGENT_TYPE) {
-    return undefined;
-  }
-  return { root, tool };
-}
-
-export async function saveLiveToolRuns(
-  plugin: PluginSession,
-  turnId: string,
-  { root, tool }: LiveToolRuns,
-): Promise<void> {
-  const rootEventId = `${LIVE_RUN_EVENT_PREFIX}${root.run.id}`;
-  if (!(await savedLiveRun(plugin, turnId, root.run.id))) {
-    await saveLiveRun(plugin, {
-      turnId,
-      eventId: rootEventId,
-      submission: openRootSubmission(root.run, root.mode, root.metadata),
-      turnEvidence: { rootRunId: root.run.id, childRunIds: [], closureState: OPEN_CLOSURE },
-    });
-  }
-  await saveLiveRun(plugin, {
-    turnId,
-    eventId: `${LIVE_RUN_EVENT_PREFIX}${tool.run.id}`,
-    submission: postSubmission(tool.run, tool.mode, tool.metadata),
-    turnEvidence: { childRunIds: [tool.run.id], closureState: OPEN_CLOSURE },
-    dependencies: [
-      { integration: LS_INTEGRATION, sessionId: plugin.sessionId, turnId, eventId: rootEventId },
-    ],
-  });
-}
-
-async function saveLiveRun(plugin: PluginSession, input: LifecycleCaptureInput): Promise<void> {
-  const result = await plugin.session.capture(input);
-  if (!CAPTURE_SAVED_STATUSES.includes(result.status)) {
-    console.error(`${LIVE_RUN_NOT_SAVED_MESSAGE} ${result.status}`);
-  }
-}
-
-export async function hasUnclosedLiveRoot(plugin: PluginSession, turnId: string): Promise<boolean> {
-  const rootRunId = runIdGenerator(plugin.sessionId, turnId)();
-  return (
-    (await savedLiveRun(plugin, turnId, rootRunId)) !== undefined &&
-    (await savedLiveRun(plugin, turnId, rootRunId, TRACE_RUN_PATCH_EVENT_PREFIX)) === undefined
-  );
-}
 
 function savedLiveRun(
   plugin: PluginSession,
@@ -203,10 +135,14 @@ function reportRecovery(result: CodexRecoveryResult): void {
   console.error(`Shared Codex trace recovery did not finish: ${JSON.stringify(result)}`);
 }
 
-export async function runCodexEngineWorker(sessionId: string, cwd: string): Promise<void> {
+export async function runCodexEngineWorker(
+  sessionId: string,
+  cwd: string,
+  storageRoot?: string,
+): Promise<void> {
   const home = homeDirectory();
   const config = await getConfig({ home, cwd, env: process.env });
-  const session = createCodexTracingSession(config, sessionId, cwd, home);
+  const session = createCodexTracingSession(config, sessionId, cwd, home, storageRoot);
   if (!session) throw new Error("Shared Codex trace worker configuration is unavailable");
   const result = await session.session.drain();
   if (result === "retry-exhausted" || result === "dropped" || result === "scope-mismatch") {
@@ -336,7 +272,7 @@ export function uploadAuth(config: Config): UploadAuth | undefined {
   return credential;
 }
 
-function writerOptions(
+export function writerOptions(
   config: Config,
   storageRoot: string,
 ): LangSmithUploadWriterOptions | undefined {
